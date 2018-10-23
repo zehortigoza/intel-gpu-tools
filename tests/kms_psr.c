@@ -60,6 +60,7 @@ typedef struct {
 	int drm_fd;
 	int debugfs_fd;
 	enum operations op;
+	bool op_psr2;
 	uint32_t devid;
 	uint32_t crtc_id;
 	igt_display_t display;
@@ -71,6 +72,7 @@ typedef struct {
 	drmModeModeInfo *mode;
 	igt_output_t *output;
 	bool with_psr_disabled;
+	bool supports_psr2;
 } data_t;
 
 static void create_cursor_fb(data_t *data)
@@ -194,12 +196,22 @@ static bool sink_support(data_t *data)
 	return data->with_psr_disabled || psr_sink_support(data->debugfs_fd);
 }
 
+static bool sink_support_psr2(data_t *data)
+{
+	return data->with_psr_disabled || psr2_sink_support(data->debugfs_fd);
+}
+
 static bool psr_wait_entry_if_enabled(data_t *data)
 {
-	if (data->with_psr_disabled)
-		return true;
-
-	return psr_wait_entry(data->debugfs_fd);
+	if (!data->op_psr2) {
+		if (data->with_psr_disabled)
+			return true;
+		return psr_wait_entry(data->debugfs_fd);
+	} else {
+		if (data->with_psr_disabled)
+			return true;
+		return psr2_wait_deep_sleep(data->debugfs_fd);
+	}
 }
 
 static inline void manual(const char *expected)
@@ -289,11 +301,16 @@ static void run_test(data_t *data)
 		expected = "screen GREEN";
 		break;
 	}
-	igt_assert(psr_wait_exit(data->debugfs_fd));
+
+	if (!data->op_psr2)
+		igt_assert(psr_wait_exit(data->debugfs_fd));
+	else
+		igt_assert(psr2_wait_update(data->debugfs_fd));
 	manual(expected);
 }
 
-static void test_cleanup(data_t *data) {
+static void test_cleanup(data_t *data)
+{
 	igt_plane_t *primary;
 
 	primary = igt_output_get_plane_type(data->output,
@@ -304,12 +321,22 @@ static void test_cleanup(data_t *data) {
 
 	igt_remove_fb(data->drm_fd, &data->fb_green);
 	igt_remove_fb(data->drm_fd, &data->fb_white);
+
+	/* switch to PSR1 again */
+	if (data->op_psr2 && !data->with_psr_disabled)
+		psr_enable(data->debugfs_fd);
+	data->op_psr2 = false;
 }
 
 static void setup_test_plane(data_t *data, int test_plane)
 {
 	uint32_t white_h, white_v;
 	igt_plane_t *primary, *sprite, *cursor;
+
+	if (data->op_psr2 && !data->with_psr_disabled) {
+		igt_require(data->supports_psr2);
+		psr2_enable(data->debugfs_fd);
+	}
 
 	igt_create_color_fb(data->drm_fd,
 			    data->mode->hdisplay, data->mode->vdisplay,
@@ -391,7 +418,7 @@ static int opt_handler(int opt, int opt_index, void *_data)
 int main(int argc, char *argv[])
 {
 	const char *help_str =
-	       "  --no-psr\tRun test without PSR.";
+	       "  --no-psr\tRun test without PSR/PSR2.\n";
 	static struct option long_options[] = {
 		{"no-psr", 0, 0, 'n'},
 		{ 0, 0, 0, 0 }
@@ -414,6 +441,7 @@ int main(int argc, char *argv[])
 
 		igt_require_f(sink_support(&data),
 			      "Sink does not support PSR\n");
+		data.supports_psr2 = sink_support_psr2(&data);
 
 		data.bufmgr = drm_intel_bufmgr_gem_init(data.drm_fd, 4096);
 		igt_assert(data.bufmgr);
@@ -428,7 +456,22 @@ int main(int argc, char *argv[])
 		test_cleanup(&data);
 	}
 
+	igt_subtest("psr2_basic") {
+		data.op_psr2 = true;
+		setup_test_plane(&data, DRM_PLANE_TYPE_PRIMARY);
+		igt_assert(psr_wait_entry_if_enabled(&data));
+		test_cleanup(&data);
+	}
+
 	igt_subtest("no_drrs") {
+		setup_test_plane(&data, DRM_PLANE_TYPE_PRIMARY);
+		igt_assert(psr_wait_entry_if_enabled(&data));
+		igt_assert(drrs_disabled(&data));
+		test_cleanup(&data);
+	}
+
+	igt_subtest("psr2_no_drrs") {
+		data.op_psr2 = true;
 		setup_test_plane(&data, DRM_PLANE_TYPE_PRIMARY);
 		igt_assert(psr_wait_entry_if_enabled(&data));
 		igt_assert(drrs_disabled(&data));
@@ -437,6 +480,17 @@ int main(int argc, char *argv[])
 
 	for (op = PAGE_FLIP; op <= RENDER; op++) {
 		igt_subtest_f("primary_%s", op_str(op)) {
+			data.op = op;
+			setup_test_plane(&data, DRM_PLANE_TYPE_PRIMARY);
+			igt_assert(psr_wait_entry_if_enabled(&data));
+			run_test(&data);
+			test_cleanup(&data);
+		}
+	}
+
+	for (op = PAGE_FLIP; op <= RENDER; op++) {
+		igt_subtest_f("psr2_primary_%s", op_str(op)) {
+			data.op_psr2 = true;
 			data.op = op;
 			setup_test_plane(&data, DRM_PLANE_TYPE_PRIMARY);
 			igt_assert(psr_wait_entry_if_enabled(&data));
@@ -456,7 +510,29 @@ int main(int argc, char *argv[])
 	}
 
 	for (op = MMAP_GTT; op <= PLANE_ONOFF; op++) {
+		igt_subtest_f("psr2_sprite_%s", op_str(op)) {
+			data.op_psr2 = true;
+			data.op = op;
+			setup_test_plane(&data, DRM_PLANE_TYPE_OVERLAY);
+			igt_assert(psr_wait_entry_if_enabled(&data));
+			run_test(&data);
+			test_cleanup(&data);
+		}
+	}
+
+	for (op = MMAP_GTT; op <= PLANE_ONOFF; op++) {
 		igt_subtest_f("cursor_%s", op_str(op)) {
+			data.op = op;
+			setup_test_plane(&data, DRM_PLANE_TYPE_CURSOR);
+			igt_assert(psr_wait_entry_if_enabled(&data));
+			run_test(&data);
+			test_cleanup(&data);
+		}
+	}
+
+	for (op = MMAP_GTT; op <= PLANE_ONOFF; op++) {
+		igt_subtest_f("psr2_cursor_%s", op_str(op)) {
+			data.op_psr2 = true;
 			data.op = op;
 			setup_test_plane(&data, DRM_PLANE_TYPE_CURSOR);
 			igt_assert(psr_wait_entry_if_enabled(&data));
@@ -474,7 +550,29 @@ int main(int argc, char *argv[])
 		test_cleanup(&data);
 	}
 
+	igt_subtest_f("psr2_dpms") {
+		data.op_psr2 = true;
+		data.op = RENDER;
+		setup_test_plane(&data, DRM_PLANE_TYPE_PRIMARY);
+		igt_assert(psr_wait_entry_if_enabled(&data));
+		dpms_off_on(&data);
+		run_test(&data);
+		test_cleanup(&data);
+	}
+
 	igt_subtest_f("suspend") {
+		data.op = PLANE_ONOFF;
+		setup_test_plane(&data, DRM_PLANE_TYPE_CURSOR);
+		igt_assert(psr_wait_entry_if_enabled(&data));
+		igt_system_suspend_autoresume(SUSPEND_STATE_MEM,
+					      SUSPEND_TEST_NONE);
+		igt_assert(psr_wait_entry_if_enabled(&data));
+		run_test(&data);
+		test_cleanup(&data);
+	}
+
+	igt_subtest_f("psr2_suspend") {
+		data.op_psr2 = true;
 		data.op = PLANE_ONOFF;
 		setup_test_plane(&data, DRM_PLANE_TYPE_CURSOR);
 		igt_assert(psr_wait_entry_if_enabled(&data));
