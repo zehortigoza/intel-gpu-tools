@@ -41,5 +41,6 @@ bool psr2_wait_update(int debugfs_fd);
 bool psr2_enable(int debugfs_fd);
 bool psr2_disable(int debugfs_fd);
 bool psr2_sink_support(int debugfs_fd);
+bool psr2_read_last_num_su_blocks_val(int debugfs_fd, uint16_t *num_su_blocks);
 
 #endif
