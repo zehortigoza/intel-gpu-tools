@@ -36,4 +36,10 @@ bool psr_enable(int debugfs_fd);
 bool psr_disable(int debugfs_fd);
 bool psr_sink_support(int debugfs_fd);
 
+bool psr2_wait_deep_sleep(int debugfs_fd);
+bool psr2_wait_update(int debugfs_fd);
+bool psr2_enable(int debugfs_fd);
+bool psr2_disable(int debugfs_fd);
+bool psr2_sink_support(int debugfs_fd);
+
 #endif

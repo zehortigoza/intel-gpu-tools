@@ -142,3 +142,95 @@ bool psr_sink_support(int debugfs_fd)
 	return ret > 0 && (strstr(buf, "Sink_Support: yes\n") ||
 			   strstr(buf, "Sink support: yes"));
 }
+
+static bool psr2_set(int debugfs_fd, bool enable)
+{
+	int ret;
+
+	ret = has_psr_debugfs(debugfs_fd);
+	/* Test PSR2 requires newer kernel that supports PSR debugfs api */
+	igt_require(ret == 0);
+
+	ret = psr_write(debugfs_fd, enable ? "0x2" : "0x1");
+	igt_assert(ret > 0);
+
+	/* Restore original value on exit */
+	if (psr_restore_debugfs_fd == -1) {
+		psr_restore_debugfs_fd = dup(debugfs_fd);
+		igt_assert(psr_restore_debugfs_fd >= 0);
+		igt_install_exit_handler(restore_psr_debugfs);
+	}
+
+	return ret;
+}
+
+bool psr2_enable(int debugfs_fd)
+{
+	return psr2_set(debugfs_fd, true);
+}
+
+bool psr2_disable(int debugfs_fd)
+{
+	return psr2_set(debugfs_fd, false);
+}
+
+bool psr2_sink_support(int debugfs_fd)
+{
+	char buf[PSR_STATUS_MAX_LEN];
+	int ret;
+
+	ret = igt_debugfs_simple_read(debugfs_fd, "i915_edp_psr_status", buf,
+				      sizeof(buf));
+	/*
+	 * i915 requires PSR version 0x03 that is PSR2 + SU with Y-coordinate to
+	 * support PSR2
+	 */
+	return ret > 0 && strstr(buf, "Sink support: yes [0x03]");
+}
+
+static bool psr2_in_deep_sleep(int debugfs_fd)
+{
+	bool deep_sleep;
+	char buf[PSR_STATUS_MAX_LEN];
+	int ret;
+
+	ret = igt_debugfs_simple_read(debugfs_fd, "i915_edp_psr_status", buf,
+				      sizeof(buf));
+	if (ret < 0)
+		return false;
+
+	deep_sleep = strstr(buf, "PSR mode: PSR2 enabled\n") &&
+		     strstr(buf, "Source PSR status: DEEP_SLEEP");
+
+	return deep_sleep;
+}
+
+bool psr2_wait_deep_sleep(int debugfs_fd)
+{
+	/*
+	 * DEEP_SLEEP is only achieved after 15 idle frames so the timeout
+	 * needs to be this long to avoid test fail in 30hz modesets
+	 */
+	return igt_wait(psr2_in_deep_sleep(debugfs_fd), 1000, 20);
+}
+
+static bool psr2_status_update(int debugfs_fd)
+{
+	char buf[PSR_STATUS_MAX_LEN];
+	int ret;
+
+	ret = igt_debugfs_simple_read(debugfs_fd, "i915_edp_psr_status", buf,
+				      sizeof(buf));
+
+	/*
+	 * As it waits for DEEP_SLEEP state when enabling PSR2 any state
+	 * different than it means that PSR2 hardware is working in update
+	 * the sink
+	 */
+	return ret > 0 && !strstr(buf, "Source PSR status: DEEP_SLEEP");
+}
+
+bool psr2_wait_update(int debugfs_fd)
+{
+	return igt_wait(psr2_status_update(debugfs_fd), 40, 10);
+}
