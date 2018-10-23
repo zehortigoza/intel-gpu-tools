@@ -228,6 +228,10 @@ igt@kms_psr@primary_page_flip
 igt@kms_psr@cursor_plane_move
 igt@kms_psr@sprite_plane_onoff
 igt@kms_psr@primary_mmap_gtt
+igt@kms_psr@psr2_primary_page_flip
+igt@kms_psr@psr2_cursor_plane_move
+igt@kms_psr@psr2_sprite_plane_onoff
+igt@kms_psr@psr2_primary_mmap_gtt
 igt@kms_setmode@basic-clone-single-crtc
 igt@pm_backlight@basic-brightness
 igt@pm_rpm@basic-pci-d3-state
