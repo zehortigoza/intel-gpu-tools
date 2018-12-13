@@ -35,7 +35,7 @@ static bool psr_active(int debugfs_fd, bool check_active)
 
 	active = strstr(buf, "HW Enabled & Active bit: yes\n") ||
 		 strstr(buf, "Source PSR ctl: enabled");
-	active = active && (strstr(buf, "SRDENT") || strstr(buf, "SLEEP"));
+	active = active && strstr(buf, "SRDENT");
 	return check_active ? active : !active;
 }
 
