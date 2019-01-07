@@ -203,7 +203,7 @@ static bool psr_supported_on_chipset(int debugfs_fd)
 
 static bool psr_wait_until_update(int debugfs_fd)
 {
-	return psr_wait_update(debugfs_fd, PSR_MODE_1);
+	return psr_long_wait_update(debugfs_fd, PSR_MODE_1);
 }
 
 static void disable_features(int debugfs_fd)
