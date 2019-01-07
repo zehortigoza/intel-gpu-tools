@@ -198,7 +198,7 @@ static bool psr_wait_until_enabled(int debugfs_fd)
 
 static bool psr_wait_until_update(int debugfs_fd)
 {
-	return !psr_wait_until_enabled(debugfs_fd);
+	return psr_wait_exit(debugfs_fd);
 }
 
 static void disable_features(int debugfs_fd)
