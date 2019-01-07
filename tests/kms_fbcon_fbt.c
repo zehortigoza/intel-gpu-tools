@@ -105,15 +105,6 @@ static bool connector_can_fbc(drmModeConnectorPtr connector)
 	return true;
 }
 
-static void fbc_print_status(int debugfs_fd)
-{
-	static char buf[128];
-
-	igt_debugfs_simple_read(debugfs_fd, "i915_fbc_status", buf,
-				sizeof(buf));
-	igt_debug("FBC status: %s\n", buf);
-}
-
 static bool fbc_is_enabled(int debugfs_fd)
 {
 	char buf[128];
@@ -125,9 +116,7 @@ static bool fbc_is_enabled(int debugfs_fd)
 
 static bool fbc_wait_until_enabled(int debugfs_fd)
 {
-	bool r = igt_wait(fbc_is_enabled(debugfs_fd), 5000, 1);
-	fbc_print_status(debugfs_fd);
-	return r;
+	return igt_wait(fbc_is_enabled(debugfs_fd), 5000, 1);
 }
 
 static bool fbc_wait_until_update(int debugfs)
@@ -179,21 +168,9 @@ static bool connector_can_psr(drmModeConnectorPtr connector)
 	return (connector->connector_type == DRM_MODE_CONNECTOR_eDP);
 }
 
-static void psr_print_status(int debugfs_fd)
-{
-	static char buf[PSR_STATUS_MAX_LEN];
-
-	igt_debugfs_simple_read(debugfs_fd, "i915_edp_psr_status", buf,
-				sizeof(buf));
-	igt_debug("PSR status: %s\n", buf);
-}
-
 static bool psr_wait_until_enabled(int debugfs_fd)
 {
-	bool r = psr_wait_entry(debugfs_fd);
-
-	psr_print_status(debugfs_fd);
-	return r;
+	return psr_wait_entry(debugfs_fd);
 }
 
 static bool psr_wait_until_update(int debugfs_fd)
