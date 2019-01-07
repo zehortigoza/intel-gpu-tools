@@ -130,6 +130,11 @@ static bool fbc_wait_until_enabled(int debugfs_fd)
 	return r;
 }
 
+static bool fbc_wait_until_update(int debugfs)
+{
+	return !fbc_wait_until_enabled(debugfs);
+}
+
 typedef bool (*connector_possible_fn)(drmModeConnectorPtr connector);
 
 static void set_mode_for_one_screen(struct drm_info *drm, struct igt_fb *fb,
@@ -196,6 +201,11 @@ static bool psr_supported_on_chipset(int debugfs_fd)
 	return psr_sink_support(debugfs_fd, PSR_MODE_1);
 }
 
+static bool psr_wait_until_update(int debugfs_fd)
+{
+	return !psr_wait_until_enabled(debugfs_fd);
+}
+
 static void disable_features(int debugfs_fd)
 {
 	igt_set_module_param_int("enable_fbc", 0);
@@ -215,16 +225,19 @@ static inline void psr_debugfs_enable(int debugfs_fd)
 struct feature {
 	bool (*supported_on_chipset)(int debugfs_fd);
 	bool (*wait_until_enabled)(int debugfs_fd);
+	bool (*wait_until_update)(int debugfs_fd);
 	bool (*connector_possible_fn)(drmModeConnectorPtr connector);
 	void (*enable)(int debugfs_fd);
 } fbc = {
 	.supported_on_chipset = fbc_supported_on_chipset,
 	.wait_until_enabled = fbc_wait_until_enabled,
+	.wait_until_update = fbc_wait_until_update,
 	.connector_possible_fn = connector_can_fbc,
 	.enable = fbc_modparam_enable,
 }, psr = {
 	.supported_on_chipset = psr_supported_on_chipset,
 	.wait_until_enabled = psr_wait_until_enabled,
+	.wait_until_update = psr_wait_until_update,
 	.connector_possible_fn = connector_can_psr,
 	.enable = psr_debugfs_enable,
 };
@@ -243,7 +256,7 @@ static void subtest(struct feature *feature, bool suspend)
 
 	kmstest_unset_all_crtcs(drm.fd, drm.res);
 	wait_user("Modes unset.");
-	igt_assert(!feature->wait_until_enabled(drm.debugfs_fd));
+	igt_assert(feature->wait_until_update(drm.debugfs_fd));
 
 	set_mode_for_one_screen(&drm, &fb, feature->connector_possible_fn);
 	wait_user("Screen set.");
@@ -263,13 +276,13 @@ static void subtest(struct feature *feature, bool suspend)
 	sleep(3);
 
 	wait_user("Back to fbcon.");
-	igt_assert(!feature->wait_until_enabled(drm.debugfs_fd));
+	igt_assert(feature->wait_until_update(drm.debugfs_fd));
 
 	if (suspend) {
 		igt_system_suspend_autoresume(SUSPEND_STATE_MEM,
 					      SUSPEND_TEST_NONE);
 		sleep(5);
-		igt_assert(!feature->wait_until_enabled(drm.debugfs_fd));
+		igt_assert(feature->wait_until_update(drm.debugfs_fd));
 	}
 }
 
