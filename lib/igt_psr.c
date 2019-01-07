@@ -47,6 +47,11 @@ bool psr_wait_exit(int debugfs_fd)
 	return igt_wait(psr_active(debugfs_fd, false), 40, 10);
 }
 
+bool psr_long_wait_exit(int debugfs_fd)
+{
+	return igt_wait(psr_active(debugfs_fd, false), 500, 10);
+}
+
 static ssize_t psr_write(int debugfs_fd, const char *buf)
 {
 	return igt_sysfs_write(debugfs_fd, "i915_edp_psr_debug", buf,
