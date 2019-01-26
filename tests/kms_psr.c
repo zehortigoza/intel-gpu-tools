@@ -387,11 +387,30 @@ static void setup_test_plane(data_t *data, int test_plane)
 
 static void test_setup(data_t *data)
 {
+	bool ret;
+
 	if (data->op_psr_mode == PSR_MODE_2)
 		igt_require(data->supports_psr2);
 	psr_enable_if_enabled(data);
 	setup_test_plane(data, data->test_plane_id);
-	igt_assert(psr_wait_entry_if_enabled(data));
+
+	ret = psr_wait_entry_if_enabled(data);
+	if (!ret) {
+		char reason[128];
+
+		ret = psr_disabled_reason_get(data->debugfs_fd, reason,
+					      sizeof(reason));
+
+		/* Check if it is a PSR2 reason while trying to enable PSR1 */
+		if (ret && data->op_psr_mode == PSR_MODE_1 &&
+		    strstr(reason, "PSR2"))
+			ret = false;
+
+		if (ret)
+			igt_skip("Skipping test because %s\n", reason);
+		else
+			igt_assert_f(ret, "PSR not enabled\n");
+	}
 }
 
 static void dpms_off_on(data_t *data)

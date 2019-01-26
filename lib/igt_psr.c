@@ -178,3 +178,33 @@ bool psr_sink_support(int debugfs_fd, enum psr_mode mode)
 		 */
 		return strstr(buf, "Sink support: yes [0x03]");
 }
+
+#define DISABLED_REASON_LOOKUP "Disabled reason: "
+
+bool psr_disabled_reason_get(int debugfs_fd, char *reason, int len)
+{
+	char buf[PSR_STATUS_MAX_LEN];
+	char *str;
+	int ret;
+
+	ret = igt_debugfs_simple_read(debugfs_fd, "i915_edp_psr_status", buf,
+				      sizeof(buf));
+	if (ret < 0)
+		return false;
+
+	str = strstr(buf, DISABLED_REASON_LOOKUP);
+	if (!str)
+		return false;
+
+	str = &str[strlen(DISABLED_REASON_LOOKUP)];
+
+	for (ret = 0; str[ret] != '\n'; ret++);
+
+	if (ret + 1 > len)
+		return false;
+
+	memcpy(reason, str, ret);
+	reason[ret] = '\0';
+
+	return true;
+}
