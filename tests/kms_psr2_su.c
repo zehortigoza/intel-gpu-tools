@@ -165,7 +165,7 @@ static bool update_screen_and_test(data_t *data)
 						    DRM_PLANE_TYPE_PRIMARY);
 
 		igt_plane_set_fb(primary, &data->fb[data->screen_changes & 1]);
-		igt_display_commit(&data->display);
+		igt_display_commit2(&data->display, COMMIT_ATOMIC);
 		break;
 	}
 	case FRONTBUFFER: {
@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
 		data.change_screen_timerfd = timerfd_create(CLOCK_MONOTONIC, 0);
 		igt_require(data.change_screen_timerfd != -1);
 		/* Changing screen at 30hz to support 30hz panels */
-		interval.it_value.tv_nsec = NSEC_PER_SEC / 15;
+		interval.it_value.tv_nsec = NSEC_PER_SEC / 30;
 		interval.it_value.tv_sec = 0;
 		interval.it_interval.tv_nsec = interval.it_value.tv_nsec;
 		interval.it_interval.tv_sec = interval.it_value.tv_sec;
