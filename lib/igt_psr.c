@@ -235,5 +235,5 @@ psr2_read_last_num_su_blocks_val(int debugfs_fd, uint16_t *num_su_blocks)
 
 bool psr2_wait_su(int debugfs_fd, uint16_t *num_su_blocks)
 {
-	return igt_wait(psr2_read_last_num_su_blocks_val(debugfs_fd, num_su_blocks), 40, 1);
+	return igt_wait(psr2_read_last_num_su_blocks_val(debugfs_fd, num_su_blocks), 80, 1);
 }
