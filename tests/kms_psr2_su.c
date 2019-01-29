@@ -193,8 +193,12 @@ static bool update_screen_and_test(data_t *data)
 		igt_assert_f(data->op, "Operation not handled\n");
 	}
 
-	if (psr2_wait_su(data->debugfs_fd, &su_blocks))
+	if (psr2_wait_su(data->debugfs_fd, &su_blocks)) {
+		printf("su_blocks=%i\n", su_blocks);
 		ret = su_blocks == EXPECTED_NUM_SU_BLOCKS;
+	} else {
+		printf("no su blocks\n");
+	}
 
 	return ret;
 }
