@@ -229,6 +229,7 @@ psr2_read_last_num_su_blocks_val(int debugfs_fd, uint16_t *num_su_blocks)
 
 	str = &str[strlen(PSR2_SU_BLOCK_STR_LOOKUP)];
 	*num_su_blocks = (uint16_t)strtol(str, NULL, 10);
+	printf("[%s]\n", buf);
 
 	return true;
 }
