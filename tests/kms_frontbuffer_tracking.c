@@ -1644,7 +1644,7 @@ static void __do_assertions(const struct test_mode *t, int flags,
 
 	/* Check the CRC to make sure the drawing operations work
 	 * immediately, independently of the features being enabled. */
-	do_crc_assertions(flags);
+	//do_crc_assertions(flags);
 
 	/* Now we can flush things to make the test faster. */
 	do_flush(t);
@@ -1656,8 +1656,8 @@ static void __do_assertions(const struct test_mode *t, int flags,
 	 * case, the first check should be enough and a new CRC check
 	 * would only delay the test suite while adding no value to the
 	 * test suite. */
-	if (t->screen == SCREEN_PRIM)
-		do_crc_assertions(flags);
+	/*if (t->screen == SCREEN_PRIM)
+		do_crc_assertions(flags);*/
 
 	if (fbc.supports_last_action && opt.fbc_check_last_action) {
 		if (flags & ASSERT_LAST_ACTION_CHANGED)
