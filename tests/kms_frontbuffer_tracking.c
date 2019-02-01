@@ -2577,6 +2577,8 @@ static void scaledprimary_subtest(const struct test_mode *t)
 	igt_require_f(gen >= 9,
 		      "Can't test primary plane scaling before gen 9\n");
 
+	igt_debug("scaledprimary_subtest() 1 reg{x: %i, y: %i, w: %i h: %i}\n", reg->x, reg->y, reg->w, reg->h);
+
 	prepare_subtest(t, NULL);
 
 	old_fb = reg->fb;
@@ -2648,6 +2650,8 @@ static void scaledprimary_subtest(const struct test_mode *t)
 	igt_fb_set_size(reg->fb, reg->plane, reg->w, reg->h);
 	igt_display_commit2(&drm.display, COMMIT_UNIVERSAL);
 	do_assertions(0);
+
+	igt_debug("scaledprimary_subtest() 2 reg{x: %i, y: %i, w: %i h: %i}\n", reg->x, reg->y, reg->w, reg->h);
 
 	igt_remove_fb(drm.fd, &new_fb);
 }
