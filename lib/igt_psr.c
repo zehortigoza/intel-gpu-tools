@@ -209,3 +209,31 @@ bool psr2_wait_su(int debugfs_fd, uint16_t *num_su_blocks)
 {
 	return igt_wait(psr2_read_last_num_su_blocks_val(debugfs_fd, num_su_blocks), 40, 1);
 }
+
+/**
+ * Returns true if PSR is enabled(don't mean active) and set mode parameter
+ * with the PSR version that is enabled if not NULL.
+ */
+bool psr_enabled(int debugfs_fd, enum psr_mode *mode)
+{
+	char buf[PSR_STATUS_MAX_LEN];
+	int ret;
+
+	ret = igt_debugfs_simple_read(debugfs_fd, "i915_edp_psr_status", buf,
+				      sizeof(buf));
+	if (ret < 1)
+		return false;
+
+	if (strstr(buf, "PSR mode: disabled"))
+		return false;
+
+	if (!mode)
+		return true;
+
+	if (strstr(buf, "PSR2 enabled"))
+		*mode = PSR_MODE_2;
+	else
+		*mode = PSR_MODE_1;
+
+	return true;
+}

@@ -453,6 +453,63 @@ igt_main_args("", long_options, help_str, opt_handler, &data)
 		display_init(&data);
 	}
 
+	igt_subtest_f("debugfs") {
+		enum psr_mode mode;
+
+		igt_require(!data.with_psr_disabled);
+
+		data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
+		setup_test_plane(&data, data.test_plane_id);
+
+		/*
+		 * Testing all combinations:
+		 * disabled -> PSR1
+		 * disabled -> PSR2
+		 *
+		 * PSR1 -> disabled
+		 * PSR1 -> PSR2
+		 *
+		 * PSR2 -> disabled
+		 * PSR2 -> PSR1
+		 *
+		 * Not testing the default value in debugfs because the result
+		 * of the default value will vary between kernel versions,
+		 * gen version and enable_psr kernel parameter.
+		 */
+		psr_disable(data.debugfs_fd);
+		igt_assert(!psr_enabled(data.debugfs_fd, NULL));
+
+		psr_enable(data.debugfs_fd, PSR_MODE_1);
+		igt_assert(psr_enabled(data.debugfs_fd, &mode));
+		igt_assert(mode == PSR_MODE_1);
+
+		psr_disable(data.debugfs_fd);
+		igt_assert(!psr_enabled(data.debugfs_fd, NULL));
+
+		if (data.supports_psr2) {
+			psr_enable(data.debugfs_fd, PSR_MODE_2);
+			igt_assert(psr_enabled(data.debugfs_fd, &mode));
+			igt_assert(mode == PSR_MODE_2);
+
+			psr_disable(data.debugfs_fd);
+			igt_assert(!psr_enabled(data.debugfs_fd, NULL));
+
+			psr_enable(data.debugfs_fd, PSR_MODE_2);
+			igt_assert(psr_enabled(data.debugfs_fd, &mode));
+			igt_assert(mode == PSR_MODE_2);
+
+			psr_enable(data.debugfs_fd, PSR_MODE_1);
+			igt_assert(psr_enabled(data.debugfs_fd, &mode));
+			igt_assert(mode == PSR_MODE_1);
+
+			psr_enable(data.debugfs_fd, PSR_MODE_2);
+			igt_assert(psr_enabled(data.debugfs_fd, &mode));
+			igt_assert(mode == PSR_MODE_2);
+		}
+
+		test_cleanup(&data);
+	}
+
 	for (data.op_psr_mode = PSR_MODE_1; data.op_psr_mode <= PSR_MODE_2;
 	     data.op_psr_mode++) {
 
