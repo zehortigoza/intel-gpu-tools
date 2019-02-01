@@ -2614,6 +2614,8 @@ static void scaledprimary_subtest(const struct test_mode *t)
 	igt_display_commit2(&drm.display, COMMIT_UNIVERSAL);
 	do_assertions(DONT_ASSERT_CRC);
 
+	igt_debug_manual_check("all", "my pic");
+
 	igt_debug("scaledprimary_subtest() 5 reg{x: %i, y: %i, w: %i h: %i}\n", reg->x, reg->y, reg->w, reg->h);
 
 	/* Source upscaling. */
