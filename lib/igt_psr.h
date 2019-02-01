@@ -40,5 +40,6 @@ bool psr_wait_update(int debugfs_fd, enum psr_mode mode);
 bool psr_enable(int debugfs_fd, enum psr_mode);
 bool psr_disable(int debugfs_fd);
 bool psr_sink_support(int debugfs_fd, enum psr_mode);
+bool psr_enabled(int debugfs_fd, enum psr_mode *mode);
 
 #endif
