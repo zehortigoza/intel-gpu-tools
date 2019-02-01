@@ -2581,11 +2581,16 @@ static void scaledprimary_subtest(const struct test_mode *t)
 
 	prepare_subtest(t, NULL);
 
+	igt_debug("scaledprimary_subtest() 2 reg{x: %i, y: %i, w: %i h: %i}\n", reg->x, reg->y, reg->w, reg->h);
+
 	old_fb = reg->fb;
 
 	create_fb(t->format, reg->fb->width, reg->fb->height,
 		  opt.tiling, t->plane, &new_fb);
 	fill_fb(&new_fb, COLOR_BLUE);
+
+	igt_debug("scaledprimary_subtest() 3 reg{x: %i, y: %i, w: %i h: %i}\n", reg->x, reg->y, reg->w, reg->h);
+
 
 	igt_draw_rect_fb(drm.fd, drm.bufmgr, NULL, &new_fb, t->method,
 			 reg->x, reg->y, reg->w / 2, reg->h / 2,
@@ -2599,6 +2604,8 @@ static void scaledprimary_subtest(const struct test_mode *t)
 			 reg->w / 4, reg->h / 4,
 			 pick_color(&new_fb, COLOR_MAGENTA));
 
+	igt_debug("scaledprimary_subtest() 4 reg{x: %i, y: %i, w: %i h: %i}\n", reg->x, reg->y, reg->w, reg->h);
+
 	/* No scaling. */
 	igt_plane_set_fb(reg->plane, &new_fb);
 	igt_fb_set_position(&new_fb, reg->plane, reg->x, reg->y);
@@ -2606,6 +2613,8 @@ static void scaledprimary_subtest(const struct test_mode *t)
 	igt_plane_set_size(reg->plane, params->mode->hdisplay, params->mode->vdisplay);
 	igt_display_commit2(&drm.display, COMMIT_UNIVERSAL);
 	do_assertions(DONT_ASSERT_CRC);
+
+	igt_debug("scaledprimary_subtest() 5 reg{x: %i, y: %i, w: %i h: %i}\n", reg->x, reg->y, reg->w, reg->h);
 
 	/* Source upscaling. */
 	igt_fb_set_size(&new_fb, reg->plane, reg->w / 2, reg->h / 2);
@@ -2623,12 +2632,17 @@ static void scaledprimary_subtest(const struct test_mode *t)
 	igt_display_commit2(&drm.display, COMMIT_UNIVERSAL);
 	do_assertions(DONT_ASSERT_CRC);
 
+	igt_debug("scaledprimary_subtest() 6 reg{x: %i, y: %i, w: %i h: %i}\n", reg->x, reg->y, reg->w, reg->h);
+
+
 	/* Destination doesn't fill the entire CRTC, upscaling. */
 	igt_fb_set_position(&new_fb, reg->plane,
 			    reg->x + reg->w / 4, reg->y + src_y_upscale);
 	igt_fb_set_size(&new_fb, reg->plane, reg->w / 2, reg->h / 2);
 	igt_display_commit2(&drm.display, COMMIT_UNIVERSAL);
 	do_assertions(DONT_ASSERT_CRC);
+
+	igt_debug("scaledprimary_subtest() 7 reg{x: %i, y: %i, w: %i h: %i}\n", reg->x, reg->y, reg->w, reg->h);
 
 	/*
 	 * On gen <= 10 HW, FBC is not enabled on a plane with a Y offset
@@ -2642,6 +2656,8 @@ static void scaledprimary_subtest(const struct test_mode *t)
 	igt_display_commit2(&drm.display, COMMIT_UNIVERSAL);
 	do_assertions(DONT_ASSERT_CRC | (gen <= 10 ? ASSERT_FBC_DISABLED : 0));
 
+	igt_debug("scaledprimary_subtest() 7 reg{x: %i, y: %i, w: %i h: %i}\n", reg->x, reg->y, reg->w, reg->h);
+
 	/* Back to the good and old blue fb. */
 	igt_plane_set_fb(reg->plane, old_fb);
 	igt_plane_set_position(params->primary.plane, 0, 0);
@@ -2651,7 +2667,7 @@ static void scaledprimary_subtest(const struct test_mode *t)
 	igt_display_commit2(&drm.display, COMMIT_UNIVERSAL);
 	do_assertions(0);
 
-	igt_debug("scaledprimary_subtest() 2 reg{x: %i, y: %i, w: %i h: %i}\n", reg->x, reg->y, reg->w, reg->h);
+	igt_debug("scaledprimary_subtest() last reg{x: %i, y: %i, w: %i h: %i}\n", reg->x, reg->y, reg->w, reg->h);
 
 	igt_remove_fb(drm.fd, &new_fb);
 }
