@@ -580,6 +580,64 @@ int main(int argc, char *argv[])
 			run_test(&data);
 			test_cleanup(&data);
 		}
+
+		igt_subtest_f("%scrc", append_subtest_name[data.op_psr_mode]) {
+			igt_pipe_crc_t *pipe_crc;
+			enum psr_mode mode;
+			igt_crc_t crcs[30];
+			drmModeRes *res;
+			unsigned i;
+
+			igt_require_pipe_crc(data.drm_fd);
+			igt_require(!data.with_psr_disabled);
+
+			res = drmModeGetResources(data.drm_fd);
+			igt_assert(res);
+
+			data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
+			test_setup(&data);
+
+			pipe_crc = igt_pipe_crc_new(data.drm_fd,
+						    kmstest_get_crtc_idx(res, data.crtc_id),
+						    INTEL_PIPE_CRC_SOURCE_AUTO);
+			/* Mode should only change after igt_pipe_crc_start() */
+			igt_assert(psr_enabled(data.debugfs_fd, &mode));
+			igt_assert(mode == data.op_psr_mode);
+
+			/*
+			 * CRC can not be calculated while PSR2 is active so
+			 * kernel should changed mode to PSR1
+			 */
+			igt_pipe_crc_start(pipe_crc);
+			igt_assert(psr_enabled(data.debugfs_fd, &mode));
+			igt_assert(mode == PSR_MODE_1);
+
+			/*
+			 * Collect and compare 30 CRCs, 30 because this is the
+			 * double of the maximum number of idle frames to
+			 * activate PSR1
+			 */
+			for (i = 0; i < sizeof(crcs) / sizeof(crcs[0]); i++)
+				igt_pipe_crc_get_current(data.drm_fd, pipe_crc,
+							 &crcs[i]);
+
+			for (i = 1; i < sizeof(crcs) / sizeof(crcs[0]); i++)
+				igt_assert(igt_check_crc_equal(&crcs[0], &crcs[i]));
+
+			/* Try to change mode while pipe CRC is active */
+			psr_enable_if_enabled(&data);
+			igt_assert(psr_enabled(data.debugfs_fd, &mode));
+			igt_assert(mode == PSR_MODE_1);
+
+			/* Mode should be restored after igt_pipe_crc_stop() */
+			igt_pipe_crc_stop(pipe_crc);
+			igt_assert(psr_enabled(data.debugfs_fd, &mode));
+			igt_assert(mode == data.op_psr_mode);
+
+			igt_pipe_crc_free(pipe_crc);
+			drmModeFreeResources(res);
+			test_cleanup(&data);
+		}
 	}
 
 	igt_fixture {
