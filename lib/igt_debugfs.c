@@ -801,6 +801,8 @@ void igt_pipe_crc_start(igt_pipe_crc_t *pipe_crc)
 	/* Stop first just to make sure we don't have lingering state left. */
 	igt_pipe_crc_stop(pipe_crc);
 
+	igt_kmsg("igt_pipe_crc_start()\n");
+
 	igt_reset_fifo_underrun_reporting(pipe_crc->fd);
 
 	igt_assert_eq(write(pipe_crc->ctl_fd, src, strlen(src)), strlen(src));
@@ -828,6 +830,8 @@ void igt_pipe_crc_start(igt_pipe_crc_t *pipe_crc)
  */
 void igt_pipe_crc_stop(igt_pipe_crc_t *pipe_crc)
 {
+	if (pipe_crc->crc_fd != -1)
+		igt_kmsg("igt_pipe_crc_stop()\n");
 	close(pipe_crc->crc_fd);
 	pipe_crc->crc_fd = -1;
 }
