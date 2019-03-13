@@ -45,6 +45,9 @@ typedef struct {
 
 #define HOTPLUG_TIMEOUT 20 /* seconds */
 
+#define FAST_HOTPLUG_SEC_TIMEOUT (1)
+#define FAST_HOTPLUG_USEC_TIMEOUT (USEC_PER_SEC * FAST_HOTPLUG_SEC_TIMEOUT)
+
 #define HPD_STORM_PULSE_INTERVAL_DP 100 /* ms */
 #define HPD_STORM_PULSE_INTERVAL_HDMI 200 /* ms */
 
@@ -100,6 +103,21 @@ reprobe_connector(data_t *data, struct chamelium_port *port)
 
 	igt_debug("Reprobing %s...\n", chamelium_port_get_name(port));
 	connector = chamelium_port_get_connector(data->chamelium, port, true);
+	igt_assert(connector);
+	status = connector->connection;
+
+	drmModeFreeConnector(connector);
+	return status;
+}
+
+static drmModeConnection
+connector_status_get(data_t *data, struct chamelium_port *port)
+{
+	drmModeConnector *connector;
+	drmModeConnection status;
+
+	igt_debug("Getting connector state %s...\n", chamelium_port_get_name(port));
+	connector = chamelium_port_get_connector(data->chamelium, port, false);
 	igt_assert(connector);
 	status = connector->connection;
 
@@ -251,6 +269,58 @@ test_basic_hotplug(data_t *data, struct chamelium_port *port, int toggle_count)
 
 	igt_cleanup_hotplug(mon);
 	igt_hpd_storm_reset(data->drm_fd);
+}
+
+/*
+ * Test kernel workaround for sinks that takes some time to have the DDC/aux
+ * channel responsive after the hotplug
+ */
+static void
+test_late_aux(data_t *data, struct chamelium_port *port)
+{
+	struct udev_monitor *mon = igt_watch_hotplug();
+	drmModeConnection status;
+
+	/* Reset will unplug all connectors */
+	reset_state(data, NULL);
+
+	/* Check if it device can act on hotplugs fast enough for this test */
+	igt_flush_hotplugs(mon);
+	chamelium_plug(data->chamelium, port);
+	igt_assert(igt_hotplug_detected(mon, FAST_HOTPLUG_SEC_TIMEOUT));
+	status = connector_status_get(data, port);
+	igt_require(status == DRM_MODE_CONNECTED);
+
+	igt_flush_hotplugs(mon);
+	chamelium_unplug(data->chamelium, port);
+	igt_assert(igt_hotplug_detected(mon, FAST_HOTPLUG_SEC_TIMEOUT));
+	status = connector_status_get(data, port);
+	igt_require(status == DRM_MODE_DISCONNECTED);
+
+	/* It is fast enough, lets disable the DDC lines and plug again */
+	igt_flush_hotplugs(mon);
+	chamelium_port_set_ddc_state(data->chamelium, port, false);
+	chamelium_plug(data->chamelium, port);
+	igt_assert(!chamelium_port_get_ddc_state(data->chamelium, port));
+
+	/*
+	 * Give some time to kernel try to process hotplug but it should fail
+	 */
+	usleep(FAST_HOTPLUG_USEC_TIMEOUT);
+	status = connector_status_get(data, port);
+	igt_assert(status == DRM_MODE_DISCONNECTED);
+
+	/*
+	 * enable the DDC line and the kernel workround should reprobe and
+	 * report as connected, giving here more time kernel loses a lot of
+	 * time retrying with DDC off causing this test to read the connector
+	 * states even before the run of kernel workaround
+	 */
+	chamelium_port_set_ddc_state(data->chamelium, port, true);
+	igt_assert(chamelium_port_get_ddc_state(data->chamelium, port));
+	igt_assert(igt_hotplug_detected(mon, FAST_HOTPLUG_SEC_TIMEOUT));
+	status = connector_status_get(data, port);
+	igt_assert(status == DRM_MODE_CONNECTED);
 }
 
 static void
@@ -1308,6 +1378,9 @@ igt_main
 
 		connector_subtest("dp-frame-dump", DisplayPort)
 			test_display_frame_dump(&data, port);
+
+		connector_subtest("dp-late-aux", DisplayPort)
+			test_late_aux(&data, port);
 	}
 
 	igt_subtest_group {
