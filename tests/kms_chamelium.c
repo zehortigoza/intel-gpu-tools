@@ -46,7 +46,6 @@ typedef struct {
 #define HOTPLUG_TIMEOUT 20 /* seconds */
 
 #define FAST_HOTPLUG_SEC_TIMEOUT (1)
-#define FAST_HOTPLUG_USEC_TIMEOUT (USEC_PER_SEC * FAST_HOTPLUG_SEC_TIMEOUT)
 
 #define HPD_STORM_PULSE_INTERVAL_DP 100 /* ms */
 #define HPD_STORM_PULSE_INTERVAL_HDMI 200 /* ms */
@@ -306,7 +305,7 @@ test_late_aux(data_t *data, struct chamelium_port *port)
 	/*
 	 * Give some time to kernel try to process hotplug but it should fail
 	 */
-	usleep(FAST_HOTPLUG_USEC_TIMEOUT);
+	igt_hotplug_detected(mon, FAST_HOTPLUG_SEC_TIMEOUT);
 	status = connector_status_get(data, port);
 	igt_assert(status == DRM_MODE_DISCONNECTED);
 
