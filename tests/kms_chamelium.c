@@ -54,9 +54,9 @@ typedef struct {
 	struct chamelium_edid *edids[TEST_EDID_COUNT];
 } data_t;
 
-#define HOTPLUG_TIMEOUT 20 /* 20 seconds */
+#define HOTPLUG_TIMEOUT (20 * MSEC_PER_SEC) /* 20 seconds */
 
-#define FAST_HOTPLUG_TIMEOUT (1) /* 1 second */
+#define FAST_HOTPLUG_TIMEOUT (MSEC_PER_SEC) /* 1 second */
 
 #define HPD_STORM_PULSE_INTERVAL_DP 100 /* ms */
 #define HPD_STORM_PULSE_INTERVAL_HDMI 200 /* ms */
@@ -2127,7 +2127,7 @@ test_hpd_storm_detect(data_t *data, struct chamelium_port *port, int width)
 	 * so we should only get at most 1 hotplug event
 	 */
 	igt_until_timeout(5)
-		count += igt_hotplug_detected(mon, 1);
+		count += igt_hotplug_detected(mon, FAST_HOTPLUG_TIMEOUT);
 	igt_assert_lt(count, 2);
 
 	igt_cleanup_hotplug(mon);

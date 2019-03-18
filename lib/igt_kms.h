@@ -767,9 +767,9 @@ const unsigned char *igt_kms_get_dp_audio_edid(void);
 
 struct udev_monitor *igt_watch_hotplug(void);
 bool igt_hotplug_detected(struct udev_monitor *mon,
-			  int timeout_secs);
+			  int timeout_msecs);
 bool igt_lease_change_detected(struct udev_monitor *mon,
-			       int timeout_secs);
+			       int timeout_msecs);
 void igt_flush_hotplugs(struct udev_monitor *mon);
 void igt_cleanup_hotplug(struct udev_monitor *mon);
 

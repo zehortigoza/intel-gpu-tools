@@ -247,7 +247,7 @@ static void *chamelium_fsm_mon(void *data)
 	 * Wait for the chamelium to try unplugging the connector, otherwise
 	 * the thread calling chamelium_rpc will kill us
 	 */
-	igt_hotplug_detected(args->mon, 60);
+	igt_hotplug_detected(args->mon, MSEC_PER_SEC * 60);
 
 	/*
 	 * Just in case the RPC call being executed returns before we complete
