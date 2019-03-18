@@ -337,6 +337,14 @@ void chamelium_unplug(struct chamelium *chamelium, struct chamelium_port *port)
 				    port->id));
 }
 
+void chamelium_unplug_hpd(struct chamelium *chamelium,
+			  struct chamelium_port *port)
+{
+	igt_debug("Unplugging hpd port %s\n", port->name);
+	xmlrpc_DECREF(chamelium_rpc(chamelium, NULL, "UnplugHPD", "(i)",
+				    port->id));
+}
+
 /**
  * chamelium_is_plugged:
  * @chamelium: The Chamelium instance to use
