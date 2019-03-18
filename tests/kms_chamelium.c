@@ -43,7 +43,7 @@ typedef struct {
 	int alt_edid_id;
 } data_t;
 
-#define HOTPLUG_TIMEOUT 20 /* seconds */
+#define HOTPLUG_TIMEOUT (20 * MSEC_PER_SEC) /* seconds */
 
 #define HPD_STORM_PULSE_INTERVAL_DP 100 /* ms */
 #define HPD_STORM_PULSE_INTERVAL_HDMI 200 /* ms */

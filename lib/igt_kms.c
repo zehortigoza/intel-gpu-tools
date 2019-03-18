@@ -4146,7 +4146,7 @@ struct udev_monitor *igt_watch_hotplug(void)
 	return mon;
 }
 
-static bool event_detected(struct udev_monitor *mon, int timeout_secs,
+static bool event_detected(struct udev_monitor *mon, int timeout_msecs,
 			   const char *property)
 {
 	struct udev_device *dev;
@@ -4162,7 +4162,7 @@ static bool event_detected(struct udev_monitor *mon, int timeout_secs,
 	 * so that redundant hotplug events don't change the results of future
 	 * checks
 	 */
-	while (!hotplug_received && poll(&fd, 1, timeout_secs * 1000)) {
+	while (!hotplug_received && poll(&fd, 1, timeout_msecs)) {
 		dev = udev_monitor_receive_device(mon);
 
 		hotplug_val = udev_device_get_property_value(dev, property);
@@ -4178,15 +4178,15 @@ static bool event_detected(struct udev_monitor *mon, int timeout_secs,
 /**
  * igt_hotplug_detected:
  * @mon: A udev monitor initialized with #igt_watch_hotplug
- * @timeout_secs: How long to wait for a hotplug event to occur.
+ * @timeout_msecs: How long to wait for a hotplug event to occur.
  *
  * Assert that a hotplug event was received since we last checked the monitor.
  *
  * Returns: true if a sysfs hotplug event was received, false if we timed out
  */
-bool igt_hotplug_detected(struct udev_monitor *mon, int timeout_secs)
+bool igt_hotplug_detected(struct udev_monitor *mon, int timeout_msecs)
 {
-	return event_detected(mon, timeout_secs, "HOTPLUG");
+	return event_detected(mon, timeout_msecs, "HOTPLUG");
 }
 
 /**
@@ -4200,7 +4200,7 @@ bool igt_hotplug_detected(struct udev_monitor *mon, int timeout_secs)
  */
 bool igt_lease_change_detected(struct udev_monitor *mon, int timeout_secs)
 {
-	return event_detected(mon, timeout_secs, "LEASE");
+	return event_detected(mon, timeout_secs * MSEC_PER_SEC, "LEASE");
 }
 
 /**
