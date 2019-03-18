@@ -1,0 +1,123 @@
+// SPDX-License-Identifier: MIT
+/*
+ * Copyright(c) 2023 Intel Corporation. All rights reserved.
+ */
+
+#include "drmtest.h"
+#include "igt_core.h"
+#include "igt_sriov_device.h"
+
+IGT_TEST_DESCRIPTION("Basic tests for enabling SR-IOV Virtual Functions");
+
+/**
+ * TEST: sriov_basic
+ * Category: Software building block
+ * Mega feature: SR-IOV
+ * Sub-category: VFs enabling
+ * Description: Validate SR-IOV VFs enabling
+ */
+
+/**
+ * SUBTEST: enable-vfs-autoprobe-off
+ * Description:
+ *   Verify VFs enabling without probing VF driver
+ * Run type: BAT
+ */
+static void enable_vfs_autoprobe_off(int pf_fd, unsigned int num_vfs)
+{
+	igt_debug("Testing %u VFs\n", num_vfs);
+
+	igt_require(igt_sriov_get_enabled_vfs(pf_fd) == 0);
+	igt_sriov_disable_driver_autoprobe(pf_fd);
+	igt_sriov_enable_vfs(pf_fd, num_vfs);
+	igt_assert_eq(num_vfs, igt_sriov_get_enabled_vfs(pf_fd));
+	igt_sriov_disable_vfs(pf_fd);
+}
+
+/**
+ * SUBTEST: enable-vfs-autoprobe-on
+ * Description:
+ *   Verify VFs enabling and auto-probing VF driver
+ * Run type: FULL
+ */
+static void enable_vfs_autoprobe_on(int pf_fd, unsigned int num_vfs)
+{
+	bool err = false;
+
+	igt_debug("Testing %u VFs\n", num_vfs);
+
+	igt_require(igt_sriov_get_enabled_vfs(pf_fd) == 0);
+	igt_sriov_enable_driver_autoprobe(pf_fd);
+	igt_sriov_enable_vfs(pf_fd, num_vfs);
+	igt_assert_eq(num_vfs, igt_sriov_get_enabled_vfs(pf_fd));
+	for (int vf_num = 1; vf_num <= num_vfs; ++vf_num) {
+		if (!igt_sriov_is_vf_drm_driver_probed(pf_fd, vf_num)) {
+			igt_debug("VF%u probe failed\n", vf_num);
+			err = true;
+		}
+	}
+	igt_sriov_disable_vfs(pf_fd);
+	igt_assert(!err);
+}
+
+igt_main
+{
+	int pf_fd;
+	bool autoprobe;
+
+	igt_fixture {
+		pf_fd = drm_open_driver(DRIVER_ANY);
+		igt_require(igt_sriov_is_pf(pf_fd));
+		igt_require(igt_sriov_get_enabled_vfs(pf_fd) == 0);
+		autoprobe = igt_sriov_is_driver_autoprobe_enabled(pf_fd);
+	}
+
+	igt_describe("Verify VFs enabling without probing VF driver");
+	igt_subtest_with_dynamic("enable-vfs-autoprobe-off") {
+		for_each_sriov_num_vfs(pf_fd, num_vfs) {
+			igt_dynamic_f("numvfs-%u", num_vfs) {
+				enable_vfs_autoprobe_off(pf_fd, num_vfs);
+			}
+		}
+		for_random_sriov_num_vfs(pf_fd, num_vfs) {
+			igt_dynamic_f("numvfs-random") {
+				enable_vfs_autoprobe_off(pf_fd, num_vfs);
+			}
+		}
+		for_max_sriov_num_vfs(pf_fd, num_vfs) {
+			igt_dynamic_f("numvfs-all") {
+				enable_vfs_autoprobe_off(pf_fd, num_vfs);
+			}
+		}
+	}
+
+	igt_describe("Verify VFs enabling and auto-probing VF driver");
+	igt_subtest_with_dynamic("enable-vfs-autoprobe-on") {
+		for_each_sriov_num_vfs(pf_fd, num_vfs) {
+			igt_dynamic_f("numvfs-%u", num_vfs) {
+				enable_vfs_autoprobe_on(pf_fd, num_vfs);
+			}
+		}
+		for_random_sriov_num_vfs(pf_fd, num_vfs) {
+			igt_dynamic_f("numvfs-random") {
+				enable_vfs_autoprobe_on(pf_fd, num_vfs);
+			}
+		}
+		for_max_sriov_num_vfs(pf_fd, num_vfs) {
+			igt_dynamic_f("numvfs-all") {
+				enable_vfs_autoprobe_on(pf_fd, num_vfs);
+			}
+		}
+	}
+
+	igt_fixture {
+		igt_sriov_disable_vfs(pf_fd);
+		/* abort to avoid execution of next tests with enabled VFs */
+		igt_abort_on_f(igt_sriov_get_enabled_vfs(pf_fd) > 0, "Failed to disable VF(s)");
+		autoprobe ? igt_sriov_enable_driver_autoprobe(pf_fd) :
+			    igt_sriov_disable_driver_autoprobe(pf_fd);
+		igt_abort_on_f(autoprobe != igt_sriov_is_driver_autoprobe_enabled(pf_fd),
+			       "Failed to restore sriov_drivers_autoprobe value\n");
+		close(pf_fd);
+	}
+}

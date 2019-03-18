@@ -71,6 +71,7 @@ test_progs = [
 	'panfrost_submit',
 	'prime_udl',
 	'prime_vgem',
+	'sriov_basic',
 	'syncobj_basic',
 	'syncobj_eventfd',
 	'syncobj_wait',
