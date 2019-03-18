@@ -326,6 +326,31 @@ static xmlrpc_value *__chamelium_rpc(struct chamelium *chamelium,
 	return res;
 }
 
+/*
+ * Same as chamelium_rpc() but it returns 0 when successfully executed
+ * otherwise it return the error code instead of fail the test.
+ */
+static int chamelium_try_rpc(struct chamelium *chamelium,
+			     struct chamelium_port *fsm_port,
+			     xmlrpc_value **res,
+			     const char *method_name,
+			     const char *format_str,
+			     ...)
+{
+	va_list va_args;
+
+	va_start(va_args, format_str);
+	*res = __chamelium_rpc_va(chamelium, fsm_port, method_name,
+				 format_str, va_args);
+	va_end(va_args);
+
+	if (chamelium->env.fault_occurred)
+		igt_debug("Chamelium RPC call failed: %s\n",
+			  chamelium->env.fault_string);
+
+	return chamelium->env.fault_code;
+}
+
 static xmlrpc_value *chamelium_rpc(struct chamelium *chamelium,
 				   struct chamelium_port *fsm_port,
 				   const char *method_name,
@@ -374,6 +399,32 @@ void chamelium_unplug(struct chamelium *chamelium, struct chamelium_port *port)
 	igt_debug("Unplugging port %s\n", port->name);
 	xmlrpc_DECREF(chamelium_rpc(chamelium, NULL, "Unplug", "(i)",
 				    port->id));
+}
+
+/*
+ * Unplug only the hotplug detection pin, leaving the data lanes intact.
+ */
+void chamelium_unplug_hpd(struct chamelium *chamelium,
+			  struct chamelium_port *port)
+{
+	xmlrpc_value *res;
+	int ret;
+
+	igt_debug("Unplugging hpd port %s\n", port->name);
+	ret = chamelium_try_rpc(chamelium, NULL, &res, "UnplugHPD", "(i)",
+				port->id);
+	if (ret) {
+		/*
+		 * This is a new method so if chamelium daemon still do not
+		 * support it, skip the test otherwise fail the test.
+		 */
+		igt_require(ret != XMLRPC_NO_SUCH_METHOD_ERROR);
+		igt_assert_f(ret == XMLRPC_NO_SUCH_METHOD_ERROR,
+			     "Chamelium RPC call failed: %s\n",
+			     chamelium->env.fault_string);
+	} else {
+		xmlrpc_DECREF(res);
+	}
 }
 
 /**

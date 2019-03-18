@@ -87,6 +87,8 @@ const char *chamelium_port_get_name(struct chamelium_port *port);
 
 void chamelium_plug(struct chamelium *chamelium, struct chamelium_port *port);
 void chamelium_unplug(struct chamelium *chamelium, struct chamelium_port *port);
+void chamelium_unplug_hpd(struct chamelium *chamelium,
+			  struct chamelium_port *port);
 bool chamelium_is_plugged(struct chamelium *chamelium,
 			  struct chamelium_port *port);
 bool chamelium_port_wait_video_input_stable(struct chamelium *chamelium,
