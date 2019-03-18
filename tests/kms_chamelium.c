@@ -289,6 +289,60 @@ test_fast_hotplug_handling(data_t *data, struct chamelium_port *port,
 	igt_require(status == DRM_MODE_DISCONNECTED);
 }
 
+static void
+test_slow_unplug_wa(data_t *data, struct chamelium_port *port)
+{
+	struct udev_monitor *mon = igt_watch_hotplug();
+	drmModeConnection status;
+
+	/*
+	 * From gen11+ we check the HPD pin state in HDMI probe detection, if
+	 * disconnected it gives up as set connector as disconnected without
+	 * trying to read the data lines
+	 */
+	//igt_require(intel_gen(intel_get_drm_devid(data->drm_fd)) < 11);
+
+	/* Reset will unplug all connectors */
+	reset_state(data, NULL);
+
+	/* Check if it device can act on hotplugs fast enough for this test */
+	test_fast_hotplug_handling(data, port, mon);
+
+	/* It is fast enough, lets plug the port again */
+	igt_flush_hotplugs(mon);
+	chamelium_plug(data->chamelium, port);
+	igt_assert(igt_hotplug_detected(mon, FAST_HOTPLUG_TIMEOUT));
+	status = connector_status_get(data, port);
+	igt_assert(status == DRM_MODE_CONNECTED);
+
+	/*
+	 * Now lets just unplug the HPD, leaving DDC and EDID available so
+	 * kernel will keep the connector as connected
+	 */
+	igt_flush_hotplugs(mon);
+	chamelium_unplug_hpd(data->chamelium, port);
+	/* Going from connected to connected should take no more than 100msec */
+	igt_hotplug_detected(mon, FAST_HOTPLUG_TIMEOUT / 2);
+	status = connector_status_get(data, port);
+	igt_assert(status == DRM_MODE_CONNECTED);
+
+	/*
+	 * Now disconnected DDC and EDID, kernel workaround should reprobe and
+	 * change connector status do disconnected
+	 */
+	chamelium_port_set_ddc_state(data->chamelium, port, false);
+	chamelium_port_set_edid(data->chamelium, port, -1);
+
+	/*
+	 * A bigger timeout is needed here because kernel will take at least
+	 * 256msec~640msec to go from connected to disconnected(see comment in
+	 * test_late_aux_wa to more information) + 1 sec to run the workaround
+	 */
+	igt_assert(igt_hotplug_detected(mon, FAST_HOTPLUG_TIMEOUT * 2));
+	status = connector_status_get(data, port);
+	igt_assert(status == DRM_MODE_DISCONNECTED);
+}
+
 /*
  * Test kernel workaround for sinks that takes some time to have the DDC/aux
  * channel responsive after the hotplug
@@ -1418,6 +1472,9 @@ igt_main
 
 		connector_subtest("dp-late-aux-wa", DisplayPort)
 			test_late_aux_wa(&data, port);
+
+		connector_subtest("slow-unplug-wa", DisplayPort)
+			test_slow_unplug_wa(&data, port);
 	}
 
 	igt_subtest_group {
