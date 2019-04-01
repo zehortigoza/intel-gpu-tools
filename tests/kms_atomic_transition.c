@@ -133,14 +133,17 @@ wm_setup_plane(igt_display_t *display, enum pipe pipe,
 		int i = plane->index;
 
 		if (!mask || !(parms[i].mask & mask)) {
-			if (plane->values[IGT_PLANE_FB_ID])
+			if (plane->values[IGT_PLANE_FB_ID]) {
+				igt_warn("\tremoving fb from plane %i\n", i);
 				igt_plane_set_fb(plane, NULL);
+			}
 			continue;
 		}
 
 		if (fencing)
 			configure_fencing(plane);
 
+		igt_warn("\tsetting fb from plane %i\n", i);
 		igt_plane_set_fb(plane, parms[i].fb);
 		igt_fb_set_size(parms[i].fb, plane, parms[i].width, parms[i].height);
 		igt_plane_set_size(plane, parms[i].width, parms[i].height);
@@ -206,9 +209,10 @@ static void setup_parms(igt_display_t *display, enum pipe pipe,
 	unsigned sprite_width, sprite_height, prev_w, prev_h;
 	bool max_sprite_width, max_sprite_height, alpha = true;
 	uint32_t n_planes = display->pipes[pipe].n_planes;
-	uint32_t n_overlays = 0, overlays[n_planes];
+	uint32_t n_overlays, overlays[n_planes];
 	igt_plane_t *plane;
-	uint32_t iter_mask = 3;
+	uint32_t iter_mask;
+	int retries = n_planes - 1;
 
 	do_or_die(drmGetCap(display->drm_fd, DRM_CAP_CURSOR_WIDTH, &cursor_width));
 	if (cursor_width >= mode->hdisplay)
@@ -217,6 +221,10 @@ static void setup_parms(igt_display_t *display, enum pipe pipe,
 	do_or_die(drmGetCap(display->drm_fd, DRM_CAP_CURSOR_HEIGHT, &cursor_height));
 	if (cursor_height >= mode->vdisplay)
 		cursor_height = mode->vdisplay;
+
+retry:
+	n_overlays = 0;
+	iter_mask = 3;
 
 	for_each_plane_on_pipe(display, pipe, plane) {
 		int i = plane->index;
@@ -254,9 +262,7 @@ static void setup_parms(igt_display_t *display, enum pipe pipe,
 
 		for (i = 1; i < n_overlays - 1; i++) {
 			int val = hars_petruska_f54_1_random_unsafe_max(2);
-			igt_warn("setup_parms() val=%i\n", val);
 
-			/* val could be: 0, 1 and 2? */
 			parms[overlays[i]].mask = 1 << (2 + val);
 		}
 	}
@@ -275,7 +281,6 @@ static void setup_parms(igt_display_t *display, enum pipe pipe,
 	 * Pre gen9 not all sizes are supported, find the biggest possible
 	 * size that can be enabled on all sprite planes.
 	 */
-retry:
 	prev_w = sprite_width = cursor_width;
 	prev_h = sprite_height = cursor_height;
 
@@ -288,6 +293,7 @@ retry:
 		set_sprite_wh(display, pipe, parms, sprite_fb,
 			      alpha, sprite_width, sprite_height);
 
+		igt_warn("wm_setup_plane()1 mask=%i sprite_width=%i sprite_height=%i\n", (1 << n_planes) - 1, sprite_width, sprite_height);
 		wm_setup_plane(display, pipe, (1 << n_planes) - 1, parms, false);
 		ret = igt_display_try_commit_atomic(display, DRM_MODE_ATOMIC_TEST_ONLY | DRM_MODE_ATOMIC_ALLOW_MODESET, NULL);
 		igt_assert(!is_atomic_check_failure_errno(ret));
@@ -295,11 +301,18 @@ retry:
 		if (is_atomic_check_plane_size_errno(ret)) {
 			if (cursor_width == sprite_width &&
 			    cursor_height == sprite_height) {
-				igt_assert_f(alpha,
-					      "Cannot configure the test with all sprite planes enabled\n");
+				if (--retries >= 0) {
+					/* retry once with XRGB format. */
+					if (alpha) {
+						alpha = false;
+					}
+				} else if (display->pipes[pipe].n_planes > 0) {
+					 display->pipes[pipe].n_planes--;
+					 igt_warn("Reduced available planes to %d\n", display->pipes[pipe].n_planes);
+				}
 
-				/* retry once with XRGB format. */
-				alpha = false;
+				n_planes = display->pipes[pipe].n_planes;
+				igt_assert_f(n_planes > 0, "No planes left to proceed with!");
 				goto retry;
 			}
 
@@ -469,6 +482,7 @@ run_transition_test(igt_display_t *display, enum pipe pipe, igt_output_t *output
 
 	igt_display_commit2(display, COMMIT_ATOMIC);
 
+	/* create cursor and sprite framebuffer and set it to every pipe plane */
 	setup_parms(display, pipe, mode, &fb, &argb_fb, &sprite_fb, parms, &iter_max);
 
 	/*
@@ -476,6 +490,7 @@ run_transition_test(igt_display_t *display, enum pipe pipe, igt_output_t *output
 	 * sprite planes lit up at 4k resolution, try decreasing width/size of secondary
 	 * planes to fix this
 	 */
+	/* setup_params should take care of this, only difference is the fencing */
 	while (1) {
 		wm_setup_plane(display, pipe, iter_max - 1, parms, false);
 
