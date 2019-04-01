@@ -241,6 +241,7 @@ static void setup_parms(igt_display_t *display, enum pipe pipe,
 		}
 	}
 
+	/* more than 1 sprite planes? */
 	if (n_overlays >= 2) {
 		uint32_t i;
 
@@ -253,7 +254,9 @@ static void setup_parms(igt_display_t *display, enum pipe pipe,
 
 		for (i = 1; i < n_overlays - 1; i++) {
 			int val = hars_petruska_f54_1_random_unsafe_max(2);
+			igt_warn("setup_parms() val=%i\n", val);
 
+			/* val could be: 0, 1 and 2? */
 			parms[overlays[i]].mask = 1 << (2 + val);
 		}
 	}
@@ -453,6 +456,7 @@ run_transition_test(igt_display_t *display, enum pipe pipe, igt_output_t *output
 
 	igt_output_set_pipe(output, pipe);
 
+	/* Remove framebuffers from all pipe planes  */
 	wm_setup_plane(display, pipe, 0, NULL, false);
 
 	if (flags & DRM_MODE_ATOMIC_ALLOW_MODESET) {
