@@ -299,12 +299,20 @@ retry:
 		igt_assert(!is_atomic_check_failure_errno(ret));
 
 		if (is_atomic_check_plane_size_errno(ret)) {
+			igt_warn("\twm_setup_plane() is_atomic_check_plane_size_errno\n");
+
 			if (cursor_width == sprite_width &&
 			    cursor_height == sprite_height) {
+
+				igt_warn("\t\t cursor_width == sprite_width && cursor_height == sprite_height retries=%i\n", retries);
+
 				if (--retries >= 0) {
 					/* retry once with XRGB format. */
 					if (alpha) {
 						alpha = false;
+						igt_warn("\t\t set alpha=false\n");
+					} else {
+						igt_warn("\t\t was already alpha=false\n");
 					}
 				} else if (display->pipes[pipe].n_planes > 0) {
 					 display->pipes[pipe].n_planes--;
@@ -332,6 +340,7 @@ retry:
 		} else {
 			prev_w = sprite_width;
 			prev_h = sprite_height;
+			igt_warn("\twm_setup_plane() !is_atomic_check_plane_size_errno\n");
 		}
 
 		if (!max_sprite_width) {
@@ -342,6 +351,8 @@ retry:
 
 				sprite_width = mode->hdisplay;
 			}
+
+			igt_warn("\twm_setup_plane()3 sprite_width=%i max_sprite_width=%i\n", sprite_width, max_sprite_width);
 		} else if (!max_sprite_height) {
 			sprite_height *= 2;
 
@@ -350,9 +361,13 @@ retry:
 
 				sprite_height = mode->vdisplay;
 			}
-		} else
+
+			igt_warn("\twm_setup_plane()3 sprite_height=%i max_sprite_height=%i\n", sprite_height, max_sprite_height);
+		} else {
+			igt_warn("\twm_setup_plane()3 Max sized sprites for all! break\n");
 			/* Max sized sprites for all! */
 			break;
+		}
 	}
 
 	igt_info("Running test on pipe %s with resolution %dx%d and sprite size %dx%d alpha %i\n",
