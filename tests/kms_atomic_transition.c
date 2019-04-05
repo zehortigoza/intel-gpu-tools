@@ -194,6 +194,14 @@ static void set_sprite_wh(igt_display_t *display, enum pipe pipe,
 #define is_atomic_check_plane_size_errno(errno) \
 		(errno == -EINVAL)
 
+enum iter_type {
+	ITER_TYPE_NONE = 0,
+	ITER_TYPE_PRIMARY = 1 << 0,
+	ITER_TYPE_CURSOR = 1 << 1,
+	ITER_TYPE_OVERLAY = 1 << 2,
+	ITER_TYPE_OVERLAY2 = 1 << 3
+};
+
 static void setup_parms(igt_display_t *display, enum pipe pipe,
 			const drmModeModeInfo *mode,
 			struct igt_fb *primary_fb,
@@ -203,12 +211,11 @@ static void setup_parms(igt_display_t *display, enum pipe pipe,
 			unsigned *iter_max)
 {
 	uint64_t cursor_width, cursor_height;
-	unsigned sprite_width, sprite_height, prev_w, prev_h;
-	bool max_sprite_width, max_sprite_height, alpha = true;
-	uint32_t n_planes = display->pipes[pipe].n_planes;
-	uint32_t n_overlays = 0, overlays[n_planes];
+	uint32_t sprite_width, sprite_height, prev_w, prev_h;
 	igt_plane_t *plane;
-	uint32_t iter_mask = 3;
+	uint32_t iter_mask = 0, max_overlays, n_overlays = 0;
+	bool alpha = true;
+	int ret;
 
 	do_or_die(drmGetCap(display->drm_fd, DRM_CAP_CURSOR_WIDTH, &cursor_width));
 	if (cursor_width >= mode->hdisplay)
@@ -225,123 +232,157 @@ static void setup_parms(igt_display_t *display, enum pipe pipe,
 			parms[i].fb = primary_fb;
 			parms[i].width = mode->hdisplay;
 			parms[i].height = mode->vdisplay;
-			parms[i].mask = 1 << 0;
+			parms[i].mask = ITER_TYPE_PRIMARY;
+			iter_mask |= ITER_TYPE_PRIMARY;
 		} else if (plane->type == DRM_PLANE_TYPE_CURSOR) {
 			parms[i].fb = argb_fb;
 			parms[i].width = cursor_width;
 			parms[i].height = cursor_height;
-			parms[i].mask = 1 << 1;
+			parms[i].mask = ITER_TYPE_CURSOR;
+			iter_mask |= ITER_TYPE_CURSOR;
 		} else {
 			parms[i].fb = sprite_fb;
-			parms[i].mask = 1 << 2;
-
-			iter_mask |= 1 << 2;
-
-			overlays[n_overlays++] = i;
+			parms[i].mask = ITER_TYPE_OVERLAY;
+			iter_mask |= ITER_TYPE_OVERLAY;
+			n_overlays++;
+			if (alpha)
+				alpha = igt_plane_has_format_mod(plane,
+								 DRM_FORMAT_ARGB8888,
+								 LOCAL_DRM_FORMAT_MOD_NONE);
 		}
 	}
 
-	if (n_overlays >= 2) {
-		uint32_t i;
-
-		/*
-		 * Create 2 groups for overlays, make sure 1 plane is put
-		 * in each then spread the rest out.
-		 */
-		iter_mask |= 1 << 3;
-		parms[overlays[n_overlays - 1]].mask = 1 << 3;
-
-		for (i = 1; i < n_overlays - 1; i++) {
-			int val = hars_petruska_f54_1_random_unsafe_max(2);
-
-			parms[overlays[i]].mask = 1 << (2 + val);
-		}
-	}
+	prev_w = sprite_width = cursor_width;
+	prev_h = sprite_height = cursor_height;
 
 	igt_create_fb(display->drm_fd, cursor_width, cursor_height,
 		      DRM_FORMAT_ARGB8888, LOCAL_DRM_FORMAT_MOD_NONE, argb_fb);
 
-	igt_create_fb(display->drm_fd, cursor_width, cursor_height,
-		      DRM_FORMAT_ARGB8888, LOCAL_DRM_FORMAT_MOD_NONE, sprite_fb);
+	igt_create_fb(display->drm_fd, sprite_width, sprite_height,
+		      alpha ? DRM_FORMAT_ARGB8888 : DRM_FORMAT_XRGB8888,
+		      LOCAL_DRM_FORMAT_MOD_NONE, sprite_fb);
+
+	max_overlays = n_overlays;
+retry:
+	/* Limit the number of planes */
+	while (max_overlays < n_overlays) {
+		int i = hars_petruska_f54_1_random_unsafe_max(display->pipes[pipe].n_planes);
+
+		/*
+		 * Always keep primary and cursor and discard already
+		 * removed planes
+		 */
+		if (parms[i].mask != ITER_TYPE_OVERLAY)
+			continue;
+
+		igt_warn("plane %i removed\n", i);
+		parms[i].mask = ITER_TYPE_NONE;
+		n_overlays--;
+	}
+
+	/*
+	 * Check if there is enough bandwidth for the current number of planes.
+	 * As the plane size and position is not taken into account we can do
+	 * this earlier.
+	 */
+	set_sprite_wh(display, pipe, parms, sprite_fb, alpha, sprite_width,
+		      sprite_height);
+	wm_setup_plane(display, pipe, iter_mask, parms, false);
+
+	/* It should be able to handle at least primary and cursor */
+	if (!max_overlays) {
+		iter_mask &= ~ITER_TYPE_OVERLAY;
+		*iter_max = iter_mask + 1;
+		return;
+	}
+
+	ret = igt_display_try_commit_atomic(display, DRM_MODE_ATOMIC_TEST_ONLY |
+					    DRM_MODE_ATOMIC_ALLOW_MODESET,
+					    NULL);
+	/*
+	 * Could mean other errors but this is also the error returned when
+	 * there is not enough bandwidth for all the planes
+	 */
+	if (ret == -EINVAL) {
+		max_overlays--;
+		goto retry;
+	}
+
+	igt_assert_f(!ret, "Error %i not expected by try_commit()\n", ret);
+
+	/* So it have enough bandwidth for n_overlays planes */
+
+	/*
+	 * Create 2 groups for overlays, make sure 1 plane is put in each then
+	 * spread the rest out.
+	 */
+	iter_mask &= ~ITER_TYPE_OVERLAY;
+	for_each_plane_on_pipe(display, pipe, plane) {
+		int i = plane->index;
+
+		if (parms[i].mask != ITER_TYPE_OVERLAY)
+			continue;
+
+		/* First overlay plane will be overlay group 1 */
+		if (!(iter_mask & ITER_TYPE_OVERLAY)) {
+			iter_mask |= ITER_TYPE_OVERLAY;
+			continue;
+		}
+
+		/* Second overlay plane will be overlay group 1 */
+		if (!(iter_mask & ITER_TYPE_OVERLAY2)) {
+			iter_mask |= ITER_TYPE_OVERLAY2;
+			parms[i].mask = ITER_TYPE_OVERLAY2;
+			continue;
+		}
+
+		/* Sort the group of the rest of overlay planes */
+		if (hars_petruska_f54_1_random_unsafe_max(2))
+			parms[i].mask = ITER_TYPE_OVERLAY2;
+	}
 
 	*iter_max = iter_mask + 1;
-	if (!n_overlays)
-		return;
 
 	/*
 	 * Pre gen9 not all sizes are supported, find the biggest possible
 	 * size that can be enabled on all sprite planes.
 	 */
-retry:
-	prev_w = sprite_width = cursor_width;
-	prev_h = sprite_height = cursor_height;
-
-	max_sprite_width = (sprite_width == mode->hdisplay);
-	max_sprite_height = (sprite_height == mode->vdisplay);
-
 	while (1) {
-		int ret;
-
-		set_sprite_wh(display, pipe, parms, sprite_fb,
-			      alpha, sprite_width, sprite_height);
-
-		wm_setup_plane(display, pipe, (1 << n_planes) - 1, parms, false);
-		ret = igt_display_try_commit_atomic(display, DRM_MODE_ATOMIC_TEST_ONLY | DRM_MODE_ATOMIC_ALLOW_MODESET, NULL);
-		igt_assert(!is_atomic_check_failure_errno(ret));
-
+		/* Size limit reached */
 		if (is_atomic_check_plane_size_errno(ret)) {
-			if (cursor_width == sprite_width &&
-			    cursor_height == sprite_height) {
-				igt_assert_f(alpha,
-					      "Cannot configure the test with all sprite planes enabled\n");
-
-				/* retry once with XRGB format. */
-				alpha = false;
-				goto retry;
-			}
-
 			sprite_width = prev_w;
 			sprite_height = prev_h;
-
-			if (max_sprite_width && max_sprite_height) {
-				set_sprite_wh(display, pipe, parms, sprite_fb,
-					      alpha, sprite_width, sprite_height);
-				break;
-			}
-
-			if (!max_sprite_width)
-				max_sprite_width = true;
-			else
-				max_sprite_height = true;
-		} else {
-			prev_w = sprite_width;
-			prev_h = sprite_height;
+			break;
 		}
 
-		if (!max_sprite_width) {
-			sprite_width *= 2;
-
-			if (sprite_width >= mode->hdisplay) {
-				max_sprite_width = true;
-
-				sprite_width = mode->hdisplay;
-			}
-		} else if (!max_sprite_height) {
-			sprite_height *= 2;
-
-			if (sprite_height >= mode->vdisplay) {
-				max_sprite_height = true;
-
-				sprite_height = mode->vdisplay;
-			}
-		} else
-			/* Max sized sprites for all! */
+		/* Commit is valid and it reached max size, use this size */
+		if (sprite_width == mode->hdisplay ||
+		    sprite_height == mode->vdisplay)
 			break;
+
+		prev_w = sprite_width;
+		prev_h = sprite_height;
+
+		sprite_width *= 2;
+		if (sprite_width >= mode->hdisplay)
+			sprite_width = mode->hdisplay;
+
+		sprite_height *= 2;
+		if (sprite_height >= mode->vdisplay)
+			sprite_height = mode->vdisplay;
+
+		set_sprite_wh(display, pipe, parms, sprite_fb, sprite_width,
+			      sprite_height, alpha);
+		wm_setup_plane(display, pipe, iter_mask, parms, false);
+		ret = igt_display_try_commit_atomic(display,
+						    DRM_MODE_ATOMIC_TEST_ONLY |
+						    DRM_MODE_ATOMIC_ALLOW_MODESET,
+						    NULL);
 	}
 
-	igt_info("Running test on pipe %s with resolution %dx%d and sprite size %dx%d alpha %i\n",
+	igt_info("Running test on pipe %s with resolution %dx%d, sprite size %dx%d, alpha %i and %i overlay planes\n",
 		 kmstest_pipe_name(pipe), mode->hdisplay, mode->vdisplay,
-		 sprite_width, sprite_height, alpha);
+		 sprite_width, sprite_height, alpha, n_overlays);
 }
 
 static void prepare_fencing(igt_display_t *display, enum pipe pipe)
@@ -519,8 +560,10 @@ run_transition_test(igt_display_t *display, enum pipe pipe, igt_output_t *output
 		}
 
 		/* force planes to be part of commit */
-		for_each_plane_on_pipe(display, pipe, plane)
-			igt_plane_set_position(plane, 0, 0);
+		for_each_plane_on_pipe(display, pipe, plane) {
+			if (parms[plane->index].mask != ITER_TYPE_NONE)
+				igt_plane_set_position(plane, 0, 0);
+		}
 
 		igt_display_commit2(display, COMMIT_ATOMIC);
 
