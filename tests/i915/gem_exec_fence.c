@@ -317,6 +317,7 @@ static void test_fence_busy_all(int fd, unsigned flags)
 
 static void test_fence_await(int fd, unsigned ring, unsigned flags)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const int gen = intel_gen(intel_get_drm_devid(fd));
 	struct drm_i915_gem_exec_object2 obj;
 	struct drm_i915_gem_relocation_entry reloc;
@@ -381,7 +382,7 @@ static void test_fence_await(int fd, unsigned ring, unsigned flags)
 	igt_assert(fence != -1);
 
 	i = 0;
-	for_each_physical_engine(fd, engine) {
+	for_each_physical_engine(fd, exec_engine_iter, engine) {
 		if (!gem_can_store_dword(fd, engine))
 			continue;
 
@@ -447,6 +448,7 @@ static int __execbuf(int fd, struct drm_i915_gem_execbuffer2 *execbuf)
 
 static void test_parallel(int fd, unsigned int master)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const int SCRATCH = 0;
 	const int BATCH = 1;
 	const int gen = intel_gen(intel_get_drm_devid(fd));
@@ -544,7 +546,7 @@ static void test_parallel(int fd, unsigned int master)
 	obj[BATCH].relocation_count = 1;
 
 	/* Queue all secondaries */
-	for_each_physical_engine(fd, engine) {
+	for_each_physical_engine(fd, exec_engine_iter, engine) {
 		if (engine == master)
 			continue;
 
@@ -705,6 +707,7 @@ static void test_keep_in_fence(int fd, unsigned int engine, unsigned int flags)
 #define EXPIRED 0x10000
 static void test_long_history(int fd, long ring_size, unsigned flags)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const uint32_t sz = 1 << 20;
 	const uint32_t bbe = MI_BATCH_BUFFER_END;
 	struct drm_i915_gem_exec_object2 obj[2];
@@ -720,7 +723,7 @@ static void test_long_history(int fd, long ring_size, unsigned flags)
 		limit = ring_size / 3;
 
 	nengine = 0;
-	for_each_physical_engine(fd, engine)
+	for_each_physical_engine(fd, exec_engine_iter, engine)
 		engines[nengine++] = engine;
 	igt_require(nengine);
 

@@ -949,9 +949,10 @@ static igt_hang_t rcs_hang(void)
 static igt_hang_t all_hang(void)
 {
 	igt_hang_t hang = igt_hang_ring(fd, I915_EXEC_RENDER);
+	const struct intel_execution_engine *exec_engine_iter;
 	unsigned engine;
 
-	for_each_physical_engine(fd, engine) {
+	for_each_physical_engine(fd, exec_engine_iter, engine) {
 		struct drm_i915_gem_execbuffer2 eb = hang.spin->execbuf;
 
 		if (engine == I915_EXEC_RENDER)

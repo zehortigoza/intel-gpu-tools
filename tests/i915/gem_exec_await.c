@@ -62,6 +62,7 @@ static void xchg_obj(void *array, unsigned i, unsigned j)
 #define CONTEXTS 0x1
 static void wide(int fd, int ring_size, int timeout, unsigned int flags)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const uint32_t bbe = MI_BATCH_BUFFER_END;
 	const int gen = intel_gen(intel_get_drm_devid(fd));
 	struct {
@@ -79,7 +80,7 @@ static void wide(int fd, int ring_size, int timeout, unsigned int flags)
 	double time;
 
 	nengine = 0;
-	for_each_physical_engine(fd, engine)
+	for_each_physical_engine(fd, exec_engine_iter, engine)
 		engines[nengine++] = engine;
 	igt_require(nengine);
 

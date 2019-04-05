@@ -80,11 +80,11 @@ extern const struct intel_execution_engine {
 	     e__++) \
 		for_if (gem_has_ring(fd__, flags__ = e__->exec_id | e__->flags))
 
-#define for_each_physical_engine(fd__, flags__) \
-	for (const struct intel_execution_engine *e__ = intel_execution_engines;\
-	     e__->name; \
-	     e__++) \
-		for_if (gem_ring_has_physical_engine(fd__, flags__ = e__->exec_id | e__->flags))
+#define for_each_physical_engine(fd__, iter, flags__) \
+	for (iter = intel_execution_engines;\
+	     iter->name; \
+	     iter++) \
+		for_if (gem_ring_has_physical_engine(fd__, flags__ = iter->exec_id | iter->flags))
 
 bool gem_ring_is_physical_engine(int fd, unsigned int ring);
 bool gem_ring_has_physical_engine(int fd, unsigned int ring);

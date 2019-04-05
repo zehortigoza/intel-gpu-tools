@@ -216,6 +216,7 @@ static void poll_ring(int fd, unsigned engine, const char *name, int timeout)
 
 static void poll_sequential(int fd, const char *name, int timeout)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const int gen = intel_gen(intel_get_drm_devid(fd));
 	const uint32_t MI_ARB_CHK = 0x5 << 23;
 	struct drm_i915_gem_execbuffer2 execbuf;
@@ -233,7 +234,7 @@ static void poll_sequential(int fd, const char *name, int timeout)
 		flags |= I915_EXEC_SECURE;
 
 	nengine = 0;
-	for_each_physical_engine(fd, engine) {
+	for_each_physical_engine(fd, exec_engine_iter, engine) {
 		if (!gem_can_store_dword(fd, engine))
 			continue;
 
@@ -427,6 +428,7 @@ static void headless(int fd, uint32_t handle)
 
 static void parallel(int fd, uint32_t handle, int timeout)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	struct drm_i915_gem_execbuffer2 execbuf;
 	struct drm_i915_gem_exec_object2 obj;
 	unsigned engines[16];
@@ -438,14 +440,14 @@ static void parallel(int fd, uint32_t handle, int timeout)
 
 	sum = 0;
 	nengine = 0;
-	for_each_physical_engine(fd, engine) {
+	for_each_physical_engine(fd, exec_engine_iter, engine) {
 		engines[nengine] = engine;
-		names[nengine] = e__->name;
+		names[nengine] = exec_engine_iter->name;
 		nengine++;
 
 		time = nop_on_ring(fd, handle, engine, 1, &count) / count;
 		sum += time;
-		igt_debug("%s: %.3fus\n", e__->name, 1e6*time);
+		igt_debug("%s: %.3fus\n", exec_engine_iter->name, 1e6*time);
 	}
 	igt_require(nengine);
 	igt_info("average (individually): %.3fus\n", sum/nengine*1e6);
@@ -489,6 +491,7 @@ static void parallel(int fd, uint32_t handle, int timeout)
 
 static void series(int fd, uint32_t handle, int timeout)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	struct drm_i915_gem_execbuffer2 execbuf;
 	struct drm_i915_gem_exec_object2 obj;
 	struct timespec start, now, sync;
@@ -500,10 +503,10 @@ static void series(int fd, uint32_t handle, int timeout)
 	const char *name;
 
 	nengine = 0;
-	for_each_physical_engine(fd, engine) {
+	for_each_physical_engine(fd, exec_engine_iter, engine) {
 		time = nop_on_ring(fd, handle, engine, 1, &count) / count;
 		if (time > max) {
-			name = e__->name;
+			name = exec_engine_iter->name;
 			max = time;
 		}
 		if (time < min)
@@ -579,6 +582,7 @@ static void xchg(void *array, unsigned i, unsigned j)
 
 static void sequential(int fd, uint32_t handle, unsigned flags, int timeout)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const int ncpus = flags & FORKED ? sysconf(_SC_NPROCESSORS_ONLN) : 1;
 	struct drm_i915_gem_execbuffer2 execbuf;
 	struct drm_i915_gem_exec_object2 obj[2];
@@ -595,12 +599,12 @@ static void sequential(int fd, uint32_t handle, unsigned flags, int timeout)
 
 	nengine = 0;
 	sum = 0;
-	for_each_physical_engine(fd, n) {
+	for_each_physical_engine(fd, exec_engine_iter, n) {
 		unsigned long count;
 
 		time = nop_on_ring(fd, handle, n, 1, &count) / count;
 		sum += time;
-		igt_debug("%s: %.3fus\n", e__->name, 1e6*time);
+		igt_debug("%s: %.3fus\n", exec_engine_iter->name, 1e6*time);
 
 		engines[nengine++] = n;
 	}
@@ -726,7 +730,9 @@ static void fence_signal(int fd, uint32_t handle,
 
 	nengine = 0;
 	if (ring_id == ALL_ENGINES) {
-		for_each_physical_engine(fd, n)
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, n)
 			engines[nengine++] = n;
 	} else {
 		gem_require_ring(fd, ring_id);

@@ -82,6 +82,7 @@ static void store_dword(int fd, unsigned ring,
 
 static void one(int fd, unsigned ring, uint32_t flags)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const int gen = intel_gen(intel_get_drm_devid(fd));
 	struct drm_i915_gem_exec_object2 obj[2];
 #define SCRATCH 0
@@ -143,7 +144,7 @@ static void one(int fd, unsigned ring, uint32_t flags)
 	gem_close(fd, obj[BATCH].handle);
 
 	i = 0;
-	for_each_physical_engine(fd, other) {
+	for_each_physical_engine(fd, exec_engine_iter, other) {
 		if (other == ring)
 			continue;
 

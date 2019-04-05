@@ -315,13 +315,14 @@ igt_main
 	int fd = -1;
 
 	igt_fixture {
+		const struct intel_execution_engine *exec_engine_iter;
 		unsigned engine;
 
 		fd = drm_open_driver(DRIVER_INTEL);
 		igt_require_gem(fd);
 		gem_require_contexts(fd);
 
-		for_each_physical_engine(fd, engine)
+		for_each_physical_engine(fd, exec_engine_iter, engine)
 			all_engines[all_nengine++] = engine;
 		igt_require(all_nengine);
 

@@ -216,6 +216,7 @@ static void single(int fd, uint32_t handle,
 
 static void all(int fd, uint32_t handle, unsigned flags, int timeout)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	struct drm_i915_gem_execbuffer2 execbuf;
 	struct drm_i915_gem_exec_object2 obj[2];
 	unsigned int engine[16], e;
@@ -225,9 +226,9 @@ static void all(int fd, uint32_t handle, unsigned flags, int timeout)
 	int n, qlen;
 
 	nengine = 0;
-	for_each_physical_engine(fd, e) {
+	for_each_physical_engine(fd, exec_engine_iter, e) {
 		engine[nengine] = e;
-		name[nengine] = e__->name;
+		name[nengine] = exec_engine_iter->name;
 		nengine++;
 	}
 	igt_require(nengine);

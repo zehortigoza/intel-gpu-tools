@@ -38,6 +38,7 @@ IGT_TEST_DESCRIPTION("Basic check of ring<->ring write synchronisation.");
 static void
 sync_loop(int fd)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const uint32_t bbe = MI_BATCH_BUFFER_END;
 	struct drm_i915_gem_execbuffer2 execbuf;
 	struct drm_i915_gem_exec_object2 object[2];
@@ -48,7 +49,7 @@ sync_loop(int fd)
 	int i;
 
 	nengine = 0;
-	for_each_physical_engine(fd, engine)
+	for_each_physical_engine(fd, exec_engine_iter, engine)
 		engines[nengine++] = engine;
 	igt_require(nengine);
 

@@ -199,6 +199,7 @@ static void fifo(int fd, unsigned ring)
 static void independent(int fd, unsigned int engine)
 {
 	IGT_CORK_HANDLE(cork);
+	const struct intel_execution_engine *exec_engine_iter;
 	uint32_t scratch, plug, batch;
 	igt_spin_t *spin = NULL;
 	unsigned int other;
@@ -213,7 +214,7 @@ static void independent(int fd, unsigned int engine)
 	plug = igt_cork_plug(&cork, fd);
 
 	/* Check that we can submit to engine while all others are blocked */
-	for_each_physical_engine(fd, other) {
+	for_each_physical_engine(fd, exec_engine_iter, other) {
 		if (other == engine)
 			continue;
 
@@ -275,7 +276,9 @@ static void smoketest(int fd, unsigned ring, unsigned timeout)
 
 	nengine = 0;
 	if (ring == ALL_ENGINES) {
-		for_each_physical_engine(fd, engine)
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, engine)
 			engines[nengine++] = engine;
 	} else {
 		engines[nengine++] = ring;
@@ -342,6 +345,7 @@ static uint32_t batch_create(int i915)
 
 static void semaphore_userlock(int i915)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	struct drm_i915_gem_exec_object2 obj = {
 		.handle = batch_create(i915),
 	};
@@ -359,7 +363,7 @@ static void semaphore_userlock(int i915)
 	 */
 
 	scratch = gem_create(i915, 4096);
-	for_each_physical_engine(i915, engine) {
+	for_each_physical_engine(i915, exec_engine_iter, engine) {
 		if (!spin) {
 			spin = igt_spin_batch_new(i915,
 						  .dependency = scratch,
@@ -384,7 +388,7 @@ static void semaphore_userlock(int i915)
 	 * taking precedence.
 	 */
 	scratch = gem_context_create(i915);
-	for_each_physical_engine(i915, engine) {
+	for_each_physical_engine(i915, exec_engine_iter, engine) {
 		struct drm_i915_gem_execbuffer2 execbuf = {
 			.buffers_ptr = to_user_pointer(&obj),
 			.buffer_count = 1,
@@ -549,11 +553,12 @@ static void preempt(int fd, unsigned ring, unsigned flags)
 
 static igt_spin_t *__noise(int fd, uint32_t ctx, int prio, igt_spin_t *spin)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	unsigned other;
 
 	gem_context_set_priority(fd, ctx, prio);
 
-	for_each_physical_engine(fd, other) {
+	for_each_physical_engine(fd, exec_engine_iter, other) {
 		if (spin == NULL) {
 			spin = __igt_spin_batch_new(fd,
 						    .ctx = ctx,
@@ -591,7 +596,9 @@ static void __preempt_other(int fd,
 	n++;
 
 	if (flags & CHAIN) {
-		for_each_physical_engine(fd, other) {
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, other) {
 			store_dword(fd, ctx[LO], other,
 				    result, (n + 1)*sizeof(uint32_t), n + 1,
 				    0, I915_GEM_DOMAIN_RENDER);
@@ -617,6 +624,7 @@ static void __preempt_other(int fd,
 
 static void preempt_other(int fd, unsigned ring, unsigned int flags)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	unsigned int primary;
 	igt_spin_t *spin = NULL;
 	uint32_t ctx[3];
@@ -640,8 +648,8 @@ static void preempt_other(int fd, unsigned ring, unsigned int flags)
 	ctx[HI] = gem_context_create(fd);
 	gem_context_set_priority(fd, ctx[HI], MAX_PRIO);
 
-	for_each_physical_engine(fd, primary) {
-		igt_debug("Primary engine: %s\n", e__->name);
+	for_each_physical_engine(fd, exec_engine_iter, primary) {
+		igt_debug("Primary engine: %s\n", exec_engine_iter->name);
 		__preempt_other(fd, ctx, ring, primary, flags);
 
 	}
@@ -696,7 +704,9 @@ static void __preempt_queue(int fd,
 	n++;
 
 	if (flags & CHAIN) {
-		for_each_physical_engine(fd, other) {
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, other) {
 			store_dword(fd, ctx[LO], other,
 				    result, (n + 1)*sizeof(uint32_t), n + 1,
 				    0, I915_GEM_DOMAIN_RENDER);
@@ -737,9 +747,10 @@ static void __preempt_queue(int fd,
 
 static void preempt_queue(int fd, unsigned ring, unsigned int flags)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	unsigned other;
 
-	for_each_physical_engine(fd, other) {
+	for_each_physical_engine(fd, exec_engine_iter, other) {
 		for (unsigned depth = 0; depth <= MAX_ELSP_QLEN; depth++)
 			__preempt_queue(fd, ring, other, depth, flags);
 	}
@@ -747,6 +758,7 @@ static void preempt_queue(int fd, unsigned ring, unsigned int flags)
 
 static void preempt_self(int fd, unsigned ring)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	uint32_t result = gem_create(fd, 4096);
 	uint32_t result_read[4096 / sizeof(uint32_t)];
 	igt_spin_t *spin[MAX_ELSP_QLEN];
@@ -768,7 +780,7 @@ static void preempt_self(int fd, unsigned ring)
 
 	n = 0;
 	gem_context_set_priority(fd, ctx[HI], MIN_PRIO);
-	for_each_physical_engine(fd, other) {
+	for_each_physical_engine(fd, exec_engine_iter, other) {
 		spin[n] = __igt_spin_batch_new(fd,
 					       .ctx = ctx[NOISE],
 					       .engine = other);
@@ -1289,12 +1301,14 @@ static void test_pi_ringfull(int fd, unsigned int engine)
 
 static void measure_semaphore_power(int i915)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	struct gpu_power power;
 	unsigned int engine, signaler;
 
 	igt_require(gpu_power_open(&power) == 0);
 
-	for_each_physical_engine(i915, signaler) {
+	for_each_physical_engine(i915, exec_engine_iter, signaler) {
+		const struct intel_execution_engine *exec_engine_iter2;
 		struct gpu_power_sample s_spin[2];
 		struct gpu_power_sample s_sema[2];
 		double baseline, total;
@@ -1313,7 +1327,7 @@ static void measure_semaphore_power(int i915)
 		gpu_power_read(&power, &s_spin[1]);
 
 		/* Add a waiter to each engine */
-		for_each_physical_engine(i915, engine) {
+		for_each_physical_engine(i915, exec_engine_iter2, engine) {
 			igt_spin_t *sema;
 
 			if (engine == signaler)
@@ -1337,7 +1351,7 @@ static void measure_semaphore_power(int i915)
 		total = gpu_power_W(&power, &s_sema[0], &s_sema[1]);
 
 		igt_info("%s: %.1fmW + %.1fmW (total %1.fmW)\n",
-			 e__->name,
+			 exec_engine_iter->name,
 			 1e3 * baseline,
 			 1e3 * (total - baseline),
 			 1e3 * total);

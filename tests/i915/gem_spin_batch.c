@@ -73,9 +73,10 @@ static void spin_exit_handler(int sig)
 
 static void spin_on_all_engines(int fd, unsigned int timeout_sec)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	unsigned engine;
 
-	for_each_physical_engine(fd, engine) {
+	for_each_physical_engine(fd, exec_engine_iter, engine) {
 		igt_fork(child, 1) {
 			igt_install_exit_handler(spin_exit_handler);
 			spin(fd, engine, timeout_sec);

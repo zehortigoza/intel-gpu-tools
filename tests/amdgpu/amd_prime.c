@@ -170,6 +170,7 @@ static void unplug(struct cork *c)
 
 static void i915_to_amd(int i915, int amd, amdgpu_device_handle device)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const uint32_t bbe = MI_BATCH_BUFFER_END;
 	struct drm_i915_gem_exec_object2 obj[2];
 	struct drm_i915_gem_execbuffer2 execbuf;
@@ -179,7 +180,7 @@ static void i915_to_amd(int i915, int amd, amdgpu_device_handle device)
 	struct cork c;
 
 	nengine = 0;
-	for_each_physical_engine(i915, engine)
+	for_each_physical_engine(i915, exec_engine_iter, engine)
 		engines[nengine++] = engine;
 	igt_require(nengine);
 

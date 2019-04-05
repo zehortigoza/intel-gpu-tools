@@ -169,7 +169,9 @@ static void all(int fd, unsigned engine, unsigned flags)
 
 	nengine = 0;
 	if (engine == ALL_ENGINES) {
-		for_each_physical_engine(fd, engine) {
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, engine) {
 			if (gem_can_store_dword(fd, engine))
 				engines[nengine++] = engine;
 		}

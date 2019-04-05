@@ -263,16 +263,18 @@ static void one(int fd, unsigned ring, unsigned test_flags)
 	__gem_busy(fd, obj[BATCH].handle, &read[BATCH], &write[BATCH]);
 
 	if (test_flags & PARALLEL) {
+		const struct intel_execution_engine *exec_engine_iter;
 		unsigned other;
 
-		for_each_physical_engine(fd, other) {
+		for_each_physical_engine(fd, exec_engine_iter, other) {
 			if (other == ring)
 				continue;
 
 			if (!gem_can_store_dword(fd, other))
 				continue;
 
-			igt_debug("Testing %s in parallel\n", e__->name);
+			igt_debug("Testing %s in parallel\n",
+				  exec_engine_iter->name);
 			one(fd, other, 0);
 		}
 	}

@@ -86,8 +86,10 @@ sync_ring(int fd, unsigned ring, int num_children, int timeout)
 	int num_engines = 0;
 
 	if (ring == ALL_ENGINES) {
-		for_each_physical_engine(fd, ring) {
-			names[num_engines] = e__->name;
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, ring) {
+			names[num_engines] = exec_engine_iter->name;
 			engines[num_engines++] = ring;
 			if (num_engines == ARRAY_SIZE(engines))
 				break;
@@ -185,11 +187,13 @@ wakeup_ring(int fd, unsigned ring, int timeout, int wlen)
 	int num_engines = 0;
 
 	if (ring == ALL_ENGINES) {
-		for_each_physical_engine(fd, ring) {
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, ring) {
 			if (!gem_can_store_dword(fd, ring))
 				continue;
 
-			names[num_engines] = e__->name;
+			names[num_engines] = exec_engine_iter->name;
 			engines[num_engines++] = ring;
 			if (num_engines == ARRAY_SIZE(engines))
 				break;
@@ -301,11 +305,13 @@ static void active_ring(int fd, unsigned ring, int timeout)
 	int num_engines = 0;
 
 	if (ring == ALL_ENGINES) {
-		for_each_physical_engine(fd, ring) {
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, ring) {
 			if (!gem_can_store_dword(fd, ring))
 				continue;
 
-			names[num_engines] = e__->name;
+			names[num_engines] = exec_engine_iter->name;
 			engines[num_engines++] = ring;
 			if (num_engines == ARRAY_SIZE(engines))
 				break;
@@ -370,11 +376,13 @@ active_wakeup_ring(int fd, unsigned ring, int timeout, int wlen)
 	int num_engines = 0;
 
 	if (ring == ALL_ENGINES) {
-		for_each_physical_engine(fd, ring) {
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, ring) {
 			if (!gem_can_store_dword(fd, ring))
 				continue;
 
-			names[num_engines] = e__->name;
+			names[num_engines] = exec_engine_iter->name;
 			engines[num_engines++] = ring;
 			if (num_engines == ARRAY_SIZE(engines))
 				break;
@@ -509,11 +517,13 @@ store_ring(int fd, unsigned ring, int num_children, int timeout)
 	int num_engines = 0;
 
 	if (ring == ALL_ENGINES) {
-		for_each_physical_engine(fd, ring) {
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, ring) {
 			if (!gem_can_store_dword(fd, ring))
 				continue;
 
-			names[num_engines] = e__->name;
+			names[num_engines] = exec_engine_iter->name;
 			engines[num_engines++] = ring;
 			if (num_engines == ARRAY_SIZE(engines))
 				break;
@@ -626,11 +636,13 @@ switch_ring(int fd, unsigned ring, int num_children, int timeout)
 	gem_require_contexts(fd);
 
 	if (ring == ALL_ENGINES) {
-		for_each_physical_engine(fd, ring) {
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, ring) {
 			if (!gem_can_store_dword(fd, ring))
 				continue;
 
-			names[num_engines] = e__->name;
+			names[num_engines] = exec_engine_iter->name;
 			engines[num_engines++] = ring;
 			if (num_engines == ARRAY_SIZE(engines))
 				break;
@@ -953,7 +965,9 @@ store_many(int fd, unsigned ring, int timeout)
 	intel_detect_and_clear_missed_interrupts(fd);
 
 	if (ring == ALL_ENGINES) {
-		for_each_physical_engine(fd, ring) {
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, ring) {
 			if (!gem_can_store_dword(fd, ring))
 				continue;
 
@@ -963,7 +977,7 @@ store_many(int fd, unsigned ring, int timeout)
 					     timeout,
 					     &shared[n]);
 
-			names[n++] = e__->name;
+			names[n++] = exec_engine_iter->name;
 		}
 		igt_waitchildren();
 	} else {
@@ -984,10 +998,11 @@ store_many(int fd, unsigned ring, int timeout)
 static void
 sync_all(int fd, int num_children, int timeout)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	unsigned engines[16], engine;
 	int num_engines = 0;
 
-	for_each_physical_engine(fd, engine) {
+	for_each_physical_engine(fd, exec_engine_iter, engine) {
 		engines[num_engines++] = engine;
 		if (num_engines == ARRAY_SIZE(engines))
 			break;
@@ -1035,12 +1050,13 @@ sync_all(int fd, int num_children, int timeout)
 static void
 store_all(int fd, int num_children, int timeout)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const int gen = intel_gen(intel_get_drm_devid(fd));
 	unsigned engines[16];
 	int num_engines = 0;
 	unsigned int ring;
 
-	for_each_physical_engine(fd, ring) {
+	for_each_physical_engine(fd, exec_engine_iter, ring) {
 		if (!gem_can_store_dword(fd, ring))
 			continue;
 
@@ -1149,8 +1165,10 @@ preempt(int fd, unsigned ring, int num_children, int timeout)
 	uint32_t ctx[2];
 
 	if (ring == ALL_ENGINES) {
-		for_each_physical_engine(fd, ring) {
-			names[num_engines] = e__->name;
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(fd, exec_engine_iter, ring) {
+			names[num_engines] = exec_engine_iter->name;
 			engines[num_engines++] = ring;
 			if (num_engines == ARRAY_SIZE(engines))
 				break;

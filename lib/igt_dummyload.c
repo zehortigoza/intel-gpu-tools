@@ -94,9 +94,10 @@ emit_recursive_batch(igt_spin_t *spin,
 
 	nengine = 0;
 	if (opts->engine == ALL_ENGINES) {
+		const struct intel_execution_engine *exec_engine_iter;
 		unsigned int engine;
 
-		for_each_physical_engine(fd, engine) {
+		for_each_physical_engine(fd, exec_engine_iter, engine) {
 			if (opts->flags & IGT_SPIN_POLL_RUN &&
 			    !gem_can_store_dword(fd, engine))
 				continue;

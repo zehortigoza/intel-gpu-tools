@@ -106,6 +106,7 @@ static void submit(int fd, int gen,
 
 static void fillgtt(int fd, unsigned ring, int timeout)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const int gen = intel_gen(intel_get_drm_devid(fd));
 	struct drm_i915_gem_execbuffer2 execbuf;
 	struct drm_i915_gem_relocation_entry reloc[2];
@@ -122,7 +123,7 @@ static void fillgtt(int fd, unsigned ring, int timeout)
 
 	nengine = 0;
 	if (ring == 0) {
-		for_each_physical_engine(fd, engine) {
+		for_each_physical_engine(fd, exec_engine_iter, engine) {
 			if (!gem_can_store_dword(fd, engine))
 				continue;
 

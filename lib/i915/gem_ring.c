@@ -140,9 +140,10 @@ unsigned int
 gem_measure_ring_inflight(int fd, unsigned int engine, enum measure_ring_flags flags)
 {
 	if (engine == ALL_ENGINES) {
+		const struct intel_execution_engine *exec_engine_iter;
 		unsigned int global_min = ~0u;
 
-		for_each_physical_engine(fd, engine) {
+		for_each_physical_engine(fd, exec_engine_iter, engine) {
 			unsigned int engine_min = __gem_measure_ring_inflight(fd, engine, flags);
 
 			if (engine_min < global_min)

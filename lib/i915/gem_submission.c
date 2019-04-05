@@ -215,7 +215,9 @@ void gem_test_engine(int i915, unsigned int engine)
 	gem_write(i915, obj.handle, 0, &bbe, sizeof(bbe));
 
 	if (engine == ALL_ENGINES) {
-		for_each_physical_engine(i915, engine) {
+		const struct intel_execution_engine *exec_engine_iter;
+
+		for_each_physical_engine(i915, exec_engine_iter, engine) {
 			execbuf.flags = engine;
 			gem_execbuf(i915, &execbuf);
 		}

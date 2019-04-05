@@ -64,9 +64,10 @@ static void check_bo(int fd, uint32_t handle)
 
 static void test_all(int fd, unsigned flags)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	unsigned engine;
 
-	for_each_physical_engine(fd, engine)
+	for_each_physical_engine(fd, exec_engine_iter, engine)
 		if (gem_can_store_dword(fd, engine))
 			run_test(fd, engine, flags & ~0xff);
 }
@@ -106,7 +107,9 @@ static void run_test(int fd, unsigned engine, unsigned flags)
 		 * GPU is then unlikely to be active!)
 		 */
 		if (has_semaphores(fd)) {
-			for_each_physical_engine(fd, engine) {
+			const struct intel_execution_engine *exec_engine_iter;
+
+			for_each_physical_engine(fd, exec_engine_iter, engine) {
 				if (gem_can_store_dword(fd, engine))
 					engines[nengine++] = engine;
 			}

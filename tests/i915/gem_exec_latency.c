@@ -263,6 +263,7 @@ static void latency_from_ring(int fd,
 			      unsigned ring, const char *name,
 			      unsigned flags)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const int gen = intel_gen(intel_get_drm_devid(fd));
 	const int has_64bit_reloc = gen >= 8;
 	struct drm_i915_gem_exec_object2 obj[3];
@@ -315,7 +316,7 @@ static void latency_from_ring(int fd,
 	reloc.presumed_offset = obj[1].offset;
 	reloc.target_handle = flags & CORK ? 1 : 0;
 
-	for_each_physical_engine(fd, other) {
+	for_each_physical_engine(fd, exec_engine_iter, other) {
 		igt_spin_t *spin = NULL;
 		IGT_CORK_HANDLE(c);
 
@@ -396,7 +397,7 @@ static void latency_from_ring(int fd,
 		igt_spin_batch_free(fd, spin);
 
 		igt_info("%s-%s delay: %.2fns\n",
-			 name, e__->name,
+			 name, exec_engine_iter->name,
 			 (results[2*repeats-1] - results[0]) / (double)repeats * rcs_clock);
 	}
 
@@ -457,6 +458,7 @@ static void
 rthog_latency_on_ring(int fd, unsigned int engine, const char *name, unsigned int flags)
 #define RTIDLE 0x1
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const char *passname[] = {
 		"warmup",
 		"normal",
@@ -486,12 +488,12 @@ rthog_latency_on_ring(int fd, unsigned int engine, const char *name, unsigned in
 
 	nengine = 0;
 	if (engine == ALL_ENGINES) {
-		for_each_physical_engine(fd, engine) {
+		for_each_physical_engine(fd, exec_engine_iter, engine) {
 			if (!gem_can_store_dword(fd, engine))
 				continue;
 
 			engines[nengine] = engine;
-			names[nengine] = e__->name;
+			names[nengine] = exec_engine_iter->name;
 			nengine++;
 		}
 		igt_require(nengine > 1);

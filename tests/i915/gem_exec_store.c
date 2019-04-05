@@ -178,6 +178,7 @@ static void store_cachelines(int fd, unsigned ring, unsigned int flags)
 
 static void store_all(int fd)
 {
+	const struct intel_execution_engine *exec_engine_iter;
 	const int gen = intel_gen(intel_get_drm_devid(fd));
 	struct drm_i915_gem_exec_object2 obj[2];
 	struct drm_i915_gem_relocation_entry reloc[32];
@@ -220,7 +221,7 @@ static void store_all(int fd)
 
 	nengine = 0;
 	intel_detect_and_clear_missed_interrupts(fd);
-	for_each_physical_engine(fd, engine) {
+	for_each_physical_engine(fd, exec_engine_iter, engine) {
 		if (!gem_can_store_dword(fd, engine))
 			continue;
 
