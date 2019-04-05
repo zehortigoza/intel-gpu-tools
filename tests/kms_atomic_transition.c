@@ -471,7 +471,6 @@ run_transition_test(igt_display_t *display, enum pipe pipe, igt_output_t *output
 	uint32_t iter_max, i;
 	struct plane_parms parms[pipe_obj->n_planes];
 	unsigned flags = 0;
-	int ret;
 
 	if (fencing)
 		prepare_fencing(display, pipe);
@@ -507,44 +506,6 @@ run_transition_test(igt_display_t *display, enum pipe pipe, igt_output_t *output
 	igt_display_commit2(display, COMMIT_ATOMIC);
 
 	setup_parms(display, pipe, mode, &fb, &argb_fb, &sprite_fb, parms, &iter_max);
-
-	/*
-	 * In some configurations the tests may not run to completion with all
-	 * sprite planes lit up at 4k resolution, try decreasing width/size of secondary
-	 * planes to fix this
-	 */
-	while (1) {
-		wm_setup_plane(display, pipe, iter_max - 1, parms, false);
-
-		if (fencing)
-			igt_pipe_request_out_fence(pipe_obj);
-
-		ret = igt_display_try_commit_atomic(display, DRM_MODE_ATOMIC_TEST_ONLY | DRM_MODE_ATOMIC_ALLOW_MODESET, NULL);
-		igt_assert(!is_atomic_check_failure_errno(ret));
-
-		if (!is_atomic_check_plane_size_errno(ret) || pipe_obj->n_planes < 3)
-			break;
-
-		ret = 0;
-		for_each_plane_on_pipe(display, pipe, plane) {
-			i = plane->index;
-
-			if (plane->type == DRM_PLANE_TYPE_PRIMARY ||
-			    plane->type == DRM_PLANE_TYPE_CURSOR)
-				continue;
-
-			if (parms[i].width <= 512)
-				continue;
-
-			parms[i].width /= 2;
-			ret = 1;
-			igt_info("Reducing sprite %i to %ux%u\n", i - 1, parms[i].width, parms[i].height);
-			break;
-		}
-
-		if (!ret)
-			igt_skip("Cannot run tests without proper size sprite planes\n");
-	}
 
 	igt_display_commit2(display, COMMIT_ATOMIC);
 
