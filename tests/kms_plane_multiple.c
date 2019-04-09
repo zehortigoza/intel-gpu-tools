@@ -23,6 +23,7 @@
  */
 
 #include "igt.h"
+#include "igt_rand.h"
 #include "drmtest.h"
 #include <errno.h>
 #include <stdbool.h>
@@ -42,13 +43,19 @@ typedef struct {
 	float blue;
 } color_t;
 
+struct plane_data {
+	igt_plane_t *plane;
+	struct igt_fb fb;
+	bool enabled;
+};
+
 typedef struct {
 	int drm_fd;
 	igt_display_t display;
 	igt_crc_t ref_crc;
 	igt_pipe_crc_t *pipe_crc;
-	igt_plane_t **plane;
-	struct igt_fb *fb;
+	struct igt_fb all_blue_primary_fb;
+	struct plane_data *planes;
 } data_t;
 
 /* Command line parameters. */
@@ -65,18 +72,37 @@ struct {
 /*
  * Common code across all tests, acting on data_t
  */
-static void test_init(data_t *data, enum pipe pipe, int n_planes)
+static void test_init(data_t *data, enum pipe pipe)
 {
+	igt_plane_t *plane;
+	const int n_planes = data->display.pipes[pipe].n_planes;
+
 	data->pipe_crc = igt_pipe_crc_new(data->drm_fd, pipe, INTEL_PIPE_CRC_SOURCE_AUTO);
 
-	data->plane = calloc(n_planes, sizeof(*data->plane));
-	igt_assert_f(data->plane != NULL, "Failed to allocate memory for planes\n");
+	data->planes = calloc(n_planes, sizeof(*data->planes));
+	igt_assert_f(data->planes != NULL, "Failed to allocate memory for planes\n");
 
-	data->fb = calloc(n_planes, sizeof(struct igt_fb));
-	igt_assert_f(data->fb != NULL, "Failed to allocate memory for FBs\n");
+	for_each_plane_on_pipe(&data->display, pipe, plane)
+		data->planes[plane->index].plane = plane;
 }
 
-static void test_fini(data_t *data, igt_output_t *output, int n_planes)
+static void cleanup_planes(data_t *data, enum pipe pipe)
+{
+	igt_plane_t *plane;
+
+	for_each_plane_on_pipe(&data->display, pipe, plane) {
+		unsigned index = plane->index;
+
+		if (!data->planes[index].enabled)
+			continue;
+
+		igt_plane_set_fb(plane, NULL);
+		igt_remove_fb(data->drm_fd, &data->planes[index].fb);
+		data->planes[index].enabled = false;
+	}
+}
+
+static void test_fini(data_t *data, igt_output_t *output, enum pipe pipe)
 {
 	igt_pipe_crc_stop(data->pipe_crc);
 
@@ -86,18 +112,18 @@ static void test_fini(data_t *data, igt_output_t *output, int n_planes)
 	igt_pipe_crc_free(data->pipe_crc);
 	data->pipe_crc = NULL;
 
-	free(data->plane);
-	data->plane = NULL;
+	igt_remove_fb(data->drm_fd, &data->all_blue_primary_fb);
 
-	free(data->fb);
-	data->fb = NULL;
+	cleanup_planes(data, pipe);
+	free(data->planes);
+	data->planes = NULL;
 
 	igt_display_reset(&data->display);
 }
 
 static void
 test_grab_crc(data_t *data, igt_output_t *output, enum pipe pipe,
-	      color_t *color, uint64_t tiling)
+	      const color_t *color, uint64_t tiling)
 {
 	drmModeModeInfo *mode;
 	igt_plane_t *primary;
@@ -106,7 +132,6 @@ test_grab_crc(data_t *data, igt_output_t *output, enum pipe pipe,
 	igt_output_set_pipe(output, pipe);
 
 	primary = igt_output_get_plane_type(output, DRM_PLANE_TYPE_PRIMARY);
-	data->plane[primary->index] = primary;
 
 	mode = igt_output_get_mode(output);
 
@@ -114,9 +139,9 @@ test_grab_crc(data_t *data, igt_output_t *output, enum pipe pipe,
 			    DRM_FORMAT_XRGB8888,
 			    LOCAL_DRM_FORMAT_MOD_NONE,
 			    color->red, color->green, color->blue,
-			    &data->fb[primary->index]);
+			    &data->all_blue_primary_fb);
 
-	igt_plane_set_fb(data->plane[primary->index], &data->fb[primary->index]);
+	igt_plane_set_fb(primary, &data->all_blue_primary_fb);
 
 	ret = igt_display_try_commit2(&data->display, COMMIT_ATOMIC);
 	igt_skip_on(ret != 0);
@@ -137,14 +162,14 @@ test_grab_crc(data_t *data, igt_output_t *output, enum pipe pipe,
  */
 
 static void
-create_fb_for_mode_position(data_t *data, igt_output_t *output, drmModeModeInfo *mode,
-			    color_t *color, int *rect_x, int *rect_y,
-			    int *rect_w, int *rect_h, uint64_t tiling,
-			    int max_planes)
+create_fb_for_mode_position(data_t *data, enum pipe pipe_id,
+			    igt_output_t *output, drmModeModeInfo *mode,
+			    const color_t *color, int *rect_x, int *rect_y,
+			    int *rect_w, int *rect_h, uint64_t tiling)
 {
 	unsigned int fb_id;
 	cairo_t *cr;
-	igt_plane_t *primary;
+	igt_plane_t *primary, *plane;
 
 	primary = igt_output_get_plane_type(output, DRM_PLANE_TYPE_PRIMARY);
 
@@ -156,144 +181,145 @@ create_fb_for_mode_position(data_t *data, igt_output_t *output, drmModeModeInfo 
 			      mode->hdisplay, mode->vdisplay,
 			      DRM_FORMAT_XRGB8888,
 			      tiling,
-			      &data->fb[primary->index]);
+			      &data->planes[primary->index].fb);
 	igt_assert(fb_id);
 
-	cr = igt_get_cairo_ctx(data->drm_fd, &data->fb[primary->index]);
-	igt_paint_color(cr, rect_x[0], rect_y[0],
-			mode->hdisplay, mode->vdisplay,
-			color->red, color->green, color->blue);
+	cr = igt_get_cairo_ctx(data->drm_fd, &data->planes[primary->index].fb);
+	igt_paint_color(cr, 0, 0, mode->hdisplay, mode->vdisplay, color->red,
+			color->green, color->blue);
 
-	for (int i = 0; i < max_planes; i++) {
-		if (data->plane[i]->type == DRM_PLANE_TYPE_PRIMARY)
+	for_each_plane_on_pipe(&data->display, pipe_id, plane) {
+		unsigned i = plane->index;
+
+		if (data->planes[i].plane->type == DRM_PLANE_TYPE_PRIMARY ||
+		    !data->planes[i].enabled)
 			continue;
-		igt_paint_color(cr, rect_x[i], rect_y[i],
-				rect_w[i], rect_h[i], 0.0, 0.0, 0.0);
-		}
 
-	igt_put_cairo_ctx(data->drm_fd, &data->fb[primary->index], cr);
+		igt_paint_color(cr, rect_x[i], rect_y[i], rect_w[i], rect_h[i],
+				0.0, 0.0, 0.0);
+	}
+
+	igt_put_cairo_ctx(data->drm_fd, &data->planes[primary->index].fb, cr);
 }
 
+static uint32_t plane_format_get(int type)
+{
+	if (type == DRM_PLANE_TYPE_CURSOR)
+		return DRM_FORMAT_ARGB8888;
+
+	return DRM_FORMAT_XRGB8888;
+}
+
+static uint64_t plane_tiling_get(int type, uint64_t tiling)
+{
+	if (type == DRM_PLANE_TYPE_CURSOR)
+		return LOCAL_DRM_FORMAT_MOD_NONE;
+
+	return tiling;
+}
+
+static int plane_size_get(int type)
+{
+	if (type == DRM_PLANE_TYPE_CURSOR)
+		return SIZE_CURSOR;
+
+	return SIZE_PLANE;
+}
 
 static void
-prepare_planes(data_t *data, enum pipe pipe_id, color_t *color,
-	       uint64_t tiling, int max_planes, igt_output_t *output)
+prepare_planes(data_t *data, enum pipe pipe_id, const color_t *color,
+	       uint64_t tiling, igt_output_t *output, int max_planes)
 {
+	const int pipe_n_planes = data->display.pipes[pipe_id].n_planes;
+	int x[pipe_n_planes], y[pipe_n_planes], size[pipe_n_planes];
 	drmModeModeInfo *mode;
-	igt_pipe_t *pipe;
 	igt_plane_t *primary;
-	int *x;
-	int *y;
-	int *size;
-	int i;
-	int* suffle;
+	igt_plane_t *plane;
+	int plane_count;
 
 	igt_output_set_pipe(output, pipe_id);
 	primary = igt_output_get_plane_type(output, DRM_PLANE_TYPE_PRIMARY);
-	pipe = primary->pipe;
-
-	x = malloc(pipe->n_planes * sizeof(*x));
-	igt_assert_f(x, "Failed to allocate %ld bytes for variable x\n", (long int) (pipe->n_planes * sizeof(*x)));
-	y = malloc(pipe->n_planes * sizeof(*y));
-	igt_assert_f(y, "Failed to allocate %ld bytes for variable y\n", (long int) (pipe->n_planes * sizeof(*y)));
-	size = malloc(pipe->n_planes * sizeof(*size));
-	igt_assert_f(size, "Failed to allocate %ld bytes for variable size\n", (long int) (pipe->n_planes * sizeof(*size)));
-	suffle = malloc(pipe->n_planes * sizeof(*suffle));
-	igt_assert_f(suffle, "Failed to allocate %ld bytes for variable size\n", (long int) (pipe->n_planes * sizeof(*suffle)));
-
-	for (i = 0; i < pipe->n_planes; i++)
-		suffle[i] = i;
-
-	/*
-	 * suffle table for planes. using rand() should keep it
-	 * 'randomized in expected way'
-	 */
-	for (i = 0; i < 256; i++) {
-		int n, m;
-		int a, b;
-
-		n = rand() % (pipe->n_planes-1);
-		m = rand() % (pipe->n_planes-1);
-
-		/*
-		 * keep primary plane at its place for test's sake.
-		 */
-		if(n == primary->index || m == primary->index)
-			continue;
-
-		a = suffle[n];
-		b = suffle[m];
-		suffle[n] = b;
-		suffle[m] = a;
-	}
-
 	mode = igt_output_get_mode(output);
 
-	/* planes with random positions */
-	x[primary->index] = 0;
-	y[primary->index] = 0;
-	for (i = 0; i < max_planes; i++) {
-		/*
-		 * Here is made assumption primary plane will have
-		 * index zero.
-		 */
-		igt_plane_t *plane = igt_output_get_plane(output, suffle[i]);
+	/* Randomize planes position */
+	for_each_plane_on_pipe(&data->display, pipe_id, plane) {
+		unsigned i = plane->index, type;
 		uint32_t plane_format;
 		uint64_t plane_tiling;
 
 		if (plane->type == DRM_PLANE_TYPE_PRIMARY)
 			continue;
-		else if (plane->type == DRM_PLANE_TYPE_CURSOR)
-			size[i] = SIZE_CURSOR;
-		else
-			size[i] = SIZE_PLANE;
+
+		type = data->planes[i].plane->type;
+		size[i] = plane_size_get(type);
+		plane_format = plane_format_get(type);
+		plane_tiling = plane_tiling_get(type, tiling);
+
+		igt_skip_on(!igt_plane_has_format_mod(data->planes[i].plane,
+						      plane_format ,
+						      plane_tiling));
 
 		x[i] = rand() % (mode->hdisplay - size[i]);
 		y[i] = rand() % (mode->vdisplay - size[i]);
 
-		data->plane[i] = plane;
+		data->planes[i].enabled = true;
+	}
 
-		plane_format = data->plane[i]->type == DRM_PLANE_TYPE_CURSOR ? DRM_FORMAT_ARGB8888 : DRM_FORMAT_XRGB8888;
-		plane_tiling = data->plane[i]->type == DRM_PLANE_TYPE_CURSOR ? LOCAL_DRM_FORMAT_MOD_NONE : tiling;
+	/* Limit the number of planes */
+	for (plane_count = pipe_n_planes; plane_count > max_planes; ) {
+		unsigned i = hars_petruska_f54_1_random_unsafe_max(pipe_n_planes);
 
-		igt_skip_on(!igt_plane_has_format_mod(plane, plane_format,
-						      plane_tiling));
+		if (data->planes[i].plane->type == DRM_PLANE_TYPE_PRIMARY ||
+		    !data->planes[i].enabled)
+			continue;
 
-		igt_create_color_fb(data->drm_fd,
-				    size[i], size[i],
-				    plane_format,
-				    plane_tiling,
+		data->planes[i].enabled = false;
+		plane_count--;
+	}
+
+	/* Allocate the framebuffers of the enabled planes */
+	for_each_plane_on_pipe(&data->display, pipe_id, plane) {
+		unsigned i = plane->index, type;
+		uint32_t plane_format;
+		uint64_t plane_tiling;
+
+		if (data->planes[i].plane->type == DRM_PLANE_TYPE_PRIMARY ||
+		    !data->planes[i].enabled)
+			continue;
+
+		type = data->planes[i].plane->type;
+		plane_format = plane_format_get(type);
+		plane_tiling = plane_tiling_get(type, tiling);
+
+		igt_create_color_fb(data->drm_fd, size[i], size[i],
+				    plane_format, plane_tiling,
 				    color->red, color->green, color->blue,
-				    &data->fb[i]);
+				    &data->planes[i].fb);
 
-		igt_plane_set_position(data->plane[i], x[i], y[i]);
-		igt_plane_set_fb(data->plane[i], &data->fb[i]);
+		igt_plane_set_position(data->planes[i].plane, x[i], y[i]);
+		igt_plane_set_fb(data->planes[i].plane, &data->planes[i].fb);
 	}
 
 	/* primary plane */
-	data->plane[primary->index] = primary;
-	create_fb_for_mode_position(data, output, mode, color, x, y,
-				    size, size, tiling, max_planes);
-	igt_plane_set_fb(data->plane[primary->index], &data->fb[primary->index]);
-	free((void*)x);
-	free((void*)y);
-	free((void*)size);
-	free((void*)suffle);
+	create_fb_for_mode_position(data, pipe_id, output, mode, color, x, y,
+				    size, size, tiling);
+	igt_plane_set_fb(data->planes[primary->index].plane,
+			 &data->planes[primary->index].fb);
+	data->planes[primary->index].enabled = true;
 }
 
 static void
 test_plane_position_with_output(data_t *data, enum pipe pipe,
-				igt_output_t *output, int n_planes,
-				uint64_t tiling)
+				igt_output_t *output, uint64_t tiling)
 {
-	color_t blue  = { 0.0f, 0.0f, 1.0f };
+	const color_t blue = { 0.0f, 0.0f, 1.0f };
 	igt_crc_t crc;
 	igt_plane_t *plane;
 	int i;
-	int err, c = 0;
 	int iterations = opt.iterations < 1 ? 1 : opt.iterations;
 	bool loop_forever;
 	char info[256];
+	int n_planes = data->display.pipes[pipe].n_planes;
 
 	if (opt.iterations == LOOP_FOREVER) {
 		loop_forever = true;
@@ -304,35 +330,43 @@ test_plane_position_with_output(data_t *data, enum pipe pipe,
 			iterations, iterations > 1 ? "iterations" : "iteration");
 	}
 
-	test_init(data, pipe, n_planes);
+	test_init(data, pipe);
 
 	test_grab_crc(data, output, pipe, &blue, tiling);
 
 	/*
 	 * Find out how many planes are allowed simultaneously
 	 */
-	do {
-		c++;
-		prepare_planes(data, pipe, &blue, tiling, c, output);
-		err = igt_display_try_commit2(&data->display, COMMIT_ATOMIC);
+	while (1) {
+		int err;
 
-		for_each_plane_on_pipe(&data->display, pipe, plane)
-			igt_plane_set_fb(plane, NULL);
+		prepare_planes(data, pipe, &blue, tiling, output, n_planes);
 
-		for (int x = 0; x < c; x++)
-			igt_remove_fb(data->drm_fd, &data->fb[x]);
-	} while (!err && c < n_planes);
+		err = igt_display_try_commit_atomic(&data->display,
+						    DRM_MODE_ATOMIC_TEST_ONLY |
+						    DRM_MODE_ATOMIC_ALLOW_MODESET,
+						    NULL);
 
-	if(err)
-		c--;
+		cleanup_planes(data, pipe);
+
+		if (!err)
+			break;
+
+		if (err == -EINVAL) {
+			n_planes--;
+			igt_assert_f(n_planes > 2, "Unable to enable 2 planes simultaneously\n");
+			continue;
+		}
+
+		igt_assert_f(!err, "Error %i not expected by try_commit()\n", err);
+	}
 
 	igt_info("Testing connector %s using pipe %s with %d planes %s with seed %d\n",
-		 igt_output_name(output), kmstest_pipe_name(pipe), c,
+		 igt_output_name(output), kmstest_pipe_name(pipe), n_planes,
 		 info, opt.seed);
 
-	i = 0;
-	while (i < iterations || loop_forever) {
-		prepare_planes(data, pipe, &blue, tiling, c, output);
+	for (i = 0; i < iterations || loop_forever; i++) {
+		prepare_planes(data, pipe, &blue, tiling, output, n_planes);
 
 		igt_display_commit2(&data->display, COMMIT_ATOMIC);
 
@@ -341,35 +375,27 @@ test_plane_position_with_output(data_t *data, enum pipe pipe,
 		for_each_plane_on_pipe(&data->display, pipe, plane)
 			igt_plane_set_fb(plane, NULL);
 
-		for (int x = 0; x < c; x++)
-			igt_remove_fb(data->drm_fd, &data->fb[x]);
+		cleanup_planes(data, pipe);
 
 		igt_assert_crc_equal(&data->ref_crc, &crc);
-
-		i++;
 	}
 
-	test_fini(data, output, n_planes);
+	test_fini(data, output, pipe);
 }
 
 static void
 test_plane_position(data_t *data, enum pipe pipe, uint64_t tiling)
 {
 	igt_output_t *output;
-	int connected_outs;
-	int n_planes = data->display.pipes[pipe].n_planes;
+	int connected_outs = 0;
 
 	if (!opt.user_seed)
 		opt.seed = time(NULL);
 
 	srand(opt.seed);
 
-	connected_outs = 0;
 	for_each_valid_output_on_pipe(&data->display, pipe, output) {
-		test_plane_position_with_output(data, pipe,
-						output,
-						n_planes,
-						tiling);
+		test_plane_position_with_output(data, pipe, output, tiling);
 		connected_outs++;
 	}
 
