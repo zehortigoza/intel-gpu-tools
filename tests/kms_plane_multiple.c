@@ -351,9 +351,9 @@ test_plane_position_with_output(data_t *data, enum pipe pipe,
 						    DRM_MODE_ATOMIC_ALLOW_MODESET,
 						    NULL);*/
 		err = igt_display_try_commit2(&data->display, COMMIT_ATOMIC);
-		igt_warn("err=%i n_planes=%i\n", err, n_planes);
-
+		igt_warn("before err=%i n_planes=%i errno=%i\n", err, n_planes, errno);
 		cleanup_planes(data, pipe);
+		igt_warn("after err=%i n_planes=%i errno=%i\n", err, n_planes, errno);
 
 		if (!err)
 			break;
