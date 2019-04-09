@@ -342,10 +342,11 @@ test_plane_position_with_output(data_t *data, enum pipe pipe,
 
 		prepare_planes(data, pipe, &blue, tiling, output, n_planes);
 
-		err = igt_display_try_commit_atomic(&data->display,
+		/*err = igt_display_try_commit_atomic(&data->display,
 						    DRM_MODE_ATOMIC_TEST_ONLY |
 						    DRM_MODE_ATOMIC_ALLOW_MODESET,
-						    NULL);
+						    NULL);*/
+		err = igt_display_try_commit2(&data->display, COMMIT_ATOMIC);
 
 		cleanup_planes(data, pipe);
 
