@@ -237,6 +237,8 @@ prepare_planes(data_t *data, enum pipe pipe_id, const color_t *color,
 	igt_plane_t *plane;
 	int plane_count;
 
+	igt_warn("prepare_planes() max_planes=%i\n", max_planes);
+
 	igt_output_set_pipe(output, pipe_id);
 	primary = igt_output_get_plane_type(output, DRM_PLANE_TYPE_PRIMARY);
 	mode = igt_output_get_mode(output);
@@ -272,6 +274,8 @@ prepare_planes(data_t *data, enum pipe pipe_id, const color_t *color,
 		if (data->planes[i].plane->type == DRM_PLANE_TYPE_PRIMARY ||
 		    !data->planes[i].enabled)
 			continue;
+
+		igt_warn("\tremoving plane %i\n", i);
 
 		data->planes[i].enabled = false;
 		plane_count--;
