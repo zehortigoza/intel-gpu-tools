@@ -38,6 +38,7 @@ lib_sources = [
 	'igt_primes.c',
 	'igt_pci.c',
 	'igt_rand.c',
+	'igt_sriov_device.c',
 	'igt_stats.c',
 	'igt_syncobj.c',
 	'igt_sysfs.c',
