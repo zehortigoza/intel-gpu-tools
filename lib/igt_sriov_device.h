@@ -23,5 +23,6 @@ void igt_sriov_disable_vfs(int pf);
 bool igt_sriov_is_driver_autoprobe_enabled(int pf);
 void igt_sriov_enable_driver_autoprobe(int pf);
 void igt_sriov_disable_driver_autoprobe(int pf);
+int igt_sriov_open_vf_drm_device(int pf, unsigned int vf_num);
 
 #endif /* __IGT_SRIOV_DEVICE_H__ */

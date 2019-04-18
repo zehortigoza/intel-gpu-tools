@@ -245,7 +245,21 @@ static void log_opened_device_path(const char *device_path)
 	igt_info("Opened device: %s\n", item->path);
 }
 
-static int open_device(const char *name, unsigned int chipset)
+/**
+ * __drm_open_device:
+ * @name: DRM node name
+ * @chipset: OR'd flags for chipset to be opened
+ *
+ * Open a drm legacy device node with given @name and compatible with given
+ * @chipset flag.
+ *
+ * A special case is the use of the IGT_FORCE_DRIVER environment variable. In
+ * such case, even if opened device is compatible with given @chipset flag, the
+ * function returns error if forced driver is not compatible with @chipset.
+ *
+ * Returns: DRM file descriptor or -1 on error
+ */
+int __drm_open_device(const char *name, unsigned int chipset)
 {
 	const char *forced;
 	char dev_name[16] = "";
@@ -350,7 +364,7 @@ static int __search_and_open(const char *base, int offset, unsigned int chipset,
 		if (_is_already_opened(name, as_idx))
 			continue;
 
-		fd = open_device(name, chipset);
+		fd = __drm_open_device(name, chipset);
 		if (fd != -1)
 			return fd;
 	}
@@ -392,13 +406,13 @@ static int __open_driver_exact(const char *name, unsigned int chipset)
 {
 	int fd;
 
-	fd = open_device(name, chipset);
+	fd = __drm_open_device(name, chipset);
 	if (fd != -1)
 		return fd;
 
 	drm_load_module(chipset);
 
-	return open_device(name, chipset);
+	return __drm_open_device(name, chipset);
 }
 
 /*

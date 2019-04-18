@@ -3,8 +3,10 @@
  * Copyright(c) 2023 Intel Corporation. All rights reserved.
  */
 
+#include <dirent.h>
 #include <errno.h>
 
+#include "drmtest.h"
 #include "igt_core.h"
 #include "igt_sriov_device.h"
 #include "igt_sysfs.h"
@@ -210,4 +212,49 @@ void igt_sriov_enable_driver_autoprobe(int pf)
 void igt_sriov_disable_driver_autoprobe(int pf)
 {
 	pf_attr_set_u32(pf,  "device/sriov_drivers_autoprobe", false);
+}
+
+/**
+ * igt_sriov_open_vf_drm_device - Open VF DRM device node
+ * @pf: PF device file descriptor
+ * @vf_num: VF number (1-based to identify single VF)
+ *
+ * Open DRM device node for given VF.
+ *
+ * Return:
+ * VF file descriptor or -1 on error.
+ */
+int igt_sriov_open_vf_drm_device(int pf, unsigned int vf_num)
+{
+	char dir_path[PATH_MAX], path[256], dev_name[16];
+	DIR *dir;
+	struct dirent *de;
+	bool found = false;
+
+	if (!vf_num)
+		return -1;
+
+	if (!igt_sysfs_path(pf, path, sizeof(path)))
+		return -1;
+	/* vf_num is 1-based, but virtfn is 0-based */
+	snprintf(dir_path, sizeof(dir_path), "%s/device/virtfn%u/drm", path, vf_num - 1);
+
+	dir = opendir(dir_path);
+	if (!dir)
+		return -1;
+	while ((de = readdir(dir))) {
+		unsigned int card_num;
+
+		if (sscanf(de->d_name, "card%d", &card_num) == 1) {
+			snprintf(dev_name, sizeof(dev_name), "/dev/dri/card%u", card_num);
+			found = true;
+			break;
+		}
+	}
+	closedir(dir);
+
+	if (!found)
+		return -1;
+
+	return __drm_open_device(dev_name, DRIVER_ANY);
 }
