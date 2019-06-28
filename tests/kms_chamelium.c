@@ -418,7 +418,8 @@ retry:
 	 * time requirement is meet.
 	 */
 	delta_nsec = igt_nsec_elapsed(&begin);
-	if (delta_nsec > (NSEC_PER_SEC * 1.2f)) {
+	igt_debug("delta_nsec=%lu\n", delta_nsec);
+	if (delta_nsec > (NSEC_PER_SEC * 1.2f) && status != DRM_MODE_CONNECTED) {
 		igt_assert_f(retries != 5, "Test preempted too many times");
 		retries++;
 
