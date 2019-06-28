@@ -369,7 +369,6 @@ static void
 test_late_aux_wa(data_t *data, struct chamelium_port *port)
 {
 	struct udev_monitor *mon = igt_watch_hotplug();
-	drmModeConnection status;
 	struct timespec begin;
 	uint64_t delta_nsec;
 	uint8_t retries = 0;
@@ -390,8 +389,7 @@ retry:
 
 	/* Give some time to kernel try to process hotplug but it should fail */
 	igt_hotplug_detected(mon, FAST_HOTPLUG_TIMEOUT);
-	status = connector_status_get(data, port);
-	igt_assert(status == DRM_MODE_DISCONNECTED);
+	igt_assert(connector_status_get(data, port) == DRM_MODE_DISCONNECTED);
 
 	/*
 	 * Enable the DDC line and the kernel workaround should reprobe and
@@ -399,10 +397,6 @@ retry:
 	 */
 	chamelium_port_set_ddc_state(data->chamelium, port, true);
 	igt_assert(chamelium_port_get_ddc_state(data->chamelium, port));
-
-	igt_hotplug_detected(mon, FAST_HOTPLUG_TIMEOUT);
-	status = connector_status_get(data, port);
-
 	/*
 	 * i915 uses the maximum timeout that each platform supports as timeout
 	 * to aux transactions, this timeout can vary from 1.6msec to 4msec and
@@ -419,7 +413,7 @@ retry:
 	 */
 	delta_nsec = igt_nsec_elapsed(&begin);
 	igt_debug("delta_nsec=%lu\n", delta_nsec);
-	if (delta_nsec > (NSEC_PER_SEC * 1.2f) && status != DRM_MODE_CONNECTED) {
+	if (delta_nsec > (NSEC_PER_SEC * 1.2f)) {
 		igt_assert_f(retries != 5, "Test preempted too many times");
 		retries++;
 
@@ -427,9 +421,11 @@ retry:
 		chamelium_unplug(data->chamelium, port);
 		igt_hotplug_detected(mon, FAST_HOTPLUG_TIMEOUT);
 		goto retry;
+
 	}
 
-	igt_assert(status == DRM_MODE_CONNECTED);
+	igt_hotplug_detected(mon, FAST_HOTPLUG_TIMEOUT);
+	igt_assert(connector_status_get(data, port) == DRM_MODE_CONNECTED);
 }
 
 static void
