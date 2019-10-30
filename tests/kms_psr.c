@@ -595,19 +595,23 @@ igt_main_args("", long_options, help_str, opt_handler, &data)
 
 			data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
 			test_setup(&data);
+			igt_kmsg("after test_setup()\n");
 
 			pipe_crc = igt_pipe_crc_new(data.drm_fd,
 						    kmstest_get_crtc_idx(res, data.crtc_id),
 						    INTEL_PIPE_CRC_SOURCE_AUTO);
+			igt_kmsg("after igt_pipe_crc_new()\n");
 			/* Mode should only change after igt_pipe_crc_start() */
 			igt_assert(psr_enabled(data.debugfs_fd, &mode));
 			igt_assert(mode == data.op_psr_mode);
+			igt_kmsg("after psr_enabled()\n");
 
 			/*
 			 * CRC can not be calculated while PSR2 is active so
 			 * kernel should changed mode to PSR1
 			 */
 			igt_pipe_crc_start(pipe_crc);
+			igt_kmsg("after igt_pipe_crc_start()\n");
 			igt_assert(psr_enabled(data.debugfs_fd, &mode));
 			igt_assert(mode == PSR_MODE_1);
 
@@ -623,19 +627,24 @@ igt_main_args("", long_options, help_str, opt_handler, &data)
 			for (i = 1; i < sizeof(crcs) / sizeof(crcs[0]); i++)
 				igt_assert(igt_check_crc_equal(&crcs[0], &crcs[i]));
 
+			igt_kmsg("after read all crcs()\n");
+
 			/* Try to change mode while pipe CRC is active */
 			psr_enable_if_enabled(&data);
 			igt_assert(psr_enabled(data.debugfs_fd, &mode));
 			igt_assert(mode == PSR_MODE_1);
+			igt_kmsg("after try to change psr mode again()\n");
 
 			/* Mode should be restored after igt_pipe_crc_stop() */
 			igt_pipe_crc_stop(pipe_crc);
+			igt_kmsg("after igt_pipe_crc_stop()\n");
 			igt_assert(psr_enabled(data.debugfs_fd, &mode));
 			igt_assert(mode == data.op_psr_mode);
 
 			igt_pipe_crc_free(pipe_crc);
 			drmModeFreeResources(res);
 			test_cleanup(&data);
+			igt_kmsg("after test_cleanup()\n");
 		}
 	}
 
