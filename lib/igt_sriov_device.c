@@ -258,3 +258,32 @@ int igt_sriov_open_vf_drm_device(int pf, unsigned int vf_num)
 
 	return __drm_open_device(dev_name, DRIVER_ANY);
 }
+
+/**
+ * igt_sriov_is_vf_drm_driver_probed - Check if VF DRM driver is probed
+ * @pf: PF device file descriptor
+ * @vf_num: VF number (1-based to identify single VF)
+ *
+ * Verify if DRM driver is bound to VF device. Probe check is based on
+ * existence of the DRM subsystem attribute in sysfs.
+ *
+ * Returns:
+ * True if VF has DRM driver loaded, false if not.
+ */
+bool igt_sriov_is_vf_drm_driver_probed(int pf, unsigned int vf_num)
+{
+	char path[PATH_MAX];
+	int sysfs;
+	bool ret;
+
+	igt_assert(vf_num > 0);
+
+	sysfs = igt_sysfs_open(pf);
+	igt_assert_fd(sysfs);
+	/* vf_num is 1-based, but virtfn is 0-based */
+	snprintf(path, sizeof(path), "device/virtfn%u/drm", vf_num - 1);
+	ret = igt_sysfs_has_attr(sysfs, path);
+	close(sysfs);
+
+	return ret;
+}
