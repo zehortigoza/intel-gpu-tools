@@ -396,10 +396,13 @@ static void test_setup(data_t *data)
 
 static void dpms_off_on(data_t *data)
 {
+	manual("regular");
 	kmstest_set_connector_dpms(data->drm_fd, data->output->config.connector,
 				   DRM_MODE_DPMS_OFF);
+	manual("DPMS OFF");
 	kmstest_set_connector_dpms(data->drm_fd, data->output->config.connector,
 				   DRM_MODE_DPMS_ON);
+	manual("screen ON");
 }
 
 static int opt_handler(int opt, int opt_index, void *_data)
