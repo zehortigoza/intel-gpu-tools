@@ -944,9 +944,9 @@ static int create_bo_for_fb(struct igt_fb *fb)
 
 		if (is_i915_device(fd)) {
 			fb->gem_handle = gem_create(fd, fb->size);
-			gem_set_tiling(fd, fb->gem_handle,
+			/*gem_set_tiling(fd, fb->gem_handle,
 				       igt_fb_mod_to_tiling(fb->modifier),
-				       fb->strides[0]);
+				       fb->strides[0]);*/
 		} else if (is_vc4_device(fd)) {
 			fb->gem_handle = igt_vc4_create_bo(fd, fb->size);
 
