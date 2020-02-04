@@ -2159,6 +2159,16 @@ static void format_draw_subtest(const struct test_mode *t)
 		badformat_subtest(t);
 }
 
+static bool tiling_is_valid(int feature_flags, enum tile_type tile)
+{
+	int devid = intel_get_drm_devid(drm.fd);
+
+	if (tile == TILE_LINEAR)
+		return false;
+
+	return true;
+}
+
 /*
  * slow_draw - sleep a little bit between drawing operations
  *
@@ -2954,22 +2964,22 @@ static void stridechange_subtest(const struct test_mode *t)
 }
 
 /**
- * tilingchange - alternate between tiled and untiled in multiple ways
+ * tiling_disable_fbc_subtest - Check that tiling causes FBC to be disabled
  *
  * METHOD
- *   This test alternates between tiled and untiled frontbuffers of the same
- *   size and format through multiple different APIs: the page flip IOCTL,
- *   normal modesets and the plane APIs.
+ *   This test alternates between a FBC supported and non-supported tiled
+ *   frontbuffers of the same size and format through multiple different
+ *   APIs: the page flip IOCTL, normal modesets and the plane APIs.
  *
  * EXPECTED RESULTS
- *   FBC gets properly disabled for the untiled FB and reenabled for the
- *   tiled FB.
+ *   FBC gets properly disabled for the non-supported tiling and reenabled for
+ *   the supported tiling.
  *
  * FAILURES
  *   Bad Kernels may somehow leave FBC enabled, which can cause FIFO underruns
  *   that lead to CRC assertion failures.
  */
-static void tilingchange_subtest(const struct test_mode *t)
+static void tiling_disable_fbc_subtest(const struct test_mode *t)
 {
 	struct igt_fb new_fb, *old_fb;
 	struct modeset_params *params = pick_params(t);
@@ -2980,13 +2990,13 @@ static void tilingchange_subtest(const struct test_mode *t)
 	old_fb = params->primary.fb;
 
 	create_fb(t->format, params->primary.fb->width, params->primary.fb->height,
-		  LOCAL_DRM_FORMAT_MOD_NONE, t->plane, &new_fb);
+		  t->tile, t->plane, &new_fb);
 	fill_fb(&new_fb, COLOR_PRIM_BG);
 
 	for (flip_type = 0; flip_type < FLIP_COUNT; flip_type++) {
 		igt_debug("Flip type: %d\n", flip_type);
 
-		/* Set a buffer with no tiling. */
+		/* Set a buffer with new tiling. */
 		params->primary.fb = &new_fb;
 		page_flip_for_params(params, flip_type);
 		do_assertions(ASSERT_FBC_DISABLED);
@@ -3486,8 +3496,18 @@ igt_main_args("", long_options, help_str, opt_handler, NULL)
 			igt_subtest_f("%s-stridechange", feature_str(t.feature))
 				stridechange_subtest(&t);
 
-			igt_subtest_f("%s-tilingchange", feature_str(t.feature))
-				tilingchange_subtest(&t);
+			for (t.tile = TILE_LINEAR; t.tile < TILE_COUNT;
+			     t.tile++) {
+				igt_subtest_f("%s-tiling-%s",
+					      feature_str(t.feature),
+					      tile_str(t.tile)) {
+
+					if (tiling_is_valid(t.feature, t.tile))
+						draw_subtest(&t);
+					else
+						tiling_disable_fbc_subtest(&t);
+				}
+			}
 		}
 
 		if ((t.feature & FEATURE_PSR) || (t.feature & FEATURE_DRRS))
