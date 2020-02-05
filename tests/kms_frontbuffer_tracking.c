@@ -3508,6 +3508,7 @@ igt_main_args("", long_options, help_str, opt_handler, NULL)
 						tiling_disable_fbc_subtest(&t);
 				}
 			}
+			t.tile = opt.tiling;
 		}
 
 		if ((t.feature & FEATURE_PSR) || (t.feature & FEATURE_DRRS))
