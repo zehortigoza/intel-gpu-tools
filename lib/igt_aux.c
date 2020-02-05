@@ -756,6 +756,8 @@ static void suspend_via_rtcwake(enum igt_suspend_state state)
 	char cmd[128];
 	int delay, ret;
 
+	return;
+
 	igt_assert(state < SUSPEND_STATE_NUM);
 
 	delay = igt_get_autoresume_delay(state);
@@ -853,6 +855,8 @@ void igt_system_suspend_autoresume(enum igt_suspend_state state,
 {
 	int power_dir;
 	enum igt_suspend_test orig_test;
+
+	igt_require(false);
 
 	igt_require((power_dir = open("/sys/power", O_RDONLY)) >= 0);
 	igt_require(get_supported_suspend_states(power_dir) & (1 << state));
