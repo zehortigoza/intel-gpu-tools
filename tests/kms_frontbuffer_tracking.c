@@ -2163,7 +2163,7 @@ static bool tiling_is_valid(int feature_flags, enum tile_type tile)
 {
 	int devid = intel_get_drm_devid(drm.fd);
 
-	if (tile == TILE_LINEAR)
+	if (tile == TILE_LINEAR && !AT_LEAST_GEN(devid, 11))
 		return false;
 
 	return true;
