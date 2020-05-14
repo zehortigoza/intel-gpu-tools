@@ -396,6 +396,7 @@ const char * const igt_plane_prop_names[IGT_NUM_PLANE_PROPS] = {
 	[IGT_PLANE_PIXEL_BLEND_MODE] = "pixel blend mode",
 	[IGT_PLANE_ALPHA] = "alpha",
 	[IGT_PLANE_ZPOS] = "zpos",
+	[IGT_PLANE_DAMAGE_CLIPS] = "FB_DAMAGE_CLIPS",
 };
 
 const char * const igt_crtc_prop_names[IGT_NUM_CRTC_PROPS] = {
