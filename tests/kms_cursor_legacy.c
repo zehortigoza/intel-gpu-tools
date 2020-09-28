@@ -521,6 +521,7 @@ static void basic_flip_cursor(igt_display_t *display,
 
 	for (i = 0; i < 25; i++) {
 		bool miss;
+		unsigned int vblank;
 
 		/* Bind the cursor first to warm up */
 		do_ioctl(display->drm_fd, DRM_IOCTL_MODE_CURSOR, &arg[0]);
@@ -545,8 +546,10 @@ static void basic_flip_cursor(igt_display_t *display,
 				break;
 			}
 
-			delta = kmstest_get_vblank(display->drm_fd, pipe, 0) - vblank_start;
+			vblank = kmstest_get_vblank(display->drm_fd, pipe, 0);
+			delta = vblank - vblank_start;
 			miss = delta != 0;
+			igt_info("FLIP_BEFORE_CURSOR before vblank=%u delta=%u miss=%i\n", vblank, delta, miss);
 
 			do_ioctl(display->drm_fd, DRM_IOCTL_MODE_CURSOR, &arg[0]);
 			break;
@@ -568,7 +571,9 @@ static void basic_flip_cursor(igt_display_t *display,
 			}
 		}
 
-		delta = kmstest_get_vblank(display->drm_fd, pipe, 0) - vblank_start;
+		vblank = kmstest_get_vblank(display->drm_fd, pipe, 0);
+		delta = vblank - vblank_start;
+		igt_info("FLIP_BEFORE_CURSOR after vblank=%u delta=%u cursor_slowpath(mode)=%i\n", vblank, delta, cursor_slowpath(mode));
 
 		if (spin) {
 			struct pollfd pfd = { display->drm_fd, POLLIN };
