@@ -263,6 +263,9 @@ static bool update_screen_and_test(data_t *data)
 			data->cursor_rect.x2 = data->mode->hdisplay;
 			data->cursor_rect.y1 = 0;
 			data->cursor_rect.y2 = SQUARE_SIZE;
+			igt_info("cursor x1=%i y1=%i x2=%i y2=%i\n",
+				 data->cursor_rect.x1, data->cursor_rect.y1,
+				 data->cursor_rect.x2, data->cursor_rect.y2);
 		}
 
 		igt_plane_set_position(data->cursor, data->cursor_rect.x1,
