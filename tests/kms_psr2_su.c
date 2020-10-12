@@ -235,17 +235,13 @@ static bool update_screen_and_test(data_t *data)
 	if (data->diagonal_move) {
 		data->rect.y1++;
 		data->rect.y2++;
-		if (data->rect.x2 > data->mode->hdisplay ||
-		    data->rect.y2 > data->mode->vdisplay) {
-			data->rect.x1 = data->rect.y1 = 0;
-			data->rect.x2 = data->rect.y2 = SQUARE_SIZE;
-		}
-	} else {
-		if (data->rect.x2 > data->mode->hdisplay) {
-			data->rect.x1 = 0;
-			data->rect.x2 = SQUARE_SIZE;
-		}
 	}
+	if (data->rect.x2 > data->mode->hdisplay ||
+	    data->rect.y2 > data->mode->vdisplay) {
+		data->rect.x1 = data->rect.y1 = 0;
+		data->rect.x2 = data->rect.y2 = SQUARE_SIZE;
+	}
+
 	*rect_in_fb = data->rect;
 
 	/* paint red rect */
@@ -254,11 +250,19 @@ static bool update_screen_and_test(data_t *data)
 	primary_damage_clips[1] = data->rect;
 
 	if (data->with_cursor) {
-		data->cursor_rect.x1++;
-		data->cursor_rect.x2++;
-		if (data->cursor_rect.x2 > data->mode->hdisplay) {
-			data->cursor_rect.x1 = 0;
-			data->cursor_rect.x2 = CUR_SIZE;
+		data->cursor_rect.x1--;
+		data->cursor_rect.x2--;
+
+		if (data->diagonal_move) {
+			data->cursor_rect.y1++;
+			data->cursor_rect.y2++;
+		}
+		if (data->cursor_rect.x1 <= 0 ||
+		    data->cursor_rect.y2 > data->mode->vdisplay) {
+			data->cursor_rect.x1 = data->mode->hdisplay - SQUARE_SIZE;
+			data->cursor_rect.x2 = data->mode->hdisplay;
+			data->cursor_rect.y1 = 0;
+			data->cursor_rect.y2 = SQUARE_SIZE;
 		}
 
 		igt_plane_set_position(data->cursor, data->cursor_rect.x1,
