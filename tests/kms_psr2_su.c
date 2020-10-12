@@ -259,10 +259,10 @@ static bool update_screen_and_test(data_t *data)
 		}
 		if (data->cursor_rect.x1 <= 0 ||
 		    data->cursor_rect.y2 > data->mode->vdisplay) {
-			data->cursor_rect.x1 = data->mode->hdisplay - SQUARE_SIZE;
+			data->cursor_rect.x1 = data->mode->hdisplay - CUR_SIZE;
 			data->cursor_rect.x2 = data->mode->hdisplay;
 			data->cursor_rect.y1 = 0;
-			data->cursor_rect.y2 = SQUARE_SIZE;
+			data->cursor_rect.y2 = CUR_SIZE;
 			igt_info("cursor x1=%i y1=%i x2=%i y2=%i\n",
 				 data->cursor_rect.x1, data->cursor_rect.y1,
 				 data->cursor_rect.x2, data->cursor_rect.y2);
