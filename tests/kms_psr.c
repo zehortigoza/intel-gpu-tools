@@ -403,7 +403,8 @@ static void setup_test_plane(data_t *data, int test_plane)
 		break;
 	}
 
-	igt_display_commit(&data->display);
+	// No need to commit from inherited state to disable and then to test state
+	//igt_display_commit(&data->display);
 
 	igt_plane_set_fb(primary, &data->fb_green);
 	igt_display_commit(&data->display);
@@ -428,7 +429,7 @@ static void test_setup(data_t *data)
 
 	psr_enable_if_enabled(data);
 	setup_test_plane(data, data->test_plane_id);
-	igt_assert(psr_wait_entry_if_enabled(data));
+	//igt_assert(psr_wait_entry_if_enabled(data));
 }
 
 static void dpms_off_on(data_t *data)
@@ -565,6 +566,74 @@ igt_main_args("", long_options, help_str, opt_handler, &data)
 			run_test(&data);
 			test_cleanup(&data);
 		}
+	}
+
+	// status: underrun
+	igt_subtest_f("setup-teardown") {
+		data.op_psr_mode = PSR_MODE_2;
+		data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
+
+		// Allocates 2 framebuffers(green and white) and set the green one
+		test_setup(&data);
+
+		// Turn off pipe
+		test_cleanup(&data);
+	}
+
+	// status: no underrun
+	igt_subtest_f("setup-deep-sleep-teardown") {
+		data.op_psr_mode = PSR_MODE_2;
+		data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
+
+		// Allocates 2 framebuffers(green and white) and set the green one
+		test_setup(&data);
+
+		// Waits PSR2 to go to deep sleep
+		igt_assert(psr_wait_entry_if_enabled(&data));
+
+		// Turn off pipe
+		test_cleanup(&data);
+	}
+
+	// status: underrun
+	igt_subtest_f("setup-deep-sleep-flip-teardown") {
+		data.op_psr_mode = PSR_MODE_2;
+		data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
+
+		// Allocates 2 framebuffers(green and white) and set the green one
+		test_setup(&data);
+
+		// Waits PSR2 to go to deep sleep
+		igt_assert(psr_wait_entry_if_enabled(&data));
+
+		// Page flip
+		igt_plane_set_fb(data.test_plane, &data.fb_white);
+		igt_display_commit(&data.display);
+
+		// Turn off pipe
+		test_cleanup(&data);
+	}
+
+	// status: no underrun
+	igt_subtest_f("setup-deep-sleep-flip-deep-sleep-teardown") {
+		data.op_psr_mode = PSR_MODE_2;
+		data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
+
+		// Allocates 2 framebuffers(green and white) and set the green one
+		test_setup(&data);
+
+		// Waits PSR2 to go to deep sleep
+		igt_assert(psr_wait_entry_if_enabled(&data));
+
+		// Page flip
+		igt_plane_set_fb(data.test_plane, &data.fb_white);
+		igt_display_commit(&data.display);
+
+		// Waits PSR2 to go to deep sleep
+		igt_assert(psr_wait_entry_if_enabled(&data));
+
+		// Turn off pipe
+		test_cleanup(&data);
 	}
 
 	igt_fixture {
