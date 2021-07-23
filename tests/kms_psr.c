@@ -576,11 +576,6 @@ igt_main_args("", long_options, help_str, opt_handler, &data)
 		// Allocates 2 framebuffers(green and white) and set the green one
 		test_setup(&data);
 
-		// disable PSR
-		igt_kmsg(KMSG_INFO "will disable psr\n");
-		psr_disable(data.drm_fd, data.debugfs_fd);
-		igt_kmsg(KMSG_INFO "psr disabled\n");
-
 		// Turn off pipe
 		test_cleanup(&data);
 	}
@@ -595,11 +590,6 @@ igt_main_args("", long_options, help_str, opt_handler, &data)
 
 		// Waits PSR2 to go to deep sleep
 		igt_assert(psr_wait_entry_if_enabled(&data));
-
-		// disable PSR
-		igt_kmsg(KMSG_INFO "will disable psr\n");
-		psr_disable(data.drm_fd, data.debugfs_fd);
-		igt_kmsg(KMSG_INFO "psr disabled\n");
 
 		// Turn off pipe
 		test_cleanup(&data);
@@ -619,11 +609,6 @@ igt_main_args("", long_options, help_str, opt_handler, &data)
 		// Page flip
 		igt_plane_set_fb(data.test_plane, &data.fb_white);
 		igt_display_commit(&data.display);
-
-		// disable PSR
-		igt_kmsg(KMSG_INFO "will disable psr\n");
-		psr_disable(data.drm_fd, data.debugfs_fd);
-		igt_kmsg(KMSG_INFO "psr disabled\n");
 
 		// Turn off pipe
 		test_cleanup(&data);
@@ -646,11 +631,6 @@ igt_main_args("", long_options, help_str, opt_handler, &data)
 
 		// Waits PSR2 to go to deep sleep
 		igt_assert(psr_wait_entry_if_enabled(&data));
-
-		// disable PSR
-		igt_kmsg(KMSG_INFO "will disable psr\n");
-		psr_disable(data.drm_fd, data.debugfs_fd);
-		igt_kmsg(KMSG_INFO "psr disabled\n");
 
 		// Turn off pipe
 		test_cleanup(&data);
