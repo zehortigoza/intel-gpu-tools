@@ -34,8 +34,6 @@
 IGT_TEST_DESCRIPTION("Test PSR2 selective update");
 
 #define SQUARE_SIZE 100
-/* each selective update block is 4 lines tall */
-#define EXPECTED_NUM_SU_BLOCKS ((SQUARE_SIZE / 4) + (SQUARE_SIZE % 4 ? 1 : 0))
 
 /*
  * Minimum is 15 as the number of frames to active PSR2 could be configured
@@ -49,6 +47,13 @@ enum operations {
 	FRONTBUFFER,
 	LAST
 };
+
+static int expected_num_su_blocks(int drm_fd)
+{
+	int block_len = psr_selective_update_block_lenght(drm_fd);
+
+	return ((SQUARE_SIZE / block_len) + (SQUARE_SIZE % block_len ? 1 : 0));
+}
 
 static const char *op_str(enum operations op)
 {
@@ -144,6 +149,7 @@ static void prepare(data_t *data)
 
 static bool update_screen_and_test(data_t *data)
 {
+	const uint16_t expected_blocks = expected_num_su_blocks(data->drm_fd);
 	uint16_t su_blocks;
 	bool ret = false;
 
@@ -188,7 +194,7 @@ static bool update_screen_and_test(data_t *data)
 	}
 
 	if (psr2_wait_su(data->debugfs_fd, &su_blocks)) {
-		ret = su_blocks == EXPECTED_NUM_SU_BLOCKS;
+		ret = su_blocks == expected_blocks;
 
 		if (!ret)
 			igt_debug("Not matching SU blocks read: %u\n", su_blocks);

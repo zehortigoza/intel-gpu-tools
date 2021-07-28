@@ -24,6 +24,7 @@
 #include "igt_params.h"
 #include "igt_psr.h"
 #include "igt_sysfs.h"
+#include "intel_chipset.h"
 #include <errno.h>
 
 bool psr_disabled_check(int debugfs_fd)
@@ -44,6 +45,15 @@ bool psr2_selective_fetch_check(int debugfs_fd)
 				sizeof(buf));
 
 	return strstr(buf, "PSR2 selective fetch: enabled");
+}
+
+uint16_t psr_selective_update_block_lenght(int drm_fd)
+{
+	if (IS_ALDERLAKE_P(intel_get_drm_devid(drm_fd)) ||
+	    intel_display_ver(intel_get_drm_devid(drm_fd)) > 13)
+	    return 1;
+
+	return 4;
 }
 
 static bool psr_active_check(int debugfs_fd, enum psr_mode mode)
