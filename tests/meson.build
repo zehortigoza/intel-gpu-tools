@@ -63,6 +63,7 @@ test_progs = [
 	'kms_prop_blob',
 	'kms_properties',
 	'kms_psr',
+	'kms_psr_test',
 	'kms_psr2_su',
 	'kms_psr2_sf',
 	'kms_pwrite_crc',
