@@ -233,6 +233,7 @@ i915_progs = [
 	'kms_mmap_write_crc',
 	'kms_pipe_b_c_ivb',
 	'kms_psr',
+	'kms_psr_test',
 	'kms_psr2_su',
 	'kms_psr2_sf',
 	'kms_pwrite_crc',
