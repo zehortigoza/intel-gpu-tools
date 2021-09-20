@@ -45,11 +45,11 @@ static void setup_plane_on_off(data_t *data)
 	int r;
 
 	igt_create_color_fb(data->drm_fd, data->mode->hdisplay,
-			    data->mode->vdisplay, DRM_FORMAT_XRGB8888,
+			    data->mode->vdisplay, DRM_FORMAT_NV12,
 			    I915_FORMAT_MOD_X_TILED, 1.0, 0.0, 0.0,
 			    &data->fbs[0]);
 	igt_create_color_fb(data->drm_fd, data->mode->hdisplay / 2,
-			    data->mode->vdisplay / 2, DRM_FORMAT_XRGB8888,
+			    data->mode->vdisplay / 2, DRM_FORMAT_NV12,
 			    I915_FORMAT_MOD_X_TILED, 1.0, 1.0, 1.0,
 			    &data->fbs[1]);
 
@@ -83,7 +83,7 @@ static void setup_test(data_t *data)
 
 		igt_create_color_fb(data->drm_fd,
 				    data->mode->hdisplay, data->mode->vdisplay,
-				    DRM_FORMAT_XRGB8888,
+				    DRM_FORMAT_NV12,
 				    I915_FORMAT_MOD_X_TILED,
 				    0.0, 0.0, 0.0,
 				    &data->fbs[i]);
