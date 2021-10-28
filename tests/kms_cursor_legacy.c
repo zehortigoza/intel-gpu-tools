@@ -1421,7 +1421,7 @@ igt_main
 		     "on single pipe with different modes, priority and number of processes");
 	igt_subtest_group {
 		enum pipe n;
-		for_each_pipe_static(n) {
+		for (n = PIPE_A; n == PIPE_A; n++) {
 			errno = 0;
 
 			igt_fixture {
