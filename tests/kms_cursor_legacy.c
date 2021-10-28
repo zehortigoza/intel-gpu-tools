@@ -27,6 +27,7 @@
 
 #include "i915/gem.h"
 #include "igt.h"
+#include "igt_psr.h"
 #include "igt_rand.h"
 #include "igt_stats.h"
 
@@ -507,6 +508,41 @@ enum basic_flip_cursor {
 
 #define BASIC_BUSY 0x1
 
+/*
+ * Because the way PSR2 selective fetch works, cursor planes might be added to
+ * commits that only contains updates to other planes.
+ * This will cause future cursor updates to be syncronized to first commit
+ * and causing vblank counter tests to fail.
+ * So here switching back to PSR1 as only tigerlake supports PSR2 HW tracking
+ * and selective fetch.
+ */
+static bool i915_disable_selective_fetch(igt_display_t *display)
+{
+	bool ret = false;
+	int debugfs_fd;
+
+	if (!is_i915_device(display->drm_fd))
+		return ret;
+
+	debugfs_fd = igt_debugfs_dir(display->drm_fd);
+	if (psr2_selective_fetch_check(debugfs_fd))
+		ret = true;
+
+	if (ret)
+		psr_enable(display->drm_fd, debugfs_fd, PSR_MODE_1);
+
+	close(debugfs_fd);
+	return ret;
+}
+
+static void i915_restore_selective_fetch(igt_display_t *display)
+{
+	int debugfs_fd = igt_debugfs_dir(display->drm_fd);
+
+	psr_enable(display->drm_fd, debugfs_fd, PSR_MODE_2);
+	close(debugfs_fd);
+}
+
 static void basic_flip_cursor(igt_display_t *display,
 			      enum flip_test mode,
 			      enum basic_flip_cursor order,
@@ -520,6 +556,7 @@ static void basic_flip_cursor(igt_display_t *display,
 	uint64_t ahnd = (flags & BASIC_BUSY) ? get_reloc_ahnd(display->drm_fd, 0) : 0;
 	igt_spin_t *spin;
 	int i, miss1 = 0, miss2 = 0, delta;
+	bool restore_sel_fetch;
 
 	if (mode >= flip_test_atomic)
 		igt_require(display->is_atomic);
@@ -533,6 +570,7 @@ static void basic_flip_cursor(igt_display_t *display,
 	prepare_flip_test(display, mode, pipe, pipe, arg, &fb_info, &argb_fb, &cursor_fb2);
 
 	igt_display_commit2(display, display->is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY);
+	restore_sel_fetch = i915_disable_selective_fetch(display);
 
 	/* Quick sanity check that we can update a cursor in a single vblank */
 	vblank_start = kmstest_get_vblank(display->drm_fd, pipe, DRM_VBLANK_NEXTONMISS);
@@ -626,6 +664,8 @@ static void basic_flip_cursor(igt_display_t *display,
 	if (miss1 || miss2)
 		igt_info("Failed to evade %i vblanks and missed %i page flips\n", miss1, miss2);
 
+	if (restore_sel_fetch)
+		i915_restore_selective_fetch(display);
 	igt_remove_fb(display->drm_fd, &fb_info);
 	igt_remove_fb(display->drm_fd, &cursor_fb);
 
@@ -675,6 +715,7 @@ static void flip_vs_cursor(igt_display_t *display, enum flip_test mode, int nloo
 	enum pipe pipe = find_connected_pipe(display, false);
 	volatile unsigned long *shared;
 	cpu_set_t mask, oldmask;
+	bool restore_sel_fetch;
 
 	if (mode >= flip_test_atomic)
 		igt_require(display->is_atomic);
@@ -688,6 +729,7 @@ static void flip_vs_cursor(igt_display_t *display, enum flip_test mode, int nloo
 	prepare_flip_test(display, mode, pipe, pipe, arg, &fb_info, &argb_fb, &cursor_fb2);
 
 	igt_display_commit2(display, display->is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY);
+	restore_sel_fetch = i915_disable_selective_fetch(display);
 
 	if (nloops)
 		target = get_cursor_updates_per_vblank(display, pipe, &arg[0]);
@@ -776,6 +818,8 @@ static void flip_vs_cursor(igt_display_t *display, enum flip_test mode, int nloo
 		sched_setaffinity(0, sizeof(oldmask), &oldmask);
 	}
 
+	if (restore_sel_fetch)
+		i915_restore_selective_fetch(display);
 	igt_remove_fb(display->drm_fd, &fb_info);
 	igt_remove_fb(display->drm_fd, &cursor_fb);
 
@@ -892,6 +936,7 @@ static void two_screens_flip_vs_cursor(igt_display_t *display, int nloops, bool 
 	volatile unsigned long *shared;
 	unsigned flags = 0, vblank_start;
 	struct drm_event_vblank vbl;
+	bool restore_sel_fetch;
 	int ret;
 
 	if (modeset) {
@@ -930,8 +975,8 @@ static void two_screens_flip_vs_cursor(igt_display_t *display, int nloops, bool 
 
 	arg2[1].x = arg2[1].y = 192;
 
-
 	igt_display_commit2(display, display->is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY);
+	restore_sel_fetch = i915_disable_selective_fetch(display);
 
 	igt_fork(child, 2) {
 		struct drm_mode_cursor *arg = child ? arg2 : arg1;
@@ -1044,6 +1089,9 @@ done:
 	shared[0] = 1;
 	igt_waitchildren();
 
+	if (restore_sel_fetch)
+		i915_restore_selective_fetch(display);
+
 	igt_remove_fb(display->drm_fd, &fb_info);
 	igt_remove_fb(display->drm_fd, &fb2_info);
 	igt_remove_fb(display->drm_fd, &cursor_fb);
@@ -1062,6 +1110,7 @@ static void cursor_vs_flip(igt_display_t *display, enum flip_test mode, int nloo
 	igt_output_t *output;
 	uint32_t vrefresh;
 	int fail_count;
+	bool restore_sel_fetch;
 
 	if (mode >= flip_test_atomic)
 		igt_require(display->is_atomic);
@@ -1079,6 +1128,7 @@ static void cursor_vs_flip(igt_display_t *display, enum flip_test mode, int nloo
 	prepare_flip_test(display, mode, pipe, pipe, arg, &fb_info, &argb_fb, &cursor_fb2);
 
 	igt_display_commit2(display, display->is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY);
+	restore_sel_fetch = i915_disable_selective_fetch(display);
 
 	target = get_cursor_updates_per_vblank(display, pipe, &arg[0]);
 
@@ -1134,6 +1184,9 @@ static void cursor_vs_flip(igt_display_t *display, enum flip_test mode, int nloo
 		}
 	}
 
+	if (restore_sel_fetch)
+		i915_restore_selective_fetch(display);
+
 	igt_assert_f(fail_count == 0,
 		     "Failed to meet cursor update expectations in %d out of %d iterations\n",
 		     fail_count, nloops);
@@ -1159,6 +1212,7 @@ static void two_screens_cursor_vs_flip(igt_display_t *display, int nloops, bool 
 		find_connected_pipe(display, true)
 	};
 	igt_output_t *outputs[2];
+	bool restore_sel_fetch;
 
 	shared = mmap(NULL, PAGE_SIZE, PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
 	igt_assert(shared != MAP_FAILED);
@@ -1187,6 +1241,7 @@ static void two_screens_cursor_vs_flip(igt_display_t *display, int nloops, bool 
 	arg[1][1].x =  arg[1][1].y = 192;
 
 	igt_display_commit2(display, display->is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY);
+	restore_sel_fetch = i915_disable_selective_fetch(display);
 
 	target[0] = get_cursor_updates_per_vblank(display, pipe[0], &arg[0][0]);
 	target[1] = get_cursor_updates_per_vblank(display, pipe[1], &arg[1][0]);
@@ -1251,6 +1306,9 @@ static void two_screens_cursor_vs_flip(igt_display_t *display, int nloops, bool 
 				    vrefresh[child]*target[child], vrefresh[child]*target[child] / 2);
 	}
 
+	if (restore_sel_fetch)
+		i915_restore_selective_fetch(display);
+
 	igt_remove_fb(display->drm_fd, &fb_info[0]);
 	igt_remove_fb(display->drm_fd, &fb_info[1]);
 	igt_remove_fb(display->drm_fd, &cursor_fb);
@@ -1265,11 +1323,14 @@ static void flip_vs_cursor_crc(igt_display_t *display, bool atomic)
 	unsigned vblank_start;
 	enum pipe pipe = find_connected_pipe(display, false);
 	igt_crc_t crcs[3];
+	bool restore_sel_fetch;
 
 	if (atomic)
 		igt_require(display->is_atomic);
 
 	igt_require(set_fb_on_crtc(display, pipe, &fb_info));
+
+	restore_sel_fetch = i915_disable_selective_fetch(display);
 
 	igt_create_color_fb(display->drm_fd, 64, 64, DRM_FORMAT_ARGB8888, 0, 1., 1., 1., &cursor_fb);
 	populate_cursor_args(display, pipe, arg, &cursor_fb);
@@ -1307,6 +1368,9 @@ static void flip_vs_cursor_crc(igt_display_t *display, bool atomic)
 
 		igt_assert_crc_equal(&crcs[i], &crcs[2]);
 	}
+
+	if (restore_sel_fetch)
+		i915_restore_selective_fetch(display);
 
 	igt_remove_fb(display->drm_fd, &fb_info);
 	igt_remove_fb(display->drm_fd, &cursor_fb);
