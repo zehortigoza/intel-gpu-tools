@@ -508,6 +508,22 @@ enum basic_flip_cursor {
 
 #define BASIC_BUSY 0x1
 
+static bool i915_psr2_selective_fetch_enabled(igt_display_t *display)
+{
+	bool ret = false;
+	int debugfs_fd;
+
+	if (!is_i915_device(display->drm_fd))
+		return ret;
+
+	debugfs_fd = igt_debugfs_dir(display->drm_fd);
+	if (psr2_selective_fetch_check(debugfs_fd))
+		ret = true;
+
+	close(debugfs_fd);
+	return ret;
+}
+
 /*
  * Because the way PSR2 selective fetch works, cursor planes might be added to
  * commits that only contains updates to other planes.
