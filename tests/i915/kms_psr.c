@@ -379,10 +379,13 @@ static void setup_test_plane(data_t *data, int test_plane)
 {
 	uint32_t white_h, white_v;
 	igt_plane_t *primary, *sprite, *cursor;
+	uint32_t format = DRM_FORMAT_XRGB8888;
 
+	if (test_plane == DRM_PLANE_TYPE_OVERLAY)
+		format = DRM_FORMAT_NV12;
 	igt_create_color_fb(data->drm_fd,
 			    data->mode->hdisplay, data->mode->vdisplay,
-			    DRM_FORMAT_XRGB8888,
+			    format,
 			    I915_FORMAT_MOD_X_TILED,
 			    0.0, 1.0, 0.0,
 			    &data->fb_green);
