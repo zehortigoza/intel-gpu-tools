@@ -280,3 +280,34 @@ bool i915_psr2_selective_fetch_check(int drm_fd)
 
 	return ret;
 }
+
+/*
+ * Check if PSR2 selective fetch is enabled, if yes switch to PSR1 and return
+ * true otherwise return false.
+ */
+bool i915_psr2_selective_fetch_disable(int drm_fd)
+{
+	int debugfs_fd;
+	bool ret = false;
+
+	if (!is_i915_device(drm_fd))
+		return ret;
+
+	debugfs_fd = igt_debugfs_dir(drm_fd);
+	if (psr2_selective_fetch_check(debugfs_fd)) {
+		psr_set(drm_fd, debugfs_fd, PSR_MODE_1);
+		ret = true;
+	}
+
+	close(debugfs_fd);
+	return ret;
+}
+
+void i915_psr2_selective_fetch_restore(int drm_fd)
+{
+	int debugfs_fd;
+
+	debugfs_fd = igt_debugfs_dir(drm_fd);
+	psr_set(drm_fd, debugfs_fd, PSR_MODE_2_SEL_FETCH);
+	close(debugfs_fd);
+}

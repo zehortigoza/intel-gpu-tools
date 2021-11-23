@@ -48,5 +48,7 @@ bool psr2_wait_su(int debugfs_fd, uint16_t *num_su_blocks);
 void psr_print_debugfs(int debugfs_fd);
 
 bool i915_psr2_selective_fetch_check(int drm_fd);
+bool i915_psr2_selective_fetch_disable(int drm_fd);
+void i915_psr2_selective_fetch_restore(int drm_fd);
 
 #endif
