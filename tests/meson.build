@@ -243,6 +243,7 @@ i915_progs = [
 	'kms_psr2_sf',
 	'kms_psr_stress_test',
 	'kms_pwrite_crc',
+	'kms_seamless_mode_switch',
 	'sysfs_clients',
 	'sysfs_defaults',
 	'sysfs_heartbeat_interval',
