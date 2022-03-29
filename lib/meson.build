@@ -76,6 +76,7 @@ lib_sources = [
 	'igt_dummyload.c',
 	'igt_store.c',
 	'uwildmat/uwildmat.c',
+	'igt_drrs.c',
 	'igt_kmod.c',
 	'igt_panfrost.c',
 	'igt_v3d.c',
