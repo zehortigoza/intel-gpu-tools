@@ -790,6 +790,9 @@ static void drrs_print_status(void)
 
 	drrs_write_status(drm.debugfs, prim_mode_params.pipe, buf, sizeof(buf));
 	igt_info("DRRS STATUS :\n%s\n", buf);
+
+	igt_debugfs_simple_read(drm.debugfs, "i915_display_info", buf, sizeof(buf));
+	igt_info("display=%s\n", buf);
 }
 
 static struct timespec fbc_get_last_action(void)
