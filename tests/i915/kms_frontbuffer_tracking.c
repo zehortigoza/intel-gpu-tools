@@ -34,6 +34,7 @@
 #include "i915/gem_create.h"
 #include "igt.h"
 #include "igt_sysfs.h"
+#include "igt_drrs.h"
 #include "igt_psr.h"
 
 IGT_TEST_DESCRIPTION("Test the Kernel's frontbuffer tracking mechanism and "
@@ -723,13 +724,6 @@ static void set_mode_for_params(struct modeset_params *params)
 	igt_display_commit(&drm.display);
 }
 
-static void __debugfs_read(const char *param, char *buf, int len)
-{
-	len = igt_debugfs_simple_read(drm.debugfs, param, buf, len);
-	if (len < 0)
-		igt_assert(len == -ENOENT || len == -ENODEV);
-}
-
 static int __debugfs_write(const char *param, char *buf, int len)
 {
 	return igt_sysfs_write(drm.debugfs, param, buf, len - 1);
@@ -790,47 +784,11 @@ static void drrs_set(unsigned int val)
 		igt_assert_f(ret == (sizeof(buf) - 1), "debugfs_write failed");
 }
 
-static bool is_drrs_high(void)
-{
-	char buf[MAX_DRRS_STATUS_BUF_LEN];
-
-	debugfs_read("i915_drrs_status", buf);
-	return strstr(buf, "DRRS_HIGH_RR");
-}
-
-static bool is_drrs_low(void)
-{
-	char buf[MAX_DRRS_STATUS_BUF_LEN];
-
-	debugfs_read("i915_drrs_status", buf);
-	return strstr(buf, "DRRS_LOW_RR");
-}
-
-static bool is_drrs_supported(void)
-{
-	char buf[MAX_DRRS_STATUS_BUF_LEN];
-
-	debugfs_read("i915_drrs_status", buf);
-	return strcasestr(buf, "DRRS Supported: Yes");
-}
-
-static bool is_drrs_inactive(void)
-{
-	char buf[MAX_DRRS_STATUS_BUF_LEN];
-
-	debugfs_read("i915_drrs_status", buf);
-
-	if (strstr(buf, "DRRS_State: "))
-		return false;
-
-	return true;
-}
-
 static void drrs_print_status(void)
 {
 	char buf[MAX_DRRS_STATUS_BUF_LEN];
 
-	debugfs_read("i915_drrs_status", buf);
+	drrs_write_status(drm.debugfs, prim_mode_params.pipe, buf, sizeof(buf));
 	igt_info("DRRS STATUS :\n%s\n", buf);
 }
 
@@ -951,7 +909,7 @@ static bool fbc_wait_until_enabled(void)
 
 static bool drrs_wait_until_rr_switch_to_low(void)
 {
-	return igt_wait(is_drrs_low(), 5000, 1);
+	return igt_wait(drrs_is_low_refresh_rate(drm.debugfs, prim_mode_params.pipe), 5000, 1);
 }
 
 #define fbc_enable() igt_set_module_param_int(drm.fd, "enable_fbc", 1)
@@ -1460,11 +1418,6 @@ static void setup_drrs(void)
 		return;
 	}
 
-	if (!is_drrs_supported()) {
-		igt_info("Can't test DRRS: Not supported.\n");
-		return;
-	}
-
 	drrs.can_test = true;
 }
 
@@ -1607,7 +1560,7 @@ static void do_status_assertions(int flags)
 	}
 
 	if (flags & ASSERT_DRRS_HIGH) {
-		if (!is_drrs_high()) {
+		if (drrs_is_low_refresh_rate(drm.debugfs, prim_mode_params.pipe)) {
 			drrs_print_status();
 			igt_assert_f(false, "DRRS HIGH\n");
 		}
@@ -1617,7 +1570,7 @@ static void do_status_assertions(int flags)
 			igt_assert_f(false, "DRRS LOW\n");
 		}
 	} else if (flags & ASSERT_DRRS_INACTIVE) {
-		if (!is_drrs_inactive()) {
+		if (drrs_is_active(drm.debugfs, prim_mode_params.pipe)) {
 			drrs_print_status();
 			igt_assert_f(false, "DRRS INACTIVE\n");
 		}
