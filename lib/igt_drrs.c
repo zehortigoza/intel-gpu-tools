@@ -56,6 +56,7 @@ static bool parse(int debugfs_fd, enum pipe pipe, struct drrs_status *status)
 			 strerror(-ret));
 		return false;
 	}
+	igt_info("[%s]\n", buf);
 
 	snprintf(search, sizeof(search), ":pipe %s]:", kmstest_pipe_name(pipe));
 	ch = strstr(buf, search);
