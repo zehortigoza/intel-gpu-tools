@@ -10,7 +10,7 @@
 
 #define INVALIDATES_PER_SEC 15
 #define FLIPS_PER_SEC 30
-#define SECS_TO_COMPLETE_TEST 10
+#define SECS_TO_COMPLETE_TEST 60
 
 #define OVERLAY_SIZE 500
 #define OVERLAY_POSITION 250
@@ -190,7 +190,8 @@ static void prepare(data_t *data)
 	r = timerfd_settime(data->invalidate_timerfd, 0, &interval, NULL);
 	igt_require_f(r != -1, "Error setting invalidate_timerfd\n");
 
-	interval.it_value.tv_nsec = NSEC_PER_SEC / FLIPS_PER_SEC;
+	//interval.it_value.tv_nsec = NSEC_PER_SEC / FLIPS_PER_SEC;
+	interval.it_value.tv_nsec = 0;
 	interval.it_value.tv_sec = 0;
 	interval.it_interval.tv_nsec = interval.it_value.tv_nsec;
 	interval.it_interval.tv_sec = interval.it_value.tv_sec;
