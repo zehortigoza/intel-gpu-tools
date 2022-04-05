@@ -99,9 +99,13 @@ static void setup_output(data_t *data)
 	for (i = 0; i < data->output->config.connector->count_modes; i++) {
 		drmModeModeInfo *m = &data->output->config.connector->modes[i];
 
-		/* TODO: improve checks for downclock */
 		if (m->hdisplay != data->mode->hdisplay ||
-		    m->vdisplay != data->mode->vdisplay)
+		    m->vdisplay != data->mode->vdisplay ||
+		    m->hsync_start != data->mode->hsync_start ||
+		    m->hsync_end != data->mode->hsync_end ||
+		    m->vsync_start != data->mode->vsync_start ||
+		    m->vsync_end != data->mode->vsync_end ||
+		    m->flags != data->mode->flags)
 		    continue;
 
 		if (m->vrefresh >= data->mode->vrefresh)
