@@ -181,6 +181,42 @@ static void prepare(data_t *data)
 	igt_require_f(i != -1, "Error setting complete_timerfd\n");
 }
 
+/*
+ * Check if expected refresh rate matches with the one printed in
+ * i915_display_info
+ */
+static void display_info_check(data_t *data)
+{
+	char buf[1024], search[16], *ch = buf;
+	drmModeModeInfo *mode;
+	int ret;
+
+	mode = data->current_drrs_mode == DRRS_HIGH ? data->mode : data->mode_low;
+
+	ret = igt_debugfs_simple_read(data->debugfs_fd, "i915_display_info", buf,
+				      sizeof(buf));
+	if (ret < 0) {
+		igt_info("Could not read i915_display_info: %s\n",
+			 strerror(-ret));
+		return;
+	}
+
+	/* point ch to pipe used in the test */
+	snprintf(search, sizeof(search), ":pipe %s]:",
+		 kmstest_pipe_name(data->output->pending_pipe));
+	ch = strstr(ch, search);
+	igt_assert(ch);
+
+	/* test if pipe is enabled and active */
+	ch = strstr(ch, "enable=yes, active=yes, mode=");
+	igt_assert(ch);
+
+	/* compare if refresh rate matches with expected */
+	snprintf(search, sizeof(search), "\": %i", mode->vrefresh);
+	ch = strstr(ch, search);
+	igt_assert(ch);
+}
+
 static void switch_refresh_rate(data_t *data)
 {
 	drmModeModeInfo *mode;
@@ -200,6 +236,11 @@ static void switch_refresh_rate(data_t *data)
 
 	igt_info("Switched to %s refresh rate mode.\n",
 		 data->current_drrs_mode == DRRS_HIGH ? "high" : "low");
+
+	igt_assert(drrs_is_active(data->debugfs_fd));
+	igt_assert(drrs_is_low_refresh_rate(data->debugfs_fd) ==
+		   data->current_drrs_mode);
+	display_info_check(data);
 }
 
 static void modeset(data_t *data)
@@ -224,6 +265,11 @@ static void modeset(data_t *data)
 	igt_assert(ret == 0);
 
 	igt_info("Modeset to high refresh rate mode.\n");
+
+	igt_assert(drrs_is_active(data->debugfs_fd));
+	igt_assert(drrs_is_low_refresh_rate(data->debugfs_fd) ==
+		   data->current_drrs_mode);
+	display_info_check(data);
 }
 
 static void flip(data_t *data)
