@@ -184,6 +184,10 @@ static void switch_refresh_rate(data_t *data)
 
 	data->current_drrs_mode = !data->current_drrs_mode;
 
+	/* TODO remove it */
+	igt_kmsg(KMSG_INFO "switch_refresh_rate() mode=%s\n",
+		 data->current_drrs_mode == DRRS_HIGH ? "high" : "low");
+
 	mode = data->current_drrs_mode == DRRS_HIGH ? data->mode : data->mode_low;
 	igt_output_override_mode(data->output, mode);
 	/* IMPORTANT: no DRM_MODE_ATOMIC_ALLOW_MODESET flag set */
@@ -205,6 +209,10 @@ static void modeset(data_t *data)
 	}
 
 	data->current_drrs_mode = !data->current_drrs_mode;
+
+	/* TODO remove it */
+	igt_kmsg(KMSG_INFO "modeset mode=%s\n",
+		 data->current_drrs_mode == DRRS_HIGH ? "high" : "low");
 
 	mode = data->current_drrs_mode == DRRS_HIGH ? data->mode : data->mode_low;
 	igt_output_override_mode(data->output, mode);
