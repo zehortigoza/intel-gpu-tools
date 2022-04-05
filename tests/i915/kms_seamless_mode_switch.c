@@ -24,7 +24,7 @@
 
 #include "igt.h"
 #include "igt_sysfs.h"
-#include "igt_psr.h"
+#include "igt_drrs.h"
 #include <errno.h>
 #include <poll.h>
 #include <stdbool.h>
@@ -333,7 +333,7 @@ igt_main
 
 		setup_output(&data);
 
-		/* TODO: setup state and check if DRRS can be enabled */
+		igt_require(drrs_is_enabled(data.debugfs_fd));
 
 		data.switch_refresh_rate_timerfd = timerfd_create(CLOCK_MONOTONIC, 0);
 		igt_require(data.switch_refresh_rate_timerfd != -1);
