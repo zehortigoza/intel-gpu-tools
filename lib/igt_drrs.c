@@ -24,11 +24,30 @@
 #include "drmtest.h"
 #include "igt_drrs.h"
 
+#define DRRS_STATUS_MAX_LEN 1024
+
+/* New debugfs */
 #define DRRS_TYPE_STR "Type: "
 #define DRRS_ENABLE_STR "Enabled: "
 #define DRRS_ACTIVE_STR "Active: "
 #define DRRS_REFRESH_RATE_STR "Refresh rate: "
-#define DRRS_STATUS_MAX_LEN 1024
+
+/* Old debugfs */
+#define OLD_DRRS_SUPPORTED_STR "DRRS Supported: "
+#define OLD_DRRS_ENABLED_STR "DRRS Enabled: "
+#define OLD_DRRS_REFRESH_RATE_STR "DRRS_State: "
+
+#define DRRS_STR "DRRS"
+#define SUPPORTED_STR "Supported"
+#define YES_STR "yes"
+#define LOW_STR "low"
+#define DRRS_LOW_RR_STR "DRRS_LOW_RR"
+
+static enum {
+	DEBUGFS_UNKNOWN_VERSION = 0,
+	DEBUGFS_NEW_VERSION,
+	DEBUGFS_OLD_VERSION
+} debugfs_version = DEBUGFS_UNKNOWN_VERSION;
 
 static bool parse(int debugfs_fd, const char *name, const char *positive_value)
 {
@@ -51,24 +70,58 @@ static bool parse(int debugfs_fd, const char *name, const char *positive_value)
 	return strncmp(ch, positive_value, strlen(positive_value)) == 0;
 }
 
+static void parse_debugfs_version(int debugfs_fd)
+{
+	if (debugfs_version != DEBUGFS_UNKNOWN_VERSION)
+		return;
+
+	if (parse(debugfs_fd, DRRS_STR " ", SUPPORTED_STR))
+		debugfs_version = DEBUGFS_OLD_VERSION;
+	else
+		debugfs_version = DEBUGFS_NEW_VERSION;
+
+	// TODO remove me
+	igt_info("DRRS debugfs version is %s\n", debugfs_version == DEBUGFS_OLD_VERSION ? "old" : "new");
+}
+
 bool drrs_is_seamless_supported(int debugfs_fd)
 {
+	parse_debugfs_version(debugfs_fd);
+
+	if (debugfs_version == DEBUGFS_OLD_VERSION)
+		return parse(debugfs_fd, OLD_DRRS_SUPPORTED_STR, YES_STR);
+
 	return parse(debugfs_fd, DRRS_TYPE_STR, "seamless");
 }
 
 bool drrs_is_enabled(int debugfs_fd)
 {
-	return parse(debugfs_fd, DRRS_ENABLE_STR, "yes");
+	parse_debugfs_version(debugfs_fd);
+
+	if (debugfs_version == DEBUGFS_OLD_VERSION)
+		return parse(debugfs_fd, OLD_DRRS_ENABLED_STR, YES_STR);
+
+	return parse(debugfs_fd, DRRS_ENABLE_STR, YES_STR);
 }
 
 bool drrs_is_active(int debugfs_fd)
 {
-	return parse(debugfs_fd, DRRS_ACTIVE_STR, "yes");
+	parse_debugfs_version(debugfs_fd);
+
+	if (debugfs_version == DEBUGFS_OLD_VERSION)
+		return parse(debugfs_fd, OLD_DRRS_ENABLED_STR, YES_STR);
+
+	return parse(debugfs_fd, DRRS_ACTIVE_STR, YES_STR);
 }
 
 bool drrs_is_low_refresh_rate(int debugfs_fd)
 {
-	return parse(debugfs_fd, DRRS_REFRESH_RATE_STR, "low");
+	parse_debugfs_version(debugfs_fd);
+
+	if (debugfs_version == DEBUGFS_OLD_VERSION)
+		return parse(debugfs_fd, OLD_DRRS_REFRESH_RATE_STR, DRRS_LOW_RR_STR);
+
+	return parse(debugfs_fd, DRRS_REFRESH_RATE_STR, LOW_STR);
 }
 
 void drrs_print_debugfs(int debugfs_fd)
