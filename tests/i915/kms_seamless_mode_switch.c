@@ -152,6 +152,8 @@ static void prepare(data_t *data)
 	igt_plane_set_fb(primary, &data->fb[0]);
 	igt_display_commit2(&data->display, COMMIT_ATOMIC);
 
+	igt_require(drrs_is_enabled(data->debugfs_fd));
+
 	interval.it_value.tv_nsec = 0;
 	interval.it_value.tv_sec = CHANGE_REFRESH_RATE_AT_EVEY_X_SEC;
 	interval.it_interval.tv_nsec = interval.it_value.tv_nsec;
@@ -240,6 +242,7 @@ static void switch_refresh_rate(data_t *data)
 	igt_assert(drrs_is_active(data->debugfs_fd));
 	igt_assert(drrs_is_low_refresh_rate(data->debugfs_fd) ==
 		   data->current_drrs_mode);
+	igt_assert(drrs_is_seamless_mode_switch_enabled(data->debugfs_fd));
 	display_info_check(data);
 }
 
@@ -249,7 +252,7 @@ static void modeset(data_t *data)
 	int ret;
 
 	if (data->current_drrs_mode == DRRS_HIGH) {
-		igt_info("Skipping modeset because a modeset to low refrersh rate mode would disable seamless DRRS\n");
+		igt_info("Skipping modeset because a modeset to low refresh rate mode would disable seamless DRRS\n");
 		return;
 	}
 
@@ -269,6 +272,7 @@ static void modeset(data_t *data)
 	igt_assert(drrs_is_active(data->debugfs_fd));
 	igt_assert(drrs_is_low_refresh_rate(data->debugfs_fd) ==
 		   data->current_drrs_mode);
+	igt_assert(!drrs_is_seamless_mode_switch_enabled(data->debugfs_fd));
 	display_info_check(data);
 }
 
@@ -377,9 +381,9 @@ igt_main
 		data.bops = buf_ops_create(data.drm_fd);
 		kmstest_set_vt_graphics_mode();
 
-		setup_output(&data);
+		igt_require(drrs_is_seamless_supported(data.debugfs_fd));
 
-		igt_require(drrs_is_enabled(data.debugfs_fd));
+		setup_output(&data);
 
 		data.switch_refresh_rate_timerfd = timerfd_create(CLOCK_MONOTONIC, 0);
 		igt_require(data.switch_refresh_rate_timerfd != -1);
