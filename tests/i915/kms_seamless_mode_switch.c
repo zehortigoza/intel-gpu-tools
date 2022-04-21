@@ -239,6 +239,9 @@ static void switch_refresh_rate(data_t *data)
 	igt_info("Switched to %s refresh rate mode.\n",
 		 data->current_drrs_mode == DRRS_HIGH ? "high" : "low");
 
+	igt_info("{\n");
+	drrs_print_debugfs(data->debugfs_fd);
+	igt_info("}\n\n");
 	igt_assert(drrs_is_active(data->debugfs_fd));
 	igt_assert(drrs_is_low_refresh_rate(data->debugfs_fd) ==
 		   data->current_drrs_mode);
@@ -269,6 +272,9 @@ static void modeset(data_t *data)
 
 	igt_info("Modeset to high refresh rate mode.\n");
 
+	igt_info("{\n");
+	drrs_print_debugfs(data->debugfs_fd);
+	igt_info("}\n\n");
 	igt_assert(drrs_is_active(data->debugfs_fd));
 	igt_assert(drrs_is_low_refresh_rate(data->debugfs_fd) ==
 		   data->current_drrs_mode);
