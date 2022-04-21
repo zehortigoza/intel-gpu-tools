@@ -31,6 +31,7 @@
 #define DRRS_ENABLE_STR "Enabled: "
 #define DRRS_ACTIVE_STR "Active: "
 #define DRRS_REFRESH_RATE_STR "Refresh rate: "
+#define DRRS_SEAMLESS_MODE_SWITCH_ENABLED_STR "Seamless mode switch enabled: "
 
 /* Old debugfs */
 #define OLD_DRRS_SUPPORTED_STR "DRRS Supported: "
@@ -138,4 +139,14 @@ void drrs_print_debugfs(int debugfs_fd)
 	}
 
 	igt_info("%s", buf);
+}
+
+bool drrs_is_seamless_mode_switch_enabled(int debugfs_fd)
+{
+	parse_debugfs_version(debugfs_fd);
+
+	if (debugfs_version == DEBUGFS_OLD_VERSION)
+		return false;
+
+	return parse(debugfs_fd, DRRS_SEAMLESS_MODE_SWITCH_ENABLED_STR, YES_STR);
 }
