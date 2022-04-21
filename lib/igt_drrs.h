@@ -30,3 +30,4 @@ bool drrs_is_enabled(int debugfs_fd);
 bool drrs_is_active(int debugfs_fd);
 bool drrs_is_low_refresh_rate(int debugfs_fd);
 void drrs_print_debugfs(int debugfs_fd);
+bool drrs_is_seamless_mode_switch_enabled(int debugfs_fd);
