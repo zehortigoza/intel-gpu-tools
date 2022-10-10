@@ -1030,7 +1030,7 @@ if ($has_filter) {
 }
 
 my $ntests=scalar(%test_names);
-printf "Number of tests: %d\n", $ntests if ($ntests > 1);
+printf "Number of tests: %d\n", $ntests if ($stat && $ntests > 1);
 
 if ($show_files) {
 	for my $f(sort keys %used_source) {
