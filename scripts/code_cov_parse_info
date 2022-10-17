@@ -18,10 +18,10 @@ my %all_line;
 my %used_source;
 my %record;
 my %files;
-my @func_regexes;
+my @func_include_regexes;
 my @func_exclude_regexes;
 my %test_names;
-my @src_regexes;
+my @src_include_regexes;
 my @src_exclude_regexes;
 
 my $verbose = 0;
@@ -30,7 +30,7 @@ my $skip_func = 0;
 
 sub is_function_excluded($)
 {
-	return 0 if (!@func_regexes && !@func_exclude_regexes);
+	return 0 if (!@func_include_regexes && !@func_exclude_regexes);
 
 	my $func = shift;
 
@@ -38,28 +38,28 @@ sub is_function_excluded($)
 		return 1 if ($func =~ m/$r/);
 	}
 
-	return 0 if (!@func_regexes);
+	return 0 if (!@func_include_regexes);
 
-	foreach my $r (@func_regexes) {
+	foreach my $r (@func_include_regexes) {
 		return 0 if ($func =~ m/$r/);
 	}
 
 	return 1;
 }
 
-sub filter_file($)
+sub is_file_excluded($)
 {
 	my $s = shift;
 
-	return 0 if (!@src_regexes && !@src_exclude_regexes);
+	return 0 if (!@src_include_regexes && !@src_exclude_regexes);
 
 	foreach my $r (@src_exclude_regexes) {
 		return 1 if ($s =~ m/$r/);
 	}
 
-	return 0 if (!@src_regexes);
+	return 0 if (!@src_include_regexes);
 
-	foreach my $r (@src_regexes) {
+	foreach my $r (@src_include_regexes) {
 		return 0 if ($s =~ m/$r/);
 	}
 
@@ -107,7 +107,7 @@ sub parse_info_data($)
 			$files{$source} = 1;
 
 			# Just ignore files explictly set as such
-			$ignore = filter_file($source);
+			$ignore = is_file_excluded($source);
 			next;
 		}
 
@@ -189,7 +189,7 @@ sub parse_info_data($)
 
 		# Ignore DA/BRDA that aren't associated with functions
 		# Those are present on header files (maybe defines?)
-		next if (@func_regexes && !$has_func);
+		next if (@func_include_regexes && !$has_func);
 
 		# FNF:<number of functions found>
 		if (m/^FNF:(-?\d+)/) {
@@ -899,10 +899,10 @@ GetOptions(
 	"only-i915|only_i915" => \$only_i915,
 	"only-drm|only_drm" => \$only_drm,
 	"func-filters|f=s" => \$func_filters,
-	"include-func=s" => \@func_regexes,
+	"include-func=s" => \@func_include_regexes,
 	"exclude-func=s" => \@func_exclude_regexes,
 	"source-filters|S=s" => \$src_filters,
-	"include-source=s" => \@src_regexes,
+	"include-source=s" => \@src_include_regexes,
 	"exclude-source=s" => \@src_exclude_regexes,
 	"show-files|show_files" => \$show_files,
 	"show-lines|show_lines" => \$show_lines,
@@ -935,9 +935,9 @@ my $str;
 if ($only_i915) {
 	# Please keep in sync with the documentation
 	push @src_exclude_regexes, "selftest";
-	push @src_regexes, "drm/i915";
-	push @src_regexes, "drm/ttm";
-	push @src_regexes, "drm/vgem";
+	push @src_include_regexes, "drm/i915";
+	push @src_include_regexes, "drm/ttm";
+	push @src_include_regexes, "drm/vgem";
 }
 
 if ($only_drm) {
@@ -946,21 +946,21 @@ if ($only_drm) {
 	push @src_exclude_regexes, "^/drm/";
 }
 
-$str = open_filter_file($func_filters, \@func_regexes, \@func_exclude_regexes);
+$str = open_filter_file($func_filters, \@func_include_regexes, \@func_exclude_regexes);
 if ($str) {
 	$filter_str .= "," if ($filter_str ne "");
 	$filter_str .= " function regex ($str)";
 	$has_filter = 1;
 }
 
-$str = open_filter_file($src_filters, \@src_regexes, \@src_exclude_regexes);
+$str = open_filter_file($src_filters, \@src_include_regexes, \@src_exclude_regexes);
 if ($str) {
 	$filter_str .= "," if ($filter_str ne "");
 	$filter_str .= " source regex ($str)";
 	$has_filter = 1;
 }
 
-$ignore_unused = 1 if (@func_regexes || @func_exclude_regexes);
+$ignore_unused = 1 if (@func_include_regexes || @func_exclude_regexes);
 
 if ($ignore_unused) {
 	$filter_str .= "," if ($filter_str ne "");
