@@ -34,17 +34,24 @@ sub is_function_excluded($)
 
 	my $func = shift;
 
+	# Handle includes first, as, when there are both include and exclude
+	# includes should take preference, as they can be overriding exclude
+	# rules
+	foreach my $r (@func_include_regexes) {
+	    return 0 if ($func =~ m/$r/);
+	}
+
 	foreach my $r (@func_exclude_regexes) {
 		return 1 if ($func =~ m/$r/);
 	}
 
-	return 0 if (!@func_include_regexes);
-
-	foreach my $r (@func_include_regexes) {
-		return 0 if ($func =~ m/$r/);
+	# If there are no exclude regexes, only include functions that are
+	# explicitly included.
+	if ($#func_exclude_regexes == 0) {
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 sub is_file_excluded($)
@@ -1178,9 +1185,10 @@ Each line at B<[filter's file]> may contain a new regex:
 
 =back
 
-When both include and exclude regexes are found, exclude regexes are
-applied first and any functions that don't match the include regular
-expressions from the B<[filter's file]> will be ignored.
+Include regexes are handled first, as they can override an exclude regex.
+
+When just include regexes are used, any functions that don't match the
+include regular expressions from the B<[filter's file]> will be ignored.
 
 Please notice that, when this filter is used, B<--ignore-unused> will be
 automaticaly enabled, as the final goal is to report per-function usage.
@@ -1189,7 +1197,8 @@ automaticaly enabled, as the final goal is to report per-function usage.
 
 Include B<regex> to the function filter. Can be used multiple times.
 
-When used together with B<--func-filters>, regexes here are handled first.
+When used together with B<--func-filters> or B<--exclude-func>, regexes
+here are handled first.
 
 Please notice that, when this filter is used, B<--ignore-unused> will be
 automaticaly enabled, as the final goal is to report per-function usage.
@@ -1197,8 +1206,6 @@ automaticaly enabled, as the final goal is to report per-function usage.
 =item B<--exclude-func> B<regex>
 
 Include B<regex> to the function filter. Can be used multiple times.
-
-When used together with B<--func-filters>, regexes here are handled first.
 
 Please notice that, when this filter is used, B<--ignore-unused> will be
 automaticaly enabled, as the final goal is to report per-function usage.
@@ -1229,21 +1236,18 @@ Each line at B<[filter's file]> may contain a new regex:
 
 =back
 
-When both include and exclude regexes are found, exclude regexes are
-applied first and any functions that don't match the include regular
-expressions from the B<[filter's file]> will be ignored.
+Include regexes are handled first, as they can override an exclude regex.
 
 =item B<--include-src> B<regex>
 
 Include B<regex> to the sources filter. Can be used multiple times.
 
-When used together with B<--src-filters>, regexes here are handled first.
+When used together with B<--src-filters> and B<--exclude-src>, regexes
+here are handled first.
 
 =item B<--exclude-src> B<regex>
 
 Include B<regex> to the sources filter. Can be used multiple times.
-
-When used together with B<--src-filters>, regexes here are handled first.
 
 =item B<--ignore-unused> or B<--ignore_unused>
 
