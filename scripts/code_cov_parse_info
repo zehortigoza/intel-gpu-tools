@@ -879,6 +879,77 @@ sub generate_report($)
 	close OUT;
 }
 
+sub check_source_branches()
+{
+	foreach my $source (sort keys(%all_branch)) {
+		next if (!$used_source{$source});
+		next if (is_file_excluded($source));
+
+		my @lines;
+		foreach my $where (sort keys %{$all_branch{$source}}) {
+			my $taken = $all_branch{$source}{$where};
+			next if ($taken > 0);
+
+			next if !($where =~ m/^(-?\d+),(-?\d+),(-?\d+)/);
+
+			my ($ln, $block, $branch, $ctx_lines);
+			$ln = $1;
+			$block = $2;
+			$branch = $3;
+
+			if (!@lines) {
+				open IN, "$source" || die "File $source not found. Can't check branches\n";
+				@lines = <IN>;
+				close IN;
+			}
+
+			if ($ln >= $#lines) {
+				die "$source:$ln line is bigger than the number of lines at the file ($#lines lines)\n";
+				return;
+			}
+
+			my $func = $all_branch{$source}{$where}{func};
+			my $func_ln = $all_branch{$source}{$where}{func_ln};
+
+			print "Branch $source:$ln, ";
+			if ($func) {
+				if ($func_ln) {
+					print "func: $func, ";
+				} else {
+					print "func: $func:$func_ln, ";
+				}
+			}
+			print "block $block, branch $branch not taken:\n";
+
+			if ($func_ln) {
+				$ctx_lines = $ln - $func_ln;
+			} else {
+				$ctx_lines = 10;
+			}
+
+
+			# Search for up to $ctx_lines before the occurrence
+			my $context = "";
+			my $has_if;
+			$ln-- if ($ln > 0);
+			my $delim = "->";
+			for (my $if_ln = $ln; $if_ln >= 0 && (($ln - $if_ln) < $ctx_lines); $if_ln--) {
+				$context = "$if_ln$delim\t$lines[$if_ln]" . $context;
+				$delim = "";
+				if ($lines[$if_ln] =~ m/(\bif\b|#if)/) {
+					$has_if = 1;
+					last;
+				}
+			}
+			if ($has_if) {
+				print $context;
+			} else {
+				print "$ln->\t$lines[$ln]";
+			}
+		}
+	}
+}
+
 #
 # Argument handling
 #
@@ -896,6 +967,7 @@ my $show_lines;
 my $only_i915;
 my $only_xe;
 my $only_drm;
+my $check_branches;
 
 GetOptions(
 	"print-coverage|print_coverage|print|p" => \$print_used,
@@ -916,6 +988,7 @@ GetOptions(
 	"show-files|show_files" => \$show_files,
 	"show-lines|show_lines" => \$show_lines,
 	"report|r=s" => \$gen_report,
+	"check-branches" => \$check_branches,
 	"css-file|css|c=s" => \$css_file,
 	"title|t=s" => \$title,
 	"html-prolog|prolog=s" => \$html_prolog,
@@ -933,7 +1006,7 @@ if ($#ARGV < 0) {
 }
 
 # At least one action should be specified
-pod2usage(1) if (!$print_used && !$filter && !$stat && !$print_unused && !$gen_report);
+pod2usage(1) if (!$print_used && !$filter && !$stat && !$print_unused && !$gen_report && !$check_branches);
 
 pod2usage(1) if ($gen_report && ($print_used || $filter || $stat || $print_unused));
 
@@ -1023,6 +1096,11 @@ if ($gen_report) {
 }
 
 gen_stats();
+
+
+if ($check_branches) {
+	check_source_branches();
+}
 
 die "Nothing counted. Wrong input files?" if (!$stats{"all_files"});
 
@@ -1293,6 +1371,12 @@ This option is automaticaly enabled when B<--func-filters> is used.
 
 Shows the list of files that were used to produce the code coverage
 results.
+
+=item B<--check-branches>
+
+Checks at the Linux Kernel source files what's the contents of the
+branches that weren't taken. The directory should match what's
+stored inside the info files.
 
 =item B<--verbose> or B<-v>
 
