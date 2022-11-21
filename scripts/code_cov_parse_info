@@ -233,7 +233,7 @@ sub parse_info_data($)
 			$was_used = 1 if ($taken > 0);
 
 			$record{$source}{$func}{brda}{$where} += $taken;
-			$all_branch{$source}{"$where"} += $taken;
+			$all_branch{$source}{"$where"}{count} += $taken;
 			next;
 		}
 
@@ -448,7 +448,7 @@ sub gen_stats()
 
 		foreach my $where (keys(%{$all_branch{$source}})) {
 			$stats{"branch_count"}++;
-			$stats{"branch_reached"}++ if ($all_branch{$source}{$where} != 0);
+			$stats{"branch_reached"}++ if ($all_branch{$source}{$where}{count} != 0);
 		}
 	}
 
@@ -607,7 +607,7 @@ sub generate_report($)
 		}
 		foreach my $source (keys(%{$report{$f}{"all_branch"}})) {
 			foreach my $where (keys(%{$report{$f}{"all_branch"}{$source}})) {
-				$all_branch{$source}{"$where"} += $report{$f}{"all_branch"}{$source}{$where};
+				$all_branch{$source}{"$where"}{count} += $report{$f}{"all_branch"}{$source}{$where}{count};
 			}
 		}
 		for my $source(keys(%{$report{$f}{"files"}})) {
@@ -887,7 +887,7 @@ sub check_source_branches()
 
 		my @lines;
 		foreach my $where (sort keys %{$all_branch{$source}}) {
-			my $taken = $all_branch{$source}{$where};
+			my $taken = $all_branch{$source}{$where}{count};
 			next if ($taken > 0);
 
 			next if !($where =~ m/^(-?\d+),(-?\d+),(-?\d+)/);
