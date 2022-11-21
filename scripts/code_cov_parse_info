@@ -291,6 +291,21 @@ sub parse_info_data($)
 	close IN or die;
 }
 
+sub sort_where($$)
+{
+	my @a = split ",", shift;
+	my @b = split ",", shift;
+	my $ret;
+
+	$ret = $a[0] <=> $b[0];
+	return $ret if ($ret);
+
+	$ret = $a[1] <=> $b[1];
+	return $ret if ($ret);
+
+	return $a[2] <=> $b[2];
+}
+
 sub write_filtered_file($)
 {
 	my $filter = shift;
@@ -332,10 +347,10 @@ sub write_filtered_file($)
 				}
 			}
 
-			foreach my $ln(sort keys %{ $record{$source}{$func}{da} }) {
+			foreach my $ln(sort { $a <=> $b } keys %{ $record{$source}{$func}{da} }) {
 				$filtered .= "DA:$ln," . $record{$source}{$func}{da}{$ln} . "\n";
 			}
-			foreach my $where(sort keys %{ $record{$source}{$func}{brda} }) {
+			foreach my $where(sort sort_where keys %{ $record{$source}{$func}{brda} }) {
 				my $taken = $record{$source}{$func}{brda}{$where};
 				$taken = "-" if (!$taken);
 				$filtered .= "BRDA:$where,$taken\n";
