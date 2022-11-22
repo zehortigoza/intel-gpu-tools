@@ -98,6 +98,7 @@ sub parse_info_data($)
 			if ($1 ne $cur_test) {
 				$cur_test = $1;
 				$test_names{$cur_test} = 1;
+				$record{tests}{$cur_test} = 1;
 			}
 			$source = $before_sf;
 			$func = $before_sf;
@@ -158,7 +159,7 @@ sub parse_info_data($)
 
 			$skip_func = 0;
 
-			$record{$source}{$func}{fn} = $ln;
+			$record{$source}{func}{$func}{fn} = $ln;
 			$all_func{$func}{$source}->{ln} = $ln;
 			next;
 		}
@@ -186,7 +187,7 @@ sub parse_info_data($)
 			$skip_func = 0;
 			$was_used = 1;
 
-			$record{$source}{$func}{fnda} += $count;
+			$record{$source}{func}{$func}{fnda} += $count;
 			$used_func{$func}{$source}->{count} += $count;
 			next;
 		}
@@ -200,14 +201,14 @@ sub parse_info_data($)
 
 		# FNF:<number of functions found>
 		if (m/^FNF:(-?\d+)/) {
-			$record{$source}{$func}{fnf} = $1;
+			$record{$source}{func}{$func}{fnf} = $1;
 			next;
 		}
 		# FNH:<number of function hit>
 		if (m/^FNH:(-?\d+)/) {
 			my $hits = $1;
-			if (!defined($record{$source}{$func}{fnh}) || $record{$source}{$func}{fnh} < $hits) {
-				$record{$source}{$func}{fnh} = $hits;
+			if (!defined($record{$source}{func}{$func}{fnh}) || $record{$source}{func}{$func}{fnh} < $hits) {
+				$record{$source}{func}{$func}{fnh} = $hits;
 			}
 			next;
 		}
@@ -232,21 +233,21 @@ sub parse_info_data($)
 
 			$was_used = 1 if ($taken > 0);
 
-			$record{$source}{$func}{brda}{$where} += $taken;
-			$all_branch{$source}{"$where"}{count} += $taken;
+			$record{files}{$source}{line}{$ln}{branches}[$branch]{count} += $taken;
+			$all_branch{$source}{$where}{count} += $taken;
 			next;
 		}
 
 		# BRF:<number of branches found>
 		if (m/^BRF:(-?\d+)/) {
-			$record{$source}{$func}{brf} = $1;
+			$record{$source}{func}{$func}{brf} = $1;
 			next;
 		}
 		# BRH:<number of branches hit>
 		if (m/^BRH:(-?\d+)/) {
 			my $hits = $1;
-			if (!defined($record{$source}{$func}{brh}) || $record{$source}{$func}{brh} < $hits) {
-				$record{$source}{$func}{brh} = $hits;
+			if (!defined($record{$source}{func}{$func}{brh}) || $record{$source}{func}{$func}{brh} < $hits) {
+				$record{$source}{func}{$func}{brh} = $hits;
 			}
 			next;
 		}
@@ -265,22 +266,22 @@ sub parse_info_data($)
 
 			$was_used = 1 if ($count > 0);
 
-			$record{$source}{$func}{da}{$ln} += $count;
-			$all_line{$source}{"$ln"} += $count;
+			$record{$source}{func}{$func}{da}{$ln} += $count;
+			$all_line{$source}{$ln} += $count;
 			next;
 		}
 
 		# LF:<number of instrumented lines>
 		if (m/^LF:(-?\d+)/) {
-			$record{$source}{$func}{lf} = $1;
+			$record{$source}{func}{$func}{lf} = $1;
 			next;
 		}
 
 		# LH:<number of lines with a non-zero execution count>
 		if (m/^LH:(-?\d+)/) {
 			my $hits = $1;
-			if (!defined($record{$source}{$func}{lh}) || $record{$source}{$func}{lh} < $hits) {
-				$record{$source}{$func}{lh} = $hits;
+			if (!defined($record{$source}{func}{$func}{lh}) || $record{$source}{func}{$func}{lh} < $hits) {
+				$record{$source}{func}{$func}{lh} = $hits;
 			}
 			next;
 		}
@@ -333,39 +334,39 @@ sub write_filtered_file($)
 				my $fn;
 				my $fnda;
 
-				if (defined($record{$source}{$func}{fn})) {
-					$filtered .= "FN:" . $record{$source}{$func}{fn} . ",$func\n";
+				if (defined($record{$source}{func}{$func}{fn})) {
+					$filtered .= "FN:" . $record{$source}{func}{$func}{fn} . ",$func\n";
 				}
-				if (defined($record{$source}{$func}{fnda})) {
-					$filtered .= "FNDA:" . $record{$source}{$func}{fnda} . ",$func\n";
+				if (defined($record{$source}{func}{$func}{fnda})) {
+					$filtered .= "FNDA:" . $record{$source}{func}{$func}{fnda} . ",$func\n";
 				}
 				if ($record{$source}{fnf}) {
-					$filtered .= "FNF:". $record{$source}{$func}{fnf} ."\n";
+					$filtered .= "FNF:". $record{$source}{func}{$func}{fnf} ."\n";
 				}
 				if ($record{$source}{fnh}) {
-					$filtered .= "FNH:". $record{$source}{$func}{fnh} ."\n";
+					$filtered .= "FNH:". $record{$source}{func}{$func}{fnh} ."\n";
 				}
 			}
 
-			foreach my $ln(sort { $a <=> $b } keys %{ $record{$source}{$func}{da} }) {
-				$filtered .= "DA:$ln," . $record{$source}{$func}{da}{$ln} . "\n";
+			foreach my $ln(sort { $a <=> $b } keys %{ $record{$source}{func}{$func}{da} }) {
+				$filtered .= "DA:$ln," . $record{$source}{func}{$func}{da}{$ln} . "\n";
 			}
-			foreach my $where(sort sort_where keys %{ $record{$source}{$func}{brda} }) {
-				my $taken = $record{$source}{$func}{brda}{$where};
+			foreach my $where(sort sort_where keys %{ $record{$source}{func}{$func}{brda} }) {
+				my $taken = $record{$source}{func}{$func}{brda}{$where};
 				$taken = "-" if (!$taken);
 				$filtered .= "BRDA:$where,$taken\n";
 			}
-			if ($record{$source}{$func}{brf}) {
-				$filtered .= "BRF:". $record{$source}{$func}{brf} ."\n";
+			if ($record{$source}{func}{$func}{brf}) {
+				$filtered .= "BRF:". $record{$source}{func}{$func}{brf} ."\n";
 			}
-			if ($record{$source}{$func}{brh}) {
-				$filtered .= "BRH:". $record{$source}{$func}{brh} ."\n";
+			if ($record{$source}{func}{$func}{brh}) {
+				$filtered .= "BRH:". $record{$source}{func}{$func}{brh} ."\n";
 			}
-			if ($record{$source}{$func}{lf}) {
-				$filtered .= "LF:". $record{$source}{$func}{lf} ."\n";
+			if ($record{$source}{func}{$func}{lf}) {
+				$filtered .= "LF:". $record{$source}{func}{$func}{lf} ."\n";
 			}
-			if ($record{$source}{$func}{lh}) {
-				$filtered .= "LH:". $record{$source}{$func}{lh} ."\n";
+			if ($record{$source}{func}{$func}{lh}) {
+				$filtered .= "LH:". $record{$source}{func}{$func}{lh} ."\n";
 			}
 		}
 
