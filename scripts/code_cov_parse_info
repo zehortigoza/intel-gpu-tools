@@ -201,15 +201,10 @@ sub parse_info_data($)
 
 		# FNF:<number of functions found>
 		if (m/^FNF:(-?\d+)/) {
-			$record{$source}{func}{$func}{fnf} = $1;
 			next;
 		}
 		# FNH:<number of function hit>
 		if (m/^FNH:(-?\d+)/) {
-			my $hits = $1;
-			if (!defined($record{$source}{func}{$func}{fnh}) || $record{$source}{func}{$func}{fnh} < $hits) {
-				$record{$source}{func}{$func}{fnh} = $hits;
-			}
 			next;
 		}
 
@@ -240,15 +235,10 @@ sub parse_info_data($)
 
 		# BRF:<number of branches found>
 		if (m/^BRF:(-?\d+)/) {
-			$record{$source}{func}{$func}{brf} = $1;
 			next;
 		}
 		# BRH:<number of branches hit>
 		if (m/^BRH:(-?\d+)/) {
-			my $hits = $1;
-			if (!defined($record{$source}{func}{$func}{brh}) || $record{$source}{func}{$func}{brh} < $hits) {
-				$record{$source}{func}{$func}{brh} = $hits;
-			}
 			next;
 		}
 
@@ -340,33 +330,10 @@ sub write_filtered_file($)
 				if (defined($record{$source}{func}{$func}{fnda})) {
 					$filtered .= "FNDA:" . $record{$source}{func}{$func}{fnda} . ",$func\n";
 				}
-				if ($record{$source}{fnf}) {
-					$filtered .= "FNF:". $record{$source}{func}{$func}{fnf} ."\n";
-				}
-				if ($record{$source}{fnh}) {
-					$filtered .= "FNH:". $record{$source}{func}{$func}{fnh} ."\n";
-				}
-			}
 
-			foreach my $ln(sort { $a <=> $b } keys %{ $record{$source}{func}{$func}{da} }) {
-				$filtered .= "DA:$ln," . $record{$source}{func}{$func}{da}{$ln} . "\n";
 			}
-			foreach my $where(sort sort_where keys %{ $record{$source}{func}{$func}{brda} }) {
-				my $taken = $record{$source}{func}{$func}{brda}{$where};
 				$taken = "-" if (!$taken);
 				$filtered .= "BRDA:$where,$taken\n";
-			}
-			if ($record{$source}{func}{$func}{brf}) {
-				$filtered .= "BRF:". $record{$source}{func}{$func}{brf} ."\n";
-			}
-			if ($record{$source}{func}{$func}{brh}) {
-				$filtered .= "BRH:". $record{$source}{func}{$func}{brh} ."\n";
-			}
-			if ($record{$source}{func}{$func}{lf}) {
-				$filtered .= "LF:". $record{$source}{func}{$func}{lf} ."\n";
-			}
-			if ($record{$source}{func}{$func}{lh}) {
-				$filtered .= "LH:". $record{$source}{func}{$func}{lh} ."\n";
 			}
 		}
 
