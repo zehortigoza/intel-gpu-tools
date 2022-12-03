@@ -6,6 +6,8 @@ use Getopt::Long;
 BEGIN { $Pod::Usage::Formatter = 'Pod::Text::Termcap'; }
 use Pod::Usage;
 use Pod::Man;
+use IO::File;
+use IO::Zlib;
 
 my $prefix = qr ".*?(linux)\w*/";
 
@@ -341,8 +343,14 @@ sub read_json($)
 	}
 
 	# Read JSON data
-	open IN, $file or die "can't open $file";
-	while (<IN>) {
+	my $fh;
+	if ($file =~ m/\.gz$/) {
+		$fh = IO::Zlib->new($file, "rb") or die "can't open $file";
+	} else {
+		$fh = IO::File->new($file) or die "can't open $file";
+	}
+	print "reading $file...\n" if ($verbose);
+	while (<$fh>) {
 		my $json = eval {
 			Cpanel::JSON::XS::decode_json($_)
 		};
@@ -362,7 +370,7 @@ sub read_json($)
 			die "Unknown JSON format on file $file\n";
 		}
 	}
-	close IN;
+	$fh->close() or die "Failed to close file $file";
 }
 
 sub read_info($)
@@ -377,11 +385,16 @@ sub read_info($)
 
 	# First step: parse data
 
-	print "reading $file...\n" if ($verbose);
-	open IN, $file or die "can't open $file";
 	# For details on .info file format, see "man geninfo"
 	# http://ltp.sourceforge.net/coverage/lcov/geninfo.1.php
-	while (<IN>) {
+	my $fh;
+	if ($file =~ m/\.gz$/) {
+		$fh = IO::Zlib->new($file, "rb") or die "can't open $file";
+	} else {
+		$fh = IO::File->new($file) or die "can't open $file";
+	}
+	print "reading $file...\n" if ($verbose);
+	while (<$fh>) {
 		# TN:<test name>
 		if (m/^TN:(.*)/) {
 			if ($1 ne $cur_test) {
@@ -568,7 +581,7 @@ sub read_info($)
 		printf("Warning: invalid line: $_");
 	}
 
-	close IN or die;
+	$fh->close() or die "Failed to close file $file";
 }
 
 sub sort_where($$)
@@ -598,9 +611,15 @@ sub write_json_file($)
 		Cpanel::JSON::XS::encode_json(\%record)
 	};
 
-	open OUT, ">$fname" or die "Can't open $fname";
-	print OUT $data or die "Failed to write to $fname";
-	close OUT or die "Failed to close to $fname";
+	if ($fname =~ m/\.gz$/) {
+		my $fh = IO::Zlib->new($fname, "wb") or die "can't open $fname";
+		print $fh $data or die "Failed to write to $fname";
+		$fh->close or die "Failed to write to $fname";
+	} else {
+		open OUT, ">$fname" or die "Can't open $fname";
+		print OUT $data or die "Failed to write to $fname";
+		close OUT or die "Failed to close to $fname";
+	}
 }
 
 sub write_info_file($)
@@ -648,12 +667,17 @@ sub write_info_file($)
 				$data .= "BRDA:$ln,0,$i,$taken\n";
 			}
 		}
-
 		$data .= "end_of_record\n";
 	}
-	open OUT, ">$fname" or die "Can't open $fname";
-	print OUT $data or die "Failed to write to $fname";
-	close OUT or die "Failed to close to $fname";
+	if ($fname =~ m/\.gz$/) {
+		my $fh = IO::Zlib->new($fname, "wb") or die "can't open $fname";
+		print $fh $data or die "Failed to write to $fname";
+		$fh->close or die "Failed to write to $fname";
+	} else {
+		open OUT, ">$fname" or die "Can't open $fname";
+		print OUT $data or die "Failed to write to $fname";
+		close OUT or die "Failed to close to $fname";
+	}
 }
 
 sub print_code_coverage($$$)
@@ -1354,7 +1378,7 @@ if ($ignore_unused) {
 }
 
 foreach my $f (@ARGV) {
-	if ($f =~ /.json$/) {
+	if ($f =~ /\.json(\.gz)?$/) {
 		read_json($f);
 	} else {
 		read_info($f);
@@ -1435,7 +1459,7 @@ if ($show_files) {
 }
 
 if ($output_file) {
-	if ($output_file =~ /.json$/) {
+	if ($output_file =~ /.json(.gz)?$/) {
 		write_json_file($output_file);
 	} else {
 		write_info_file($output_file);
