@@ -519,6 +519,10 @@ sub read_info($)
 			my $branch = $3;
 			my $taken = $4;
 
+			if ($block != 0) {
+				print "Warning: unexpected block $block at line $.\n";
+			}
+
 			my $where = "$ln,$block,$branch";
 
 			$taken = 0 if ($taken eq '-');
