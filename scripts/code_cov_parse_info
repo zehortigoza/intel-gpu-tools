@@ -22,11 +22,16 @@ my %record;
 my %files;
 my @func_include_regexes;
 my @func_exclude_regexes;
+my @branch_include_regexes;
+my @branch_exclude_regexes;
 my %test_names;
 my @src_include_regexes;
 my @src_exclude_regexes;
+my $source_dir = ".";
 my $can_filter_lines = 1;
 my $ignore_lines_without_functions = 1;
+my $ignore_branches_on_headers = 1;
+my $has_branch_filter;
 
 my $verbose = 0;
 my $ignore_unused = 0;
@@ -87,6 +92,32 @@ sub is_file_excluded($)
 	return 1;
 }
 
+sub is_branch_excluded($)
+{
+	return 0 if (!@branch_include_regexes && !@branch_exclude_regexes);
+
+	my $branch = shift;
+
+	# Handle includes first, as, when there are both include and exclude
+	# includes should take preference, as they can be overriding exclude
+	# rules
+	foreach my $r (@branch_include_regexes) {
+	    return 0 if ($branch =~ m/$r/);
+	}
+
+	foreach my $r (@branch_exclude_regexes) {
+		return 1 if ($branch =~ m/$r/);
+	}
+
+	# If there are no exclude regexes, only include branches that are
+	# explicitly included.
+	if ($#branch_exclude_regexes == 0) {
+		return 1;
+	}
+
+	return 0;
+}
+
 # Use something that comes before any real function
 my $before_sf = "!!!!";
 
@@ -115,6 +146,7 @@ sub parse_json_gcov_v1($$)
 	# Store test name at the record
 	$record{tests}{$cur_test} = 1;
 
+	my %cached;
 	for my $file_ref (@{$json->{'files'}}) {
 		my $source = $file_ref->{'file'};
 
@@ -182,16 +214,40 @@ sub parse_json_gcov_v1($$)
 			}
 			$all_line{$source}{$ln} += $line_ref->{'count'};
 
+			if ($ignore_branches_on_headers) {
+				next if ($source =~ m/\.h$/);
+			}
+
 			my $i = 0;
 			for my $branch_ref (@{$line_ref->{'branches'}}) {
 				my $where = sprintf "%d,%d,%d", $ln, 0, $i;
+
+				# Filter out branches
+				if ($has_branch_filter) {
+					if (!$cached{$source}) {
+						open IN, "$source_dir/$source" || die "File $source_dir/$source not found. Can't filter branches\n";
+						push @{$cached{$source}}, <IN>;
+						close IN;
+					}
+					my $nlines = scalar(@{$cached{$source}});
+					if ($ln > $nlines) {
+						die "$source:$ln line is bigger than the number of lines at the file ($nlines lines)\n";
+						return;
+					}
+					next if (is_branch_excluded($cached{$source}[$ln - 1]));
+				}
 
 				if ($func eq $before_sf) {
 					# Ignore DA/BRDA that aren't associated with
 					# functions. Those are present on header files
 					# (maybe defines?)
 					next if ($ignore_lines_without_functions);
+
+					# Otherwise place them in separate
+					$func = $before_sf;
 				} else {
+					next if is_function_excluded($func);
+
 					$all_branch{$source}{$where}{func} = $func;
 				}
 
@@ -232,6 +288,7 @@ sub parse_json_internal_format_v1($$)
 	my $was_used = 0;
 	my $has_func = 0;
 	my $ignore = 0;
+	my %cached;
 
 	# Store the common JSON data into the record
 	for my $key (keys %$json) {
@@ -308,17 +365,30 @@ sub parse_json_internal_format_v1($$)
 			}
 			$all_line{$source}{$ln} += $line_ref->{'count'};
 
+			if ($ignore_branches_on_headers) {
+				next if ($source =~ m/\.h$/);
+			}
+
 			my $i = 0;
 			for my $branch_ref (@{$line_ref->{'branches'}}) {
 				my $taken = $branch_ref->{'count'};
 				my $where = sprintf "%d,%d,%d", $ln, 0, $i;
 
-				# Negative gcov results are possible, as
-				# reported at:
-				# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67937
-				# Lcov ignores those. So, let's do the same
-				# here.
-				$branch_ref->{'count'} = 0 if ($branch_ref->{'count'} < 0);
+
+				# Filter out branches
+				if ($has_branch_filter) {
+					if (!$cached{$source}) {
+						open IN, "$source_dir/$source" || die "File $source_dir/$source not found. Can't filter branches\n";
+						push @{$cached{$source}}, <IN>;
+						close IN;
+					}
+					my $nlines = scalar(@{$cached{$source}});
+					if ($ln > $nlines) {
+						die "$source:$ln line is bigger than the number of lines at the file ($nlines lines)\n";
+						return;
+					}
+					next if (is_branch_excluded($cached{$source}[$ln - 1]));
+				}
 
 				for my $key (keys %$branch_ref) {
 					next if (!$record{files}{$source}{line}{$ln}{branches});
@@ -387,6 +457,7 @@ sub read_info($)
 	my $source = $before_sf;
 	my $func = $before_sf;
 	my $cur_test = "";
+	my %cached;
 
 	# Info files don't contain functions for lines. So, they can't
 	# be used to filter lines and branches used inside functions.
@@ -527,6 +598,25 @@ sub read_info($)
 			my $block = $2;
 			my $branch = $3;
 			my $taken = $4;
+
+			if ($ignore_branches_on_headers) {
+				next if ($source =~ m/\.h$/);
+			}
+
+			# Filter out branches
+			if ($has_branch_filter) {
+				if (!$cached{$source}) {
+					open IN, "$source_dir/$source" || die "File $source_dir/$source not found. Can't filter branches\n";
+					push @{$cached{$source}}, <IN>;
+					close IN;
+				}
+				my $nlines = scalar(@{$cached{$source}});
+				if ($ln > $nlines) {
+					die "$source:$ln line is bigger than the number of lines at the file ($nlines lines)\n";
+					return;
+				}
+				next if (is_branch_excluded($cached{$source}[$ln - 1]));
+			}
 
 			if ($block != 0) {
 				print "Warning: unexpected block $block at line $.\n";
@@ -1217,7 +1307,10 @@ sub check_source_branches()
 		next if (!$used_source{$source});
 		next if (is_file_excluded($source));
 
-		my @lines;
+		open IN, "$source_dir/$source" || die "File $source_dir/$source not found. Can't check branches\n";
+		my @lines = <IN>;
+		close IN;
+
 		foreach my $where (sort keys %{$all_branch{$source}}) {
 			my $taken = $all_branch{$source}{$where}{count};
 			next if ($taken > 0);
@@ -1229,13 +1322,7 @@ sub check_source_branches()
 			$block = $2;
 			$branch = $3;
 
-			if (!@lines) {
-				open IN, "$source" || die "File $source not found. Can't check branches\n";
-				@lines = <IN>;
-				close IN;
-			}
-
-			if ($ln >= $#lines) {
+			if ($ln > $#lines) {
 				die "$source:$ln line is bigger than the number of lines at the file ($#lines lines)\n";
 				return;
 			}
@@ -1292,6 +1379,7 @@ my $help;
 my $man;
 my $func_filters;
 my $src_filters;
+my $branch_filters;
 my $show_files;
 my $show_lines;
 my $only_i915;
@@ -1304,6 +1392,7 @@ GetOptions(
 	"print-unused|u" => \$print_unused,
 	"stat|statistics" => \$stat,
 	"output|o=s" => \$output_file,
+	"source-dir|source_dir=s" => \$source_dir,
 	"verbose|v" => \$verbose,
 	"ignore-unused|ignore_unused" => \$ignore_unused,
 	"only-i915|only_i915" => \$only_i915,
@@ -1312,14 +1401,18 @@ GetOptions(
 	"func-filters|f=s" => \$func_filters,
 	"include-func=s" => \@func_include_regexes,
 	"exclude-func=s" => \@func_exclude_regexes,
+	"branch-filters|f=s" => \$branch_filters,
+	"include-branch=s" => \@branch_include_regexes,
+	"exclude-branch=s" => \@branch_exclude_regexes,
 	"source-filters|S=s" => \$src_filters,
 	"include-source=s" => \@src_include_regexes,
 	"exclude-source=s" => \@src_exclude_regexes,
 	"ignore-lines-without-functions!" => \$ignore_lines_without_functions,
+	"ignore-branches-on-headers!" => \$ignore_branches_on_headers,
 	"show-files|show_files" => \$show_files,
 	"show-lines|show_lines" => \$show_lines,
 	"report|r=s" => \$gen_report,
-	"check-branches" => \$check_branches,
+	"check-branches|check_branches" => \$check_branches,
 	"css-file|css|c=s" => \$css_file,
 	"title|t=s" => \$title,
 	"html-prolog|prolog=s" => \$html_prolog,
@@ -1379,6 +1472,14 @@ if ($str) {
 	$filter_str .= "," if ($filter_str ne "");
 	$filter_str .= " source regex ($str)";
 	$has_filter = 1;
+}
+
+$str = open_filter_file($branch_filters, \@branch_include_regexes, \@branch_exclude_regexes);
+if ($str) {
+	$filter_str .= "," if ($filter_str ne "");
+	$filter_str .= " branch regex ($str)";
+	$has_filter = 1;
+	$has_branch_filter = 1;
 }
 
 $ignore_unused = 1 if (@func_include_regexes || @func_exclude_regexes);
@@ -1567,6 +1668,12 @@ Produce an output file merging all input files.
 
 The generated output file is affected by the applied filters.
 
+=item B<--source-dir> or B<--source_dir>
+
+Sets the source directory baseline. This is used together with other
+options that require to parse the source files (currently, only
+B<--check-branches).
+
 =item B<--only-drm> or B<--only_drm>
 
 Filters out includes outside the DRM subsystem, plus trace files.
@@ -1656,6 +1763,51 @@ Include B<regex> to the function filter. Can be used multiple times.
 Please notice that, when this filter is used, B<--ignore-unused> will be
 automaticaly enabled, as the final goal is to report per-function usage.
 
+=item B<--branch-filters>  B<[filter's file]> or B<-f>  B<[filter's file]>
+
+Use a file containing regular expressions (regex) to filter branches.
+
+Each line at B<[filter's file]> may contain a new regex:
+
+=over 4
+
+- Blank lines and lines starting with B<#> will be ignored;
+
+- Each line of the file will be handled as a new regex;
+
+- If B<+regex> is used, the filter will include B<regex> to the matches;
+
+- If B<-regex> is used, the filter will exclude B<regex> from the matches;
+
+- If the line doesn't start with neither B<+> nor B<->, containing just
+  B<regex>, the filter will include B<regex> to the matches.
+
+- Any whitespace/tab before or after B<regex> will be ignored.
+
+=back
+
+Include regexes are handled first, as they can override an exclude regex.
+
+When just include regexes are used, any branches that don't match the
+include regular expressions from the B<[filter's file]> will be ignored.
+
+=item B<--include-branch> B<regex>
+
+Include B<regex> to the branch filter. Can be used multiple times.
+
+When used together with B<--branch-filters> or B<--exclude-branch>, regexes
+here are handled first.
+
+Please notice that, when this filter is used, B<--ignore-unused> will be
+automaticaly enabled, as the final goal is to report per-branch usage.
+
+=item B<--exclude-branch> B<regex>
+
+Include B<regex> to the branchtion filter. Can be used multiple times.
+
+Please notice that, when this filter is used, B<--ignore-unused> will be
+automaticaly enabled, as the final goal is to report per-branch usage.
+
 =item B<--source-filters>  B<[filter's file]> or B<-S>  B<[filter's file]>
 
 Use a file containing regular expressions to filter source files.
@@ -1727,6 +1879,30 @@ Use B<--no-ignore-lines-without-functions> to disable it.
 Disables filtering out branches that are not associated with any functions
 inside the source file, but were imported via includes.
 
+See B<--ignore-lines-without-functions> for more details.
+
+=item B<--ignore-branches-on-headers>
+
+Branches on header files are really tricky to parse, as they depend
+on how gcc optimizes the output code. That's specially hard to use on
+Linux Kernel, as there are lots of complex macros that can be optimized
+on different ways. There are even some cases where the same macro sometimes
+have zero branches, while on other cases it can contain dozen ones.
+
+When this option is selected, all branches inside header files will be
+ignored.
+
+Please notice that this is enabled by default.
+
+Use B<--no-ignore-branches-on-headers> to disable this filter, preserving
+data from all branches.
+
+=item B<--no-ignore-branches-on-headers>
+
+Disables filtering out branches that are inside header files.
+
+See B<--ignore-branches-on-headers> for more details.
+
 =back
 
 =item B<--show-files> or B<--show_files>
@@ -1734,7 +1910,7 @@ inside the source file, but were imported via includes.
 Shows the list of files that were used to produce the code coverage
 results.
 
-=item B<--check-branches>
+=item B<--check-branches> or B<--check_branches>
 
 Checks at the Linux Kernel source files what's the contents of the
 branches that weren't taken. The directory should match what's
