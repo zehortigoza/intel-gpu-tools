@@ -25,6 +25,8 @@ my @func_exclude_regexes;
 my %test_names;
 my @src_include_regexes;
 my @src_exclude_regexes;
+my $can_filter_lines = 1;
+my $ignore_lines_without_functions = 1;
 
 my $verbose = 0;
 my $ignore_unused = 0;
@@ -161,12 +163,6 @@ sub parse_json_gcov_v1($$)
 
 			my $func = $line_ref->{'function_name'};
 			if (!$func) {
-				# Ignore DA/BRDA that aren't associated with
-				# functions. Those are present on header files
-				# (maybe defines?)
-				next if (@func_include_regexes);
-
-				# Otherwise place them in separate
 				$func = $before_sf;
 			} else {
 				next if is_function_excluded($func);
@@ -188,8 +184,16 @@ sub parse_json_gcov_v1($$)
 
 			my $i = 0;
 			for my $branch_ref (@{$line_ref->{'branches'}}) {
-				my $taken = $branch_ref->{'count'};
 				my $where = sprintf "%d,%d,%d", $ln, 0, $i;
+
+				if ($func eq $before_sf) {
+					# Ignore DA/BRDA that aren't associated with
+					# functions. Those are present on header files
+					# (maybe defines?)
+					next if ($ignore_lines_without_functions);
+				} else {
+					$all_branch{$source}{$where}{func} = $func;
+				}
 
 				# Negative gcov results are possible, as
 				# reported at:
@@ -206,7 +210,8 @@ sub parse_json_gcov_v1($$)
 					}
 				}
 
-				$all_branch{$source}{$where}{count} += $taken;
+				$all_branch{$source}{$where}{count} += $branch_ref->{'count'};
+
 				$i++;
 			}
 			if (!defined($record{files}{$source}{line}{$ln}{branches})) {
@@ -382,6 +387,10 @@ sub read_info($)
 	my $source = $before_sf;
 	my $func = $before_sf;
 	my $cur_test = "";
+
+	# Info files don't contain functions for lines. So, they can't
+	# be used to filter lines and branches used inside functions.
+	$can_filter_lines = 0;
 
 	# First step: parse data
 
@@ -1231,18 +1240,15 @@ sub check_source_branches()
 				return;
 			}
 
+			my $func_ln;
 			my $func = $all_branch{$source}{$where}{func};
-			my $func_ln = $all_branch{$source}{$where}{func_ln};
-
-			print "Branch $source:$ln, ";
 			if ($func) {
-				if ($func_ln) {
-					print "func: $func, ";
-				} else {
-					print "func: $func:$func_ln, ";
-				}
+				$func_ln = $all_func{$func}{$source}->{ln};
 			}
-			print "block $block, branch $branch not taken:\n";
+
+			print "Branch $branch on $source:$ln";
+			print ", function: $func" if ($func);
+			print " not taken:\n";
 
 			if ($func_ln) {
 				$ctx_lines = $ln - $func_ln;
@@ -1250,14 +1256,14 @@ sub check_source_branches()
 				$ctx_lines = 10;
 			}
 
-
 			# Search for up to $ctx_lines before the occurrence
 			my $context = "";
 			my $has_if;
 			$ln-- if ($ln > 0);
 			my $delim = "->";
 			for (my $if_ln = $ln; $if_ln >= 0 && (($ln - $if_ln) < $ctx_lines); $if_ln--) {
-				$context = "$if_ln$delim\t$lines[$if_ln]" . $context;
+				my $cur_ln = $if_ln + 1;
+				$context = "$cur_ln$delim\t$lines[$if_ln]" . $context;
 				$delim = "";
 				if ($lines[$if_ln] =~ m/(\bif\b|#if)/) {
 					$has_if = 1;
@@ -1267,7 +1273,8 @@ sub check_source_branches()
 			if ($has_if) {
 				print $context;
 			} else {
-				print "$ln->\t$lines[$ln]";
+				my $cur_ln = $ln + 1;
+				print "$cur_ln->\t$lines[$ln]";
 			}
 		}
 	}
@@ -1308,6 +1315,7 @@ GetOptions(
 	"source-filters|S=s" => \$src_filters,
 	"include-source=s" => \@src_include_regexes,
 	"exclude-source=s" => \@src_exclude_regexes,
+	"ignore-lines-without-functions!" => \$ignore_lines_without_functions,
 	"show-files|show_files" => \$show_files,
 	"show-lines|show_lines" => \$show_lines,
 	"report|r=s" => \$gen_report,
@@ -1437,6 +1445,10 @@ print_summary() if ($stat);
 
 if ($has_filter) {
 	my $percent = 100. * $stats{"used_files"} / $stats{"all_files"};
+
+	if (!$can_filter_lines) {
+		printf "Warning......: Function filters won't work with lines/branches\n";
+	}
 
 	printf "Filters......:%s.\n", $filter_str;
 	printf "Source files.: %.2f%% (%d of %d total)",
@@ -1695,6 +1707,25 @@ and code that will never be used, so, placing them will just bloat the
 report and decrease the code coverage statistics.
 
 This option is automaticaly enabled when B<--func-filters> is used.
+
+=item B<--ignore-lines-without-functions>
+
+This option works only when the input file is in JSON format.
+
+Basically, include files may contain several lines of codes that aren't
+assigned to any functions inside a source file. This is a common behavior
+for macros and inlined functions inside headers.
+
+When this option is selected, the branches stat won't contain any such code.
+
+Please notice that this is enabled by default.
+
+Use B<--no-ignore-lines-without-functions> to disable it.
+
+=item B<--no-ignore-lines-without-functions>
+
+Disables filtering out branches that are not associated with any functions
+inside the source file, but were imported via includes.
 
 =back
 
