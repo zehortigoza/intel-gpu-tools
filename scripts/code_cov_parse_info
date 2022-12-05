@@ -126,7 +126,6 @@ sub parse_json_gcov_v1($$)
 	my $file = shift;
 	my $json = shift;
 
-	my $was_used = 0;
 	my $has_func = 0;
 	my $ignore = 0;
 
@@ -149,6 +148,7 @@ sub parse_json_gcov_v1($$)
 	my %cached;
 	for my $file_ref (@{$json->{'files'}}) {
 		my $source = $file_ref->{'file'};
+		my $was_used = 0;
 
 		$files{$source} = 1;
 		next if is_file_excluded($source);
@@ -181,8 +181,6 @@ sub parse_json_gcov_v1($$)
 				$was_used = 1;
 			}
 		}
-		next if ($ignore_unused && !$was_used);
-		$used_source{$source} = 1;
 
 		# Parse lines and branches
 		for my $line_ref (@{$file_ref->{'lines'}}) {
@@ -267,6 +265,7 @@ sub parse_json_gcov_v1($$)
 				}
 
 				$all_branch{$source}{$where}{count} += $branch_ref->{'count'};
+				$was_used = 1 if ($branch_ref->{'count'} > 0);
 
 				$i++;
 			}
@@ -274,6 +273,8 @@ sub parse_json_gcov_v1($$)
 				@{$record{files}{$source}{line}{$ln}{branches}} = ();
 			}
 		}
+		next if ($ignore_unused && !$was_used);
+		$used_source{$source} = 1;
 	}
 
 	# As the record was changed, we need to use a different format name
@@ -285,7 +286,6 @@ sub parse_json_internal_format_v1($$)
 	my $file = shift;
 	my $json = shift;
 
-	my $was_used = 0;
 	my $has_func = 0;
 	my $ignore = 0;
 	my %cached;
@@ -305,6 +305,8 @@ sub parse_json_internal_format_v1($$)
 
 	for my $source (keys %{$json->{'files'}}) {
 		$files{$source} = 1;
+		my $was_used = 0;
+
 		next if is_file_excluded($source);
 
 		my $file_ref = \%{$json->{'files'}{$source}};
@@ -332,8 +334,6 @@ sub parse_json_internal_format_v1($$)
 				$was_used = 1;
 			}
 		}
-		next if ($ignore_unused && !$was_used);
-		$used_source{$source} = 1;
 
 		# Parse lines and branches
 		for my $ln (keys %{$file_ref->{line}}) {
@@ -400,12 +400,15 @@ sub parse_json_internal_format_v1($$)
 				}
 
 				$all_branch{$source}{$where}{count} += $taken;
+				$was_used = 1 if ($taken > 0);
 				$i++;
 			}
 			if (!defined($record{files}{$source}{line}{$ln}{branches})) {
 				@{$record{files}{$source}{line}{$ln}{branches}} = ();
 			}
 		}
+		next if ($ignore_unused && !$was_used);
+		$used_source{$source} = 1;
 	}
 }
 
@@ -876,7 +879,7 @@ sub gen_stats()
 
 	# per-file coverage stats
 	$stats{"all_files"} = scalar keys(%files);
-	$stats{"filtered_files"} = scalar keys(%record);
+	$stats{"filtered_files"} = scalar keys(%{$record{files}});
 	$stats{"used_files"} = scalar keys(%used_source);
 }
 
