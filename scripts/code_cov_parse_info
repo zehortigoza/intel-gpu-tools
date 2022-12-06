@@ -614,6 +614,7 @@ sub read_info($)
 					close IN;
 				}
 				my $nlines = scalar(@{$cached{$source}});
+				die "File $source_dir/$source not found or it is empty. Can't filter branches\n" if (!$nlines);
 				if ($ln > $nlines) {
 					die "$source:$ln line is bigger than the number of lines at the file ($nlines lines)\n";
 					return;
