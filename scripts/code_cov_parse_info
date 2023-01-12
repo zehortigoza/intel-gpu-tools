@@ -894,6 +894,7 @@ my $src_filters;
 my $show_files;
 my $show_lines;
 my $only_i915;
+my $only_xe;
 my $only_drm;
 
 GetOptions(
@@ -904,6 +905,7 @@ GetOptions(
 	"verbose|v" => \$verbose,
 	"ignore-unused|ignore_unused" => \$ignore_unused,
 	"only-i915|only_i915" => \$only_i915,
+	"only-xe|only_xe" => \$only_xe,
 	"only-drm|only_drm" => \$only_drm,
 	"func-filters|f=s" => \$func_filters,
 	"include-func=s" => \@func_include_regexes,
@@ -947,6 +949,14 @@ if ($only_i915) {
 	push @src_include_regexes, "drm/vgem";
 }
 
+if ($only_xe) {
+	# Please keep in sync with the documentation
+	push @src_exclude_regexes, "selftest";
+	push @src_include_regexes, "drm/xe";
+#	push @src_include_regexes, "drm/ttm";
+#	push @src_include_regexes, "drm/vgem";
+}
+
 if ($only_drm) {
 	# Please keep in sync with the documentation
 	push @src_exclude_regexes, "trace.*\.h\$";
@@ -980,7 +990,9 @@ foreach my $f (@ARGV) {
 
 	if ($gen_report) {
 		$f =~ s,.*/,,;
+		$f =~ s/\.gz$//;
 		$f =~ s/\.info$//;
+		$f =~ s/\.json$//;
 
 		gen_stats();
 
@@ -1157,6 +1169,19 @@ the following regular expressions:
 	- drm/i915/
 	- drm/ttm
 	- drm/vgem
+
+Excluding files that match:
+
+	- selftest
+
+=item B<--only-xe> or B<--only_xe>
+
+Filters out C files and headers outside drm core and drm/i915.
+
+E. g. code coverage results will include only the files that that match
+the following regular expressions:
+
+	- drm/xe/
 
 Excluding files that match:
 
