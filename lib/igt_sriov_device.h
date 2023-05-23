@@ -26,4 +26,45 @@ void igt_sriov_disable_driver_autoprobe(int pf);
 int igt_sriov_open_vf_drm_device(int pf, unsigned int vf_num);
 bool igt_sriov_is_vf_drm_driver_probed(int pf, unsigned int vf_num);
 
+/**
+ * for_each_sriov_vf - Helper for running code on each VF
+ * @__pf_fd: PF device file descriptor
+ * @__vf_num: VFs iterator
+ *
+ * For loop that iterates over all VFs associated with given PF @__pf_fd.
+ */
+#define for_each_sriov_vf(__pf_fd, __vf_num) \
+	for (unsigned int __vf_num = 1, __total_vfs = igt_sriov_get_total_vfs(__pf_fd); \
+	     __vf_num <= __total_vfs; \
+	     ++__vf_num)
+#define for_each_sriov_num_vfs for_each_sriov_vf
+
+/**
+ * for_random_sriov_vf - Helper for running code on random VF
+ * @__pf_fd: PF device file descriptor
+ * @__vf_num: stores random VF
+ *
+ * Helper allows to run code using random VF number (stored in @__vf_num)
+ * picked from the range of all VFs associated with given PF @__pf_fd.
+ */
+#define for_random_sriov_vf(__pf_fd, __vf_num) \
+	for (unsigned int __vf_num = 1 + random() % igt_sriov_get_total_vfs(__pf_fd), __tmp = 0; \
+	     __tmp < 1; \
+	     ++__tmp)
+#define for_random_sriov_num_vfs for_random_sriov_vf
+
+/**
+ * for_last_sriov_vf - Helper for running code on last VF
+ * @__pf_fd: PF device file descriptor
+ * @__vf_num: stores last VF number
+ *
+ * Helper allows to run code using last VF number (stored in @__vf_num)
+ * associated with given PF @__pf_fd.
+ */
+#define for_last_sriov_vf(__pf_fd, __vf_num) \
+	for (unsigned int __vf_num = igt_sriov_get_total_vfs(__pf_fd), __tmp = 0; \
+	     __tmp < 1; \
+	     ++__tmp)
+#define for_max_sriov_num_vfs for_last_sriov_vf
+
 #endif /* __IGT_SRIOV_DEVICE_H__ */
