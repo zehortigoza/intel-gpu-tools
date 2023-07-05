@@ -525,6 +525,14 @@ uint32_t xe_min_page_size(int fd, uint64_t region)
 xe_dev_FN(xe_config, config, struct drm_xe_query_config *);
 
 /**
+ * xe_gt_list:
+ * @fd: xe device fd
+ *
+ * Returns query gts of xe device @fd.
+ */
+xe_dev_FN(xe_gt_list, gt_list, struct drm_xe_query_gt_list *);
+
+/**
  * xe_number_engine:
  * @fd: xe device fd
  *
