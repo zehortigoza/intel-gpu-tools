@@ -464,6 +464,12 @@ static int i915_perf_revision(int fd)
 	drm_i915_getparam_t gp;
 	int value = 1, ret;
 
+#define FINAL_I915_PERF_REV 7
+
+	if (is_xe_device(drm_fd))
+		return FINAL_I915_PERF_REV +
+			xe_config(drm_fd)->info[XE_QUERY_OA_IOCTL_VERSION];
+
 	gp.param = I915_PARAM_PERF_REVISION;
 	gp.value = &value;
 	ret = igt_ioctl(drm_fd, DRM_IOCTL_I915_GETPARAM, &gp);
