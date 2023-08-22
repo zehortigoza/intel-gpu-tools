@@ -26,6 +26,7 @@
 #include "igt_perf.h"
 #include "igt_sysfs.h"
 #include "drm.h"
+#include "xe/xe_ioctl.h"
 #include "xe/xe_query.h"
 
 /**
@@ -1778,6 +1779,7 @@ static struct load_helper {
 	int devid;
 	struct buf_ops *bops;
 	uint32_t context_id;
+	uint32_t vm;
 	struct intel_bb *ibb;
 	enum load load;
 	bool exit;
@@ -1864,10 +1866,15 @@ static void load_helper_init(void)
 
 	lh.bops = buf_ops_create(drm_fd);
 
-	lh.context_id = gem_context_create(drm_fd);
+	if (is_xe_device(drm_fd)) {
+		lh.vm = xe_vm_create(drm_fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		lh.context_id = xe_exec_queue_create(drm_fd, lh.vm, &xe_engine(drm_fd, 0)->instance, 0);
+	} else {
+		lh.context_id = gem_context_create(drm_fd);
+	}
 	igt_assert_neq(lh.context_id, 0xffffffff);
 
-	lh.ibb = intel_bb_create_with_context(drm_fd, lh.context_id, 0, NULL, BATCH_SZ);
+	lh.ibb = intel_bb_create_with_context(drm_fd, lh.context_id, lh.vm, NULL, BATCH_SZ);
 
 	scratch_buf_init(lh.bops, &lh.dst, 1920, 1080, 0);
 	scratch_buf_init(lh.bops, &lh.src, 1920, 1080, 0);
@@ -1875,12 +1882,8 @@ static void load_helper_init(void)
 
 static void load_helper_fini(void)
 {
-	int i915;
-
 	if (!render_copy)
 		return;
-
-	i915 = buf_ops_get_fd(lh.bops);
 
 	if (lh.igt_proc.running)
 		load_helper_stop();
@@ -1888,7 +1891,12 @@ static void load_helper_fini(void)
 	intel_buf_close(lh.bops, &lh.src);
 	intel_buf_close(lh.bops, &lh.dst);
 	intel_bb_destroy(lh.ibb);
-	gem_context_destroy(i915, lh.context_id);
+	if (is_xe_device(drm_fd)) {
+		xe_exec_queue_destroy(drm_fd, lh.context_id);
+		xe_vm_destroy(drm_fd, lh.vm);
+	} else {
+		gem_context_destroy(drm_fd, lh.context_id);
+	}
 	buf_ops_destroy(lh.bops);
 }
 
@@ -3315,6 +3323,7 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
 	struct intel_buf *buf;
 #define INVALID_CTX_ID 0xffffffff
 	uint32_t ctx_id = INVALID_CTX_ID;
+	uint32_t vm = 0;
 	uint32_t *report32;
 	size_t format_size_32;
 	struct oa_format format = get_oa_format(fmt);
@@ -3323,11 +3332,16 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
 	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
 	bops = buf_ops_create(drm_fd);
-	ctx_id = gem_context_create(drm_fd);
+	if (is_xe_device(drm_fd)) {
+		vm = xe_vm_create(drm_fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		ctx_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
+	} else {
+		ctx_id = gem_context_create(drm_fd);
+	}
 	igt_assert_neq(ctx_id, INVALID_CTX_ID);
 	properties[1] = ctx_id;
 
-	ibb = intel_bb_create_with_context(drm_fd, ctx_id, 0, NULL, BATCH_SZ);
+	ibb = intel_bb_create_with_context(drm_fd, ctx_id, vm, NULL, BATCH_SZ);
 	buf = intel_buf_create(bops, 4096, 1, 8, 64,
 			       I915_TILING_NONE, I915_COMPRESSION_NONE);
 
@@ -3372,7 +3386,12 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
 	intel_buf_unmap(buf);
 	intel_buf_destroy(buf);
 	intel_bb_destroy(ibb);
-	gem_context_destroy(drm_fd, ctx_id);
+	if (is_xe_device(drm_fd)) {
+		xe_exec_queue_destroy(drm_fd, ctx_id);
+		xe_vm_destroy(drm_fd, vm);
+	} else {
+		gem_context_destroy(drm_fd, ctx_id);
+	}
 	buf_ops_destroy(bops);
 	__perf_close(stream_fd);
 }
@@ -3937,7 +3956,7 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 	struct buf_ops *bops;
 	struct intel_bb *ibb0, *ibb1;
 	struct intel_buf src[3], dst[3], *dst_buf;
-	uint32_t context0_id, context1_id;
+	uint32_t context0_id, context1_id, vm = 0;
 	uint32_t *report0_32, *report1_32, *report2_32, *report3_32;
 	uint64_t timestamp0_64, timestamp1_64;
 	uint64_t delta_ts64, delta_oa32;
@@ -3960,10 +3979,16 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 		scratch_buf_init(bops, &dst[i], width, height, 0x00ff00ff);
 	}
 
-	context0_id = gem_context_create(drm_fd);
-	context1_id = gem_context_create(drm_fd);
-	ibb0 = intel_bb_create_with_context(drm_fd, context0_id, 0, NULL, BATCH_SZ);
-	ibb1 = intel_bb_create_with_context(drm_fd, context1_id, 0, NULL, BATCH_SZ);
+	if (is_xe_device(drm_fd)) {
+		vm = xe_vm_create(drm_fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		context0_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
+		context1_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
+	} else {
+		context0_id = gem_context_create(drm_fd);
+		context1_id = gem_context_create(drm_fd);
+	}
+	ibb0 = intel_bb_create_with_context(drm_fd, context0_id, vm, NULL, BATCH_SZ);
+	ibb1 = intel_bb_create_with_context(drm_fd, context1_id, vm, NULL, BATCH_SZ);
 
 	igt_debug("submitting warm up render_copy\n");
 
@@ -4208,8 +4233,14 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 	intel_buf_destroy(dst_buf);
 	intel_bb_destroy(ibb0);
 	intel_bb_destroy(ibb1);
-	gem_context_destroy(drm_fd, context0_id);
-	gem_context_destroy(drm_fd, context1_id);
+	if (is_xe_device(drm_fd)) {
+		xe_exec_queue_destroy(drm_fd, context0_id);
+		xe_exec_queue_destroy(drm_fd, context1_id);
+		xe_vm_destroy(drm_fd, vm);
+	} else {
+		gem_context_destroy(drm_fd, context0_id);
+		gem_context_destroy(drm_fd, context1_id);
+	}
 	buf_ops_destroy(bops);
 	__perf_close(stream_fd);
 }
