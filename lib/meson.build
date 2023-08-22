@@ -455,7 +455,7 @@ endforeach
 lib_igt_xe_oa_build = shared_library(
   'xe_oa',
   xe_oa_files,
-  dependencies: lib_igt_chipset,
+  dependencies: [lib_igt_chipset,lib_igt,pciaccess],
   include_directories : inc,
   install: true,
   soversion: '1.5')
