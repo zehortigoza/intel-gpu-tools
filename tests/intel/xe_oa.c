@@ -764,15 +764,19 @@ oar_unit_default_format(void)
  * Temporary wrapper to distinguish mappings on !llc platforms,
  * where it seems cache over GEM_MMAP_OFFSET is not flushed before execution.
  */
-static void *buf_map(int i915, struct intel_buf *buf, bool write)
+static void *buf_map(int fd, struct intel_buf *buf, bool write)
 {
 	void *p;
 
-	if (gem_has_llc(i915))
-		p = intel_buf_cpu_map(buf, write);
-	else
-		p = intel_buf_device_map(buf, write);
-
+	if (is_xe_device(fd)) {
+		buf->ptr = xe_bo_map(fd, buf->handle, buf->surface[0].size);
+		p = buf->ptr;
+	} else {
+		if (gem_has_llc(fd))
+			p = intel_buf_cpu_map(buf, write);
+		else
+			p = intel_buf_device_map(buf, write);
+	}
 	return p;
 }
 
@@ -3342,7 +3346,7 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
 	intel_bb_flush_render(ibb);
 	intel_bb_sync(ibb);
 
-	intel_buf_cpu_map(buf, false);
+	buf_map(drm_fd, buf, false);
 	report32 = buf->ptr;
 	format_size_32 = format.size >> 2;
 	dump_report(report32, format_size_32, "mi-rpc");
@@ -4079,7 +4083,7 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 	intel_bb_sync(ibb0);
 	intel_bb_sync(ibb1);
 
-	intel_buf_cpu_map(dst_buf, false);
+	buf_map(drm_fd, dst_buf, false);
 
 	/* Sanity check reports
 	 * reportX_32[0]: report id passed with mi-rpc
@@ -4175,8 +4179,8 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 	/* Verify that the work actually happened by comparing the src
 	 * and dst buffers
 	 */
-	intel_buf_cpu_map(&src[0], false);
-	intel_buf_cpu_map(&dst[0], false);
+	buf_map(drm_fd, &src[0], false);
+	buf_map(drm_fd, &dst[0], false);
 
 	ret = memcmp(src[0].ptr, dst[0].ptr, 4 * width * height);
 	intel_buf_unmap(&src[0]);
