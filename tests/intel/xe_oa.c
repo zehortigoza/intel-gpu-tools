@@ -26,6 +26,8 @@
 #include "igt_perf.h"
 #include "igt_sysfs.h"
 #include "drm.h"
+#include "xe/xe_query.h"
+
 /**
  * TEST: perf
  * Description: Test the i915 perf metrics streaming interface
@@ -5412,7 +5414,7 @@ igt_main
 		 * loading/unloading i915. Load i915 here before we stat the
 		 * files.
 		 */
-		drm_load_module(DRIVER_INTEL);
+		drm_load_module(DRIVER_XE);
 
 		igt_require(stat("/proc/sys/dev/xe/perf_stream_paranoid", &sb)
 			    == 0);
@@ -5433,8 +5435,8 @@ igt_main
 		igt_assert_eq(drm_fd, -1);
 
 		/* Avoid the normal exithandler, our perf-fd interferes */
-		drm_fd = __drm_open_driver(DRIVER_INTEL);
-		igt_require_gem(drm_fd);
+		drm_fd = __drm_open_driver(DRIVER_XE);
+		xe_device_get(drm_fd);
 
 		devid = intel_get_drm_devid(drm_fd);
 		sysfs = perf_sysfs_open(drm_fd);
