@@ -5685,6 +5685,7 @@ igt_main
 		igt_subtest_with_dynamic("gen12-unprivileged-single-ctx-counters") {
 			igt_require(has_class_instance(drm_fd, I915_ENGINE_CLASS_RENDER, 0));
 			igt_require_f(render_copy, "no render-copy function\n");
+			igt_require(!is_xe_device(drm_fd));
 			if (is_xe_device(drm_fd)) {
 				const struct intel_execution_engine2 e2 = {};
 				igt_dynamic_f("%s", "rcs")
