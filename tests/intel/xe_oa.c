@@ -4914,18 +4914,21 @@ test_whitelisted_registers_userspace_config(void)
 }
 
 static unsigned
-read_i915_module_ref(void)
+read_i915_module_ref(bool is_xe)
 {
 	FILE *fp = fopen("/proc/modules", "r");
 	char *line = NULL;
 	size_t line_buf_size = 0;
 	int len = 0;
 	unsigned ref_count;
+	char mod[8];
+	int modn = is_xe ? 3 : 5;
 
 	igt_assert(fp);
 
+	strcpy(mod, is_xe ? "xe " : "i915 ");
 	while ((len = getline(&line, &line_buf_size, fp)) > 0) {
-		if (strncmp(line, "i915 ", 5) == 0) {
+		if (strncmp(line, mod, modn) == 0) {
 			unsigned long mem;
 			int ret = sscanf(line + 5, "%lu %u", &mem, &ref_count);
 			igt_assert(ret == 2);
@@ -4980,17 +4983,26 @@ test_i915_ref_count(void)
 	unsigned baseline, ref_count0, ref_count1;
 	uint32_t oa_report0[64];
 	uint32_t oa_report1[64];
+	bool is_xe;
 
 	/* This should be the first test before the first fixture so no drm_fd
 	 * should have been opened so far...
 	 */
 	igt_assert_eq(drm_fd, -1);
 
-	baseline = read_i915_module_ref();
+	/* Tell read_i915_module_ref if we are on xe or i915 (because drm_fd is -1) */
+	drm_fd = __drm_open_driver(DRIVER_INTEL | DRIVER_XE);
+	is_xe = is_xe_device(drm_fd);
+	drm_close_driver(drm_fd);
+	close(sysfs);
+	drm_fd = -1;
+
+	baseline = read_i915_module_ref(is_xe);
 	igt_debug("baseline ref count (drm fd closed) = %u\n", baseline);
 
-	drm_fd = __drm_open_driver(DRIVER_INTEL);
-	igt_require_i915(drm_fd);
+	drm_fd = __drm_open_driver(DRIVER_INTEL | DRIVER_XE);
+	if (is_xe_device(drm_fd))
+		xe_device_get(drm_fd);
 	devid = intel_get_drm_devid(drm_fd);
 	sysfs = perf_sysfs_open(drm_fd);
 
@@ -5002,12 +5014,12 @@ test_i915_ref_count(void)
 	properties[5] = default_test_set->perf_oa_format;
 	properties[7] = oa_exp_1_millisec;
 
-	ref_count0 = read_i915_module_ref();
+	ref_count0 = read_i915_module_ref(is_xe);
 	igt_debug("initial ref count with drm_fd open = %u\n", ref_count0);
 	igt_assert(ref_count0 > baseline);
 
 	stream_fd = __perf_open(drm_fd, &param, false);
-	ref_count1 = read_i915_module_ref();
+	ref_count1 = read_i915_module_ref(is_xe);
 	igt_debug("ref count after opening i915 perf stream = %u\n", ref_count1);
 	igt_assert(ref_count1 > ref_count0);
 
@@ -5015,7 +5027,7 @@ test_i915_ref_count(void)
 	close(sysfs);
 	drm_fd = -1;
 	sysfs = -1;
-	ref_count0 = read_i915_module_ref();
+	ref_count0 = read_i915_module_ref(is_xe);
 	igt_debug("ref count after closing drm fd = %u\n", ref_count0);
 
 	igt_assert(ref_count0 > baseline);
@@ -5027,7 +5039,7 @@ test_i915_ref_count(void)
 			  false); /* not just timer reports */
 
 	__perf_close(stream_fd);
-	ref_count0 = read_i915_module_ref();
+	ref_count0 = read_i915_module_ref(is_xe);
 	igt_debug("ref count after closing i915 perf stream fd = %u\n", ref_count0);
 	igt_assert_eq(ref_count0, baseline);
 }
