@@ -5060,13 +5060,18 @@ __ci_to_e2(const intel_ctx_t *ctx, struct i915_engine_class_instance *ci)
 	static struct intel_execution_engine2 e2;
 	struct intel_execution_engine2 *e;
 
+	if (is_xe_device(drm_fd)) {
+		strncpy(e2.name, "rcs", sizeof(e2.name));
+		goto exit;
+	}
+
 	for_each_ctx_engine(drm_fd, ctx, e) {
 		if (e->class == ci->engine_class && e->instance == ci->engine_instance) {
 			e2 = *e;
 			break;
 		}
 	}
-
+exit:
 	return &e2;
 }
 
