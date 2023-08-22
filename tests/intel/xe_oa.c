@@ -5623,12 +5623,14 @@ igt_main
 		 */
 		igt_describe("Verify exclusivity of perf streams with sample oa option");
 		igt_subtest("gen12-group-exclusive-stream-sample-oa") {
+			igt_require(!is_xe_device(drm_fd));
 			igt_require(intel_gen(devid) >= 12);
 			test_group_exclusive_stream(ctx, true);
 		}
 
 		igt_describe("Verify exclusivity of perf streams with ctx handle");
 		igt_subtest("gen12-group-exclusive-stream-ctx-handle") {
+			igt_require(!is_xe_device(drm_fd));
 			igt_require(intel_gen(devid) >= 12);
 			test_group_exclusive_stream(ctx, false);
 		}
@@ -5653,14 +5655,18 @@ igt_main
 		}
 
 		igt_describe("Verify invalid SSEU opening parameters");
-		igt_subtest_with_dynamic("global-sseu-config-invalid")
+		igt_subtest_with_dynamic("global-sseu-config-invalid") {
+			igt_require(!is_xe_device(drm_fd));
 			__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
 				test_global_sseu_config_invalid(ctx, e);
+		}
 
 		igt_describe("Verify specifying SSEU opening parameters");
-		igt_subtest_with_dynamic("global-sseu-config")
+		igt_subtest_with_dynamic("global-sseu-config") {
+			igt_require(!is_xe_device(drm_fd));
 			__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
 				test_global_sseu_config(ctx, e);
+		}
 	}
 
 	igt_subtest("invalid-create-userspace-config")
