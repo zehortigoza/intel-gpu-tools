@@ -5222,6 +5222,9 @@ static struct perf_engine_group *get_engine_groups(int i915, uint32_t *num_group
 	struct perf_engine_group *groups = NULL;
 	uint32_t id = UINT32_MAX, num_grps = 0, i = 0, j;
 
+	if (is_xe_device(drm_fd))
+		return default_engine_group(num_groups);
+
 	qinfo = query_engine_info(i915);
 	if (!qinfo)
 		return default_engine_group(num_groups);
