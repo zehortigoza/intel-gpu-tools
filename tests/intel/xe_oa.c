@@ -5439,7 +5439,7 @@ test_group_concurrent_oa_buffer_read(void)
 
 igt_main
 {
-	const intel_ctx_t *ctx;
+	const intel_ctx_t *ctx = NULL;
 	const struct intel_execution_engine2 *e;
 
 	igt_fixture {
@@ -5479,8 +5479,11 @@ igt_main
 
 		igt_require(init_sys_info());
 
-		ctx = intel_ctx_create_all_physical(drm_fd);
-		set_default_engine(ctx);
+		if (!is_xe_device(drm_fd)) {
+			ctx = intel_ctx_create_all_physical(drm_fd);
+			set_default_engine(ctx);
+		}
+
 		write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 		write_u64_file("/proc/sys/dev/xe/oa_max_sample_rate", 100000);
 
