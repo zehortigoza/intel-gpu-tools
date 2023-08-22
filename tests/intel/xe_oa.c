@@ -1187,7 +1187,7 @@ test_system_wide_paranoid(void)
 			.properties_ptr = to_user_pointer(properties),
 		};
 
-		write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 1);
+		write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
 		igt_drop_root();
 
@@ -1212,7 +1212,7 @@ test_system_wide_paranoid(void)
 			.num_properties = ARRAY_SIZE(properties) / 2,
 			.properties_ptr = to_user_pointer(properties),
 		};
-		write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 0);
+		write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 0);
 
 		igt_drop_root();
 
@@ -1223,7 +1223,7 @@ test_system_wide_paranoid(void)
 	igt_waitchildren();
 
 	/* leave in paranoid state */
-	write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 1);
+	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 }
 
 static void
@@ -2058,7 +2058,7 @@ test_invalid_oa_exponent(void)
 static void
 test_low_oa_exponent_permissions(void)
 {
-	int max_freq = read_u64_file("/proc/sys/dev/i915/oa_max_sample_rate");
+	int max_freq = read_u64_file("/proc/sys/dev/xe/oa_max_sample_rate");
 	int bad_exponent = max_oa_exponent_for_freq_gt(max_freq);
 	int ok_exponent = bad_exponent + 1;
 	uint64_t properties[] = {
@@ -2080,7 +2080,7 @@ test_low_oa_exponent_permissions(void)
 	igt_assert_eq(max_freq, 100000);
 
 	/* Avoid EACCES errors opening a stream without CAP_SYS_ADMIN */
-	write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 0);
+	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 0);
 
 	igt_fork(child, 1) {
 		igt_drop_root();
@@ -2103,7 +2103,7 @@ test_low_oa_exponent_permissions(void)
 
 	oa_period = timebase_scale(2 << ok_exponent);
 	oa_freq = NSEC_PER_SEC / oa_period;
-	write_u64_file("/proc/sys/dev/i915/oa_max_sample_rate", oa_freq - 100);
+	write_u64_file("/proc/sys/dev/xe/oa_max_sample_rate", oa_freq - 100);
 
 	igt_fork(child, 1) {
 		igt_drop_root();
@@ -2114,8 +2114,8 @@ test_low_oa_exponent_permissions(void)
 	igt_waitchildren();
 
 	/* restore the defaults */
-	write_u64_file("/proc/sys/dev/i915/oa_max_sample_rate", 100000);
-	write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 1);
+	write_u64_file("/proc/sys/dev/xe/oa_max_sample_rate", 100000);
+	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 }
 
 static int64_t
@@ -3295,7 +3295,7 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
 	struct oa_format format = get_oa_format(fmt);
 
 	/* Ensure perf_stream_paranoid is set to 1 by default */
-	write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 1);
+	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
 	bops = buf_ops_create(drm_fd);
 	ctx_id = gem_context_create(drm_fd);
@@ -3490,7 +3490,7 @@ gen8_test_single_ctx_render_target_writes_a_counter(void)
 	struct igt_helper_process child = {};
 
 	/* should be default, but just to be sure... */
-	write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 1);
+	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
 	do {
 
@@ -4196,7 +4196,7 @@ gen12_test_single_ctx_render_target_writes_a_counter(const struct intel_executio
 	struct igt_helper_process child = {};
 
 	/* Ensure perf_stream_paranoid is set to 1 by default */
-	write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 1);
+	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
 	do {
 		igt_fork_helper(&child) {
@@ -4512,7 +4512,7 @@ test_global_sseu_config(const intel_ctx_t *ctx, const struct intel_execution_eng
 
 	igt_require(__builtin_popcount(default_sseu.subslice_mask) > 1);
 
-	write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 0);
+	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 0);
 
 	sseu_param = make_valid_reduced_sseu_config(default_sseu,
 						    e->class,
@@ -4529,7 +4529,7 @@ test_global_sseu_config(const intel_ctx_t *ctx, const struct intel_execution_eng
 
 	igt_waitchildren();
 
-	write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 1);
+	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
 	stream_fd = __perf_open(drm_fd, &param, false);
 	__perf_close(stream_fd);
@@ -5011,8 +5011,8 @@ test_i915_ref_count(void)
 static void
 test_sysctl_defaults(void)
 {
-	int paranoid = read_u64_file("/proc/sys/dev/i915/perf_stream_paranoid");
-	int max_freq = read_u64_file("/proc/sys/dev/i915/oa_max_sample_rate");
+	int paranoid = read_u64_file("/proc/sys/dev/xe/perf_stream_paranoid");
+	int max_freq = read_u64_file("/proc/sys/dev/xe/oa_max_sample_rate");
 
 	igt_assert_eq(paranoid, 1);
 	igt_assert_eq(max_freq, 100000);
@@ -5414,9 +5414,9 @@ igt_main
 		 */
 		drm_load_module(DRIVER_INTEL);
 
-		igt_require(stat("/proc/sys/dev/i915/perf_stream_paranoid", &sb)
+		igt_require(stat("/proc/sys/dev/xe/perf_stream_paranoid", &sb)
 			    == 0);
-		igt_require(stat("/proc/sys/dev/i915/oa_max_sample_rate", &sb)
+		igt_require(stat("/proc/sys/dev/xe/oa_max_sample_rate", &sb)
 			    == 0);
 	}
 
@@ -5443,8 +5443,8 @@ igt_main
 
 		ctx = intel_ctx_create_all_physical(drm_fd);
 		set_default_engine(ctx);
-		write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 1);
-		write_u64_file("/proc/sys/dev/i915/oa_max_sample_rate", 100000);
+		write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
+		write_u64_file("/proc/sys/dev/xe/oa_max_sample_rate", 100000);
 
 		gt_max_freq_mhz = sysfs_read(RPS_RP0_FREQ_MHZ);
 		perf_oa_groups = get_engine_groups(drm_fd, &num_perf_oa_groups);
@@ -5675,8 +5675,8 @@ igt_main
 
 	igt_fixture {
 		/* leave sysctl options in their default state... */
-		write_u64_file("/proc/sys/dev/i915/oa_max_sample_rate", 100000);
-		write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 1);
+		write_u64_file("/proc/sys/dev/xe/oa_max_sample_rate", 100000);
+		write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
 		if (intel_perf)
 			intel_perf_free(intel_perf);
