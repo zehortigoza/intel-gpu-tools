@@ -543,7 +543,20 @@ sysfs_read(enum i915_attr_id id)
 {
 	unsigned long value;
 
-	igt_assert(igt_sysfs_rps_scanf(sysfs, id, "%lu", &value) == 1);
+	if (is_xe_device(drm_fd)) {
+		switch (id) {
+		case RPS_RP0_FREQ_MHZ:
+			igt_assert(igt_sysfs_scanf(sysfs, "device/tile0/gt0/freq_rp0", "%lu", &value) == 1);
+			break;
+		case RC6_RESIDENCY_MS:
+			igt_assert(igt_sysfs_scanf(sysfs, "device/tile0/gt0/rc6_residency", "%lu", &value) == 1);
+			break;
+		default:
+			igt_assert(0);
+		}
+	} else {
+		igt_assert(igt_sysfs_rps_scanf(sysfs, id, "%lu", &value) == 1);
+	}
 
 	return value;
 }
@@ -4931,6 +4944,9 @@ done:
 static int perf_sysfs_open(int i915)
 {
 	int dirfd, gt;
+
+	if (is_xe_device(drm_fd))
+		return igt_sysfs_open(drm_fd);
 
 	/* use the first available sysfs interface */
 	for_each_sysfs_gt_dirfd(i915, dirfd, gt)
