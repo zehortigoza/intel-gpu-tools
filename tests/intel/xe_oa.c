@@ -5310,14 +5310,8 @@ random_engine(struct perf_engine_group *group)
 
 static bool has_class_instance(int i915, uint16_t class, uint16_t instance)
 {
-	int fd;
-
-	fd = perf_i915_open(i915, I915_PMU_ENGINE_BUSY(class, instance));
-	if (fd >= 0) {
-		close(fd);
+	if (class == I915_ENGINE_CLASS_RENDER && !IS_PONTEVECCHIO(devid))
 		return true;
-	}
-
 	return false;
 }
 
