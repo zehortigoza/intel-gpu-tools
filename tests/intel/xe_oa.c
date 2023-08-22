@@ -5631,8 +5631,14 @@ igt_main
 		igt_describe("Test MI REPORT PERF COUNT for Gen 12");
 		igt_subtest_with_dynamic("gen12-mi-rpc") {
 			igt_require(has_class_instance(drm_fd, I915_ENGINE_CLASS_RENDER, 0));
-			__for_each_render_engine(drm_fd, e)
-				gen12_test_mi_rpc(e);
+			if (is_xe_device(drm_fd)) {
+				const struct intel_execution_engine2 e2 = {};
+				igt_dynamic_f("%s", "rcs")
+					gen12_test_mi_rpc(&e2);
+			} else {
+				__for_each_render_engine(drm_fd, e)
+					gen12_test_mi_rpc(e);
+			}
 		}
 
 		igt_describe("Test OA TLB invalidate");
@@ -5644,8 +5650,14 @@ igt_main
 		igt_subtest_with_dynamic("gen12-unprivileged-single-ctx-counters") {
 			igt_require(has_class_instance(drm_fd, I915_ENGINE_CLASS_RENDER, 0));
 			igt_require_f(render_copy, "no render-copy function\n");
-			__for_each_render_engine(drm_fd, e)
-				gen12_test_single_ctx_render_target_writes_a_counter(e);
+			if (is_xe_device(drm_fd)) {
+				const struct intel_execution_engine2 e2 = {};
+				igt_dynamic_f("%s", "rcs")
+					gen12_test_single_ctx_render_target_writes_a_counter(&e2);
+			} else {
+				__for_each_render_engine(drm_fd, e)
+					gen12_test_single_ctx_render_target_writes_a_counter(e);
+			}
 		}
 	}
 
