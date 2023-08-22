@@ -20,10 +20,11 @@
 
 #include <i915_drm.h>
 
+#include "drmtest.h"
 #include "i915_pciids.h"
-
 #include "intel_chipset.h"
 #include "xe_oa.h"
+#include "xe/xe_query.h"
 
 #include "xe_oa_metrics_adl.h"
 #include "xe_oa_metrics_acmgt1.h"
@@ -31,8 +32,6 @@
 #include "xe_oa_metrics_acmgt3.h"
 #include "xe_oa_metrics_mtlgt2.h"
 #include "xe_oa_metrics_mtlgt3.h"
-
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 static int
 perf_ioctl(int fd, unsigned long request, void *arg)
@@ -504,6 +503,54 @@ intel_sysfs_attr_id_to_name(int sysfs_dirfd, intel_sysfs_attr_id id, int gt)
 		intel_sysfs_attr_name[0][id];
 }
 
+static struct intel_perf *
+xe_perf_for_fd(int drm_fd, int gt)
+{
+	uint32_t device_id;
+	uint32_t device_revision = 0;
+	uint32_t timestamp_frequency;
+	uint64_t gt_min_freq;
+	uint64_t gt_max_freq;
+	struct intel_perf *ret;
+	int sysfs_dir_fd = open_master_sysfs_dir(drm_fd);
+	char path_min[64], path_max[64];
+
+	if (sysfs_dir_fd < 0) {
+		igt_warn("open_master_sysfs_dir failed\n");
+		return NULL;
+	}
+
+	if (IS_PONTEVECCHIO(xe_dev_id(drm_fd))) {
+		sprintf(path_min, "device/tile%d/gt%d/freq_min", gt, gt);
+		sprintf(path_max, "device/tile%d/gt%d/freq_max", gt, gt);
+	} else {
+		sprintf(path_min, "device/tile0/gt%d/freq_min", gt);
+		sprintf(path_max, "device/tile0/gt%d/freq_max", gt);
+	}
+
+	if (!read_sysfs(sysfs_dir_fd, path_min, &gt_min_freq) ||
+	    !read_sysfs(sysfs_dir_fd, path_max, &gt_max_freq)) {
+		igt_warn("Unable to read freqs from sysfs\n");
+		close(sysfs_dir_fd);
+		return NULL;
+	}
+	close(sysfs_dir_fd);
+
+	device_id = intel_get_drm_devid(drm_fd);
+	timestamp_frequency = xe_gt_list(drm_fd)->gt_list[0].oa_timestamp_freq;
+
+	ret = intel_perf_for_devinfo(device_id,
+				     device_revision,
+				     timestamp_frequency,
+				     gt_min_freq * 1000000,
+				     gt_max_freq * 1000000,
+				     NULL);
+	if (!ret)
+		igt_warn("intel_perf_for_devinfo failed\n");
+
+	return ret;
+}
+
 struct intel_perf *
 intel_perf_for_fd(int drm_fd, int gt)
 {
@@ -515,6 +562,9 @@ intel_perf_for_fd(int drm_fd, int gt)
 	struct drm_i915_query_topology_info *topology;
 	struct intel_perf *ret;
 	int sysfs_dir_fd = open_master_sysfs_dir(drm_fd);
+
+	if (is_xe_device(drm_fd))
+		return xe_perf_for_fd(drm_fd, gt);
 
 	if (sysfs_dir_fd < 0)
 		return NULL;
