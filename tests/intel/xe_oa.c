@@ -460,39 +460,16 @@ __perf_open(int fd, struct drm_i915_perf_open_param *param, bool prevent_pm)
 	return ret;
 }
 
-static int i915_perf_revision(int fd)
-{
-	drm_i915_getparam_t gp;
-	int value = 1, ret;
-
-#define FINAL_I915_PERF_REV 7
-
-	if (is_xe_device(drm_fd))
-		return FINAL_I915_PERF_REV +
-			xe_config(drm_fd)->info[XE_QUERY_OA_IOCTL_VERSION];
-
-	gp.param = I915_PARAM_PERF_REVISION;
-	gp.value = &value;
-	ret = igt_ioctl(drm_fd, DRM_IOCTL_I915_GETPARAM, &gp);
-	if (ret == -1) {
-		/* If the param is missing, consider version 1. */
-		igt_assert_eq(errno, EINVAL);
-		return 1;
-	}
-
-	return value;
-}
-
 static bool
 has_param_class_instance(void)
 {
-	return i915_perf_revision(drm_fd) >= 6;
+	return true;
 }
 
 static bool
 has_param_poll_period(void)
 {
-	return i915_perf_revision(drm_fd) >= 5;
+	return true;
 }
 
 static int
@@ -5238,11 +5215,7 @@ static void populate_mtl_oa_unit_ids(struct drm_i915_query_engine_info *qinfo)
 
 		case I915_ENGINE_CLASS_VIDEO:
 		case I915_ENGINE_CLASS_VIDEO_ENHANCE:
-			if (i915_perf_revision(drm_fd) >= 7)
-				qinfo->engines[i].rsvd0 = 1;
-			else
-				qinfo->engines[i].rsvd0 = UINT32_MAX;
-
+			qinfo->engines[i].rsvd0 = 1;
 			break;
 
 		default:
@@ -5594,8 +5567,6 @@ igt_main
 		      .instance = default_e2.instance,
 		};
 
-		igt_require(i915_perf_revision(drm_fd) >= 5);
-
 		test_blocking(10 * 1000 * 1000 /* 10ms oa period */,
 			      true /* set_kernel_hrtimer */,
 			      40 * 1000 * 1000 /* default 40ms hrtimer */,
@@ -5621,8 +5592,6 @@ igt_main
 		      .class = default_e2.class,
 		      .instance = default_e2.instance,
 		};
-
-		igt_require(i915_perf_revision(drm_fd) >= 5);
 
 		test_polling(10 * 1000 * 1000 /* 10ms oa period */,
 			     true /* set_kernel_hrtimer */,
@@ -5698,8 +5667,6 @@ igt_main
 	}
 
 	igt_subtest_group {
-		igt_fixture igt_require(i915_perf_revision(drm_fd) >= 6);
-
 		igt_describe("Verify invalid class instance");
 		igt_subtest("gen12-invalid-class-instance")
 			test_invalid_class_instance();
@@ -5737,7 +5704,6 @@ igt_main
 
 	igt_subtest_group {
 		igt_fixture {
-			igt_require(i915_perf_revision(drm_fd) >= 4);
 			igt_require(intel_graphics_ver(devid) < IP_VER(12, 50));
 		}
 
