@@ -273,7 +273,7 @@ struct intel_perf {
 	struct intel_perf_devinfo devinfo;
 };
 
-struct drm_i915_perf_record_header;
+struct drm_xe_oa_record_header;
 struct drm_i915_query_topology_info;
 
 static inline bool
@@ -323,19 +323,19 @@ void intel_perf_load_perf_configs(struct intel_perf *perf, int drm_fd);
 void intel_perf_accumulate_reports(struct intel_perf_accumulator *acc,
 				   const struct intel_perf *perf,
 				   const struct intel_perf_metric_set *metric_set,
-				   const struct drm_i915_perf_record_header *record0,
-				   const struct drm_i915_perf_record_header *record1);
+				   const struct drm_xe_oa_record_header *record0,
+				   const struct drm_xe_oa_record_header *record1);
 
 uint64_t intel_perf_read_record_timestamp(const struct intel_perf *perf,
 					  const struct intel_perf_metric_set *metric_set,
-					  const struct drm_i915_perf_record_header *record);
+					  const struct drm_xe_oa_record_header *record);
 
 uint64_t intel_perf_read_record_timestamp_raw(const struct intel_perf *perf,
 					      const struct intel_perf_metric_set *metric_set,
-					      const struct drm_i915_perf_record_header *record);
+					      const struct drm_xe_oa_record_header *record);
 
 const char *intel_perf_read_report_reason(const struct intel_perf *perf,
-					  const struct drm_i915_perf_record_header *record);
+					  const struct drm_xe_oa_record_header *record);
 
 #ifdef __cplusplus
 };
