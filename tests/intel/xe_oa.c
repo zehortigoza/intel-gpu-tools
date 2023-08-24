@@ -30,33 +30,33 @@
 #include "xe/xe_query.h"
 
 /**
- * TEST: perf
- * Description: Test the i915 perf metrics streaming interface
+ * TEST: xe_oa
+ * Description: Test the xe perf metrics streaming interface
  * Run type: FULL
  *
  * SUBTEST: blocking
  * Description: Test blocking read with default hrtimer frequency
- * Feature: i915 streaming interface, oa
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: blocking-parameterized
  * Description: Test blocking read with different hrtimer frequencies
- * Feature: i915 streaming interface, oa
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: buffer-fill
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: create-destroy-userspace-config
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: disabled-read-error
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: enable-disable
@@ -76,7 +76,7 @@
  *
  * SUBTEST: gen12-invalid-class-instance
  * Description: Verify invalid class instance
- * Feature: i915 streaming interface, oa
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: gen12-mi-rpc
@@ -85,7 +85,7 @@
  *
  * SUBTEST: gen12-oa-tlb-invalidate
  * Description: Test OA TLB invalidate
- * Feature: i915 streaming interface, oa
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: gen12-unprivileged-single-ctx-counters
@@ -103,57 +103,57 @@
  * Description: Verify invalid SSEU opening parameters
  * Feature: oa
  *
- * SUBTEST: i915-ref-count
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * SUBTEST: xe-ref-count
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: invalid-create-userspace-config
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: invalid-oa-exponent
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: invalid-oa-format-id
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: invalid-oa-metric-set-id
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: invalid-open-flags
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: invalid-remove-userspace-config
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: low-oa-exponent-permissions
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: mi-rpc
  * Feature: oa
  *
  * SUBTEST: missing-sample-flags
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: non-sampling-read-error
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: non-system-wide-paranoid
@@ -161,15 +161,15 @@
  *
  * SUBTEST: non-zero-reason
  * Description: Test that reason field in OA reports is never 0 on Gen8+
- * Feature: i915 streaming interface, oa
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: oa-exponents
  * Feature: oa
  *
  * SUBTEST: oa-formats
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: per-context-mode-unprivileged
@@ -177,46 +177,46 @@
  *
  * SUBTEST: polling
  * Description: Test polled read with default hrtimer frequency
- * Feature: i915 streaming interface, oa
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: polling-parameterized
  * Description: Test polled read with different hrtimer frequencies
- * Feature: i915 streaming interface, oa
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: polling-small-buf
  * Description: Test polled read with buffer size smaller than available data
- * Feature: i915 streaming interface, oa
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: rc6-disable
  * Feature: oa
  *
  * SUBTEST: short-reads
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: stress-open-close
- * Description: Stress tests opening & closing the i915-perf stream in a busy loop
+ * Description: Stress tests opening & closing the xe-perf stream in a busy loop
  * Feature: oa
  *
  * SUBTEST: sysctl-defaults
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  *
  * SUBTEST: unprivileged-single-ctx-counters
  * Feature: oa, obsolete
  *
  * SUBTEST: whitelisted-registers-userspace-config
- * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
+ * Description: Test the xe perf metrics streaming interface
+ * Feature: xe streaming interface, oa
  * Test category: Perf
  */
 
-IGT_TEST_DESCRIPTION("Test the i915 perf metrics streaming interface");
+IGT_TEST_DESCRIPTION("Test the xe perf metrics streaming interface");
 
 #define GEN6_MI_REPORT_PERF_COUNT ((0x28 << 23) | (3 - 2))
 #define GEN8_MI_REPORT_PERF_COUNT ((0x28 << 23) | (4 - 2))
@@ -2244,7 +2244,7 @@ test_blocking(uint64_t requested_oa_period,
 	 * the error delta.
 	 */
 	start = get_time();
-	do_ioctl(perf_fd, I915_PERF_IOCTL_ENABLE, 0);
+	do_ioctl(perf_fd, XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < test_duration_ns; /* nop */) {
 		struct drm_i915_perf_record_header *header;
 		bool timer_report_read = false;
@@ -2408,7 +2408,7 @@ test_polling(uint64_t requested_oa_period,
 	 * the error delta.
 	 */
 	start = get_time();
-	do_ioctl(stream_fd, I915_PERF_IOCTL_ENABLE, 0);
+	do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < test_duration_ns; /* nop */) {
 		struct pollfd pollfd = { .fd = stream_fd, .events = POLLIN };
 		struct drm_i915_perf_record_header *header;
@@ -2553,7 +2553,7 @@ static void test_polling_small_buf(void)
 	uint32_t n_polls = 0;
 
 	stream_fd = __perf_open(drm_fd, &param, true /* prevent_pm */);
-	do_ioctl(stream_fd, I915_PERF_IOCTL_ENABLE, 0);
+	do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
 
 	while (igt_nsec_elapsed(&ts) < test_duration) {
 		struct pollfd pollfd = { .fd = stream_fd, .events = POLLIN };
@@ -2595,7 +2595,7 @@ num_valid_reports_captured(struct drm_i915_perf_open_param *param,
 	stream_fd = __perf_open(drm_fd, param, true);
 
 	start = get_time();
-	do_ioctl(stream_fd, I915_PERF_IOCTL_ENABLE, 0);
+	do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < *duration_ns; /* nop */) {
 		struct drm_i915_perf_record_header *header;
 		int ret;
@@ -2717,7 +2717,7 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 		uint32_t n_periodic_reports;
 		uint32_t first_timestamp = 0, last_timestamp = 0;
 
-		do_ioctl(stream_fd, I915_PERF_IOCTL_ENABLE, 0);
+		do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
 
 		nanosleep(&(struct timespec){ .tv_sec = 0,
 					      .tv_nsec = fill_duration * 1.25 },
@@ -2738,12 +2738,12 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 
 		igt_assert_eq(overflow_seen, true);
 
-		do_ioctl(stream_fd, I915_PERF_IOCTL_DISABLE, 0);
+		do_ioctl(stream_fd, XE_PERF_IOCTL_DISABLE, 0);
 
 		igt_debug("fill_duration = %"PRIu64"ns, oa_exponent = %u\n",
 			  fill_duration, oa_exponent);
 
-		do_ioctl(stream_fd, I915_PERF_IOCTL_ENABLE, 0);
+		do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
 
 		nanosleep(&(struct timespec){ .tv_sec = 0,
 					.tv_nsec = fill_duration / 2 },
@@ -2805,7 +2805,7 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 			}
 		}
 
-		do_ioctl(stream_fd, I915_PERF_IOCTL_DISABLE, 0);
+		do_ioctl(stream_fd, XE_PERF_IOCTL_DISABLE, 0);
 
 		igt_debug("first ts = %u, last ts = %u\n", first_timestamp, last_timestamp);
 
@@ -2975,7 +2975,7 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 		igt_assert_eq(len, -1);
 		igt_assert_eq(errno, EIO);
 
-		do_ioctl(stream_fd, I915_PERF_IOCTL_ENABLE, 0);
+		do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
 
 		nanosleep(&(struct timespec){ .tv_sec = 0,
 					      .tv_nsec = fill_duration / 2 },
@@ -3040,7 +3040,7 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 
 		}
 
-		do_ioctl(stream_fd, I915_PERF_IOCTL_DISABLE, 0);
+		do_ioctl(stream_fd, XE_PERF_IOCTL_DISABLE, 0);
 
 		igt_debug("first ts = %lu, last ts = %lu\n", first_timestamp, last_timestamp);
 
@@ -3242,13 +3242,13 @@ test_disabled_read_error(void)
 			  oa_report1,
 			  false); /* not just timer reports */
 
-	do_ioctl(stream_fd, I915_PERF_IOCTL_DISABLE, 0);
+	do_ioctl(stream_fd, XE_PERF_IOCTL_DISABLE, 0);
 
 	ret = read(stream_fd, buf, sizeof(buf));
 	igt_assert_eq(ret, -1);
 	igt_assert_eq(errno, EIO);
 
-	do_ioctl(stream_fd, I915_PERF_IOCTL_ENABLE, 0);
+	do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
 
 	read_2_oa_reports(default_test_set->perf_oa_format,
 			  oa_exponent,
@@ -4976,7 +4976,7 @@ static int perf_sysfs_open(int i915)
  * including in the corner case where the original drm fd has been closed.
  */
 static void
-test_i915_ref_count(void)
+test_xe_ref_count(void)
 {
 	uint64_t properties[] = {
 		/* Include OA reports in samples */
@@ -5454,9 +5454,9 @@ igt_main
 		struct stat sb;
 
 		/*
-		 * Prior tests may have unloaded i915 or failed while
-		 * loading/unloading i915. Load i915 here before we stat the
-		 * files.
+		 * Prior tests may have unloaded the module or failed while
+		 * loading/unloading the module. Load xe here before we
+		 * stat the files.
 		 */
 		drm_load_module(DRIVER_XE);
 
@@ -5466,8 +5466,8 @@ igt_main
 			    == 0);
 	}
 
-	igt_subtest("i915-ref-count")
-		test_i915_ref_count();
+	igt_subtest("xe-ref-count")
+		test_xe_ref_count();
 
 	igt_subtest("sysctl-defaults")
 		test_sysctl_defaults();
@@ -5697,7 +5697,7 @@ igt_main
 	igt_subtest("rc6-disable")
 		test_rc6_disable();
 
-	igt_describe("Stress tests opening & closing the i915-perf stream in a busy loop");
+	igt_describe("Stress tests opening & closing the xe-oa stream in a busy loop");
 	igt_subtest_with_dynamic("stress-open-close")
 		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
 			test_stress_open_close(e);
