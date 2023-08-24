@@ -1270,13 +1270,13 @@ test_invalid_class_instance(void)
 #define OA_E_CLASS 9
 #define OA_E_INSTANCE 11
 
-	properties[OA_E_CLASS] = I915_ENGINE_CLASS_COPY;
+	properties[OA_E_CLASS] = DRM_XE_ENGINE_CLASS_COPY;
 	do_ioctl_err(drm_fd, DRM_IOCTL_I915_PERF_OPEN, &param, EINVAL);
 
 	properties[OA_E_CLASS] = 10;
 	do_ioctl_err(drm_fd, DRM_IOCTL_I915_PERF_OPEN, &param, EINVAL);
 
-	properties[OA_E_CLASS] = I915_ENGINE_CLASS_RENDER;
+	properties[OA_E_CLASS] = DRM_XE_ENGINE_CLASS_RENDER;
 
 	properties[OA_E_INSTANCE] = 100;
 	do_ioctl_err(drm_fd, DRM_IOCTL_I915_PERF_OPEN, &param, EINVAL);
@@ -1707,10 +1707,10 @@ oa_unit_supports_engine(int oa_unit, const struct intel_execution_engine2 *e)
 {
 	switch (oa_unit) {
 	case OAM:
-		return e->class == I915_ENGINE_CLASS_VIDEO ||
-		       e->class == I915_ENGINE_CLASS_VIDEO_ENHANCE;
+		return e->class == DRM_XE_ENGINE_CLASS_VIDEO_DECODE ||
+		       e->class == DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE;
 	case OAG:
-		return e->class == I915_ENGINE_CLASS_RENDER;
+		return e->class == DRM_XE_ENGINE_CLASS_RENDER;
 	}
 
 	return false;
@@ -5095,7 +5095,7 @@ exit:
 
 #define __for_each_render_engine(fd__, e__) \
 	for_each_physical_engine(fd__, e__) \
-		if (e__->class == I915_ENGINE_CLASS_RENDER) \
+		if (e__->class == DRM_XE_ENGINE_CLASS_RENDER) \
 			igt_dynamic_f("%s", e__->name)
 
 struct perf_engine_group {
@@ -5136,10 +5136,10 @@ static struct intel_perf_metric_set *metric_set(const struct intel_execution_eng
 
 	if (IS_HASWELL(devid))
 		test_set_name = "RenderBasic";
-	else if (e2->class == I915_ENGINE_CLASS_RENDER)
+	else if (e2->class == DRM_XE_ENGINE_CLASS_RENDER)
 		test_set_name = "TestOa";
-	else if ((e2->class == I915_ENGINE_CLASS_VIDEO ||
-		  e2->class == I915_ENGINE_CLASS_VIDEO_ENHANCE) &&
+	else if ((e2->class == DRM_XE_ENGINE_CLASS_VIDEO_DECODE ||
+		  e2->class == DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE) &&
 		 HAS_OAM(devid))
 		test_set_name = "MediaSet1";
 	else
@@ -5209,12 +5209,12 @@ static void populate_mtl_oa_unit_ids(struct drm_i915_query_engine_info *qinfo)
 		ci = qinfo->engines[i].engine;
 
 		switch (ci.engine_class) {
-		case I915_ENGINE_CLASS_RENDER:
+		case DRM_XE_ENGINE_CLASS_RENDER:
 			qinfo->engines[i].rsvd0 = 0;
 			break;
 
-		case I915_ENGINE_CLASS_VIDEO:
-		case I915_ENGINE_CLASS_VIDEO_ENHANCE:
+		case DRM_XE_ENGINE_CLASS_VIDEO_DECODE:
+		case DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE:
 			qinfo->engines[i].rsvd0 = 1;
 			break;
 
@@ -5318,7 +5318,7 @@ random_engine(struct perf_engine_group *group)
 
 static bool has_class_instance(int i915, uint16_t class, uint16_t instance)
 {
-	if (class == I915_ENGINE_CLASS_RENDER && !IS_PONTEVECCHIO(devid))
+	if (class == DRM_XE_ENGINE_CLASS_RENDER && !IS_PONTEVECCHIO(devid))
 		return true;
 	return false;
 }
@@ -5328,7 +5328,7 @@ static void set_default_engine(const intel_ctx_t *ctx)
 	const struct intel_execution_engine2 *e;
 
 	for_each_ctx_engine(drm_fd, ctx, e)
-		if (e->class == I915_ENGINE_CLASS_RENDER && e->instance == 0)
+		if (e->class == DRM_XE_ENGINE_CLASS_RENDER && e->instance == 0)
 			default_e2 = *e;
 }
 
@@ -5499,7 +5499,7 @@ igt_main
 		perf_oa_groups = get_engine_groups(drm_fd, &num_perf_oa_groups);
 		igt_assert(perf_oa_groups && num_perf_oa_groups);
 
-		if (has_class_instance(drm_fd, I915_ENGINE_CLASS_RENDER, 0))
+		if (has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0))
 			render_copy = igt_get_render_copyfunc(devid);
 	}
 
@@ -5634,7 +5634,7 @@ igt_main
 
 		igt_describe("Test MI REPORT PERF COUNT for Gen 12");
 		igt_subtest_with_dynamic("gen12-mi-rpc") {
-			igt_require(has_class_instance(drm_fd, I915_ENGINE_CLASS_RENDER, 0));
+			igt_require(has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0));
 			if (is_xe_device(drm_fd)) {
 				const struct intel_execution_engine2 e2 = {};
 				igt_dynamic_f("%s", "rcs")
@@ -5652,7 +5652,7 @@ igt_main
 
 		igt_describe("Measure performance for a specific context using OAR in Gen 12");
 		igt_subtest_with_dynamic("gen12-unprivileged-single-ctx-counters") {
-			igt_require(has_class_instance(drm_fd, I915_ENGINE_CLASS_RENDER, 0));
+			igt_require(has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0));
 			igt_require_f(render_copy, "no render-copy function\n");
 			igt_require(!is_xe_device(drm_fd));
 			if (is_xe_device(drm_fd)) {
