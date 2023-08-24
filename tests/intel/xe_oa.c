@@ -284,59 +284,6 @@ struct oa_format {
 	bool report_hdr_64bit;
 };
 
-static struct oa_format hsw_oa_formats[I915_OA_FORMAT_MAX] = {
-	[I915_OA_FORMAT_A13] = { /* HSW only */
-		"A13", .size = 64,
-		.a_off = 12, .n_a = 13, },
-	[I915_OA_FORMAT_A29] = { /* HSW only */
-		"A29", .size = 128,
-		.a_off = 12, .n_a = 29, },
-	[I915_OA_FORMAT_A13_B8_C8] = { /* HSW only */
-		"A13_B8_C8", .size = 128,
-		.a_off = 12, .n_a = 13,
-		.b_off = 64, .n_b = 8,
-		.c_off = 96, .n_c = 8, },
-	[I915_OA_FORMAT_A45_B8_C8] = { /* HSW only */
-		"A45_B8_C8", .size = 256,
-		.a_off = 12,  .n_a = 45,
-		.b_off = 192, .n_b = 8,
-		.c_off = 224, .n_c = 8, },
-	[I915_OA_FORMAT_B4_C8] = { /* HSW only */
-		"B4_C8", .size = 64,
-		.b_off = 16, .n_b = 4,
-		.c_off = 32, .n_c = 8, },
-	[I915_OA_FORMAT_B4_C8_A16] = { /* HSW only */
-		"B4_C8_A16", .size = 128,
-		.b_off = 16, .n_b = 4,
-		.c_off = 32, .n_c = 8,
-		.a_off = 60, .n_a = 16, .first_a = 29, },
-	[I915_OA_FORMAT_C4_B8] = { /* HSW+ (header differs from HSW-Gen8+) */
-		"C4_B8", .size = 64,
-		.c_off = 16, .n_c = 4,
-		.b_off = 28, .n_b = 8 },
-};
-
-static struct oa_format gen8_oa_formats[I915_OA_FORMAT_MAX] = {
-	[I915_OA_FORMAT_A12] = {
-		"A12", .size = 64,
-		.a_off = 12, .n_a = 12, .first_a = 7, },
-	[I915_OA_FORMAT_A12_B8_C8] = {
-		"A12_B8_C8", .size = 128,
-		.a_off = 12, .n_a = 12,
-		.b_off = 64, .n_b = 8,
-		.c_off = 96, .n_c = 8, .first_a = 7, },
-	[I915_OA_FORMAT_A32u40_A4u32_B8_C8] = {
-		"A32u40_A4u32_B8_C8", .size = 256,
-		.a40_high_off = 160, .a40_low_off = 16, .n_a40 = 32,
-		.a_off = 144, .n_a = 4, .first_a = 32,
-		.b_off = 192, .n_b = 8,
-		.c_off = 224, .n_c = 8, },
-	[I915_OA_FORMAT_C4_B8] = {
-		"C4_B8", .size = 64,
-		.c_off = 16, .n_c = 4,
-		.b_off = 32, .n_b = 8, },
-};
-
 static struct oa_format gen12_oa_formats[I915_OA_FORMAT_MAX] = {
 	[I915_OA_FORMAT_A32u40_A4u32_B8_C8] = {
 		"A32u40_A4u32_B8_C8", .size = 256,
@@ -400,24 +347,6 @@ static struct oa_format mtl_oa_formats[I915_OA_FORMAT_MAX] = {
 		.report_hdr_64bit = true, },
 };
 
-static bool hsw_undefined_a_counters[45] = {
-	[4] = true,
-	[6] = true,
-	[9] = true,
-	[11] = true,
-	[14] = true,
-	[16] = true,
-	[19] = true,
-	[21] = true,
-	[24] = true,
-	[26] = true,
-	[29] = true,
-	[31] = true,
-	[34] = true,
-	[43] = true,
-	[44] = true,
-};
-
 /* No A counters currently reserved/undefined for gen8+ so far */
 static bool gen8_undefined_a_counters[45];
 
@@ -462,16 +391,12 @@ dump_report(const uint32_t *report, uint32_t size, const char *message) {
 static struct oa_format
 get_oa_format(enum drm_i915_oa_format format)
 {
-	if (IS_HASWELL(devid))
-		return hsw_oa_formats[format];
-	else if (IS_DG2(devid))
+	if (IS_DG2(devid))
 		return dg2_oa_formats[format];
 	else if (IS_METEORLAKE(devid))
 		return mtl_oa_formats[format];
-	else if (IS_GEN12(devid))
-		return gen12_oa_formats[format];
 	else
-		return gen8_oa_formats[format];
+		return gen12_oa_formats[format];
 }
 
 static char *
@@ -613,22 +538,6 @@ sysfs_read(enum i915_attr_id id)
 	igt_assert(igt_sysfs_rps_scanf(sysfs, id, "%lu", &value) == 1);
 
 	return value;
-}
-
-/* XXX: For Haswell this utility is only applicable to the render basic
- * metric set.
- *
- * C2 corresponds to a clock counter for the Haswell render basic metric set
- * but it's not included in all of the formats.
- */
-static uint64_t
-hsw_read_report_ticks(const uint32_t *report, enum drm_i915_oa_format format)
-{
-	uint32_t *c = (uint32_t *)(((uint8_t *)report) + get_oa_format(format).c_off);
-
-	igt_assert_neq(get_oa_format(format).n_c, 0);
-
-	return c[2];
 }
 
 static uint64_t
@@ -801,21 +710,8 @@ oa_exponent_to_ns(int exponent)
 static bool
 oa_report_is_periodic(uint32_t oa_exponent, const uint32_t *report)
 {
-	if (IS_HASWELL(devid)) {
-		/* For Haswell we don't have a documented report reason field
-		 * (though empirically report[0] bit 10 does seem to correlate
-		 * with a timer trigger reason) so we instead infer which
-		 * reports are timer triggered by checking if the least
-		 * significant bits are zero and the exponent bit is set.
-		 */
-		uint32_t oa_exponent_mask = (1 << (oa_exponent + 1)) - 1;
-
-		if ((report[1] & oa_exponent_mask) == (1 << oa_exponent))
-			return true;
-	} else {
-		if (gen8_report_reason(report) & OAREPORT_REASON_TIMER)
-			return true;
-	}
+	if (gen8_report_reason(report) & OAREPORT_REASON_TIMER)
+		return true;
 
 	return false;
 }
@@ -823,15 +719,7 @@ oa_report_is_periodic(uint32_t oa_exponent, const uint32_t *report)
 static bool
 oa_report_ctx_is_valid(uint32_t *report)
 {
-	if (IS_HASWELL(devid)) {
-		return false; /* TODO */
-	} else if (IS_GEN8(devid)) {
-		return report[0] & (1ul << 25);
-	} else if (AT_LEAST_GEN(devid, 9)) {
-		return report[0] & (1ul << 16);
-	}
-
-	igt_assert(!"Please update this function for newer Gen");
+	return report[0] & (1ul << 16);
 }
 
 static uint32_t
@@ -897,100 +785,11 @@ emit_report_perf_count(struct intel_bb *ibb,
 {
 	intel_bb_add_intel_buf(ibb, dst, true);
 
-	if (IS_HASWELL(devid))
-		intel_bb_out(ibb, GEN6_MI_REPORT_PERF_COUNT);
-	else
-		intel_bb_out(ibb, GEN8_MI_REPORT_PERF_COUNT);
-
+	intel_bb_out(ibb, GEN8_MI_REPORT_PERF_COUNT);
 	intel_bb_emit_reloc(ibb, dst->handle,
 			    I915_GEM_DOMAIN_INSTRUCTION, I915_GEM_DOMAIN_INSTRUCTION,
 			    dst_offset, dst->addr.offset);
 	intel_bb_out(ibb, report_id);
-}
-
-static void
-hsw_sanity_check_render_basic_reports(const uint32_t *oa_report0,
-				      const uint32_t *oa_report1,
-				      enum drm_i915_oa_format fmt)
-{
-	uint64_t time_delta = timebase_scale(oa_timestamp_delta(oa_report1,
-								oa_report0,
-								fmt));
-	uint64_t clock_delta;
-	uint64_t max_delta;
-	struct oa_format format = get_oa_format(fmt);
-
-	igt_assert_neq_u64(time_delta, 0);
-
-	/* As a special case we have to consider that on Haswell we
-	 * can't explicitly derive a clock delta for all OA report
-	 * formats...
-	 */
-	if (format.n_c == 0) {
-		/* Assume running at max freq for sake of
-		 * below sanity check on counters... */
-		clock_delta = (gt_max_freq_mhz * time_delta) / 1000;
-	} else {
-		uint64_t freq;
-
-		clock_delta = oa_tick_delta(oa_report1, oa_report0, fmt);
-
-		igt_assert_neq_u64(clock_delta, 0);
-
-		freq = (clock_delta * 1000) / time_delta;
-		igt_debug("freq = %"PRIu64"\n", freq);
-
-		igt_assert(freq <= gt_max_freq_mhz);
-	}
-
-	igt_debug("clock delta = %"PRIu64"\n", clock_delta);
-
-	/* The maximum rate for any HSW counter =
-	 *   clock_delta * N EUs
-	 *
-	 * Sanity check that no counters exceed this delta.
-	 */
-	max_delta = clock_delta * intel_perf->devinfo.n_eus;
-
-	/* 40bit A counters were only introduced for Gen8+ */
-	igt_assert_eq(format.n_a40, 0);
-
-	for (int j = 0; j < format.n_a; j++) {
-		uint32_t *a0 = (uint32_t *)(((uint8_t *)oa_report0) +
-					    format.a_off);
-		uint32_t *a1 = (uint32_t *)(((uint8_t *)oa_report1) +
-					    format.a_off);
-		int a_id = format.first_a + j;
-		uint32_t delta = a1[j] - a0[j];
-
-		if (undefined_a_counters[a_id])
-			continue;
-
-		igt_debug("A%d: delta = %"PRIu32"\n", a_id, delta);
-		igt_assert(delta <= max_delta);
-	}
-
-	for (int j = 0; j < format.n_b; j++) {
-		uint32_t *b0 = (uint32_t *)(((uint8_t *)oa_report0) +
-					    format.b_off);
-		uint32_t *b1 = (uint32_t *)(((uint8_t *)oa_report1) +
-					    format.b_off);
-		uint32_t delta = b1[j] - b0[j];
-
-		igt_debug("B%d: delta = %"PRIu32"\n", j, delta);
-		igt_assert(delta <= max_delta);
-	}
-
-	for (int j = 0; j < format.n_c; j++) {
-		uint32_t *c0 = (uint32_t *)(((uint8_t *)oa_report0) +
-					    format.c_off);
-		uint32_t *c1 = (uint32_t *)(((uint8_t *)oa_report1) +
-					    format.c_off);
-		uint32_t delta = c1[j] - c0[j];
-
-		igt_debug("C%d: delta = %"PRIu32"\n", j, delta);
-		igt_assert(delta <= max_delta);
-	}
 }
 
 static uint64_t
@@ -1300,18 +1099,9 @@ init_sys_info(void)
 		  intel_perf->devinfo.timestamp_frequency);
 	igt_assert_neq(intel_perf->devinfo.timestamp_frequency, 0);
 
-	/* We don't have a TestOa metric set for Haswell so use
-	 * RenderBasic
-	 */
-	if (IS_HASWELL(devid)) {
-		read_report_ticks = hsw_read_report_ticks;
-		sanity_check_reports = hsw_sanity_check_render_basic_reports;
-		undefined_a_counters = hsw_undefined_a_counters;
-	} else {
-		read_report_ticks = gen8_read_report_ticks;
-		sanity_check_reports = gen8_sanity_check_test_oa_reports;
-		undefined_a_counters = gen8_undefined_a_counters;
-	}
+	read_report_ticks = gen8_read_report_ticks;
+	sanity_check_reports = gen8_sanity_check_test_oa_reports;
+	undefined_a_counters = gen8_undefined_a_counters;
 
 	intel_perf_load_perf_configs(intel_perf, drm_fd);
 
@@ -2326,49 +2116,6 @@ test_low_oa_exponent_permissions(void)
 	/* restore the defaults */
 	write_u64_file("/proc/sys/dev/i915/oa_max_sample_rate", 100000);
 	write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 1);
-}
-
-static void
-test_per_context_mode_unprivileged(void)
-{
-	uint64_t properties[] = {
-		/* Single context sampling */
-		DRM_I915_PERF_PROP_CTX_HANDLE, UINT64_MAX, /* updated below */
-
-		/* Include OA reports in samples */
-		DRM_I915_PERF_PROP_SAMPLE_OA, true,
-
-		/* OA unit configuration */
-		DRM_I915_PERF_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-		DRM_I915_PERF_PROP_OA_FORMAT, default_test_set->perf_oa_format,
-		DRM_I915_PERF_PROP_OA_EXPONENT, oa_exp_1_millisec,
-	};
-	struct drm_i915_perf_open_param param = {
-		.flags = I915_PERF_FLAG_FD_CLOEXEC,
-		.num_properties = ARRAY_SIZE(properties) / 2,
-		.properties_ptr = to_user_pointer(properties),
-	};
-
-	/* should be default, but just to be sure... */
-	write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 1);
-
-	igt_fork(child, 1) {
-		uint32_t ctx_id = 0xffffffff; /* invalid id */
-
-		igt_drop_root();
-
-		ctx_id = gem_context_create(drm_fd);
-		igt_assert_neq(ctx_id, 0xffffffff);
-
-		properties[1] = ctx_id;
-
-		stream_fd = __perf_open(drm_fd, &param, false);
-		__perf_close(stream_fd);
-
-		gem_context_destroy(drm_fd, ctx_id);
-	}
-
-	igt_waitchildren();
 }
 
 static int64_t
@@ -3693,232 +3440,6 @@ emit_stall_timestamp_and_rpc(struct intel_bb *ibb,
 	intel_bb_out(ibb, 0); /* imm upper */
 
 	emit_report_perf_count(ibb, dst, report_dst_offset, report_id);
-}
-
-/* Tests the INTEL_performance_query use case where an unprivileged process
- * should be able to configure the OA unit for per-context metrics (for a
- * context associated with that process' drm file descriptor) and the counters
- * should only relate to that specific context.
- *
- * Unfortunately only Haswell limits the progression of OA counters for a
- * single context and so this unit test is Haswell specific. For Gen8+ although
- * reports read via i915 perf can be filtered for a single context the counters
- * themselves always progress as global/system-wide counters affected by all
- * contexts.
- */
-static void
-hsw_test_single_ctx_counters(void)
-{
-	uint64_t properties[] = {
-		DRM_I915_PERF_PROP_CTX_HANDLE, UINT64_MAX, /* updated below */
-
-		/* Note: we have to specify at least one sample property even
-		 * though we aren't interested in samples in this case
-		 */
-		DRM_I915_PERF_PROP_SAMPLE_OA, true,
-
-		/* OA unit configuration */
-		DRM_I915_PERF_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-		DRM_I915_PERF_PROP_OA_FORMAT, default_test_set->perf_oa_format,
-
-		/* Note: no OA exponent specified in this case */
-	};
-	struct drm_i915_perf_open_param param = {
-		.flags = I915_PERF_FLAG_FD_CLOEXEC,
-		.num_properties = ARRAY_SIZE(properties) / 2,
-		.properties_ptr = to_user_pointer(properties),
-	};
-
-	/* should be default, but just to be sure... */
-	write_u64_file("/proc/sys/dev/i915/perf_stream_paranoid", 1);
-
-	igt_fork(child, 1) {
-		struct buf_ops *bops;
-		struct intel_buf src[3], dst[3], *dst_buf;
-		struct intel_bb *ibb0, *ibb1;
-		uint32_t context0_id, context1_id;
-		uint32_t *report0_32, *report1_32;
-		uint64_t timestamp0_64, timestamp1_64;
-		uint32_t delta_ts64, delta_oa32;
-		uint64_t delta_ts64_ns, delta_oa32_ns;
-		uint32_t delta_delta;
-		int n_samples_written;
-		int width = 800;
-		int height = 600;
-
-		igt_drop_root();
-
-		bops = buf_ops_create(drm_fd);
-
-		for (int i = 0; i < ARRAY_SIZE(src); i++) {
-			scratch_buf_init(bops, &src[i], width, height, 0xff0000ff);
-			scratch_buf_init(bops, &dst[i], width, height, 0x00ff00ff);
-		}
-
-		/*
-		 * We currently cache addresses for buffers within
-		 * intel_bb, so use separate batches for different contexts
-		 */
-		context0_id = gem_context_create(drm_fd);
-		context1_id = gem_context_create(drm_fd);
-		ibb0 = intel_bb_create_with_context(drm_fd, context0_id, 0, NULL, BATCH_SZ);
-		ibb1 = intel_bb_create_with_context(drm_fd, context1_id, 0, NULL, BATCH_SZ);
-
-		igt_debug("submitting warm up render_copy\n");
-
-		/* Submit some early, unmeasured, work to the context we want
-		 * to measure to try and catch issues with i915-perf
-		 * initializing the HW context ID for filtering.
-		 *
-		 * We do this because i915-perf single context filtering had
-		 * previously only relied on a hook into context pinning to
-		 * initialize the HW context ID, instead of also trying to
-		 * determine the HW ID while opening the stream, in case it
-		 * has already been pinned.
-		 *
-		 * This wasn't noticed by the previous unit test because we
-		 * were opening the stream while the context hadn't been
-		 * touched or pinned yet and so it worked out correctly to wait
-		 * for the pinning hook.
-		 *
-		 * Now a buggy version of i915-perf will fail to measure
-		 * anything for context0 once this initial render_copy() ends
-		 * up pinning the context since there won't ever be a pinning
-		 * hook callback.
-		 */
-		render_copy(ibb0,
-			    &src[0], 0, 0, width, height,
-			    &dst[0], 0, 0);
-
-		properties[1] = context0_id;
-
-		intel_bb_flush_render(ibb0);
-		intel_bb_sync(ibb0);
-
-		scratch_buf_memset(&src[0], width, height, 0xff0000ff);
-		scratch_buf_memset(&dst[0], width, height, 0x00ff00ff);
-
-		igt_debug("opening i915-perf stream\n");
-		stream_fd = __perf_open(drm_fd, &param, false);
-
-		dst_buf = intel_buf_create(bops, 4096, 1, 8, 64,
-					   I915_TILING_NONE,
-					   I915_COMPRESSION_NONE);
-
-		buf_map(drm_fd, dst_buf, true /* write enable */);
-		memset(dst_buf->ptr, 0x80, 4096);
-		intel_buf_unmap(dst_buf);
-
-		emit_stall_timestamp_and_rpc(ibb0,
-					     dst_buf,
-					     512 /* timestamp offset */,
-					     0, /* report dst offset */
-					     0xdeadbeef); /* report id */
-
-		/* Explicitly flush here (even though the render_copy() call
-		 * will itself flush before/after the copy) to clarify that
-		 * that the PIPE_CONTROL + MI_RPC commands will be in a
-		 * separate batch from the copy.
-		 */
-		intel_bb_flush_render(ibb0);
-
-		render_copy(ibb0,
-			    &src[0], 0, 0, width, height,
-			    &dst[0], 0, 0);
-
-		/* Another redundant flush to clarify batch bo is free to reuse */
-		intel_bb_flush_render(ibb0);
-
-		/* submit two copies on the other context to avoid a false
-		 * positive in case the driver somehow ended up filtering for
-		 * context1
-		 */
-		render_copy(ibb1,
-			    &src[1], 0, 0, width, height,
-			    &dst[1], 0, 0);
-
-		render_copy(ibb1,
-			    &src[2], 0, 0, width, height,
-			    &dst[2], 0, 0);
-
-		/* And another */
-		intel_bb_flush_render(ibb1);
-
-		emit_stall_timestamp_and_rpc(ibb0,
-					     dst_buf,
-					     520 /* timestamp offset */,
-					     256, /* report dst offset */
-					     0xbeefbeef); /* report id */
-
-		intel_bb_flush_render(ibb0);
-		intel_bb_sync(ibb0);
-
-		intel_buf_cpu_map(dst_buf, false /* write enable */);
-
-		report0_32 = dst_buf->ptr;
-		igt_assert_eq(report0_32[0], 0xdeadbeef); /* report ID */
-		igt_assert_neq(report0_32[1], 0); /* timestamp */
-
-		report1_32 = report0_32 + 64;
-		igt_assert_eq(report1_32[0], 0xbeefbeef); /* report ID */
-		igt_assert_neq(report1_32[1], 0); /* timestamp */
-
-		print_reports(report0_32, report1_32,
-			      lookup_format(default_test_set->perf_oa_format));
-
-		/* A40 == N samples written to all render targets */
-		n_samples_written = report1_32[43] - report0_32[43];
-
-		igt_debug("n samples written = %d\n", n_samples_written);
-		igt_assert_eq(n_samples_written, width * height);
-
-		igt_debug("timestamp32 0 = %u\n", report0_32[1]);
-		igt_debug("timestamp32 1 = %u\n", report1_32[1]);
-
-		timestamp0_64 = *(uint64_t *)(((uint8_t *)dst_buf->ptr) + 512);
-		timestamp1_64 = *(uint64_t *)(((uint8_t *)dst_buf->ptr) + 520);
-
-		igt_debug("timestamp64 0 = %"PRIu64"\n", timestamp0_64);
-		igt_debug("timestamp64 1 = %"PRIu64"\n", timestamp1_64);
-
-		delta_ts64 = timestamp1_64 - timestamp0_64;
-		delta_oa32 = report1_32[1] - report0_32[1];
-
-		/* sanity check that we can pass the delta to timebase_scale */
-		igt_assert(delta_ts64 < UINT32_MAX);
-		delta_oa32_ns = timebase_scale(delta_oa32);
-		delta_ts64_ns = timebase_scale(delta_ts64);
-
-		igt_debug("ts32 delta = %u, = %uns\n",
-			  delta_oa32, (unsigned)delta_oa32_ns);
-		igt_debug("ts64 delta = %u, = %uns\n",
-			  delta_ts64, (unsigned)delta_ts64_ns);
-
-		/* The delta as calculated via the PIPE_CONTROL timestamp or
-		 * the OA report timestamps should be almost identical but
-		 * allow a 320 nanoseconds margin.
-		 */
-		delta_delta = delta_ts64_ns > delta_oa32_ns ?
-			(delta_ts64_ns - delta_oa32_ns) :
-			(delta_oa32_ns - delta_ts64_ns);
-		igt_assert(delta_delta <= 320);
-
-		for (int i = 0; i < ARRAY_SIZE(src); i++) {
-			intel_buf_close(bops, &src[i]);
-			intel_buf_close(bops, &dst[i]);
-		}
-
-		intel_buf_unmap(dst_buf);
-		intel_buf_destroy(dst_buf);
-		intel_bb_destroy(ibb0);
-		intel_bb_destroy(ibb1);
-		gem_context_destroy(drm_fd, context0_id);
-		gem_context_destroy(drm_fd, context1_id);
-		buf_ops_destroy(bops);
-		__perf_close(stream_fd);
-	}
-
-	igt_waitchildren();
 }
 
 /* Tests the INTEL_performance_query use case where an unprivileged process
@@ -5960,11 +5481,6 @@ igt_main
 		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
 			test_oa_exponents(e);
 
-	igt_subtest("per-context-mode-unprivileged") {
-		igt_require(IS_HASWELL(devid));
-		test_per_context_mode_unprivileged();
-	}
-
 	igt_subtest_with_dynamic("buffer-fill")
 		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
 			test_buffer_fill(e);
@@ -6052,12 +5568,6 @@ igt_main
 	igt_subtest("mi-rpc") {
 		igt_require(intel_gen(devid) < 12);
 		test_mi_rpc();
-	}
-
-	igt_subtest("unprivileged-single-ctx-counters") {
-		igt_require(IS_HASWELL(devid));
-		igt_require_f(render_copy, "no render-copy function\n");
-		hsw_test_single_ctx_counters();
 	}
 
 	igt_subtest("gen8-unprivileged-single-ctx-counters") {
