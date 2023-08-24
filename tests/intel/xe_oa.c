@@ -433,7 +433,7 @@ __perf_close(int fd)
 }
 
 static int
-__perf_open(int fd, struct drm_i915_perf_open_param *param, bool prevent_pm)
+__perf_open(int fd, struct drm_xe_oa_open_param *param, bool prevent_pm)
 {
 	int ret;
 	int32_t pm_value = 0;
@@ -473,12 +473,12 @@ has_param_poll_period(void)
 }
 
 static int
-lookup_format(int i915_perf_fmt_id)
+lookup_format(int oa_fmt_id)
 {
-	igt_assert(i915_perf_fmt_id < XE_OA_FORMAT_MAX);
-	igt_assert(get_oa_format(i915_perf_fmt_id).name);
+	igt_assert(oa_fmt_id < XE_OA_FORMAT_MAX);
+	igt_assert(get_oa_format(oa_fmt_id).name);
 
-	return i915_perf_fmt_id;
+	return oa_fmt_id;
 }
 
 static uint64_t
@@ -1154,11 +1154,11 @@ i915_read_reports_until_timestamp(enum drm_xe_oa_format oa_format,
 		total_len += len;
 
 		while (offset < total_len) {
-			const struct drm_i915_perf_record_header *header =
-				(const struct drm_i915_perf_record_header *) &buf[offset];
+			const struct drm_xe_oa_record_header *header =
+				(const struct drm_xe_oa_record_header *) &buf[offset];
 			uint32_t *report = (uint32_t *) (header + 1);
 
-			if (header->type == DRM_I915_PERF_RECORD_SAMPLE)
+			if (header->type == DRM_XE_OA_RECORD_SAMPLE)
 				last_seen_timestamp = oa_timestamp(report, oa_format);
 
 			offset += header->size;
@@ -1183,7 +1183,7 @@ test_system_wide_paranoid(void)
 			DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
 			DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		};
-		struct drm_i915_perf_open_param param = {
+		struct drm_xe_oa_open_param param = {
 			.flags = I915_PERF_FLAG_FD_CLOEXEC |
 				I915_PERF_FLAG_FD_NONBLOCK,
 			.num_properties = ARRAY_SIZE(properties) / 2,
@@ -1209,7 +1209,7 @@ test_system_wide_paranoid(void)
 			DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
 			DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		};
-		struct drm_i915_perf_open_param param = {
+		struct drm_xe_oa_open_param param = {
 			.flags = I915_PERF_FLAG_FD_CLOEXEC |
 				I915_PERF_FLAG_FD_NONBLOCK,
 			.num_properties = ARRAY_SIZE(properties) / 2,
@@ -1241,7 +1241,7 @@ test_invalid_open_flags(void)
 		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = ~0, /* Undefined flag bits set! */
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
@@ -1261,7 +1261,7 @@ test_invalid_class_instance(void)
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, 0,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, 0,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
@@ -1303,7 +1303,7 @@ test_invalid_oa_metric_set_id(void)
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROP_OA_METRICS_SET, UINT64_MAX,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC |
 			I915_PERF_FLAG_FD_NONBLOCK,
 		.num_properties = ARRAY_SIZE(properties) / 2,
@@ -1337,7 +1337,7 @@ test_invalid_oa_format_id(void)
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROP_OA_FORMAT, UINT64_MAX,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC |
 			I915_PERF_FLAG_FD_NONBLOCK,
 		.num_properties = ARRAY_SIZE(properties) / 2,
@@ -1370,7 +1370,7 @@ test_missing_sample_flags(void)
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
@@ -1387,9 +1387,9 @@ read_2_oa_reports(int format_id,
 		  bool timer_only)
 {
 	size_t format_size = get_oa_format(format_id).size;
-	size_t sample_size = (sizeof(struct drm_i915_perf_record_header) +
+	size_t sample_size = (sizeof(struct drm_xe_oa_record_header) +
 			      format_size);
-	const struct drm_i915_perf_record_header *header;
+	const struct drm_xe_oa_record_header *header;
 	uint32_t exponent_mask = (1 << (exponent + 1)) - 1;
 
 	/* Note: we allocate a large buffer so that each read() iteration
@@ -1434,7 +1434,7 @@ read_2_oa_reports(int format_id,
 			 * see a _BUFFER_LOST error is the buffer_fill test,
 			 * otherwise something bad has probably happened...
 			 */
-			igt_assert_neq(header->type, DRM_I915_PERF_RECORD_OA_BUFFER_LOST);
+			igt_assert_neq(header->type, DRM_XE_OA_RECORD_OA_BUFFER_LOST);
 
 			/* At high sampling frequencies the OA HW might not be
 			 * able to cope with all write requests and will notify
@@ -1442,7 +1442,7 @@ read_2_oa_reports(int format_id,
 			 * two sequential reports due to the timeline blip this
 			 * implies
 			 */
-			if (header->type == DRM_I915_PERF_RECORD_OA_REPORT_LOST) {
+			if (header->type == DRM_XE_OA_RECORD_OA_REPORT_LOST) {
 				igt_debug("read restart: OA trigger collision / report lost\n");
 				n = 0;
 
@@ -1458,7 +1458,7 @@ read_2_oa_reports(int format_id,
 			 * i915-perf is extended in the future with additional
 			 * record types.
 			 */
-			igt_assert_eq(header->type, DRM_I915_PERF_RECORD_SAMPLE);
+			igt_assert_eq(header->type, DRM_XE_OA_RECORD_SAMPLE);
 
 			igt_assert_eq(header->size, sample_size);
 
@@ -1514,7 +1514,7 @@ open_and_read_2_oa_reports(int format_id,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
@@ -1915,7 +1915,7 @@ test_oa_exponents(const struct intel_execution_engine2 *e)
 			DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 			DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 		};
-		struct drm_i915_perf_open_param param = {
+		struct drm_xe_oa_open_param param = {
 			.flags = I915_PERF_FLAG_FD_CLOEXEC,
 			.num_properties = has_param_class_instance() ?
 					  ARRAY_SIZE(properties) / 2 :
@@ -1924,7 +1924,7 @@ test_oa_exponents(const struct intel_execution_engine2 *e)
 		};
 		uint64_t expected_timestamp_delta = 2ULL << exponent;
 		size_t format_size = get_oa_format(fmt).size;
-		size_t sample_size = (sizeof(struct drm_i915_perf_record_header) +
+		size_t sample_size = (sizeof(struct drm_xe_oa_record_header) +
 				      format_size);
 		int max_reports = MAX_OA_BUF_SIZE / format_size;
 		int buf_size = sample_size * max_reports * 1.5;
@@ -1945,7 +1945,7 @@ test_oa_exponents(const struct intel_execution_engine2 *e)
 		stream_fd = __perf_open(drm_fd, &param, true /* prevent_pm */);
 
 		while (n_timer_reports < NUM_TIMER_REPORTS) {
-			struct drm_i915_perf_record_header *header;
+			struct drm_xe_oa_record_header *header;
 
 			while ((ret = read(stream_fd, buf, buf_size)) < 0 &&
 			       errno == EINTR)
@@ -1963,15 +1963,15 @@ test_oa_exponents(const struct intel_execution_engine2 *e)
 
 				header = (void *)(buf + offset);
 
-				if (header->type == DRM_I915_PERF_RECORD_OA_BUFFER_LOST) {
+				if (header->type == DRM_XE_OA_RECORD_OA_BUFFER_LOST) {
 					igt_assert(!"reached");
 					break;
 				}
 
-				if (header->type == DRM_I915_PERF_RECORD_OA_REPORT_LOST)
+				if (header->type == DRM_XE_OA_RECORD_OA_REPORT_LOST)
 					igt_debug("report loss\n");
 
-				if (header->type != DRM_I915_PERF_RECORD_SAMPLE)
+				if (header->type != DRM_XE_OA_RECORD_SAMPLE)
 					continue;
 
 				report = (void *)(header + 1);
@@ -2045,7 +2045,7 @@ test_invalid_oa_exponent(void)
 		DRM_XE_OA_PROP_OA_EXPONENT, 31, /* maximum exponent expected
 						       to be accepted */
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
@@ -2080,7 +2080,7 @@ test_low_oa_exponent_permissions(void)
 		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
 		DRM_XE_OA_PROP_OA_EXPONENT, bad_exponent,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
@@ -2167,7 +2167,7 @@ test_blocking(uint64_t requested_oa_period,
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
 	uint64_t props[DRM_XE_OA_PROP_MAX * 2];
 	uint64_t *idx = props;
-	struct drm_i915_perf_open_param param;
+	struct drm_xe_oa_open_param param;
 	uint8_t buf[1024 * 1024];
 	struct tms start_times;
 	struct tms end_times;
@@ -2246,7 +2246,7 @@ test_blocking(uint64_t requested_oa_period,
 	start = get_time();
 	do_ioctl(perf_fd, XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < test_duration_ns; /* nop */) {
-		struct drm_i915_perf_record_header *header;
+		struct drm_xe_oa_record_header *header;
 		bool timer_report_read = false;
 		bool non_timer_report_read = false;
 		int ret;
@@ -2269,7 +2269,7 @@ test_blocking(uint64_t requested_oa_period,
 			for (int offset = 0; offset < ret; offset += header->size) {
 				header = (void *)(buf + offset);
 
-				if (header->type == DRM_I915_PERF_RECORD_SAMPLE) {
+				if (header->type == DRM_XE_OA_RECORD_SAMPLE) {
 					uint32_t *report = (void *)(header + 1);
 
 					if (oa_report_is_periodic(oa_exponent,
@@ -2332,7 +2332,7 @@ test_polling(uint64_t requested_oa_period,
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
 	uint64_t props[DRM_XE_OA_PROP_MAX * 2];
 	uint64_t *idx = props;
-	struct drm_i915_perf_open_param param;
+	struct drm_xe_oa_open_param param;
 	uint8_t buf[1024 * 1024];
 	struct tms start_times;
 	struct tms end_times;
@@ -2411,7 +2411,7 @@ test_polling(uint64_t requested_oa_period,
 	do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < test_duration_ns; /* nop */) {
 		struct pollfd pollfd = { .fd = stream_fd, .events = POLLIN };
-		struct drm_i915_perf_record_header *header;
+		struct drm_xe_oa_record_header *header;
 		bool timer_report_read = false;
 		bool non_timer_report_read = false;
 		int ret;
@@ -2454,7 +2454,7 @@ test_polling(uint64_t requested_oa_period,
 			for (int offset = 0; offset < ret; offset += header->size) {
 				header = (void *)(buf + offset);
 
-				if (header->type == DRM_I915_PERF_RECORD_SAMPLE) {
+				if (header->type == DRM_XE_OA_RECORD_SAMPLE) {
 					uint32_t *report = (void *)(header + 1);
 
 					if (oa_report_is_periodic(oa_exponent, report))
@@ -2536,7 +2536,7 @@ static void test_polling_small_buf(void)
 		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC |
 			I915_PERF_FLAG_DISABLED |
 			I915_PERF_FLAG_FD_NONBLOCK,
@@ -2544,7 +2544,7 @@ static void test_polling_small_buf(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 	uint32_t test_duration = 80 * 1000 * 1000;
-	int sample_size = (sizeof(struct drm_i915_perf_record_header) +
+	int sample_size = (sizeof(struct drm_xe_oa_record_header) +
 			   get_oa_format(default_test_set->perf_oa_format).size);
 	int n_expected_reports = test_duration / oa_exponent_to_ns(oa_exponent);
 	int n_expect_read_bytes = n_expected_reports * sample_size;
@@ -2583,7 +2583,7 @@ static void test_polling_small_buf(void)
 }
 
 static int
-num_valid_reports_captured(struct drm_i915_perf_open_param *param,
+num_valid_reports_captured(struct drm_xe_oa_open_param *param,
 			   int64_t *duration_ns)
 {
 	uint8_t buf[1024 * 1024];
@@ -2597,7 +2597,7 @@ num_valid_reports_captured(struct drm_i915_perf_open_param *param,
 	start = get_time();
 	do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < *duration_ns; /* nop */) {
-		struct drm_i915_perf_record_header *header;
+		struct drm_xe_oa_record_header *header;
 		int ret;
 
 		while ((ret = read(stream_fd, buf, sizeof(buf))) < 0 &&
@@ -2609,7 +2609,7 @@ num_valid_reports_captured(struct drm_i915_perf_open_param *param,
 		for (int offset = 0; offset < ret; offset += header->size) {
 			header = (void *)(buf + offset);
 
-			if (header->type == DRM_I915_PERF_RECORD_SAMPLE) {
+			if (header->type == DRM_XE_OA_RECORD_SAMPLE) {
 				uint32_t *report = (void *)(header + 1);
 
 				if (gen8_report_reason(report) & OAREPORT_REASON_TIMER)
@@ -2640,7 +2640,7 @@ gen12_test_oa_tlb_invalidate(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC |
 			I915_PERF_FLAG_DISABLED,
 		.num_properties = has_param_class_instance() ?
@@ -2691,16 +2691,16 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
 				  (ARRAY_SIZE(properties) / 2) - 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
-	struct drm_i915_perf_record_header *header;
+	struct drm_xe_oa_record_header *header;
 	size_t report_size = get_oa_format(fmt).size;
-	int buf_size = 65536 * (report_size + sizeof(struct drm_i915_perf_record_header));
+	int buf_size = 65536 * (report_size + sizeof(struct drm_xe_oa_record_header));
 	uint8_t *buf = malloc(buf_size);
 	int len;
 	size_t oa_buf_size = MAX_OA_BUF_SIZE;
@@ -2732,7 +2732,7 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 		for (int offset = 0; offset < len; offset += header->size) {
 			header = (void *)(buf + offset);
 
-			if (header->type == DRM_I915_PERF_RECORD_OA_BUFFER_LOST)
+			if (header->type == DRM_XE_OA_RECORD_OA_BUFFER_LOST)
 				overflow_seen = true;
 		}
 
@@ -2774,10 +2774,10 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 				report = (void *) (header + 1);
 
 				switch (header->type) {
-				case DRM_I915_PERF_RECORD_OA_REPORT_LOST:
+				case DRM_XE_OA_RECORD_OA_REPORT_LOST:
 					igt_debug("report loss, trying again\n");
 					break;
-				case DRM_I915_PERF_RECORD_SAMPLE:
+				case DRM_XE_OA_RECORD_SAMPLE:
 					igt_debug(" > report ts=%"PRIu64""
 						  " ts_delta_last_periodic=%"PRIu64" is_timer=%i ctx_id=%8x nb_periodic=%u\n",
 						  oa_timestamp(report, fmt),
@@ -2798,7 +2798,7 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 						n_periodic_reports++;
 					}
 					break;
-				case DRM_I915_PERF_RECORD_OA_BUFFER_LOST:
+				case DRM_XE_OA_RECORD_OA_BUFFER_LOST:
 					igt_assert(!"unexpected overflow");
 					break;
 				}
@@ -2845,15 +2845,15 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
 				  (ARRAY_SIZE(properties) / 2) - 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
-	struct drm_i915_perf_record_header *header;
-	uint32_t buf_size = 3 * 65536 * (report_size + sizeof(struct drm_i915_perf_record_header));
+	struct drm_xe_oa_record_header *header;
+	uint32_t buf_size = 3 * 65536 * (report_size + sizeof(struct drm_xe_oa_record_header));
 	uint8_t *buf = malloc(buf_size);
 	uint32_t total_len = 0, reports_lost;
 	const uint32_t *last_report;
@@ -2868,7 +2868,7 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 
 	stream_fd = __perf_open(drm_fd, &param, true /* prevent_pm */);
 
-	while (total_len < (buf_size - sizeof(struct drm_i915_perf_record_header)) &&
+	while (total_len < (buf_size - sizeof(struct drm_xe_oa_record_header)) &&
 	       ((len = read(stream_fd, &buf[total_len], buf_size - total_len)) > 0 ||
 		(len == -1 && errno == EINTR))) {
 		if (len > 0)
@@ -2888,10 +2888,10 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 		header = (void *) (buf + offset);
 
 		switch (header->type) {
-		case DRM_I915_PERF_RECORD_OA_REPORT_LOST:
+		case DRM_XE_OA_RECORD_OA_REPORT_LOST:
 			reports_lost++;
 			break;
-		case DRM_I915_PERF_RECORD_SAMPLE: {
+		case DRM_XE_OA_RECORD_SAMPLE: {
 			const uint32_t *report = (void *) (header + 1);
 			uint32_t reason = (report[0] >> OAREPORT_REASON_SHIFT) &
 				OAREPORT_REASON_MASK;
@@ -2904,7 +2904,7 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 			last_report = report;
 			break;
 		}
-		case DRM_I915_PERF_RECORD_OA_BUFFER_LOST:
+		case DRM_XE_OA_RECORD_OA_BUFFER_LOST:
 			igt_assert(!"unexpected overflow");
 			break;
 		}
@@ -2934,7 +2934,7 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC |
 			 I915_PERF_FLAG_DISABLED, /* Verify we start disabled */
 		.num_properties = has_param_class_instance() ?
@@ -2943,7 +2943,7 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 		.properties_ptr = to_user_pointer(properties),
 	};
 	size_t report_size = get_oa_format(fmt).size;
-	int buf_size = 65536 * (report_size + sizeof(struct drm_i915_perf_record_header));
+	int buf_size = 65536 * (report_size + sizeof(struct drm_xe_oa_record_header));
 	uint8_t *buf = malloc(buf_size);
 	size_t oa_buf_size = MAX_OA_BUF_SIZE;
 	int n_full_oa_reports = oa_buf_size / report_size;
@@ -2958,7 +2958,7 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 	for (int i = 0; i < 5; i++) {
 		int len;
 		uint32_t n_periodic_reports;
-		struct drm_i915_perf_record_header *header;
+		struct drm_xe_oa_record_header *header;
 		uint64_t first_timestamp = 0, last_timestamp = 0;
 
 		/* Giving enough time for an overflow might help catch whether
@@ -3001,9 +3001,9 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 				report = (void *) (header + 1);
 
 				switch (header->type) {
-				case DRM_I915_PERF_RECORD_OA_REPORT_LOST:
+				case DRM_XE_OA_RECORD_OA_REPORT_LOST:
 					break;
-				case DRM_I915_PERF_RECORD_SAMPLE:
+				case DRM_XE_OA_RECORD_SAMPLE:
 					if (first_timestamp == 0)
 						first_timestamp = oa_timestamp(report, fmt);
 					last_timestamp = oa_timestamp(report, fmt);
@@ -3032,7 +3032,7 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 						n_periodic_reports++;
 					}
 					break;
-				case DRM_I915_PERF_RECORD_OA_BUFFER_LOST:
+				case DRM_XE_OA_RECORD_OA_BUFFER_LOST:
 					igt_assert(!"unexpected overflow");
 					break;
 				}
@@ -3086,17 +3086,17 @@ test_short_reads(void)
 		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
-	size_t record_size = 256 + sizeof(struct drm_i915_perf_record_header);
+	size_t record_size = 256 + sizeof(struct drm_xe_oa_record_header);
 	size_t page_size = sysconf(_SC_PAGE_SIZE);
 	int zero_fd = open("/dev/zero", O_RDWR|O_CLOEXEC);
 	uint8_t *pages = mmap(NULL, page_size * 2,
 			      PROT_READ|PROT_WRITE, MAP_PRIVATE, zero_fd, 0);
-	struct drm_i915_perf_record_header *header;
+	struct drm_xe_oa_record_header *header;
 	int ret;
 
 	igt_assert_neq(zero_fd, -1);
@@ -3127,7 +3127,7 @@ test_short_reads(void)
 			   header,
 			   page_size);
 		igt_assert(ret > 0);
-	} while (header->type == DRM_I915_PERF_RECORD_OA_REPORT_LOST);
+	} while (header->type == DRM_XE_OA_RECORD_OA_REPORT_LOST);
 
 	igt_assert_eq(ret, record_size);
 
@@ -3139,7 +3139,7 @@ test_short_reads(void)
 	header = (void *)(pages + page_size - 16);
 	do {
 		ret = read(stream_fd, header, page_size);
-	} while (ret > 0 && header->type == DRM_I915_PERF_RECORD_OA_REPORT_LOST);
+	} while (ret > 0 && header->type == DRM_XE_OA_RECORD_OA_REPORT_LOST);
 	igt_assert_eq(ret, -1);
 	igt_assert_eq(errno, EFAULT);
 
@@ -3153,7 +3153,7 @@ test_short_reads(void)
 		ret = read(stream_fd,
 			   header,
 			   record_size / 2);
-	} while (ret > 0 && header->type == DRM_I915_PERF_RECORD_OA_REPORT_LOST);
+	} while (ret > 0 && header->type == DRM_XE_OA_RECORD_OA_REPORT_LOST);
 
 	igt_assert_eq(ret, -1);
 	igt_assert_eq(errno, ENOSPC);
@@ -3178,7 +3178,7 @@ test_non_sampling_read_error(void)
 
 		/* XXX: no sampling exponent */
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
@@ -3213,7 +3213,7 @@ test_disabled_read_error(void)
 		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC |
 			 I915_PERF_FLAG_DISABLED, /* XXX: open disabled */
 		.num_properties = ARRAY_SIZE(properties) / 2,
@@ -3288,7 +3288,7 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
@@ -3388,7 +3388,7 @@ test_mi_rpc(void)
 
 		/* Note: no OA exponent specified in this case */
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
@@ -3495,13 +3495,13 @@ gen8_test_single_ctx_render_target_writes_a_counter(void)
 
 		/* Note: no OA exponent specified in this case */
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
 	size_t format_size = get_oa_format(default_test_set->perf_oa_format).size;
-	size_t sample_size = (sizeof(struct drm_i915_perf_record_header) +
+	size_t sample_size = (sizeof(struct drm_xe_oa_record_header) +
 			      format_size);
 	int max_reports = MAX_OA_BUF_SIZE / format_size;
 	int buf_size = sample_size * max_reports * 1.5;
@@ -3516,7 +3516,7 @@ gen8_test_single_ctx_render_target_writes_a_counter(void)
 	do {
 
 		igt_fork_helper(&child) {
-			struct drm_i915_perf_record_header *header;
+			struct drm_xe_oa_record_header *header;
 			struct buf_ops *bops;
 			struct intel_bb *ibb0, *ibb1;
 			struct intel_buf src[3], dst[3], *dst_buf;
@@ -3728,7 +3728,7 @@ gen8_test_single_ctx_render_target_writes_a_counter(void)
 				 * see a _BUFFER_LOST error is the buffer_fill test,
 				 * otherwise something bad has probably happened...
 				 */
-				igt_assert_neq(header->type, DRM_I915_PERF_RECORD_OA_BUFFER_LOST);
+				igt_assert_neq(header->type, DRM_XE_OA_RECORD_OA_BUFFER_LOST);
 
 				/* At high sampling frequencies the OA HW might not be
 				 * able to cope with all write requests and will notify
@@ -3736,7 +3736,7 @@ gen8_test_single_ctx_render_target_writes_a_counter(void)
 				 *
 				 * XXX: we should maybe restart the test in this case?
 				 */
-				if (header->type == DRM_I915_PERF_RECORD_OA_REPORT_LOST) {
+				if (header->type == DRM_XE_OA_RECORD_OA_REPORT_LOST) {
 					igt_debug("OA trigger collision / report lost\n");
 					ret = EAGAIN;
 					goto again;
@@ -3747,7 +3747,7 @@ gen8_test_single_ctx_render_target_writes_a_counter(void)
 				 * i915-perf is extended in the future with additional
 				 * record types.
 				 */
-				igt_assert_eq(header->type, DRM_I915_PERF_RECORD_SAMPLE);
+				igt_assert_eq(header->type, DRM_XE_OA_RECORD_SAMPLE);
 
 				igt_assert_eq(header->size, sample_size);
 
@@ -3923,7 +3923,7 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
@@ -4264,7 +4264,7 @@ test_rc6_disable(void)
 		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
@@ -4323,7 +4323,7 @@ test_stress_open_close(const struct intel_execution_engine2 *e)
 			DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 			DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 		};
-		struct drm_i915_perf_open_param param = {
+		struct drm_xe_oa_open_param param = {
 			.flags = I915_PERF_FLAG_FD_CLOEXEC |
 			         I915_PERF_FLAG_DISABLED, /* XXX: open disabled */
 			.num_properties = has_param_class_instance() ?
@@ -4429,7 +4429,7 @@ test_global_sseu_config_invalid(const intel_ctx_t *ctx, const struct intel_execu
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC |
 		I915_PERF_FLAG_DISABLED, /* XXX: open disabled */
 		.num_properties = has_param_class_instance() ?
@@ -4520,7 +4520,7 @@ test_global_sseu_config(const intel_ctx_t *ctx, const struct intel_execution_eng
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC |
 		I915_PERF_FLAG_DISABLED, /* XXX: open disabled */
 		.num_properties = has_param_class_instance() ?
@@ -4568,7 +4568,7 @@ test_global_sseu_config(const intel_ctx_t *ctx, const struct intel_execution_eng
 	__perf_close(stream_fd);
 }
 
-static int __i915_perf_add_config(int fd, struct drm_i915_perf_oa_config *config)
+static int __i915_perf_add_config(int fd, struct drm_xe_oa_config *config)
 {
 	int ret = igt_ioctl(fd, DRM_IOCTL_XE_OA_ADD_CONFIG, config);
 	if (ret < 0)
@@ -4576,7 +4576,7 @@ static int __i915_perf_add_config(int fd, struct drm_i915_perf_oa_config *config
 	return ret;
 }
 
-static int i915_perf_add_config(int fd, struct drm_i915_perf_oa_config *config)
+static int i915_perf_add_config(int fd, struct drm_xe_oa_config *config)
 {
 	int config_id = __i915_perf_add_config(fd, config);
 
@@ -4606,7 +4606,7 @@ static bool has_i915_perf_userspace_config(int fd)
 static void
 test_invalid_create_userspace_config(void)
 {
-	struct drm_i915_perf_oa_config config;
+	struct drm_xe_oa_config config;
 	const char *uuid = "01234567-0123-0123-0123-0123456789ab";
 	const char *invalid_uuid = "blablabla-wrong";
 	uint32_t mux_regs[] = { 0x9888 /* NOA_WRITE */, 0x0 };
@@ -4667,7 +4667,7 @@ test_invalid_create_userspace_config(void)
 static void
 test_invalid_remove_userspace_config(void)
 {
-	struct drm_i915_perf_oa_config config;
+	struct drm_xe_oa_config config;
 	const char *uuid = "01234567-0123-0123-0123-0123456789ab";
 	uint32_t mux_regs[] = { 0x9888 /* NOA_WRITE */, 0x0 };
 	uint64_t config_id, wrong_config_id = 999999999;
@@ -4709,7 +4709,7 @@ test_invalid_remove_userspace_config(void)
 static void
 test_create_destroy_userspace_config(void)
 {
-	struct drm_i915_perf_oa_config config;
+	struct drm_xe_oa_config config;
 	const char *uuid = "01234567-0123-0123-0123-0123456789ab";
 	uint32_t mux_regs[] = { 0x9888 /* NOA_WRITE */, 0x0 };
 	uint32_t flex_regs[100];
@@ -4724,7 +4724,7 @@ test_create_destroy_userspace_config(void)
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROP_OA_METRICS_SET
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC |
 		I915_PERF_FLAG_FD_NONBLOCK |
 		I915_PERF_FLAG_DISABLED,
@@ -4796,7 +4796,7 @@ test_create_destroy_userspace_config(void)
 static void
 test_whitelisted_registers_userspace_config(void)
 {
-	struct drm_i915_perf_oa_config config;
+	struct drm_xe_oa_config config;
 	const char *uuid = "01234567-0123-0123-0123-0123456789ab";
 	uint32_t mux_regs[200];
 	uint32_t b_counters_regs[200];
@@ -4987,7 +4987,7 @@ test_xe_ref_count(void)
 		DRM_XE_OA_PROP_OA_FORMAT, 0, /* update below */
 		DRM_XE_OA_PROP_OA_EXPONENT, 0, /* update below */
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
@@ -5348,7 +5348,7 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, 0,
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 	};
-	struct drm_i915_perf_open_param param = {
+	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
 		/* for gem_context use case, we do no pass exponent */
 		.num_properties = exponent ?

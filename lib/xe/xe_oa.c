@@ -852,7 +852,7 @@ intel_perf_add_metric_set(struct intel_perf *perf,
 static void
 load_metric_set_config(struct intel_perf_metric_set *metric_set, int drm_fd)
 {
-	struct drm_i915_perf_oa_config config;
+	struct drm_xe_oa_config config;
 	int ret;
 
 	memset(&config, 0, sizeof(config));
@@ -868,7 +868,7 @@ load_metric_set_config(struct intel_perf_metric_set *metric_set, int drm_fd)
 	config.n_flex_regs = metric_set->n_flex_regs;
 	config.flex_regs_ptr = (uintptr_t) metric_set->flex_regs;
 
-	ret = perf_ioctl(drm_fd, DRM_IOCTL_I915_PERF_ADD_CONFIG, &config);
+	ret = perf_ioctl(drm_fd, DRM_IOCTL_XE_OA_ADD_CONFIG, &config);
 	if (ret >= 0)
 		metric_set->perf_oa_metrics_set = ret;
 }
@@ -968,8 +968,8 @@ accumulate_uint40(int a_index,
 void intel_perf_accumulate_reports(struct intel_perf_accumulator *acc,
 				   const struct intel_perf *perf,
 				   const struct intel_perf_metric_set *metric_set,
-				   const struct drm_i915_perf_record_header *record0,
-				   const struct drm_i915_perf_record_header *record1)
+				   const struct drm_xe_oa_record_header *record0,
+				   const struct drm_xe_oa_record_header *record1)
 {
 	const uint32_t *start = (const uint32_t *)(record0 + 1);
 	const uint32_t *end = (const uint32_t *)(record1 + 1);
@@ -1083,7 +1083,7 @@ void intel_perf_accumulate_reports(struct intel_perf_accumulator *acc,
 
 uint64_t intel_perf_read_record_timestamp(const struct intel_perf *perf,
 					  const struct intel_perf_metric_set *metric_set,
-					  const struct drm_i915_perf_record_header *record)
+					  const struct drm_xe_oa_record_header *record)
 {
        const uint32_t *report32 = (const uint32_t *)(record + 1);
        const uint64_t *report64 = (const uint64_t *)(record + 1);
@@ -1114,7 +1114,7 @@ uint64_t intel_perf_read_record_timestamp(const struct intel_perf *perf,
 
 uint64_t intel_perf_read_record_timestamp_raw(const struct intel_perf *perf,
 					  const struct intel_perf_metric_set *metric_set,
-					  const struct drm_i915_perf_record_header *record)
+					  const struct drm_xe_oa_record_header *record)
 {
        const uint32_t *report32 = (const uint32_t *)(record + 1);
        const uint64_t *report64 = (const uint64_t *)(record + 1);
@@ -1144,7 +1144,7 @@ uint64_t intel_perf_read_record_timestamp_raw(const struct intel_perf *perf,
 }
 
 const char *intel_perf_read_report_reason(const struct intel_perf *perf,
-					  const struct drm_i915_perf_record_header *record)
+					  const struct drm_xe_oa_record_header *record)
 {
 	const uint32_t *report = (const uint32_t *) (record + 1);
 
