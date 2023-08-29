@@ -100,9 +100,9 @@ extern "C" {
 #define DRM_XE_EXEC_QUEUE_GET_PROPERTY	0x08
 #define DRM_XE_EXEC			0x09
 #define DRM_XE_WAIT_USER_FENCE		0x0a
-#define DRM_XE_OA_OPEN			0x16
-#define DRM_XE_OA_ADD_CONFIG		0x17
-#define DRM_XE_OA_REMOVE_CONFIG		0x18
+#define DRM_XE_PERF_OPEN		0x16
+#define DRM_XE_PERF_ADD_CONFIG		0x17
+#define DRM_XE_PERF_REMOVE_CONFIG	0x18
 
 /* Must be kept compact -- no holes */
 
@@ -117,9 +117,9 @@ extern "C" {
 #define DRM_IOCTL_XE_EXEC_QUEUE_GET_PROPERTY	DRM_IOWR(DRM_COMMAND_BASE + DRM_XE_EXEC_QUEUE_GET_PROPERTY, struct drm_xe_exec_queue_get_property)
 #define DRM_IOCTL_XE_EXEC			DRM_IOW(DRM_COMMAND_BASE + DRM_XE_EXEC, struct drm_xe_exec)
 #define DRM_IOCTL_XE_WAIT_USER_FENCE		DRM_IOWR(DRM_COMMAND_BASE + DRM_XE_WAIT_USER_FENCE, struct drm_xe_wait_user_fence)
-#define DRM_IOCTL_XE_OA_OPEN			DRM_IOW(DRM_COMMAND_BASE + DRM_XE_OA_OPEN, struct drm_xe_oa_open_param)
-#define DRM_IOCTL_XE_OA_ADD_CONFIG		DRM_IOW(DRM_COMMAND_BASE + DRM_XE_OA_ADD_CONFIG, struct drm_xe_oa_config)
-#define DRM_IOCTL_XE_OA_REMOVE_CONFIG		DRM_IOW(DRM_COMMAND_BASE + DRM_XE_OA_REMOVE_CONFIG, __u64)
+#define DRM_IOCTL_XE_PERF_OPEN			DRM_IOW(DRM_COMMAND_BASE + DRM_XE_PERF_OPEN, struct drm_xe_perf_param)
+#define DRM_IOCTL_XE_PERF_ADD_CONFIG		DRM_IOW(DRM_COMMAND_BASE + DRM_XE_PERF_ADD_CONFIG, struct drm_xe_perf_param)
+#define DRM_IOCTL_XE_PERF_REMOVE_CONFIG		DRM_IOW(DRM_COMMAND_BASE + DRM_XE_PERF_REMOVE_CONFIG, struct drm_xe_perf_param)
 
 /**
  * DOC: Xe IOCTL Extensions
@@ -1377,6 +1377,26 @@ struct drm_xe_wait_user_fence {
 	__u64 reserved[2];
 };
 
+enum drm_xe_perf_type {
+	XE_PERF_TYPE_OA,
+};
+
+/**
+ * struct drm_xe_perf_param - XE perf layer param
+ *
+ * The perf layer enables multiplexing perf counter streams of multiple
+ * types. The actual params for a particular stream operation are supplied
+ * via a pointer right after @perf_type.
+ */
+struct drm_xe_perf_param {
+	/** @extensions: Pointer to the first extension struct, if any */
+	__u64 extensions;
+	/** @perf_type: Type, of enum drm_xe_perf_type, of perf stream  */
+	__u64 perf_type;
+	/** @param: Pointer to actual stream params */
+	__u64 param;
+};
+
 enum drm_xe_oa_format {
 	XE_OA_FORMAT_C4_B8 = 7,
 
@@ -1477,9 +1497,9 @@ enum drm_xe_oa_property_id {
 
 struct drm_xe_oa_open_param {
 	__u32 flags;
-#define XE_OA_FLAG_FD_CLOEXEC	BIT(0)
-#define XE_OA_FLAG_FD_NONBLOCK	BIT(1)
-#define XE_OA_FLAG_DISABLED	BIT(2)
+#define XE_OA_FLAG_FD_CLOEXEC	(1 << 0)
+#define XE_OA_FLAG_FD_NONBLOCK	(1 << 1)
+#define XE_OA_FLAG_DISABLED	(1 << 2)
 
 	/** The number of u64 (id, value) pairs */
 	__u32 num_properties;
@@ -1602,25 +1622,19 @@ struct drm_xe_oa_config {
  *
  * It's undefined whether any pending data for the stream will be lost.
  */
-#define XE_OA_IOCTL_ENABLE	_IO('i', 0x0)
+#define XE_PERF_IOCTL_ENABLE	_IO('i', 0x0)
 
 /*
- * Disable data capture for a stream.
+ * Disable data capture for a stream
  *
  * It is an error to try and read a stream that is disabled.
  */
-#define XE_OA_IOCTL_DISABLE	_IO('i', 0x1)
+#define XE_PERF_IOCTL_DISABLE	_IO('i', 0x1)
 
 /*
- * Change metrics_set captured by a stream.
- *
- * If the stream is bound to a specific context, the configuration change
- * will performed __inline__ with that context such that it takes effect before
- * the next execbuf submission.
- *
- * Returns the previously bound metrics set id, or a negative error code.
+ * Change stream configuration
  */
-#define XE_OA_IOCTL_CONFIG	_IO('i', 0x2)
+#define XE_PERF_IOCTL_CONFIG	_IO('i', 0x2)
 
 #if defined(__cplusplus)
 }
