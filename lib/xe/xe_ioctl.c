@@ -542,21 +542,24 @@ void xe_force_gt_reset(int fd, int gt)
 	system(reset_string);
 }
 
-int xe_perf_ioctl(int fd, unsigned long request, void *arg)
+int xe_perf_ioctl(int fd, unsigned long request,
+		  enum drm_xe_perf_op op, void *arg)
 {
 	/* Chain the PERF layer struct */
 	struct drm_xe_perf_param p = {
 		.extensions = 0,
 		.perf_type = XE_PERF_TYPE_OA,
+		.perf_op = op,
 		.param = (__u64)arg,
 	};
 
 	return igt_ioctl(fd, request, &p);
 }
 
-void xe_perf_ioctl_err(int fd, unsigned long request, void *arg, int err)
+void xe_perf_ioctl_err(int fd, unsigned long request,
+		       enum drm_xe_perf_op op, void *arg, int err)
 {
-	igt_assert_eq(xe_perf_ioctl(fd, request, arg), -1);
+	igt_assert_eq(xe_perf_ioctl(fd, request, op, arg), -1);
 	igt_assert_eq(errno, err);
 	errno = 0;
 }

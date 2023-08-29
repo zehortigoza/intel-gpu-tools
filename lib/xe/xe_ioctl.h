@@ -93,7 +93,9 @@ int64_t xe_wait_ufence(int fd, uint64_t *addr, uint64_t value,
 		       uint32_t exec_queue, int64_t timeout);
 void xe_force_gt_reset(int fd, int gt);
 
-int xe_perf_ioctl(int fd, unsigned long request, void *arg);
-void xe_perf_ioctl_err(int fd, unsigned long request, void *arg, int err);
+int xe_perf_ioctl(int fd, unsigned long request,
+		  enum drm_xe_perf_op op, void *arg);
+void xe_perf_ioctl_err(int fd, unsigned long request,
+		       enum drm_xe_perf_op op, void *arg, int err);
 
 #endif /* XE_IOCTL_H */
