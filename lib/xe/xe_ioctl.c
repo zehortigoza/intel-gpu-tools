@@ -541,3 +541,22 @@ void xe_force_gt_reset(int fd, int gt)
 		 minor(st.st_rdev), gt);
 	system(reset_string);
 }
+
+int xe_perf_ioctl(int fd, unsigned long request, void *arg)
+{
+	/* Chain the PERF layer struct */
+	struct drm_xe_perf_param p = {
+		.extensions = 0,
+		.perf_type = XE_PERF_TYPE_OA,
+		.param = (__u64)arg,
+	};
+
+	return igt_ioctl(fd, request, &p);
+}
+
+void xe_perf_ioctl_err(int fd, unsigned long request, void *arg, int err)
+{
+	igt_assert_eq(xe_perf_ioctl(fd, request, arg), -1);
+	igt_assert_eq(errno, err);
+	errno = 0;
+}

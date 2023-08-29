@@ -26,6 +26,7 @@
 #include "intel_chipset.h"
 #include "ioctl_wrappers.h"
 #include "linux_scaffold.h"
+#include "xe_ioctl.h"
 #include "xe_oa.h"
 #include "xe/xe_query.h"
 #include "intel_hwconfig_types.h"
@@ -868,7 +869,7 @@ load_metric_set_config(struct intel_perf_metric_set *metric_set, int drm_fd)
 	config.n_flex_regs = metric_set->n_flex_regs;
 	config.flex_regs_ptr = (uintptr_t) metric_set->flex_regs;
 
-	ret = perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF_ADD_CONFIG, &config);
+	ret = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF_ADD_CONFIG, &config);
 	if (ret >= 0)
 		metric_set->perf_oa_metrics_set = ret;
 }
