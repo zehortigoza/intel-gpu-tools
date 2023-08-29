@@ -100,9 +100,7 @@ extern "C" {
 #define DRM_XE_EXEC_QUEUE_GET_PROPERTY	0x08
 #define DRM_XE_EXEC			0x09
 #define DRM_XE_WAIT_USER_FENCE		0x0a
-#define DRM_XE_PERF_OPEN		0x16
-#define DRM_XE_PERF_ADD_CONFIG		0x17
-#define DRM_XE_PERF_REMOVE_CONFIG	0x18
+#define DRM_XE_PERF			0x16
 
 /* Must be kept compact -- no holes */
 
@@ -117,9 +115,7 @@ extern "C" {
 #define DRM_IOCTL_XE_EXEC_QUEUE_GET_PROPERTY	DRM_IOWR(DRM_COMMAND_BASE + DRM_XE_EXEC_QUEUE_GET_PROPERTY, struct drm_xe_exec_queue_get_property)
 #define DRM_IOCTL_XE_EXEC			DRM_IOW(DRM_COMMAND_BASE + DRM_XE_EXEC, struct drm_xe_exec)
 #define DRM_IOCTL_XE_WAIT_USER_FENCE		DRM_IOWR(DRM_COMMAND_BASE + DRM_XE_WAIT_USER_FENCE, struct drm_xe_wait_user_fence)
-#define DRM_IOCTL_XE_PERF_OPEN			DRM_IOW(DRM_COMMAND_BASE + DRM_XE_PERF_OPEN, struct drm_xe_perf_param)
-#define DRM_IOCTL_XE_PERF_ADD_CONFIG		DRM_IOW(DRM_COMMAND_BASE + DRM_XE_PERF_ADD_CONFIG, struct drm_xe_perf_param)
-#define DRM_IOCTL_XE_PERF_REMOVE_CONFIG		DRM_IOW(DRM_COMMAND_BASE + DRM_XE_PERF_REMOVE_CONFIG, struct drm_xe_perf_param)
+#define DRM_IOCTL_XE_PERF			DRM_IOW(DRM_COMMAND_BASE + DRM_XE_PERF, struct drm_xe_perf_param)
 
 /**
  * DOC: Xe IOCTL Extensions
@@ -1381,18 +1377,27 @@ enum drm_xe_perf_type {
 	XE_PERF_TYPE_OA,
 };
 
+enum drm_xe_perf_op {
+	XE_PERF_STREAM_OPEN,
+	XE_PERF_ADD_CONFIG,
+	XE_PERF_REMOVE_CONFIG,
+};
+
 /**
  * struct drm_xe_perf_param - XE perf layer param
  *
  * The perf layer enables multiplexing perf counter streams of multiple
  * types. The actual params for a particular stream operation are supplied
- * via a pointer right after @perf_type.
+ * via a pointer right after @perf_type (use __copy_from_user to get these
+ * params).
  */
 struct drm_xe_perf_param {
 	/** @extensions: Pointer to the first extension struct, if any */
 	__u64 extensions;
 	/** @perf_type: Type, of enum drm_xe_perf_type, of perf stream  */
 	__u64 perf_type;
+	/** @perf_op: Perf op, of enum drm_xe_perf_op */
+	__u64 perf_op;
 	/** @param: Pointer to actual stream params */
 	__u64 param;
 };
