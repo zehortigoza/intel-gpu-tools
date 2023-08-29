@@ -445,7 +445,7 @@ __perf_open(int fd, struct drm_xe_oa_open_param *param, bool prevent_pm)
 		pm_fd = -1;
 	}
 
-	ret = igt_ioctl(fd, DRM_IOCTL_XE_OA_OPEN, param);
+	ret = igt_ioctl(fd, DRM_IOCTL_XE_PERF_OPEN, param);
 
 	igt_assert(ret >= 0);
 	errno = 0;
@@ -1130,7 +1130,7 @@ test_system_wide_paranoid(void)
 
 		igt_drop_root();
 
-		do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EACCES);
+		do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EACCES);
 	}
 
 	igt_waitchildren();
@@ -1183,7 +1183,7 @@ test_invalid_open_flags(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 }
 
 static void
@@ -1207,18 +1207,18 @@ test_invalid_class_instance(void)
 #define OA_E_INSTANCE 11
 
 	properties[OA_E_CLASS] = DRM_XE_ENGINE_CLASS_COPY;
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	properties[OA_E_CLASS] = 10;
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	properties[OA_E_CLASS] = DRM_XE_ENGINE_CLASS_RENDER;
 
 	properties[OA_E_INSTANCE] = 100;
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	properties[OA_E_INSTANCE] = 248;
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	properties[OA_E_CLASS] = default_e2.class;
 	properties[OA_E_INSTANCE] = default_e2.instance;
@@ -1246,10 +1246,10 @@ test_invalid_oa_metric_set_id(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	properties[ARRAY_SIZE(properties) - 1] = 0; /* ID 0 is also be reserved as invalid */
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	/* Check that we aren't just seeing false positives... */
 	properties[ARRAY_SIZE(properties) - 1] = default_test_set->perf_oa_metrics_set;
@@ -1258,7 +1258,7 @@ test_invalid_oa_metric_set_id(void)
 
 	/* There's no valid default OA metric set ID... */
 	param.num_properties--;
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 }
 
 static void
@@ -1280,10 +1280,10 @@ test_invalid_oa_format_id(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	properties[ARRAY_SIZE(properties) - 1] = 0; /* ID 0 is also be reserved as invalid */
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	/* Check that we aren't just seeing false positives... */
 	properties[ARRAY_SIZE(properties) - 1] = default_test_set->perf_oa_format;
@@ -1292,7 +1292,7 @@ test_invalid_oa_format_id(void)
 
 	/* There's no valid default OA format... */
 	param.num_properties--;
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 }
 
 static void
@@ -1312,7 +1312,7 @@ test_missing_sample_flags(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 }
 
 static void
@@ -1993,7 +1993,7 @@ test_invalid_oa_exponent(void)
 
 	for (int i = 32; i < 65; i++) {
 		properties[7] = i;
-		do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+		do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 	}
 }
 
@@ -2031,7 +2031,7 @@ test_low_oa_exponent_permissions(void)
 	igt_fork(child, 1) {
 		igt_drop_root();
 
-		do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EACCES);
+		do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EACCES);
 	}
 
 	igt_waitchildren();
@@ -2054,7 +2054,7 @@ test_low_oa_exponent_permissions(void)
 	igt_fork(child, 1) {
 		igt_drop_root();
 
-		do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EACCES);
+		do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EACCES);
 	}
 
 	igt_waitchildren();
@@ -3892,30 +3892,30 @@ test_global_sseu_config_invalid(const intel_ctx_t *ctx, const struct intel_execu
 	/* Invalid engine class */
 	sseu_param = default_sseu;
 	sseu_param.engine.engine_class = -1;
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	/* Invalid engine instance */
 	sseu_param = default_sseu;
 	sseu_param.engine.engine_instance = -1;
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	/* Invalid slice mask */
 	sseu_param = default_sseu;
 	sseu_param.slice_mask = 0;
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	sseu_param = default_sseu;
 	sseu_param.slice_mask = mask_plus_one(sseu_param.slice_mask);
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	/* Invalid subslice mask */
 	sseu_param = default_sseu;
 	sseu_param.subslice_mask = 0;
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	sseu_param = default_sseu;
 	sseu_param.subslice_mask = mask_plus_one(sseu_param.subslice_mask);
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EINVAL);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EINVAL);
 
 	/* Privileged operation */
 	if (__builtin_popcount(default_sseu.subslice_mask) > 1) {
@@ -3925,7 +3925,7 @@ test_global_sseu_config_invalid(const intel_ctx_t *ctx, const struct intel_execu
 			sseu_param = make_valid_reduced_sseu_config(default_sseu,
 								    e->class,
 								    e->instance);
-			do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param, EACCES);
+			do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param, EACCES);
 		}
 		igt_waitchildren();
 	}
@@ -4007,7 +4007,7 @@ test_global_sseu_config(const intel_ctx_t *ctx, const struct intel_execution_eng
 
 static int __i915_perf_add_config(int fd, struct drm_xe_oa_config *config)
 {
-	int ret = igt_ioctl(fd, DRM_IOCTL_XE_OA_ADD_CONFIG, config);
+	int ret = igt_ioctl(fd, DRM_IOCTL_XE_PERF_ADD_CONFIG, config);
 	if (ret < 0)
 		ret = -errno;
 	return ret;
@@ -4025,14 +4025,14 @@ static int i915_perf_add_config(int fd, struct drm_xe_oa_config *config)
 
 static void i915_perf_remove_config(int fd, uint64_t config_id)
 {
-	igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_OA_REMOVE_CONFIG,
+	igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_PERF_REMOVE_CONFIG,
 				&config_id), 0);
 }
 
 static bool has_i915_perf_userspace_config(int fd)
 {
 	uint64_t config = 0;
-	int ret = igt_ioctl(fd, DRM_IOCTL_XE_OA_REMOVE_CONFIG, &config);
+	int ret = igt_ioctl(fd, DRM_IOCTL_XE_PERF_REMOVE_CONFIG, &config);
 	igt_assert_eq(ret, -1);
 
 	igt_debug("errno=%i\n", errno);
@@ -4133,12 +4133,12 @@ test_invalid_remove_userspace_config(void)
 	igt_fork(child, 1) {
 		igt_drop_root();
 
-		do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_REMOVE_CONFIG, &config_id, EACCES);
+		do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_REMOVE_CONFIG, &config_id, EACCES);
 	}
 	igt_waitchildren();
 
 	/* Removing invalid config ID should fail. */
-	do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_REMOVE_CONFIG, &wrong_config_id, ENOENT);
+	do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_REMOVE_CONFIG, &wrong_config_id, ENOENT);
 
 	i915_perf_remove_config(drm_fd, config_id);
 }
@@ -4355,7 +4355,7 @@ test_whitelisted_registers_userspace_config(void)
 	config.n_mux_regs = i / 2;
 
 	/* Create a new config */
-	ret = igt_ioctl(drm_fd, DRM_IOCTL_XE_OA_ADD_CONFIG, &config);
+	ret = igt_ioctl(drm_fd, DRM_IOCTL_XE_PERF_ADD_CONFIG, &config);
 	igt_assert(ret > 0); /* Config 0 should be used by the kernel */
 	config_id = ret;
 
@@ -4812,7 +4812,7 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 		properties[7] = ci->engine_class;
 		properties[9] = ci->engine_instance;
 		grp->perf_fd = igt_ioctl(drm_fd,
-					 DRM_IOCTL_XE_OA_OPEN,
+					 DRM_IOCTL_XE_PERF_OPEN,
 					 &param);
 		igt_assert(grp->perf_fd >= 0);
 		igt_debug("opened OA buffer with c:i %d:%d\n",
@@ -4841,7 +4841,7 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 			properties[9] = ci->engine_instance;
 			/* for SAMPLE OA use case, we must pass exponent */
 			param.num_properties = ARRAY_SIZE(properties) / 2;
-			do_ioctl_err(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param,
+			do_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param,
 				     EBUSY);
 			igt_debug("try OA buffer with c:i %d:%d\n",
 				  ci->engine_class, ci->engine_instance);
@@ -4855,7 +4855,7 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 			/* for gem_context use case, we do no pass exponent */
 			param.num_properties = ARRAY_SIZE(properties) / 2 - 1;
 			errno = 0;
-			err = igt_ioctl(drm_fd, DRM_IOCTL_XE_OA_OPEN, &param);
+			err = igt_ioctl(drm_fd, DRM_IOCTL_XE_PERF_OPEN, &param);
 			igt_assert(err < 0);
 			igt_assert(errno == EBUSY || errno == ENODEV);
 			igt_debug("try OA ci unit with c:i %d:%d\n",
