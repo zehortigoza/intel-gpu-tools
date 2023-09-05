@@ -1388,8 +1388,7 @@ enum drm_xe_perf_op {
  *
  * The perf layer enables multiplexing perf counter streams of multiple
  * types. The actual params for a particular stream operation are supplied
- * via a pointer right after @perf_type (use __copy_from_user to get these
- * params).
+ * via the @param pointer (use __copy_from_user to get these params).
  */
 struct drm_xe_perf_param {
 	/** @extensions: Pointer to the first extension struct, if any */
@@ -1569,52 +1568,20 @@ struct drm_xe_oa_config {
 	char uuid[36];
 
 	/**
-	 * @n_mux_regs:
+	 * @n_regs:
 	 *
-	 * Number of mux regs in &mux_regs_ptr.
+	 * Number of regs in @regs_ptr.
 	 */
-	__u32 n_mux_regs;
+	__u32 n_regs;
 
 	/**
-	 * @n_boolean_regs:
+	 * @regs_ptr:
 	 *
-	 * Number of boolean regs in &boolean_regs_ptr.
+	 * Pointer to tuples of u32 values (register address, value) for OA
+	 * config registers. Expected length of buffer is (2 * sizeof(u32) *
+	 * @n_regs).
 	 */
-	__u32 n_boolean_regs;
-
-	/**
-	 * @n_flex_regs:
-	 *
-	 * Number of flex regs in &flex_regs_ptr.
-	 */
-	__u32 n_flex_regs;
-
-	/**
-	 * @mux_regs_ptr:
-	 *
-	 * Pointer to tuples of u32 values (register address, value) for mux
-	 * registers.  Expected length of buffer is (2 * sizeof(u32) *
-	 * &n_mux_regs).
-	 */
-	__u64 mux_regs_ptr;
-
-	/**
-	 * @boolean_regs_ptr:
-	 *
-	 * Pointer to tuples of u32 values (register address, value) for mux
-	 * registers.  Expected length of buffer is (2 * sizeof(u32) *
-	 * &n_boolean_regs).
-	 */
-	__u64 boolean_regs_ptr;
-
-	/**
-	 * @flex_regs_ptr:
-	 *
-	 * Pointer to tuples of u32 values (register address, value) for mux
-	 * registers.  Expected length of buffer is (2 * sizeof(u32) *
-	 * &n_flex_regs).
-	 */
-	__u64 flex_regs_ptr;
+	__u64 regs_ptr;
 };
 
 /*

@@ -4061,48 +4061,36 @@ test_invalid_create_userspace_config(void)
 
 	/* invalid uuid */
 	strncpy(config.uuid, invalid_uuid, sizeof(config.uuid));
-	config.n_mux_regs = 1;
-	config.mux_regs_ptr = to_user_pointer(mux_regs);
-	config.n_boolean_regs = 0;
-	config.n_flex_regs = 0;
+	config.n_regs = 1;
+	config.regs_ptr = to_user_pointer(mux_regs);
 
 	igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EINVAL);
 
 	/* invalid mux_regs */
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
-	config.n_mux_regs = 1;
-	config.mux_regs_ptr = to_user_pointer(invalid_mux_regs);
-	config.n_boolean_regs = 0;
-	config.n_flex_regs = 0;
+	config.n_regs = 1;
+	config.regs_ptr = to_user_pointer(invalid_mux_regs);
 
 	igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EINVAL);
 
 	/* empty config */
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
-	config.n_mux_regs = 0;
-	config.mux_regs_ptr = to_user_pointer(mux_regs);
-	config.n_boolean_regs = 0;
-	config.n_flex_regs = 0;
+	config.n_regs = 0;
+	config.regs_ptr = to_user_pointer(mux_regs);
 
 	igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EINVAL);
 
-	/* empty config with null pointers */
+	/* empty config with null pointer */
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
-	config.n_mux_regs = 1;
-	config.mux_regs_ptr = to_user_pointer(NULL);
-	config.n_boolean_regs = 2;
-	config.boolean_regs_ptr = to_user_pointer(NULL);
-	config.n_flex_regs = 3;
-	config.flex_regs_ptr = to_user_pointer(NULL);
+	config.n_regs = 1;
+	config.regs_ptr = to_user_pointer(NULL);
 
 	igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EINVAL);
 
-	/* invalid pointers */
+	/* invalid pointer */
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
-	config.n_mux_regs = 42;
-	config.mux_regs_ptr = to_user_pointer((void *) 0xDEADBEEF);
-	config.n_boolean_regs = 0;
-	config.n_flex_regs = 0;
+	config.n_regs = 42;
+	config.regs_ptr = to_user_pointer((void *) 0xDEADBEEF);
 
 	igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EFAULT);
 }
@@ -4128,10 +4116,8 @@ test_invalid_remove_userspace_config(void)
 
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
 
-	config.n_mux_regs = 1;
-	config.mux_regs_ptr = to_user_pointer(mux_regs);
-	config.n_boolean_regs = 0;
-	config.n_flex_regs = 0;
+	config.n_regs = 1;
+	config.regs_ptr = to_user_pointer(mux_regs);
 
 	config_id = i915_perf_add_config(drm_fd, &config);
 
@@ -4157,7 +4143,7 @@ test_create_destroy_userspace_config(void)
 	struct drm_xe_oa_config config;
 	const char *uuid = "01234567-0123-0123-0123-0123456789ab";
 	uint32_t mux_regs[] = { 0x9888 /* NOA_WRITE */, 0x0 };
-	uint32_t flex_regs[100];
+	uint32_t regs[100];
 	int i;
 	uint64_t config_id;
 	uint64_t properties[] = {
@@ -4189,20 +4175,15 @@ test_create_destroy_userspace_config(void)
 	memset(&config, 0, sizeof(config));
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
 
-	config.n_mux_regs = 1;
-	config.mux_regs_ptr = to_user_pointer(mux_regs);
-
-	/* Flex EU counters are only available on gen8+ */
-	if (intel_gen(devid) >= 8) {
-		for (i = 0; i < ARRAY_SIZE(flex_regs) / 2; i++) {
-			flex_regs[i * 2] = 0xe458; /* EU_PERF_CNTL0 */
-			flex_regs[i * 2 + 1] = 0x0;
-		}
-		config.flex_regs_ptr = to_user_pointer(flex_regs);
-		config.n_flex_regs = ARRAY_SIZE(flex_regs) / 2;
+	regs[0] = mux_regs[0];
+	regs[1] = mux_regs[1];
+	/* Flex EU counters */
+	for (i = 1; i < ARRAY_SIZE(regs) / 2; i++) {
+		regs[i * 2] = 0xe458; /* EU_PERF_CNTL0 */
+		regs[i * 2 + 1] = 0x0;
 	}
-
-	config.n_boolean_regs = 0;
+	config.regs_ptr = to_user_pointer(regs);
+	config.n_regs = ARRAY_SIZE(regs) / 2;
 
 	/* Creating configs without permissions shouldn't work. */
 	igt_fork(child, 1) {
@@ -4243,9 +4224,7 @@ test_whitelisted_registers_userspace_config(void)
 {
 	struct drm_xe_oa_config config;
 	const char *uuid = "01234567-0123-0123-0123-0123456789ab";
-	uint32_t mux_regs[200];
-	uint32_t b_counters_regs[200];
-	uint32_t flex_regs[200];
+	uint32_t regs[600];
 	uint32_t i;
 	uint32_t oa_start_trig1, oa_start_trig8;
 	uint32_t oa_report_trig1, oa_report_trig8;
@@ -4284,83 +4263,47 @@ test_whitelisted_registers_userspace_config(void)
 		oa_report_trig8 = 0x275c;
 	}
 
-	/* OASTARTTRIG[1-8] */
+	/* b_counters_regs: OASTARTTRIG[1-8] */
 	for (i = oa_start_trig1; i <= oa_start_trig8; i += 4) {
-		b_counters_regs[config.n_boolean_regs * 2] = i;
-		b_counters_regs[config.n_boolean_regs * 2 + 1] = 0;
-		config.n_boolean_regs++;
+		regs[config.n_regs * 2] = i;
+		regs[config.n_regs * 2 + 1] = 0;
+		config.n_regs++;
 	}
-	/* OAREPORTTRIG[1-8] */
+	/* b_counters_regs: OAREPORTTRIG[1-8] */
 	for (i = oa_report_trig1; i <= oa_report_trig8; i += 4) {
-		b_counters_regs[config.n_boolean_regs * 2] = i;
-		b_counters_regs[config.n_boolean_regs * 2 + 1] = 0;
-		config.n_boolean_regs++;
+		regs[config.n_regs * 2] = i;
+		regs[config.n_regs * 2 + 1] = 0;
+		config.n_regs++;
 	}
-	config.boolean_regs_ptr = (uintptr_t) b_counters_regs;
 
-	if (intel_gen(devid) >= 8) {
-		/* Flex EU registers, only from Gen8+. */
-		for (i = 0; i < ARRAY_SIZE(flex); i++) {
-			flex_regs[config.n_flex_regs * 2] = flex[i];
-			flex_regs[config.n_flex_regs * 2 + 1] = 0;
-			config.n_flex_regs++;
-		}
-		config.flex_regs_ptr = (uintptr_t) flex_regs;
+	/* Flex EU registers, only from Gen8+. */
+	for (i = 0; i < ARRAY_SIZE(flex); i++) {
+		regs[config.n_regs * 2] = flex[i];
+		regs[config.n_regs * 2 + 1] = 0;
+		config.n_regs++;
 	}
 
 	/* Mux registers (too many of them, just checking bounds) */
-	i = 0;
-
 	/* NOA_WRITE */
-	mux_regs[i++] = 0x9888;
-	mux_regs[i++] = 0;
+	regs[config.n_regs * 2] = 0x9888;
+	regs[config.n_regs * 2 + 1] = 0;
+	config.n_regs++;
 
-	if (IS_HASWELL(devid)) {
-		/* Haswell specific. undocumented... */
-		mux_regs[i++] = 0x9ec0;
-		mux_regs[i++] = 0;
-
-		mux_regs[i++] = 0x25100;
-		mux_regs[i++] = 0;
-		mux_regs[i++] = 0x2ff90;
-		mux_regs[i++] = 0;
+	/* NOA_CONFIG */
+	regs[config.n_regs * 2] = 0xD04;
+	regs[config.n_regs * 2 + 1] = 0;
+	config.n_regs++;
+	regs[config.n_regs * 2] = 0xD2C;
+	regs[config.n_regs * 2 + 1] = 0;
+	config.n_regs++;
+	if (!IS_METEORLAKE(devid)) {
+		/* WAIT_FOR_RC6_EXIT */
+		regs[config.n_regs * 2] = 0x20CC;
+		regs[config.n_regs * 2 + 1] = 0;
+	config.n_regs++;
 	}
 
-	if (intel_gen(devid) >= 8 && !IS_CHERRYVIEW(devid)) {
-		/* NOA_CONFIG */
-		mux_regs[i++] = 0xD04;
-		mux_regs[i++] = 0;
-		mux_regs[i++] = 0xD2C;
-		mux_regs[i++] = 0;
-		if (!IS_METEORLAKE(devid)) {
-			/* WAIT_FOR_RC6_EXIT */
-			mux_regs[i++] = 0x20CC;
-			mux_regs[i++] = 0;
-		}
-	}
-
-	if (IS_CHERRYVIEW(devid)) {
-		/* Cherryview specific. undocumented... */
-		mux_regs[i++] = 0x182300;
-		mux_regs[i++] = 0;
-		mux_regs[i++] = 0x1823A4;
-		mux_regs[i++] = 0;
-	}
-
-	if (intel_gen(devid) <= 11) {
-		/* HALF_SLICE_CHICKEN2 (shared with kernel workaround) */
-		mux_regs[i++] = 0xE180;
-		mux_regs[i++] = 0;
-		/* PERFCNT[12] */
-		mux_regs[i++] = 0x91B8;
-		mux_regs[i++] = 0;
-		/* PERFMATRIX */
-		mux_regs[i++] = 0x91C8;
-		mux_regs[i++] = 0;
-	}
-
-	config.mux_regs_ptr = (uintptr_t) mux_regs;
-	config.n_mux_regs = i / 2;
+	config.regs_ptr = (uintptr_t) regs;
 
 	/* Create a new config */
 	ret = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_ADD_CONFIG, &config);
