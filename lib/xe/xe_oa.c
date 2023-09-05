@@ -854,24 +854,32 @@ static void
 load_metric_set_config(struct intel_perf_metric_set *metric_set, int drm_fd)
 {
 	struct drm_xe_oa_config config;
+	u8 *regs;
 	int ret;
 
 	memset(&config, 0, sizeof(config));
 
 	memcpy(config.uuid, metric_set->hw_config_guid, sizeof(config.uuid));
 
-	config.n_mux_regs = metric_set->n_mux_regs;
-	config.mux_regs_ptr = (uintptr_t) metric_set->mux_regs;
+	config.n_regs = metric_set->n_mux_regs +
+		metric_set->n_b_counter_regs +
+		metric_set->n_flex_regs;
+	config.regs_ptr = to_user_pointer(malloc(2 * config.n_regs * sizeof(u32)));
+	igt_assert(config.regs_ptr);
+	regs = (u8 *)config.regs_ptr;
 
-	config.n_boolean_regs = metric_set->n_b_counter_regs;
-	config.boolean_regs_ptr = (uintptr_t) metric_set->b_counter_regs;
-
-	config.n_flex_regs = metric_set->n_flex_regs;
-	config.flex_regs_ptr = (uintptr_t) metric_set->flex_regs;
+	memcpy(regs, metric_set->mux_regs, 2 * metric_set->n_mux_regs * sizeof(u32));
+	regs += 2 * metric_set->n_mux_regs * sizeof(u32);
+	memcpy(regs, metric_set->b_counter_regs, 2 * metric_set->n_b_counter_regs * sizeof(u32));
+	regs += 2 * metric_set->n_b_counter_regs * sizeof(u32);
+	memcpy(regs, metric_set->flex_regs, 2 * metric_set->n_flex_regs * sizeof(u32));
+	regs += 2 * metric_set->n_flex_regs * sizeof(u32);
 
 	ret = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_ADD_CONFIG, &config);
 	if (ret >= 0)
 		metric_set->perf_oa_metrics_set = ret;
+
+	free((void *)config.regs_ptr);
 }
 
 void
