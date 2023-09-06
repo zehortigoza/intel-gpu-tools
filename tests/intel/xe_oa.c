@@ -252,13 +252,33 @@ IGT_TEST_DESCRIPTION("Test the xe perf metrics streaming interface");
 		*_tail++ = _value; \
 	} while (0)
 
+enum xe_oa_format_name {
+	XE_OA_FORMAT_C4_B8 = 7,
+
+	/* Gen8+ */
+	XE_OA_FORMAT_A12,
+	XE_OA_FORMAT_A12_B8_C8,
+	XE_OA_FORMAT_A32u40_A4u32_B8_C8,
+
+	/* DG2 */
+	XE_OAR_FORMAT_A32u40_A4u32_B8_C8,
+	XE_OA_FORMAT_A24u40_A14u32_B8_C8,
+
+	/* MTL OAM */
+	XE_OAM_FORMAT_MPEC8u64_B8_C8,
+	XE_OAM_FORMAT_MPEC8u32_B8_C8,
+
+	XE_OA_FORMAT_MAX,
+};
+
 struct accumulator {
 #define MAX_RAW_OA_COUNTERS 62
-	enum drm_xe_oa_format format;
+	enum xe_oa_format_name format;
 
 	uint64_t deltas[MAX_RAW_OA_COUNTERS];
 };
 
+/* OA unit types */
 enum {
 	OAG,
 	OAR,
@@ -283,8 +303,9 @@ struct oa_format {
 	int n_b;
 	int c_off;
 	int n_c;
-	int oa_type;
+	int oa_type; /* of enum xe_oa_format_name */
 	bool report_hdr_64bit;
+	int counter_select;
 };
 
 static struct oa_format gen12_oa_formats[XE_OA_FORMAT_MAX] = {
@@ -293,7 +314,9 @@ static struct oa_format gen12_oa_formats[XE_OA_FORMAT_MAX] = {
 		.a40_high_off = 160, .a40_low_off = 16, .n_a40 = 32,
 		.a_off = 144, .n_a = 4, .first_a = 32,
 		.b_off = 192, .n_b = 8,
-		.c_off = 224, .n_c = 8, },
+		.c_off = 224, .n_c = 8, .oa_type = XE_OA_FMT_TYPE_OAG,
+		.counter_select = 5,
+	},
 };
 
 static struct oa_format dg2_oa_formats[XE_OA_FORMAT_MAX] = {
@@ -302,7 +325,9 @@ static struct oa_format dg2_oa_formats[XE_OA_FORMAT_MAX] = {
 		.a40_high_off = 160, .a40_low_off = 16, .n_a40 = 32,
 		.a_off = 144, .n_a = 4, .first_a = 32,
 		.b_off = 192, .n_b = 8,
-		.c_off = 224, .n_c = 8, .oa_type = OAR, },
+		.c_off = 224, .n_c = 8, .oa_type = XE_OA_FMT_TYPE_OAR,
+		.counter_select = 5,
+	},
 	/* This format has A36 and A37 interleaved with high bytes of some A
 	 * counters, so we will accumulate only subset of counters.
 	 */
@@ -313,7 +338,9 @@ static struct oa_format dg2_oa_formats[XE_OA_FORMAT_MAX] = {
 		/* u32: A0 - A3 */
 		.a_off = 16, .n_a = 4,
 		.b_off = 192, .n_b = 8,
-		.c_off = 224, .n_c = 8, .oa_type = OAG, },
+		.c_off = 224, .n_c = 8, .oa_type = XE_OA_FMT_TYPE_OAG,
+		.counter_select = 5,
+	},
 };
 
 static struct oa_format mtl_oa_formats[XE_OA_FORMAT_MAX] = {
@@ -322,7 +349,9 @@ static struct oa_format mtl_oa_formats[XE_OA_FORMAT_MAX] = {
 		.a40_high_off = 160, .a40_low_off = 16, .n_a40 = 32,
 		.a_off = 144, .n_a = 4, .first_a = 32,
 		.b_off = 192, .n_b = 8,
-		.c_off = 224, .n_c = 8, .oa_type = OAR, },
+		.c_off = 224, .n_c = 8, .oa_type = XE_OA_FMT_TYPE_OAR,
+		.counter_select = 5,
+	},
 	/* This format has A36 and A37 interleaved with high bytes of some A
 	 * counters, so we will accumulate only subset of counters.
 	 */
@@ -333,21 +362,27 @@ static struct oa_format mtl_oa_formats[XE_OA_FORMAT_MAX] = {
 		/* u32: A0 - A3 */
 		.a_off = 16, .n_a = 4,
 		.b_off = 192, .n_b = 8,
-		.c_off = 224, .n_c = 8, .oa_type = OAG, },
+		.c_off = 224, .n_c = 8, .oa_type = XE_OA_FMT_TYPE_OAG,
+		.counter_select = 5,
+	},
 
 	/* Treat MPEC countes as A counters for now */
 	[XE_OAM_FORMAT_MPEC8u64_B8_C8] = {
 		"MPEC8u64_B8_C8", .size = 192,
 		.a64_off = 32, .n_a64 = 8,
 		.b_off = 96, .n_b = 8,
-		.c_off = 128, .n_c = 8, .oa_type = OAM,
-		.report_hdr_64bit = true, },
+		.c_off = 128, .n_c = 8, .oa_type = XE_OA_FMT_TYPE_OAM_MPEC,
+		.report_hdr_64bit = true,
+		.counter_select = 1,
+	},
 	[XE_OAM_FORMAT_MPEC8u32_B8_C8] = {
 		"MPEC8u32_B8_C8", .size = 128,
 		.a_off = 32, .n_a = 8,
 		.b_off = 64, .n_b = 8,
-		.c_off = 96, .n_c = 8, .oa_type = OAM,
-		.report_hdr_64bit = true, },
+		.c_off = 96, .n_c = 8, .oa_type = XE_OA_FMT_TYPE_OAM_MPEC,
+		.report_hdr_64bit = true,
+		.counter_select = 2,
+	},
 };
 
 /* No A counters currently reserved/undefined for gen8+ so far */
@@ -369,10 +404,10 @@ static uint64_t oa_exp_1_millisec;
 
 static igt_render_copyfunc_t render_copy = NULL;
 static uint64_t (*read_report_ticks)(const uint32_t *report,
-				     enum drm_xe_oa_format format);
+				     enum xe_oa_format_name format);
 static void (*sanity_check_reports)(const uint32_t *oa_report0,
 				    const uint32_t *oa_report1,
-				    enum drm_xe_oa_format format);
+				    enum xe_oa_format_name format);
 
 
 static struct intel_perf_metric_set *metric_set(const struct intel_execution_engine2 *e2);
@@ -392,7 +427,7 @@ dump_report(const uint32_t *report, uint32_t size, const char *message) {
 }
 
 static struct oa_format
-get_oa_format(enum drm_xe_oa_format format)
+get_oa_format(enum xe_oa_format_name format)
 {
 	if (IS_DG2(devid))
 		return dg2_oa_formats[format];
@@ -401,6 +436,22 @@ get_oa_format(enum drm_xe_oa_format format)
 	else
 		return gen12_oa_formats[format];
 }
+
+static u64 oa_format_fields(u64 name)
+{
+#define FIELD_PREP_ULL(_mask, _val) \
+	(((_val) << (__builtin_ffsll(_mask) - 1)) & (_mask))
+
+	struct oa_format f = get_oa_format(name);
+
+	/* 0 format name is invalid */
+	if (!name)
+		memset(&f, 0xff, sizeof(f));
+
+	return FIELD_PREP_ULL(XE_OA_MASK_FMT_TYPE, (u64)f.oa_type) |
+		FIELD_PREP_ULL(XE_OA_MASK_COUNTER_SEL, (u64)f.counter_select);
+}
+#define __ff oa_format_fields
 
 static char *
 pretty_print_oa_period(uint64_t oa_period_ns)
@@ -531,7 +582,7 @@ sysfs_read(enum i915_attr_id id)
 }
 
 static uint64_t
-gen8_read_report_ticks(const uint32_t *report, enum drm_xe_oa_format format)
+gen8_read_report_ticks(const uint32_t *report, enum xe_oa_format_name format)
 {
 
 	struct oa_format fmt = get_oa_format(format);
@@ -561,7 +612,7 @@ elapsed_delta(uint64_t t1, uint64_t t0, uint32_t width)
 static uint64_t
 oa_tick_delta(const uint32_t *report1,
 	      const uint32_t *report0,
-	      enum drm_xe_oa_format format)
+	      enum xe_oa_format_name format)
 {
 	return elapsed_delta(read_report_ticks(report1, format),
 			     read_report_ticks(report0, format), 32);
@@ -633,7 +684,7 @@ cs_timebase_scale(uint32_t u32_delta)
 }
 
 static uint64_t
-oa_timestamp(const uint32_t *report, enum drm_xe_oa_format format)
+oa_timestamp(const uint32_t *report, enum xe_oa_format_name format)
 {
 	struct oa_format fmt = get_oa_format(format);
 
@@ -643,7 +694,7 @@ oa_timestamp(const uint32_t *report, enum drm_xe_oa_format format)
 static uint64_t
 oa_timestamp_delta(const uint32_t *report1,
 		   const uint32_t *report0,
-		   enum drm_xe_oa_format format)
+		   enum xe_oa_format_name format)
 {
 	uint32_t width = intel_graphics_ver(devid) >= IP_VER(12, 55) ? 56 : 32;
 
@@ -788,7 +839,7 @@ emit_report_perf_count(struct intel_bb *ibb,
 
 static uint64_t
 gen8_read_40bit_a_counter(const uint32_t *report,
-			  enum drm_xe_oa_format fmt, int a_id)
+			  enum xe_oa_format_name fmt, int a_id)
 {
 	struct oa_format format = get_oa_format(fmt);
 	uint8_t *a40_high = (((uint8_t *)report) + format.a40_high_off);
@@ -800,7 +851,7 @@ gen8_read_40bit_a_counter(const uint32_t *report,
 }
 
 static uint64_t
-xehpsdv_read_64bit_a_counter(const uint32_t *report, enum drm_xe_oa_format fmt, int a_id)
+xehpsdv_read_64bit_a_counter(const uint32_t *report, enum xe_oa_format_name fmt, int a_id)
 {
 	struct oa_format format = get_oa_format(fmt);
 	uint64_t *a64 = (uint64_t *)(((uint8_t *)report) + format.a64_off);
@@ -833,7 +884,7 @@ static void
 accumulate_uint40(int a_index,
                   uint32_t *report0,
                   uint32_t *report1,
-		  enum drm_xe_oa_format format,
+		  enum xe_oa_format_name format,
                   uint64_t *delta)
 {
 	uint64_t value0 = gen8_read_40bit_a_counter(report0, format, a_index),
@@ -846,7 +897,7 @@ static void
 accumulate_uint64(int a_index,
 		  const uint32_t *report0,
 		  const uint32_t *report1,
-		  enum drm_xe_oa_format format,
+		  enum xe_oa_format_name format,
 		  uint64_t *delta)
 {
 	uint64_t value0 = xehpsdv_read_64bit_a_counter(report0, format, a_index),
@@ -940,7 +991,7 @@ accumulator_print(struct accumulator *accumulator, const char *title)
 static void
 gen8_sanity_check_test_oa_reports(const uint32_t *oa_report0,
 				  const uint32_t *oa_report1,
-				  enum drm_xe_oa_format fmt)
+				  enum xe_oa_format_name fmt)
 {
 	struct oa_format format = get_oa_format(fmt);
 	uint64_t time_delta = timebase_scale(oa_timestamp_delta(oa_report1,
@@ -1016,7 +1067,7 @@ gen8_sanity_check_test_oa_reports(const uint32_t *oa_report0,
 	/* The TestOa metric set defines all B counters to be a
 	 * multiple of the gpu clock
 	 */
-	if (format.n_b && (format.oa_type == OAG || format.oa_type == OAR)) {
+	if (format.n_b && (format.oa_type == XE_OA_FMT_TYPE_OAG || format.oa_type == XE_OA_FMT_TYPE_OAR)) {
 		if (clock_delta > 0) {
 			b = rpt1_b[0] - rpt0_b[0];
 			igt_debug("B0: delta = %"PRIu32"\n", b);
@@ -1116,7 +1167,7 @@ test_system_wide_paranoid(void)
 
 			/* OA unit configuration */
 			DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-			DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+			DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 			DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		};
 		struct drm_xe_oa_open_param param = {
@@ -1143,7 +1194,7 @@ test_system_wide_paranoid(void)
 
 			/* OA unit configuration */
 			DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-			DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+			DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 			DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		};
 		struct drm_xe_oa_open_param param = {
@@ -1175,7 +1226,7 @@ test_invalid_open_flags(void)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 	};
 	struct drm_xe_oa_open_param param = {
@@ -1194,7 +1245,7 @@ test_invalid_class_instance(void)
 	uint64_t properties[] = {
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 		DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, 0,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, 0,
@@ -1237,7 +1288,7 @@ test_invalid_oa_metric_set_id(void)
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
 		/* OA unit configuration */
-		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROP_OA_METRICS_SET, UINT64_MAX,
 	};
@@ -1273,7 +1324,7 @@ test_invalid_oa_format_id(void)
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
-		DRM_XE_OA_PROP_OA_FORMAT, UINT64_MAX,
+		DRM_XE_OA_PROP_OA_FORMAT, UINT64_MAX, /* No __ff() here */
 	};
 	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC |
@@ -1284,11 +1335,11 @@ test_invalid_oa_format_id(void)
 
 	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
 
-	properties[ARRAY_SIZE(properties) - 1] = 0; /* ID 0 is also be reserved as invalid */
+	properties[ARRAY_SIZE(properties) - 1] = __ff(0); /* ID 0 is also be reserved as invalid */
 	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
 
 	/* Check that we aren't just seeing false positives... */
-	properties[ARRAY_SIZE(properties) - 1] = default_test_set->perf_oa_format;
+	properties[ARRAY_SIZE(properties) - 1] = __ff(default_test_set->perf_oa_format);
 	stream_fd = __perf_open(drm_fd, &param, false);
 	__perf_close(stream_fd);
 
@@ -1306,7 +1357,7 @@ test_missing_sample_flags(void)
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
-		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 	};
 	struct drm_xe_oa_open_param param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
@@ -1446,7 +1497,7 @@ open_and_read_2_oa_reports(int format_id,
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, format_id,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(format_id),
 		DRM_XE_OA_PROP_OA_EXPONENT, exponent,
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
@@ -1848,7 +1899,7 @@ test_oa_exponents(const struct intel_execution_engine2 *e)
 
 			/* OA unit configuration */
 			DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
-			DRM_XE_OA_PROP_OA_FORMAT, fmt,
+			DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
 			DRM_XE_OA_PROP_OA_EXPONENT, exponent,
 			DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 			DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
@@ -1979,7 +2030,7 @@ test_invalid_oa_exponent(void)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, 31, /* maximum exponent expected
 						       to be accepted */
 	};
@@ -2016,7 +2067,7 @@ test_low_oa_exponent_permissions(void)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, bad_exponent,
 	};
 	struct drm_xe_oa_open_param param = {
@@ -2137,7 +2188,7 @@ test_blocking(uint64_t requested_oa_period,
 
 	ADD_PROPS(props, idx, SAMPLE_OA, true);
 	ADD_PROPS(props, idx, OA_METRICS_SET, test_set->perf_oa_metrics_set);
-	ADD_PROPS(props, idx, OA_FORMAT, test_set->perf_oa_format);
+	ADD_PROPS(props, idx, OA_FORMAT, __ff(test_set->perf_oa_format));
 	ADD_PROPS(props, idx, OA_EXPONENT, oa_exponent);
 
 	if (has_param_poll_period() && set_kernel_hrtimer)
@@ -2301,7 +2352,7 @@ test_polling(uint64_t requested_oa_period,
 
 	ADD_PROPS(props, idx, SAMPLE_OA, true);
 	ADD_PROPS(props, idx, OA_METRICS_SET, test_set->perf_oa_metrics_set);
-	ADD_PROPS(props, idx, OA_FORMAT, test_set->perf_oa_format);
+	ADD_PROPS(props, idx, OA_FORMAT, __ff(test_set->perf_oa_format));
 	ADD_PROPS(props, idx, OA_EXPONENT, oa_exponent);
 
 	if (has_param_poll_period() && set_kernel_hrtimer)
@@ -2474,7 +2525,7 @@ static void test_polling_small_buf(void)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
 	};
 	struct drm_xe_oa_open_param param = {
@@ -2576,7 +2627,7 @@ gen12_test_oa_tlb_invalidate(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
@@ -2627,7 +2678,7 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, fmt,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
@@ -2781,7 +2832,7 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, fmt,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
@@ -2870,7 +2921,7 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, fmt,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
@@ -3024,7 +3075,7 @@ test_short_reads(void)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
 	};
 	struct drm_xe_oa_open_param param = {
@@ -3115,7 +3166,7 @@ test_non_sampling_read_error(void)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 
 		/* XXX: no sampling exponent */
 	};
@@ -3151,7 +3202,7 @@ test_disabled_read_error(void)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
 	};
 	struct drm_xe_oa_open_param param = {
@@ -3225,7 +3276,7 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
 		 * values.
 		 */
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, fmt,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
@@ -3361,7 +3412,7 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 		 * values.
 		 */
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, fmt,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
@@ -3703,7 +3754,7 @@ test_rc6_disable(void)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 	};
 	struct drm_xe_oa_open_param param = {
@@ -3760,7 +3811,7 @@ test_stress_open_close(const struct intel_execution_engine2 *e)
 
 			/* OA unit configuration */
 			DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
-			DRM_XE_OA_PROP_OA_FORMAT, test_set->perf_oa_format,
+			DRM_XE_OA_PROP_OA_FORMAT, __ff(test_set->perf_oa_format),
 			DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
 			DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 			DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
@@ -3865,7 +3916,7 @@ test_global_sseu_config_invalid(const intel_ctx_t *ctx, const struct intel_execu
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROP_GLOBAL_SSEU, to_user_pointer(&sseu_param),
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
@@ -3957,7 +4008,7 @@ test_global_sseu_config(const intel_ctx_t *ctx, const struct intel_execution_eng
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROP_GLOBAL_SSEU, to_user_pointer(&sseu_param),
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
@@ -4151,7 +4202,7 @@ test_create_destroy_userspace_config(void)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
-		DRM_XE_OA_PROP_OA_FORMAT, default_test_set->perf_oa_format,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROP_OA_METRICS_SET
 	};
@@ -4372,7 +4423,7 @@ test_xe_ref_count(void)
 
 		/* OA unit configuration */
 		DRM_XE_OA_PROP_OA_METRICS_SET, 0 /* updated below */,
-		DRM_XE_OA_PROP_OA_FORMAT, 0, /* update below */
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(0), /* update below */
 		DRM_XE_OA_PROP_OA_EXPONENT, 0, /* update below */
 	};
 	struct drm_xe_oa_open_param param = {
@@ -4411,7 +4462,7 @@ test_xe_ref_count(void)
 	 */
 	igt_require(init_sys_info());
 	properties[3] = default_test_set->perf_oa_metrics_set;
-	properties[5] = default_test_set->perf_oa_format;
+	properties[5] = __ff(default_test_set->perf_oa_format);
 	properties[7] = oa_exp_1_millisec;
 
 	ref_count0 = read_i915_module_ref(is_xe);
@@ -4731,7 +4782,7 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 	uint64_t properties[] = {
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 		DRM_XE_OA_PROP_OA_METRICS_SET, 0,
-		DRM_XE_OA_PROP_OA_FORMAT, 0,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(0),
 		DRM_XE_OA_PROP_OA_ENGINE_CLASS, 0,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, 0,
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
@@ -4759,7 +4810,7 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 		}
 
 		properties[3] = test_set->perf_oa_metrics_set;
-		properties[5] = test_set->perf_oa_format;
+		properties[5] = __ff(test_set->perf_oa_format);
 		properties[7] = ci->engine_class;
 		properties[9] = ci->engine_instance;
 		grp->perf_fd = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF,
@@ -4786,7 +4837,7 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 			properties[0] = DRM_XE_OA_PROP_SAMPLE_OA;
 			properties[1] = true;
 			properties[3] = test_set->perf_oa_metrics_set;
-			properties[5] = test_set->perf_oa_format;
+			properties[5] = __ff(test_set->perf_oa_format);
 			properties[7] = ci->engine_class;
 			properties[9] = ci->engine_instance;
 			/* for SAMPLE OA use case, we must pass exponent */
