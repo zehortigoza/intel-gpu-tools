@@ -1401,23 +1401,13 @@ struct drm_xe_perf_param {
 	__u64 param;
 };
 
-enum drm_xe_oa_format {
-	XE_OA_FORMAT_C4_B8 = 7,
-
-	/* Gen8+ */
-	XE_OA_FORMAT_A12,
-	XE_OA_FORMAT_A12_B8_C8,
-	XE_OA_FORMAT_A32u40_A4u32_B8_C8,
-
-	/* DG2 */
-	XE_OAR_FORMAT_A32u40_A4u32_B8_C8,
-	XE_OA_FORMAT_A24u40_A14u32_B8_C8,
-
-	/* MTL OAM */
-	XE_OAM_FORMAT_MPEC8u64_B8_C8,
-	XE_OAM_FORMAT_MPEC8u32_B8_C8,
-
-	XE_OA_FORMAT_MAX	    /* non-ABI */
+enum drm_xe_oa_format_type {
+	XE_OA_FMT_TYPE_OAG,
+	XE_OA_FMT_TYPE_OAR,
+	XE_OA_FMT_TYPE_OAM,
+	XE_OA_FMT_TYPE_OAC,
+	XE_OA_FMT_TYPE_OAM_MPEC,
+	XE_OA_FMT_TYPE_PEC,
 };
 
 enum drm_xe_oa_property_id {
@@ -1444,6 +1434,16 @@ enum drm_xe_oa_property_id {
 	 * The value specifies the size and layout of OA unit reports.
 	 */
 	DRM_XE_OA_PROP_OA_FORMAT,
+	/**
+	 * OA_FORMAT's are specified the same way as in Bspec, in terms of
+	 * the following quantities: a. enum @drm_xe_oa_format_type
+	 * b. Counter select c. Counter size and d. BC report
+	 */
+#define XE_OA_MASK_FMT_TYPE	(0xff << 0)
+#define XE_OA_MASK_COUNTER_SEL	(0xff << 8)
+#define XE_OA_MASK_COUNTER_SIZE	(0xff << 16)
+#define XE_OA_MASK_BC_REPORT	(0xff << 24)
+
 	/**
 	 * Specifying this property implicitly requests periodic OA unit
 	 * sampling and (at least on Haswell) the sampling frequency is derived
