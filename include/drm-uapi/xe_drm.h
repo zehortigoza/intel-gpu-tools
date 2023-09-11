@@ -687,7 +687,6 @@ struct drm_xe_device_query {
 #define DRM_XE_DEVICE_QUERY_GT_TOPOLOGY		5
 #define DRM_XE_DEVICE_QUERY_ENGINE_CYCLES	6
 #define DRM_XE_DEVICE_QUERY_UC_FW_VERSION	7
-#define XE_QUERY_OA_IOCTL_VERSION		8
 	/** @query: The type of data to query */
 	__u32 query;
 
@@ -1462,13 +1461,11 @@ enum drm_xe_oa_property_id {
 	DRM_XE_OA_PROP_HOLD_PREEMPTION,
 
 	/**
-	 * Specifying this pins all contexts to the specified SSEU power
-	 * configuration for the duration of the recording.
-	 *
-	 * This parameter's value is a pointer to a struct
-	 * drm_xe_gem_context_param_sseu (TBD).
+	 * Specify a global OA buffer size to be allocated in bytes. The
+	 * size specified must be supported by HW (powers of 2 ranging from
+	 * 128 KB to 128Mb depending on the platform)
 	 */
-	DRM_XE_OA_PROP_GLOBAL_SSEU,
+	DRM_XE_OA_PROP_OA_BUFFER_SIZE,
 
 	/**
 	 * This optional parameter specifies the timer interval in nanoseconds
@@ -1500,6 +1497,22 @@ enum drm_xe_oa_property_id {
 };
 
 struct drm_xe_oa_open_param {
+	/** @extensions: Pointer to the first extension struct, if any */
+	__u64 extensions;
+
+	/**
+	 * @config_syncobj: (Output) handle to configuration syncobj
+	 *
+	 * Handle to a syncobj which the kernel will signal after stream
+	 * configuration or re-configuration is complete (after retrun from
+	 * the ioctl). This handle can be provided as a dependency to the
+	 * next XE exec ioctl.
+	 */
+	__u32 config_syncobj;
+
+	__u32 reserved;
+
+	/** @flags: Flags */
 	__u32 flags;
 #define XE_OA_FLAG_FD_CLOEXEC	(1 << 0)
 #define XE_OA_FLAG_FD_NONBLOCK	(1 << 1)
@@ -1560,6 +1573,9 @@ enum drm_xe_oa_record_type {
 };
 
 struct drm_xe_oa_config {
+	/** @extensions: Pointer to the first extension struct, if any */
+	__u64 extensions;
+
 	/**
 	 * @uuid:
 	 *
