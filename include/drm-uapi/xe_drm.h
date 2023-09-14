@@ -1411,11 +1411,11 @@ enum drm_xe_oa_format_type {
 
 enum drm_xe_oa_property_id {
 	/**
-	 * Open the stream for a specific exec queue id (as used with
-	 * drm_xe_exec). A stream opened for a specific exec queue id this
-	 * way won't typically require root privileges.
+	 * ID of the OA unit on which to open the OA stream, see
+	 * @oa_unit_id in 'struct drm_xe_engine_class_instance'. Defaults
+	 * to 0 if not provided.
 	 */
-	DRM_XE_OA_PROP_EXEC_QUEUE_ID = 1,
+	DRM_XE_OA_PROP_OA_UNIT_ID = 1,
 
 	/**
 	 * A value of 1 requests the inclusion of raw OA unit reports as
@@ -1479,17 +1479,15 @@ enum drm_xe_oa_property_id {
 	DRM_XE_OA_PROP_POLL_OA_PERIOD,
 
 	/**
-	 * Multiple engines may be mapped to the same OA unit. The OA unit is
-	 * identified by class:instance of any engine mapped to it.
-	 *
-	 * This parameter specifies the engine class and must be passed along
-	 * with DRM_XE_OA_PROP_OA_ENGINE_INSTANCE.
+	 * Open the stream for a specific exec queue id (as used with
+	 * drm_xe_exec). A stream opened for a specific exec queue id this
+	 * way won't typically require root privileges.
 	 */
-	DRM_XE_OA_PROP_OA_ENGINE_CLASS,
+	DRM_XE_OA_PROP_EXEC_QUEUE_ID,
 
 	/**
-	 * This parameter specifies the engine instance and must be passed along
-	 * with DRM_XE_OA_PROP_OA_ENGINE_CLASS.
+	 * This parameter specifies the engine instance and can be passed along
+	 * with DRM_XE_OA_PROP_EXEC_QUEUE_ID or will default to 0.
 	 */
 	DRM_XE_OA_PROP_OA_ENGINE_INSTANCE,
 

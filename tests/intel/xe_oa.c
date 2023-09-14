@@ -1154,6 +1154,8 @@ test_system_wide_paranoid(void)
 {
 	igt_fork(child, 1) {
 		uint64_t properties[] = {
+			DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 			/* Include OA reports in samples */
 			DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -1181,6 +1183,8 @@ test_system_wide_paranoid(void)
 
 	igt_fork(child, 1) {
 		uint64_t properties[] = {
+			DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 			/* Include OA reports in samples */
 			DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -1213,6 +1217,8 @@ static void
 test_invalid_open_flags(void)
 {
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* Include OA reports in samples */
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -1232,50 +1238,11 @@ test_invalid_open_flags(void)
 }
 
 static void
-test_invalid_class_instance(void)
-{
-	uint64_t properties[] = {
-		DRM_XE_OA_PROP_SAMPLE_OA, true,
-		DRM_XE_OA_PROP_OA_METRICS_SET, default_test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROP_OA_FORMAT, __ff(default_test_set->perf_oa_format),
-		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
-		DRM_XE_OA_PROP_OA_ENGINE_CLASS, 0,
-		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, 0,
-	};
-	struct drm_xe_oa_open_param param = {
-		.flags = I915_PERF_FLAG_FD_CLOEXEC,
-		.num_properties = ARRAY_SIZE(properties) / 2,
-		.properties_ptr = to_user_pointer(properties),
-	};
-
-#define OA_E_CLASS 9
-#define OA_E_INSTANCE 11
-
-	properties[OA_E_CLASS] = DRM_XE_ENGINE_CLASS_COPY;
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
-
-	properties[OA_E_CLASS] = 10;
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
-
-	properties[OA_E_CLASS] = DRM_XE_ENGINE_CLASS_RENDER;
-
-	properties[OA_E_INSTANCE] = 100;
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
-
-	properties[OA_E_INSTANCE] = 248;
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
-
-	properties[OA_E_CLASS] = default_e2.class;
-	properties[OA_E_INSTANCE] = default_e2.instance;
-
-	stream_fd = __perf_open(drm_fd, &param, false);
-	__perf_close(stream_fd);
-}
-
-static void
 test_invalid_oa_metric_set_id(void)
 {
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* Include OA reports in samples */
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -1310,6 +1277,8 @@ static void
 test_invalid_oa_format_id(void)
 {
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* Include OA reports in samples */
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -1344,6 +1313,8 @@ static void
 test_missing_sample_flags(void)
 {
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* No _PROP_SAMPLE_xyz flags */
 
 		/* OA unit configuration */
@@ -1484,6 +1455,8 @@ open_and_read_2_oa_reports(int format_id,
 {
 	struct intel_perf_metric_set *test_set = metric_set(e);
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* Include OA reports in samples */
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -1491,7 +1464,6 @@ open_and_read_2_oa_reports(int format_id,
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROP_OA_FORMAT, __ff(format_id),
 		DRM_XE_OA_PROP_OA_EXPONENT, exponent,
-		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 
 	};
@@ -1886,6 +1858,8 @@ test_oa_exponents(const struct intel_execution_engine2 *e)
 	 */
 	for (int exponent = 5; exponent < 20; exponent++) {
 		uint64_t properties[] = {
+			DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 			/* Include OA reports in samples */
 			DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -1893,7 +1867,6 @@ test_oa_exponents(const struct intel_execution_engine2 *e)
 			DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
 			DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
 			DRM_XE_OA_PROP_OA_EXPONENT, exponent,
-			DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 			DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 		};
 		struct drm_xe_oa_open_param param = {
@@ -2187,7 +2160,7 @@ test_blocking(uint64_t requested_oa_period,
 		ADD_PROPS(props, idx, POLL_OA_PERIOD, kernel_hrtimer);
 
 	if (has_param_class_instance()) {
-		ADD_PROPS(props, idx, OA_ENGINE_CLASS, e->class);
+		ADD_PROPS(props, idx, OA_UNIT_ID, 0);
 		ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, e->instance);
 	}
 
@@ -2351,7 +2324,7 @@ test_polling(uint64_t requested_oa_period,
 		ADD_PROPS(props, idx, POLL_OA_PERIOD, kernel_hrtimer);
 
 	if (has_param_class_instance()) {
-		ADD_PROPS(props, idx, OA_ENGINE_CLASS, e->class);
+		ADD_PROPS(props, idx, OA_UNIT_ID, 0);
 		ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, e->instance);
 	}
 
@@ -2512,6 +2485,8 @@ static void test_polling_small_buf(void)
 {
 	int oa_exponent = max_oa_exponent_for_period_lte(40 * 1000); /* 40us */
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* Include OA reports in samples */
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -2616,12 +2591,12 @@ gen12_test_oa_tlb_invalidate(const struct intel_execution_engine2 *e)
 	int oa_exponent = max_oa_exponent_for_period_lte(30000000);
 	struct intel_perf_metric_set *test_set = metric_set(e);
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROP_OA_FORMAT, __ff(test_set->perf_oa_format),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
-		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_param param = {
@@ -2665,6 +2640,8 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 	struct intel_perf_metric_set *test_set = metric_set(e);
 	uint64_t fmt = test_set->perf_oa_format;
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* Include OA reports in samples */
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -2672,7 +2649,6 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
-		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_param param = {
@@ -2819,6 +2795,8 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 	uint64_t fmt = test_set->perf_oa_format;
 	size_t report_size = get_oa_format(fmt).size;
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* Include OA reports in samples */
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -2826,7 +2804,6 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
-		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_param param = {
@@ -2908,6 +2885,8 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 	struct intel_perf_metric_set *test_set = metric_set(e);
 	uint64_t fmt = test_set->perf_oa_format;
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* Include OA reports in samples */
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -2915,7 +2894,6 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
-		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_param param = {
@@ -3062,6 +3040,8 @@ test_short_reads(void)
 {
 	int oa_exponent = max_oa_exponent_for_period_lte(5000);
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* Include OA reports in samples */
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -3151,6 +3131,8 @@ static void
 test_non_sampling_read_error(void)
 {
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* XXX: even without periodic sampling we have to
 		 * specify at least one sample layout property...
 		 */
@@ -3187,6 +3169,8 @@ test_disabled_read_error(void)
 {
 	int oa_exponent = 5; /* 5 micro seconds */
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* XXX: even without periodic sampling we have to
 		 * specify at least one sample layout property...
 		 */
@@ -3249,6 +3233,8 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
 	uint64_t fmt = oar_unit_default_format();
 	struct intel_perf_metric_set *test_set = metric_set(e);
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* On Gen12, MI RPC uses OAR. OAR is configured only for the
 		 * render context that wants to measure the performance. Hence a
 		 * context must be specified in the gen12 MI RPC when compared
@@ -3269,7 +3255,6 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
 		 */
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
-		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_param param = {
@@ -3300,7 +3285,7 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
 		ctx_id = gem_context_create(drm_fd);
 	}
 	igt_assert_neq(ctx_id, INVALID_CTX_ID);
-	properties[1] = ctx_id;
+	properties[3] = ctx_id;
 
 	ibb = intel_bb_create_with_context(drm_fd, ctx_id, vm, NULL, BATCH_SZ);
 	buf = intel_buf_create(bops, 4096, 1, 8, 64,
@@ -3390,6 +3375,8 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 	struct intel_perf_metric_set *test_set = metric_set(e);
 	uint64_t fmt = oar_unit_default_format();
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* Have a random value here for the context id, but initialize
 		 * it once you figure out the context ID for the work to be
 		 * measured
@@ -3405,7 +3392,6 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 		 */
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
-		DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_param param = {
@@ -3479,7 +3465,7 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 		    &dst[0], 0, 0);
 
 	/* Initialize the context parameter to the perf open ioctl here */
-	properties[1] = context0_id;
+	properties[3] = context0_id;
 
 	igt_debug("opening i915-perf stream\n");
 	stream_fd = __perf_open(drm_fd, &param, false);
@@ -3741,6 +3727,8 @@ static void
 test_rc6_disable(void)
 {
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* Include OA reports in samples */
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -3796,6 +3784,8 @@ test_stress_open_close(const struct intel_execution_engine2 *e)
 	igt_until_timeout(2) {
 		int oa_exponent = 5; /* 5 micro seconds */
 		uint64_t properties[] = {
+			DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 			/* XXX: even without periodic sampling we have to
 			 * specify at least one sample layout property...
 			 */
@@ -3805,7 +3795,6 @@ test_stress_open_close(const struct intel_execution_engine2 *e)
 			DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
 			DRM_XE_OA_PROP_OA_FORMAT, __ff(test_set->perf_oa_format),
 			DRM_XE_OA_PROP_OA_EXPONENT, oa_exponent,
-			DRM_XE_OA_PROP_OA_ENGINE_CLASS, e->class,
 			DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
 		};
 		struct drm_xe_oa_open_param param = {
@@ -3961,6 +3950,8 @@ test_create_destroy_userspace_config(void)
 	int i;
 	uint64_t config_id;
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		DRM_XE_OA_PROP_OA_METRICS_SET, 0, /* Filled later */
 
 		/* OA unit configuration */
@@ -4014,7 +4005,7 @@ test_create_destroy_userspace_config(void)
 	igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EADDRINUSE);
 
 	/* Try to use the new config */
-	properties[1] = config_id;
+	properties[3] = config_id;
 	stream_fd = __perf_open(drm_fd, &param, false);
 
 	/* Verify that destroying the config doesn't yield any error. */
@@ -4181,6 +4172,8 @@ static void
 test_xe_ref_count(void)
 {
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
 		/* Include OA reports in samples */
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 
@@ -4224,9 +4217,9 @@ test_xe_ref_count(void)
 	 * init_sys_info()...
 	 */
 	igt_require(init_sys_info());
-	properties[3] = default_test_set->perf_oa_metrics_set;
-	properties[5] = __ff(default_test_set->perf_oa_format);
-	properties[7] = oa_exp_1_millisec;
+	properties[5] = default_test_set->perf_oa_metrics_set;
+	properties[7] = __ff(default_test_set->perf_oa_format);
+	properties[9] = oa_exp_1_millisec;
 
 	ref_count0 = read_i915_module_ref(is_xe);
 	igt_debug("initial ref count with drm_fd open = %u\n", ref_count0);
@@ -4543,10 +4536,10 @@ static void
 test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 {
 	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
 		DRM_XE_OA_PROP_SAMPLE_OA, true,
 		DRM_XE_OA_PROP_OA_METRICS_SET, 0,
 		DRM_XE_OA_PROP_OA_FORMAT, __ff(0),
-		DRM_XE_OA_PROP_OA_ENGINE_CLASS, 0,
 		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, 0,
 		DRM_XE_OA_PROP_OA_EXPONENT, oa_exp_1_millisec,
 	};
@@ -4572,9 +4565,8 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 			properties[1] = ctx->id;
 		}
 
-		properties[3] = test_set->perf_oa_metrics_set;
-		properties[5] = __ff(test_set->perf_oa_format);
-		properties[7] = ci->engine_class;
+		properties[5] = test_set->perf_oa_metrics_set;
+		properties[7] = __ff(test_set->perf_oa_format);
 		properties[9] = ci->engine_instance;
 		grp->perf_fd = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF,
 					     XE_PERF_STREAM_OPEN, &param);
@@ -4850,10 +4842,6 @@ igt_main
 	}
 
 	igt_subtest_group {
-		igt_describe("Verify invalid class instance");
-		igt_subtest("gen12-invalid-class-instance")
-			test_invalid_class_instance();
-
 		/*
 		 * OAR and OAG use cases can be separately opened only on gen12
 		 * and later, so group-exclusive-stream tests require >= 12.
