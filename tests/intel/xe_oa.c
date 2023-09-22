@@ -92,6 +92,10 @@
  * Description: Measure performance for a specific context using OAR in Gen 12
  * Feature: oa
  *
+ * SUBTEST: gen12-unprivileged-one-ctx
+ * Description: Measure performance for a specific context using OAR in Gen 12
+ * Feature: oa
+ *
  * SUBTEST: gen8-unprivileged-single-ctx-counters
  * Feature: oa, obsolete
  *
@@ -3683,8 +3687,265 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 	__perf_close(stream_fd);
 }
 
+static void gen12_single_ctx_helper_one_ctx(const struct intel_execution_engine2 *e)
+{
+	struct intel_perf_metric_set *test_set = metric_set(e);
+	uint64_t fmt = oar_unit_default_format();
+	uint64_t properties[] = {
+		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
+
+		/* Have a random value here for the context id, but initialize
+		 * it once you figure out the context ID for the work to be
+		 * measured
+		 */
+		DRM_XE_OA_PROP_EXEC_QUEUE_ID, UINT64_MAX,
+
+		/* OA unit configuration:
+		 * DRM_XE_OA_PROP_SAMPLE_OA is no longer required for Gen12
+		 * because the OAR unit increments counters only for the
+		 * relevant context. No other parameters are needed since we do
+		 * not rely on the OA buffer anymore to normalize the counter
+		 * values.
+		 */
+		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
+		DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
+		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
+	};
+	struct drm_xe_oa_open_prop param = {
+		.flags = I915_PERF_FLAG_FD_CLOEXEC,
+		.num_properties = has_param_class_instance() ?
+				  ARRAY_SIZE(properties) / 2 :
+				  (ARRAY_SIZE(properties) / 2) - 2,
+		.properties_ptr = to_user_pointer(properties),
+	};
+	struct buf_ops *bops;
+	struct intel_bb *ibb0;
+	struct intel_buf src[3], dst[3], *dst_buf;
+	uint32_t context0_id, vm = 0;
+	uint32_t *report0_32, *report1_32;
+	uint64_t timestamp0_64, timestamp1_64;
+	uint64_t delta_ts64, delta_oa32;
+	uint64_t delta_ts64_ns, delta_oa32_ns;
+	uint64_t delta_delta;
+	int width = 800;
+	int height = 600;
+#define INVALID_CTX_ID 0xffffffff
+	uint32_t ctx0_id = INVALID_CTX_ID;
+	uint32_t ctx1_id = INVALID_CTX_ID;
+	int ret;
+	struct accumulator accumulator = {
+		.format = fmt
+	};
+
+	bops = buf_ops_create(drm_fd);
+
+	for (int i = 0; i < ARRAY_SIZE(src); i++) {
+		scratch_buf_init(bops, &src[i], width, height, 0xff0000ff);
+		scratch_buf_init(bops, &dst[i], width, height, 0x00ff00ff);
+	}
+
+	if (is_xe_device(drm_fd)) {
+		vm = xe_vm_create(drm_fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		context0_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
+	} else {
+		context0_id = gem_context_create(drm_fd);
+	}
+	ibb0 = intel_bb_create_with_context(drm_fd, context0_id, vm, NULL, BATCH_SZ);
+
+	igt_debug("submitting warm up render_copy\n");
+
+	/* Submit some early, unmeasured, work to the context we want
+	 * to measure to try and catch issues with i915-perf
+	 * initializing the HW context ID for filtering.
+	 *
+	 * We do this because i915-perf single context filtering had
+	 * previously only relied on a hook into context pinning to
+	 * initialize the HW context ID, instead of also trying to
+	 * determine the HW ID while opening the stream, in case it
+	 * has already been pinned.
+	 *
+	 * This wasn't noticed by the previous unit test because we
+	 * were opening the stream while the context hadn't been
+	 * touched or pinned yet and so it worked out correctly to wait
+	 * for the pinning hook.
+	 *
+	 * Now a buggy version of i915-perf will fail to measure
+	 * anything for context0 once this initial render_copy() ends
+	 * up pinning the context since there won't ever be a pinning
+	 * hook callback.
+	 */
+	render_copy(ibb0,
+		    &src[0], 0, 0, width, height,
+		    &dst[0], 0, 0);
+
+	/* Initialize the context parameter to the perf open ioctl here */
+	properties[3] = context0_id;
+
+	igt_debug("opening i915-perf stream\n");
+	stream_fd = __perf_open(drm_fd, &param, false);
+
+	dst_buf = intel_buf_create(bops, 4096, 1, 8, 64,
+				   I915_TILING_NONE,
+				   I915_COMPRESSION_NONE);
+
+	/* Set write domain to cpu briefly to fill the buffer with 80s */
+	buf_map(drm_fd, dst_buf, true /* write enable */);
+	memset(dst_buf->ptr, 0x80, 2048);
+	memset((uint8_t *) dst_buf->ptr + 2048, 0, 2048);
+	intel_buf_unmap(dst_buf);
+
+	/* Submit an mi-rpc to context0 before measurable work */
+#define BO_TIMESTAMP_OFFSET0 1024
+#define BO_REPORT_OFFSET0 0
+#define BO_REPORT_ID0 0xdeadbeef
+	emit_stall_timestamp_and_rpc(ibb0,
+				     dst_buf,
+				     BO_TIMESTAMP_OFFSET0,
+				     BO_REPORT_OFFSET0,
+				     BO_REPORT_ID0);
+	intel_bb_flush_render(ibb0);
+
+	/* Remove intel_buf from ibb0 added implicitly in rendercopy */
+	intel_bb_remove_intel_buf(ibb0, dst_buf);
+
+	/* This is the work/context that is measured for counter increments */
+	render_copy(ibb0,
+		    &src[0], 0, 0, width, height,
+		    &dst[0], 0, 0);
+	intel_bb_flush_render(ibb0);
+
+	/* Submit an mi-rpc to context0 after all measurable work */
+#define BO_TIMESTAMP_OFFSET1 1032
+#define BO_REPORT_OFFSET1 256
+#define BO_REPORT_ID1 0xbeefbeef
+	emit_stall_timestamp_and_rpc(ibb0,
+				     dst_buf,
+				     BO_TIMESTAMP_OFFSET1,
+				     BO_REPORT_OFFSET1,
+				     BO_REPORT_ID1);
+	intel_bb_flush_render(ibb0);
+	intel_bb_sync(ibb0);
+
+	buf_map(drm_fd, dst_buf, false);
+
+	/* Sanity check reports
+	 * reportX_32[0]: report id passed with mi-rpc
+	 * reportX_32[1]: timestamp
+	 * reportX_32[2]: context id
+	 *
+	 * report0_32: start of measurable work
+	 * report1_32: end of measurable work
+	 * report2_32: start of other work
+	 * report3_32: end of other work
+	 */
+	report0_32 = dst_buf->ptr;
+	igt_assert_eq(report0_32[0], 0xdeadbeef);
+	igt_assert(oa_timestamp(report0_32, fmt));
+	ctx0_id = report0_32[2];
+	igt_debug("MI_RPC(start) CTX ID: %u\n", ctx0_id);
+	dump_report(report0_32, 64, "report0_32");
+
+	report1_32 = report0_32 + 64;
+	igt_assert_eq(report1_32[0], 0xbeefbeef);
+	igt_assert(oa_timestamp(report1_32, fmt));
+	ctx1_id = report1_32[2];
+	igt_debug("CTX ID1: %u\n", ctx1_id);
+	dump_report(report1_32, 64, "report1_32");
+
+	/* Accumulate deltas for counters - A0, A21 and A26 */
+	memset(accumulator.deltas, 0, sizeof(accumulator.deltas));
+	accumulate_reports(&accumulator, report0_32, report1_32);
+	igt_debug("total: A0 = %"PRIu64", A21 = %"PRIu64", A26 = %"PRIu64"\n",
+			accumulator.deltas[2 + 0],
+			accumulator.deltas[2 + 21],
+			accumulator.deltas[2 + 26]);
+
+	igt_debug("oa_timestamp32 0 = %"PRIu64"\n", oa_timestamp(report0_32, fmt));
+	igt_debug("oa_timestamp32 1 = %"PRIu64"\n", oa_timestamp(report1_32, fmt));
+	igt_debug("ctx_id 0 = %u\n", report0_32[2]);
+	igt_debug("ctx_id 1 = %u\n", report1_32[2]);
+
+	/* The delta as calculated via the PIPE_CONTROL timestamp or
+	 * the OA report timestamps should be almost identical but
+	 * allow a 500 nanoseconds margin.
+	 */
+	timestamp0_64 = *(uint64_t *)(((uint8_t *)dst_buf->ptr) + BO_TIMESTAMP_OFFSET0);
+	timestamp1_64 = *(uint64_t *)(((uint8_t *)dst_buf->ptr) + BO_TIMESTAMP_OFFSET1);
+
+	igt_debug("ts_timestamp64 0 = %"PRIu64"\n", timestamp0_64);
+	igt_debug("ts_timestamp64 1 = %"PRIu64"\n", timestamp1_64);
+
+	delta_ts64 = timestamp1_64 - timestamp0_64;
+	delta_oa32 = oa_timestamp_delta(report1_32, report0_32, fmt);
+
+	/* Sanity check that we can pass the delta to timebase_scale */
+	delta_oa32_ns = timebase_scale(delta_oa32);
+	delta_ts64_ns = cs_timebase_scale(delta_ts64);
+
+	igt_debug("oa32 delta = %"PRIu64", = %"PRIu64"ns\n",
+			delta_oa32, delta_oa32_ns);
+	igt_debug("ts64 delta = %"PRIu64", = %"PRIu64"ns\n",
+			delta_ts64, delta_ts64_ns);
+
+	delta_delta = delta_ts64_ns > delta_oa32_ns ?
+		      (delta_ts64_ns - delta_oa32_ns) :
+		      (delta_oa32_ns - delta_ts64_ns);
+	if (delta_delta > 500) {
+		igt_debug("delta_delta = %"PRIu64". exceeds margin, skipping..\n",
+			  delta_delta);
+		exit(EAGAIN);
+	}
+
+	igt_debug("n samples written = %"PRIu64"/%"PRIu64" (%ix%i)\n",
+		  accumulator.deltas[2 + 21],
+		  accumulator.deltas[2 + 26],
+		  width, height);
+	accumulator_print(&accumulator, "filtered");
+
+	/* Verify that the work actually happened by comparing the src
+	 * and dst buffers
+	 */
+	buf_map(drm_fd, &src[0], false);
+	buf_map(drm_fd, &dst[0], false);
+
+	ret = memcmp(src[0].ptr, dst[0].ptr, 4 * width * height);
+	intel_buf_unmap(&src[0]);
+	intel_buf_unmap(&dst[0]);
+
+	if (ret != 0) {
+		accumulator_print(&accumulator, "total");
+		exit(EAGAIN);
+	}
+
+	/* Check that this test passed. The test measures the number of 2x2
+	 * samples written to the render target using the counter A26. For
+	 * OAR, this counter will only have increments relevant to this specific
+	 * context. The value equals the width * height of the rendered work.
+	 */
+	igt_assert_eq(accumulator.deltas[2 + 26], width * height);
+
+	/* Clean up */
+	for (int i = 0; i < ARRAY_SIZE(src); i++) {
+		intel_buf_close(bops, &src[i]);
+		intel_buf_close(bops, &dst[i]);
+	}
+
+	intel_buf_unmap(dst_buf);
+	intel_buf_destroy(dst_buf);
+	intel_bb_destroy(ibb0);
+	if (is_xe_device(drm_fd)) {
+		xe_exec_queue_destroy(drm_fd, context0_id);
+		xe_vm_destroy(drm_fd, vm);
+	} else {
+		gem_context_destroy(drm_fd, context0_id);
+	}
+	buf_ops_destroy(bops);
+	__perf_close(stream_fd);
+}
+
 static void
-gen12_test_single_ctx_render_target_writes_a_counter(const struct intel_execution_engine2 *e)
+gen12_test_single_ctx_render_target_writes_a_counter(const struct intel_execution_engine2 *e,
+						     bool one_ctx)
 {
 	int child_ret;
 	struct igt_helper_process child = {};
@@ -3698,7 +3959,11 @@ gen12_test_single_ctx_render_target_writes_a_counter(const struct intel_executio
 			drm_fd = drm_reopen_driver(drm_fd);
 
 			igt_drop_root();
-			gen12_single_ctx_helper(e);
+
+			if (one_ctx)
+				gen12_single_ctx_helper_one_ctx(e);
+			else
+				gen12_single_ctx_helper(e);
 
 			drm_close_driver(drm_fd);
 		}
@@ -4822,10 +5087,19 @@ igt_main
 			if (is_xe_device(drm_fd)) {
 				const struct intel_execution_engine2 e2 = {};
 				igt_dynamic_f("%s", "rcs")
-					gen12_test_single_ctx_render_target_writes_a_counter(&e2);
+					gen12_test_single_ctx_render_target_writes_a_counter(&e2, false);
 			} else {
 				__for_each_render_engine(drm_fd, e)
-					gen12_test_single_ctx_render_target_writes_a_counter(e);
+					gen12_test_single_ctx_render_target_writes_a_counter(e, false);
+			}
+		}
+		igt_subtest_with_dynamic("gen12-unprivileged-one-ctx") {
+			igt_require(has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0));
+			igt_require_f(render_copy, "no render-copy function\n");
+			if (is_xe_device(drm_fd)) {
+				const struct intel_execution_engine2 e2 = {};
+				igt_dynamic_f("%s", "rcs")
+					gen12_test_single_ctx_render_target_writes_a_counter(&e2, true);
 			}
 		}
 	}
