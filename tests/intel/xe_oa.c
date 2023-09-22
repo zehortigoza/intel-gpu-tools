@@ -655,18 +655,7 @@ gen8_read_report_reason(const uint32_t *report)
 static uint32_t
 cs_timestamp_frequency(int fd)
 {
-	struct drm_i915_getparam gp = {};
-	static uint32_t value = 0;
-
-	if (value)
-		return value;
-
-	gp.param = I915_PARAM_CS_TIMESTAMP_FREQUENCY;
-	gp.value = (int *)(&value);
-
-	igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_I915_GETPARAM, &gp), 0);
-
-	return value;
+	return xe_gt_list(drm_fd)->gt_list[0].reference_clock;
 }
 
 static uint64_t
@@ -4830,7 +4819,6 @@ igt_main
 		igt_subtest_with_dynamic("gen12-unprivileged-single-ctx-counters") {
 			igt_require(has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0));
 			igt_require_f(render_copy, "no render-copy function\n");
-			igt_require(!is_xe_device(drm_fd));
 			if (is_xe_device(drm_fd)) {
 				const struct intel_execution_engine2 e2 = {};
 				igt_dynamic_f("%s", "rcs")
