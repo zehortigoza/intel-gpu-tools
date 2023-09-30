@@ -101,9 +101,23 @@ class Registry:
                            'DG1',
                            'ACM',
                            'PVC',
-                           'MTL', )
+                           'MTL',
+                           'LNL',
+                          )
         if name in known_chipsets:
             return name
+
+        internal_chipsets = {
+            'P22': 'ATS',
+            'P24': 'DG2',
+            'P25': 'PVC',
+            'P26': 'ADL',
+            'P27': 'MTL',
+            'P31': 'LNL',
+        }
+
+        if name in internal_chipsets:
+            return internal_chipsets[name]
 
         # Unknown HW
         assert 0
