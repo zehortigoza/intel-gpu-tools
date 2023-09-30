@@ -2667,9 +2667,35 @@ struct dumper dumpers[] = {
 		.dump = dump_general_definitions,
 	},
 	{
+		.id = BDB_PSR,
+		.min_bdb_version = 165,
+		.name = "PSR block",
+		.dump = dump_psr,
+	},
+	{
 		.id = BDB_CHILD_DEVICE_TABLE,
 		.name = "Legacy child devices block",
 		.dump = dump_legacy_child_devices,
+	},
+	{
+		.id = BDB_DRIVER_FEATURES,
+		.name = "Driver feature data block",
+		.dump = dump_driver_feature,
+	},
+	{
+		.id = BDB_SDVO_LVDS_OPTIONS,
+		.name = "SDVO LVDS options block",
+		.dump = dump_sdvo_lvds_options,
+	},
+	{
+		.id = BDB_SDVO_LVDS_DTD,
+		.name = "SDVO LVDS DTD",
+		.dump = dump_sdvo_lvds_dtd,
+	},
+	{
+		.id = BDB_EDP,
+		.name = "eDP block",
+		.dump = dump_edp,
 	},
 	{
 		.id = BDB_LFP_OPTIONS,
@@ -2695,32 +2721,6 @@ struct dumper dumpers[] = {
 		.id = BDB_LFP_POWER,
 		.name = "LFP power conservation features block",
 		.dump = dump_lfp_power,
-	},
-	{
-		.id = BDB_SDVO_LVDS_OPTIONS,
-		.name = "SDVO LVDS options block",
-		.dump = dump_sdvo_lvds_options,
-	},
-	{
-		.id = BDB_SDVO_LVDS_DTD,
-		.name = "SDVO LVDS DTD",
-		.dump = dump_sdvo_lvds_dtd,
-	},
-	{
-		.id = BDB_DRIVER_FEATURES,
-		.name = "Driver feature data block",
-		.dump = dump_driver_feature,
-	},
-	{
-		.id = BDB_EDP,
-		.name = "eDP block",
-		.dump = dump_edp,
-	},
-	{
-		.id = BDB_PSR,
-		.min_bdb_version = 165,
-		.name = "PSR block",
-		.dump = dump_psr,
 	},
 	{
 		.id = BDB_MIPI_CONFIG,
