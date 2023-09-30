@@ -1487,6 +1487,11 @@ static const char * const lvds_config[] = {
 	[BDB_DRIVER_EDP] = "Embedded DisplayPort",
 };
 
+static const char *default_algorithm(bool algorithm)
+{
+	return algorithm ? "driver default" : "OS default";
+}
+
 static void dump_driver_feature(struct context *context,
 				const struct bdb_block *block)
 {
@@ -1507,7 +1512,7 @@ static void dump_driver_feature(struct context *context,
 	printf("\tAllow display switching when DVD active: %s\n",
 	       YESNO(feature->allow_display_switch_dvd));
 	printf("\tBoot Device Algorithm: %s\n",
-	       feature->boot_dev_algorithm ? "driver default" : "os default");
+	       default_algorithm(feature->boot_dev_algorithm));
 
 	printf("\tBoot Mode X: %u\n", feature->boot_mode_x);
 	printf("\tBoot Mode Y: %u\n", feature->boot_mode_y);
