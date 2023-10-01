@@ -2821,6 +2821,8 @@ static void dump_headers(struct context *context)
 	printf("\tVBT size:\t\t0x%04x (%u)\n", vbt->vbt_size, vbt->vbt_size);
 	printf("\tVBT checksum:\t\t0x%02x\n", vbt->vbt_checksum);
 	printf("\tBDB offset:\t\t0x%08x (%u)\n", vbt->bdb_offset, vbt->bdb_offset);
+	for (i = 0; i < ARRAY_SIZE(vbt->aim_offset); i++)
+		printf("\tAIM #%d offset:\t\t0x%08x (%u)\n", i+1, vbt->aim_offset[i], vbt->aim_offset[i]);
 
 	printf("\n");
 
