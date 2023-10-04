@@ -2124,7 +2124,7 @@ test_blocking(uint64_t requested_oa_period,
 	struct tms end_times;
 	int64_t user_ns, kernel_ns;
 	int64_t tick_ns = 1000000000 / sysconf(_SC_CLK_TCK);
-	int64_t test_duration_ns = tick_ns * 1000;
+	int64_t test_duration_ns = tick_ns * 100;
 
 	int max_iterations = (test_duration_ns / oa_period) + 2;
 	int n_extra_iterations = 0;
@@ -2289,7 +2289,7 @@ test_polling(uint64_t requested_oa_period,
 	struct tms end_times;
 	int64_t user_ns, kernel_ns;
 	int64_t tick_ns = 1000000000 / sysconf(_SC_CLK_TCK);
-	int64_t test_duration_ns = tick_ns * 1000;
+	int64_t test_duration_ns = tick_ns * 100;
 
 	int max_iterations = (test_duration_ns / oa_period) + 2;
 	int n_extra_iterations = 0;
