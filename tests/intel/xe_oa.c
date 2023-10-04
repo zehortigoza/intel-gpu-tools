@@ -4948,8 +4948,7 @@ igt_main
 		perf_oa_groups = get_engine_groups(drm_fd, &num_perf_oa_groups);
 		igt_assert(perf_oa_groups && num_perf_oa_groups);
 
-		if (has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0) &&
-		    !is_xe_device(drm_fd))
+		if (has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0))
 			render_copy = igt_get_render_copyfunc(devid);
 	}
 
