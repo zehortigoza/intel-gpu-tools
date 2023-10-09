@@ -1397,6 +1397,8 @@ struct drm_xe_perf_param {
 	__u64 perf_type;
 	/** @perf_op: Perf op, of enum @drm_xe_perf_op */
 	__u64 perf_op;
+	/** @param_size: size of data struct pointed to by @param */
+	__u64 param_size;
 	/** @param: Pointer to actual stream params */
 	__u64 param;
 };
@@ -1416,10 +1418,15 @@ enum drm_xe_oa_format_type {
  * If a query is made with a struct drm_xe_device_query where .query
  * is equal to DRM_XE_DEVICE_QUERY_OA_INFO, then the reply uses struct
  * drm_xe_query_oa_info in .data.
+ *
+ * FIXME: this is not implemented yet
  */
 struct drm_xe_query_oa_info {
 	/** @extensions: Pointer to the first extension struct, if any */
 	__u64 extensions;
+
+	/** @capabilities: OA capabilities bit-mask */
+	__u64 capabilities;
 
 	/** @oa_unit_count: number of OA units returned in oau[] */
 	__u32 oa_unit_count;
@@ -1444,6 +1451,12 @@ struct drm_xe_query_oa_info {
 		/** @oa_timestamp_freq: OA timestamp freq */
 		__u64 oa_timestamp_freq;
 
+		/** @oa_buf_mmap_offset: offset to use for OA buffer mmap */
+		__u64 oa_buf_mmap_offset;
+
+		/** @oa_buf_size: OA buffer size */
+		__u64 oa_buf_size;
+
 		/** @reserved: MBZ */
 		__u64 reserved[4];
 
@@ -1455,6 +1468,12 @@ struct drm_xe_query_oa_info {
 struct drm_xe_oa_open_param {
 	/** @extensions: Pointer to the first extension struct, if any */
 	__u64 extensions;
+
+	/** @num_syncs: Amount of struct drm_xe_sync in array. */
+	__u32 num_syncs;
+
+	/** @syncs: Pointer to struct drm_xe_sync array. */
+	__u64 syncs;
 
 	/**
 	 * @oa_unit_id: ID of the OA unit on which to open the OA stream,
