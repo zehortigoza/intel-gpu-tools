@@ -264,6 +264,17 @@ enum xe_oa_format_name {
 	XE_OAM_FORMAT_MPEC8u64_B8_C8,
 	XE_OAM_FORMAT_MPEC8u32_B8_C8,
 
+	/* Xe2+ */
+	XE_OA_FORMAT_PEC64u64,
+	XE_OA_FORMAT_PEC64u64_B8_C8,
+	XE_OA_FORMAT_PEC64u32,
+	XE_OA_FORMAT_PEC32u64_G1,
+	XE_OA_FORMAT_PEC32u32_G1,
+	XE_OA_FORMAT_PEC32u64_G2,
+	XE_OA_FORMAT_PEC32u32_G2,
+	XE_OA_FORMAT_PEC36u64_G1_32_G2_4,
+	XE_OA_FORMAT_PEC36u64_G1_4_G2_32,
+
 	XE_OA_FORMAT_MAX,
 };
 
@@ -302,6 +313,8 @@ struct oa_format {
 	int oa_type; /* of enum xe_oa_format_name */
 	bool report_hdr_64bit;
 	int counter_select;
+	int counter_size;
+	int bc_report;
 };
 
 static struct oa_format gen12_oa_formats[XE_OA_FORMAT_MAX] = {
@@ -381,6 +394,72 @@ static struct oa_format mtl_oa_formats[XE_OA_FORMAT_MAX] = {
 	},
 };
 
+static struct oa_format lnl_oa_formats[XE_OA_FORMAT_MAX] = {
+	[XE_OA_FORMAT_PEC64u64] = {
+		"PEC64u64", .size = 576,
+		.oa_type = XE_OA_FMT_TYPE_PEC,
+		.report_hdr_64bit = true,
+		.counter_select = 1,
+		.counter_size = 1,
+		.bc_report = 0 },
+	[XE_OA_FORMAT_PEC64u64_B8_C8] = {
+		"PEC64u64_B8_C8", .size = 640,
+		.oa_type = XE_OA_FMT_TYPE_PEC,
+		.report_hdr_64bit = true,
+		.counter_select = 1,
+		.counter_size = 1,
+		.bc_report = 1 },
+	[XE_OA_FORMAT_PEC64u32] = {
+		"PEC64u32", .size = 320,
+		.oa_type = XE_OA_FMT_TYPE_PEC,
+		.report_hdr_64bit = true,
+		.counter_select = 1,
+		.counter_size = 0,
+		.bc_report = 0 },
+	[XE_OA_FORMAT_PEC32u64_G1] = {
+		"PEC32u64_G1", .size = 320,
+		.oa_type = XE_OA_FMT_TYPE_PEC,
+		.report_hdr_64bit = true,
+		.counter_select = 5,
+		.counter_size = 1,
+		.bc_report = 0 },
+	[XE_OA_FORMAT_PEC32u32_G1] = {
+		"PEC32u32_G1", .size = 192,
+		.oa_type = XE_OA_FMT_TYPE_PEC,
+		.report_hdr_64bit = true,
+		.counter_select = 5,
+		.counter_size = 0,
+		.bc_report = 0 },
+	[XE_OA_FORMAT_PEC32u64_G2] = {
+		"PEC32u64_G2", .size = 320,
+		.oa_type = XE_OA_FMT_TYPE_PEC,
+		.report_hdr_64bit = true,
+		.counter_select = 6,
+		.counter_size = 1,
+		.bc_report = 0 },
+	[XE_OA_FORMAT_PEC32u32_G2] = {
+		"PEC32u64_G2", .size = 192,
+		.oa_type = XE_OA_FMT_TYPE_PEC,
+		.report_hdr_64bit = true,
+		.counter_select = 6,
+		.counter_size = 0,
+		.bc_report = 0 },
+	[XE_OA_FORMAT_PEC36u64_G1_32_G2_4] = {
+		"PEC36u64_G1_32_G2_4", .size = 320,
+		.oa_type = XE_OA_FMT_TYPE_PEC,
+		.report_hdr_64bit = true,
+		.counter_select = 3,
+		.counter_size = 1,
+		.bc_report = 0 },
+	[XE_OA_FORMAT_PEC36u64_G1_4_G2_32] = {
+		"PEC36u64_G1_4_G2_32_G2", .size = 320,
+		.oa_type = XE_OA_FMT_TYPE_PEC,
+		.report_hdr_64bit = true,
+		.counter_select = 4,
+		.counter_size = 1,
+		.bc_report = 0 },
+};
+
 /* No A counters currently reserved/undefined for gen8+ so far */
 static bool gen8_undefined_a_counters[45];
 
@@ -429,6 +508,8 @@ get_oa_format(enum xe_oa_format_name format)
 		return dg2_oa_formats[format];
 	else if (IS_METEORLAKE(devid))
 		return mtl_oa_formats[format];
+	else if (IS_LUNARLAKE(devid))
+		return lnl_oa_formats[format];
 	else
 		return gen12_oa_formats[format];
 }
@@ -445,7 +526,9 @@ static u64 oa_format_fields(u64 name)
 		memset(&f, 0xff, sizeof(f));
 
 	return FIELD_PREP_ULL(XE_OA_MASK_FMT_TYPE, (u64)f.oa_type) |
-		FIELD_PREP_ULL(XE_OA_MASK_COUNTER_SEL, (u64)f.counter_select);
+		FIELD_PREP_ULL(XE_OA_MASK_COUNTER_SEL, (u64)f.counter_select) |
+		FIELD_PREP_ULL(XE_OA_MASK_COUNTER_SIZE, (u64)f.counter_size) |
+		FIELD_PREP_ULL(XE_OA_MASK_BC_REPORT, (u64)f.bc_report);
 }
 #define __ff oa_format_fields
 
@@ -1674,7 +1757,8 @@ test_oa_formats(const struct intel_execution_engine2 *e)
 		if (!format.name) /* sparse, indexed by ID */
 			continue;
 
-		if (!oa_unit_supports_engine(format.oa_type, e))
+		/* FIXME: change oa_unit_supports_engine to handle all format.oa_type */
+		if (!IS_LUNARLAKE(devid) && !oa_unit_supports_engine(format.oa_type, e))
 			continue;
 
 		igt_debug("Checking OA format %s\n", format.name);
@@ -3658,6 +3742,10 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 		exit(EAGAIN);
 	}
 
+	/* FIXME: can we deduce the presence of A26 from get_oa_format(fmt)? */
+	if (IS_LUNARLAKE(devid))
+		goto skip_check;
+
 	/* Check that this test passed. The test measures the number of 2x2
 	 * samples written to the render target using the counter A26. For
 	 * OAR, this counter will only have increments relevant to this specific
@@ -3665,6 +3753,7 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 	 */
 	igt_assert_eq(accumulator.deltas[2 + 26], width * height);
 
+ skip_check:
 	/* Clean up */
 	for (int i = 0; i < ARRAY_SIZE(src); i++) {
 		intel_buf_close(bops, &src[i]);
@@ -4104,13 +4193,16 @@ static bool has_i915_perf_userspace_config(int fd)
 	return errno != EINVAL;
 }
 
+#define SAMPLE_MUX_REG (IS_LUNARLAKE(xe_dev_id(drm_fd)) ? \
+			0x13000 /* PES* */ : 0x9888 /* NOA_WRITE */)
+
 static void
 test_invalid_create_userspace_config(void)
 {
 	struct drm_xe_oa_config config;
 	const char *uuid = "01234567-0123-0123-0123-0123456789ab";
 	const char *invalid_uuid = "blablabla-wrong";
-	uint32_t mux_regs[] = { 0x9888 /* NOA_WRITE */, 0x0 };
+	uint32_t mux_regs[] = { SAMPLE_MUX_REG, 0x0 };
 	uint32_t invalid_mux_regs[] = { 0x12345678 /* invalid register */, 0x0 };
 
 	igt_require(has_i915_perf_userspace_config(drm_fd));
@@ -4158,7 +4250,7 @@ test_invalid_remove_userspace_config(void)
 {
 	struct drm_xe_oa_config config;
 	const char *uuid = "01234567-0123-0123-0123-0123456789ab";
-	uint32_t mux_regs[] = { 0x9888 /* NOA_WRITE */, 0x0 };
+	uint32_t mux_regs[] = { SAMPLE_MUX_REG, 0x0 };
 	uint64_t config_id, wrong_config_id = 999999999;
 	char path[512];
 
@@ -4200,7 +4292,7 @@ test_create_destroy_userspace_config(void)
 {
 	struct drm_xe_oa_config config;
 	const char *uuid = "01234567-0123-0123-0123-0123456789ab";
-	uint32_t mux_regs[] = { 0x9888 /* NOA_WRITE */, 0x0 };
+	uint32_t mux_regs[] = { SAMPLE_MUX_REG, 0x0 };
 	uint32_t regs[100];
 	int i;
 	uint64_t config_id;
@@ -4345,22 +4437,24 @@ test_whitelisted_registers_userspace_config(void)
 
 	/* Mux registers (too many of them, just checking bounds) */
 	/* NOA_WRITE */
-	regs[config.n_regs * 2] = 0x9888;
+	regs[config.n_regs * 2] = SAMPLE_MUX_REG;
 	regs[config.n_regs * 2 + 1] = 0;
 	config.n_regs++;
 
 	/* NOA_CONFIG */
-	regs[config.n_regs * 2] = 0xD04;
-	regs[config.n_regs * 2 + 1] = 0;
-	config.n_regs++;
-	regs[config.n_regs * 2] = 0xD2C;
-	regs[config.n_regs * 2 + 1] = 0;
-	config.n_regs++;
-	if (!IS_METEORLAKE(devid)) {
+	if (!IS_LUNARLAKE(devid)) {
+		regs[config.n_regs * 2] = 0xD04;
+		regs[config.n_regs * 2 + 1] = 0;
+		config.n_regs++;
+		regs[config.n_regs * 2] = 0xD2C;
+		regs[config.n_regs * 2 + 1] = 0;
+		config.n_regs++;
+	}
+	if (!IS_LUNARLAKE(devid) && !IS_METEORLAKE(devid)) {
 		/* WAIT_FOR_RC6_EXIT */
 		regs[config.n_regs * 2] = 0x20CC;
 		regs[config.n_regs * 2 + 1] = 0;
-	config.n_regs++;
+		config.n_regs++;
 	}
 
 	config.regs_ptr = (uintptr_t) regs;

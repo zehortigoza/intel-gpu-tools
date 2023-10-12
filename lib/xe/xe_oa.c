@@ -37,6 +37,7 @@
 #include "xe_oa_metrics_acmgt3.h"
 #include "xe_oa_metrics_mtlgt2.h"
 #include "xe_oa_metrics_mtlgt3.h"
+#include "xe_oa_metrics_lnl.h"
 
 static int
 perf_ioctl(int fd, unsigned long request, void *arg)
@@ -345,6 +346,8 @@ intel_perf_for_devinfo(uint32_t device_id,
 			intel_perf_load_metrics_mtlgt3(perf);
 		else
 			return unsupported_xe_oa_platform(perf);
+	} else if (devinfo->is_lunarlake) {
+		intel_perf_load_metrics_lnl(perf);
 	} else {
 		return unsupported_xe_oa_platform(perf);
 	}
