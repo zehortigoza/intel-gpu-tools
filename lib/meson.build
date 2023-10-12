@@ -405,6 +405,7 @@ xe_oa_hardware = [
   'adl',
   'acmgt1', 'acmgt2', 'acmgt3',
   'mtlgt2', 'mtlgt3',
+  'lnl',
 ]
 
 xe_xml_files = []

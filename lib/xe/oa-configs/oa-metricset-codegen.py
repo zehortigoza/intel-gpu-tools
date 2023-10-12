@@ -92,13 +92,41 @@ def output_counter_report(set, counter):
 
 def generate_metric_sets(args, gen):
     c(textwrap.dedent("""\
-        #include <stddef.h>
-        #include <stdint.h>
-        #include <stdlib.h>
-        #include <stdbool.h>
-        #include <assert.h>
+	#include <stddef.h>
+	#include <stdint.h>
+	#include <stdlib.h>
+	#include <stdbool.h>
+	#include <assert.h>
 
-        #include "i915_drm.h"
+	enum xe_oa_format_name {
+		XE_OA_FORMAT_C4_B8 = 7,
+
+		/* Gen8+ */
+		XE_OA_FORMAT_A12,
+		XE_OA_FORMAT_A12_B8_C8,
+		XE_OA_FORMAT_A32u40_A4u32_B8_C8,
+
+		/* DG2 */
+		XE_OAR_FORMAT_A32u40_A4u32_B8_C8,
+		XE_OA_FORMAT_A24u40_A14u32_B8_C8,
+
+		/* MTL OAM */
+		XE_OAM_FORMAT_MPEC8u64_B8_C8,
+		XE_OAM_FORMAT_MPEC8u32_B8_C8,
+
+		/* Xe2+ */
+		XE_OA_FORMAT_PEC64u64,
+		XE_OA_FORMAT_PEC64u64_B8_C8,
+		XE_OA_FORMAT_PEC64u32,
+		XE_OA_FORMAT_PEC32u64_G1,
+		XE_OA_FORMAT_PEC32u32_G1,
+		XE_OA_FORMAT_PEC32u64_G2,
+		XE_OA_FORMAT_PEC32u32_G2,
+		XE_OA_FORMAT_PEC36u64_G1_32_G2_4,
+		XE_OA_FORMAT_PEC36u64_G1_4_G2_32,
+
+		XE_OA_FORMAT_MAX,
+	};
 
         """))
 
@@ -132,22 +160,10 @@ def generate_metric_sets(args, gen):
         c("metric_set->n_counters = 0;\n")
         c("metric_set->perf_oa_metrics_set = 0; // determined at runtime\n")
 
-        if gen.chipset == "hsw":
-            c(textwrap.dedent("""\
-                metric_set->perf_oa_format = I915_OA_FORMAT_A45_B8_C8;
-
-                metric_set->perf_raw_size = 256;
-                metric_set->gpu_time_offset = 0;
-                metric_set->a_offset = 1;
-                metric_set->b_offset = metric_set->a_offset + 45;
-                metric_set->c_offset = metric_set->b_offset + 8;
-                metric_set->perfcnt_offset = metric_set->c_offset + 8;
-
-            """))
-        elif gen.chipset.startswith("acm") or gen.chipset.startswith("mtl"):
+        if gen.chipset.startswith("acm") or gen.chipset.startswith("mtl"):
             if set.oa_format == "128B_MPEC8_NOA16":
                 c(textwrap.dedent("""\
-                    metric_set->perf_oa_format = I915_OAM_FORMAT_MPEC8u32_B8_C8;
+                    metric_set->perf_oa_format = XE_OAM_FORMAT_MPEC8u32_B8_C8;
 
                     metric_set->perf_raw_size = 128;
                     metric_set->gpu_time_offset = 0;
@@ -159,7 +175,7 @@ def generate_metric_sets(args, gen):
                 """))
             else:
                 c(textwrap.dedent("""\
-                    metric_set->perf_oa_format = I915_OA_FORMAT_A24u40_A14u32_B8_C8;
+                    metric_set->perf_oa_format = XE_OA_FORMAT_A24u40_A14u32_B8_C8;
 
                     metric_set->perf_raw_size = 256;
                     metric_set->gpu_time_offset = 0;
@@ -169,9 +185,22 @@ def generate_metric_sets(args, gen):
                     metric_set->c_offset = metric_set->b_offset + 8;
                     metric_set->perfcnt_offset = metric_set->c_offset + 8;
                 """))
+        elif gen.chipset == "lnl":
+            c(textwrap.dedent("""\
+                metric_set->perf_oa_format = XE_OA_FORMAT_PEC64u64;
+
+                metric_set->perf_raw_size = 576;
+                metric_set->gpu_time_offset = 0;
+                metric_set->gpu_clock_offset = 1;
+                metric_set->a_offset = 2;
+                // metric_set->b_offset = metric_set->a_offset + 38;
+                // metric_set->c_offset = metric_set->b_offset + 8;
+                metric_set->perfcnt_offset = metric_set->a_offset + 64;
+
+            """))
         else:
             c(textwrap.dedent("""\
-                metric_set->perf_oa_format = I915_OA_FORMAT_A32u40_A4u32_B8_C8;
+                metric_set->perf_oa_format = XE_OA_FORMAT_A32u40_A4u32_B8_C8;
 
                 metric_set->perf_raw_size = 256;
                 metric_set->gpu_time_offset = 0;
