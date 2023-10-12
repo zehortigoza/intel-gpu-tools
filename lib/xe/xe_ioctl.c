@@ -542,16 +542,71 @@ void xe_force_gt_reset(int fd, int gt)
 	system(reset_string);
 }
 
+static void xe_oa_prop_to_param(struct drm_xe_oa_open_prop *properties,
+				struct drm_xe_oa_open_param *p)
+{
+	__u64 *prop = (__u64 *)properties->properties_ptr;
+	int i;
+
+	p->open_flags = properties->flags;
+
+	/* If exponent is not present set it to -1 */
+	p->period_exponent = -1;
+
+	for (i = 0; i < properties->num_properties; i++) {
+		switch (*prop++) {
+		case DRM_XE_OA_PROP_OA_UNIT_ID:
+			p->oa_unit_id = *prop++;
+			break;
+		case DRM_XE_OA_PROP_SAMPLE_OA:
+			p->sample_oa = *prop++;
+			break;
+		case DRM_XE_OA_PROP_OA_METRICS_SET:
+			p->metric_set = *prop++;
+			break;
+		case DRM_XE_OA_PROP_OA_FORMAT:
+			p->oa_format = *prop++;
+			break;
+		case DRM_XE_OA_PROP_OA_EXPONENT:
+			p->period_exponent = *prop++;
+			break;
+		case DRM_XE_OA_PROP_HOLD_PREEMPTION:
+			p->hold_preemption = *prop++;
+			break;
+		case DRM_XE_OA_PROP_OA_BUFFER_SIZE:
+			p->oa_buffer_size = *prop++;
+			break;
+		case DRM_XE_OA_PROP_POLL_OA_PERIOD:
+			p->poll_period_us = *prop++ / 1000;
+			break;
+		case DRM_XE_OA_PROP_EXEC_QUEUE_ID:
+			p->exec_queue_id = *prop++;
+			break;
+		case DRM_XE_OA_PROP_OA_ENGINE_INSTANCE:
+			p->engine_instance = *prop++;
+			break;
+		default:
+			igt_info("Unknown property %lld\n", *prop++);
+			break;
+		}
+	}
+}
+
 int xe_perf_ioctl(int fd, unsigned long request,
 		  enum drm_xe_perf_op op, void *arg)
 {
+	struct drm_xe_oa_open_param param = {};
+
 	/* Chain the PERF layer struct */
 	struct drm_xe_perf_param p = {
 		.extensions = 0,
 		.perf_type = XE_PERF_TYPE_OA,
 		.perf_op = op,
-		.param = (__u64)arg,
+		.param = (op == XE_PERF_STREAM_OPEN) ? (__u64)&param : (__u64)arg,
 	};
+
+	if (op == XE_PERF_STREAM_OPEN)
+		xe_oa_prop_to_param((struct drm_xe_oa_open_prop *)arg, &param);
 
 	return igt_ioctl(fd, request, &p);
 }

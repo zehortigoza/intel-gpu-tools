@@ -687,6 +687,7 @@ struct drm_xe_device_query {
 #define DRM_XE_DEVICE_QUERY_GT_TOPOLOGY		5
 #define DRM_XE_DEVICE_QUERY_ENGINE_CYCLES	6
 #define DRM_XE_DEVICE_QUERY_UC_FW_VERSION	7
+#define DRM_XE_DEVICE_QUERY_OA_INFO		8
 	/** @query: The type of data to query */
 	__u32 query;
 
@@ -1392,9 +1393,9 @@ enum drm_xe_perf_op {
 struct drm_xe_perf_param {
 	/** @extensions: Pointer to the first extension struct, if any */
 	__u64 extensions;
-	/** @perf_type: Type, of enum drm_xe_perf_type, of perf stream  */
+	/** @perf_type: Type, of enum @drm_xe_perf_type, of perf stream  */
 	__u64 perf_type;
-	/** @perf_op: Perf op, of enum drm_xe_perf_op */
+	/** @perf_op: Perf op, of enum @drm_xe_perf_op */
 	__u64 perf_op;
 	/** @param: Pointer to actual stream params */
 	__u64 param;
@@ -1409,30 +1410,68 @@ enum drm_xe_oa_format_type {
 	XE_OA_FMT_TYPE_PEC,
 };
 
-enum drm_xe_oa_property_id {
-	/**
-	 * ID of the OA unit on which to open the OA stream, see
-	 * @oa_unit_id in 'struct drm_xe_engine_class_instance'. Defaults
-	 * to 0 if not provided.
-	 */
-	DRM_XE_OA_PROP_OA_UNIT_ID = 1,
+/**
+ * struct drm_xe_query_oa_info - describe OA units
+ *
+ * If a query is made with a struct drm_xe_device_query where .query
+ * is equal to DRM_XE_DEVICE_QUERY_OA_INFO, then the reply uses struct
+ * drm_xe_query_oa_info in .data.
+ */
+struct drm_xe_query_oa_info {
+	/** @extensions: Pointer to the first extension struct, if any */
+	__u64 extensions;
+
+	/** @oa_unit_count: number of OA units returned in oau[] */
+	__u32 oa_unit_count;
+
+	/** @pad: MBZ */
+	__u32 pad;
+
+	/** @reserved: MBZ */
+	__u64 reserved[4];
+
+	/** @oau: OA units returned for this device */
+	struct drm_xe_query_oa_unit {
+		/** @oa_unit_id: OA unit ID */
+		__u16 oa_unit_id;
+
+		/** @gt_id: GT ID for this OA unit */
+		__u16 gt_id;
+
+		/** @pad: MBZ */
+		__u32 pad;
+
+		/** @oa_timestamp_freq: OA timestamp freq */
+		__u64 oa_timestamp_freq;
+
+		/** @reserved: MBZ */
+		__u64 reserved[4];
+
+		/** @eci: engines attached to this OA unit */
+		struct drm_xe_engine_class_instance eci[];
+	} oau[];
+};
+
+struct drm_xe_oa_open_param {
+	/** @extensions: Pointer to the first extension struct, if any */
+	__u64 extensions;
 
 	/**
-	 * A value of 1 requests the inclusion of raw OA unit reports as
-	 * part of stream samples.
+	 * @oa_unit_id: ID of the OA unit on which to open the OA stream,
+	 * see @oa_unit_id in struct @drm_xe_engine_class_instance
 	 */
-	DRM_XE_OA_PROP_SAMPLE_OA,
+	__u32 oa_unit_id;
 
 	/**
-	 * The value specifies which set of OA unit metrics should be
-	 * configured, defining the contents of any OA unit reports.
+	 * @sample_oa: A value of 1 requests the inclusion of raw OA unit
+	 * reports as part of stream samples
 	 */
-	DRM_XE_OA_PROP_OA_METRICS_SET,
+	__u32 sample_oa;
 
 	/**
-	 * The value specifies the size and layout of OA unit reports.
+	 * @oa_format: The value specifies the size and layout of OA unit reports
 	 */
-	DRM_XE_OA_PROP_OA_FORMAT,
+	__u64 oa_format;
 	/**
 	 * OA_FORMAT's are specified the same way as in Bspec, in terms of
 	 * the following quantities: a. enum @drm_xe_oa_format_type
@@ -1444,86 +1483,69 @@ enum drm_xe_oa_property_id {
 #define XE_OA_MASK_BC_REPORT	(0xff << 24)
 
 	/**
-	 * Specifying this property implicitly requests periodic OA unit
-	 * sampling and (at least on Haswell) the sampling frequency is derived
-	 * from this exponent as follows:
+	 * @metric_set: specifies which set of OA unit metrics should be
+	 * configured, defining the contents of any OA unit reports. Metric
+	 * set ID is returned by the XE_PERF_ADD_CONFIG op of the PREF ioctl
+	 */
+	__u32 metric_set;
+
+	/**
+	 * @period_exponent: Specifying this property implicitly requests
+	 * periodic OA unit sampling. The sampling period is:
 	 *
-	 *   80ns * 2^(period_exponent + 1)
-	 */
-	DRM_XE_OA_PROP_OA_EXPONENT,
-
-	/**
-	 * Specifying this property is only valid when specify a context to
-	 * filter with DRM_XE_OA_PROP_ENGINE_ID. Specifying this property
-	 * will hold preemption of the particular engine we want to gather
-	 * performance data about.
-	 */
-	DRM_XE_OA_PROP_HOLD_PREEMPTION,
-
-	/**
-	 * Specify a global OA buffer size to be allocated in bytes. The
-	 * size specified must be supported by HW (powers of 2 ranging from
-	 * 128 KB to 128Mb depending on the platform)
-	 */
-	DRM_XE_OA_PROP_OA_BUFFER_SIZE,
-
-	/**
-	 * This optional parameter specifies the timer interval in nanoseconds
-	 * at which the xe driver will check the OA buffer for available data.
-	 * Minimum allowed value is 100 microseconds. A default value is used by
-	 * the driver if this parameter is not specified. Note that larger timer
-	 * values will reduce cpu consumption during OA perf captures. However,
-	 * excessively large values would potentially result in OA buffer
-	 * overwrites as captures reach end of the OA buffer.
-	 */
-	DRM_XE_OA_PROP_POLL_OA_PERIOD,
-
-	/**
-	 * Open the stream for a specific exec queue id (as used with
-	 * drm_xe_exec). A stream opened for a specific exec queue id this
-	 * way won't typically require root privileges.
-	 */
-	DRM_XE_OA_PROP_EXEC_QUEUE_ID,
-
-	/**
-	 * This parameter specifies the engine instance and can be passed along
-	 * with DRM_XE_OA_PROP_EXEC_QUEUE_ID or will default to 0.
-	 */
-	DRM_XE_OA_PROP_OA_ENGINE_INSTANCE,
-
-	DRM_XE_OA_PROP_MAX /* non-ABI */
-};
-
-struct drm_xe_oa_open_param {
-	/** @extensions: Pointer to the first extension struct, if any */
-	__u64 extensions;
-
-	/**
-	 * @config_syncobj: (Output) handle to configuration syncobj
+	 *   2^(period_exponent + 1) / @oa_timestamp_freq
 	 *
-	 * Handle to a syncobj which the kernel will signal after stream
-	 * configuration or re-configuration is complete (after retrun from
-	 * the ioctl). This handle can be provided as a dependency to the
-	 * next XE exec ioctl.
+	 * Set period_exponent *negative* to disable periodic sampling
 	 */
-	__u32 config_syncobj;
+	__s32 period_exponent;
 
-	__u32 reserved;
+	/**
+	 * @oa_buffer_size: Specify a global OA buffer size to be allocated
+	 * in bytes. The size specified must be supported by HW (powers of
+	 * 2 ranging from 128 KB to 128Mb depending on the platform). A
+	 * value of 0 will choose a default size of 16 MB.
+	 */
+	__u32 oa_buffer_size;
 
-	/** @flags: Flags */
-	__u32 flags;
+	/**
+	 * @poll_period: Specify timer interval in micro-seconds at which
+	 * the xe driver will check the OA buffer for available
+	 * data. Minimum allowed value is 100 microseconds. A value of 0
+	 * selects a default value is used by the driver. Note that larger
+	 * timer values will reduce cpu consumption during OA perf
+	 * captures. However, excessively large values would potentially
+	 * result in OA buffer overwrites as captures reach end of the OA
+	 * buffer.
+	 */
+	__u32 poll_period_us;
+
+	/** @open_flags: Flags */
+	__u32 open_flags;
 #define XE_OA_FLAG_FD_CLOEXEC	(1 << 0)
 #define XE_OA_FLAG_FD_NONBLOCK	(1 << 1)
 #define XE_OA_FLAG_DISABLED	(1 << 2)
 
-	/** The number of u64 (id, value) pairs */
-	__u32 num_properties;
+	/**
+	 * @exec_queue_id: Open the stream for a specific exec queue id (as
+	 * used with drm_xe_exec). A stream opened for a specific exec
+	 * queue id this way won't typically require root
+	 * privileges. Pass a value <= 0 to not specify an exec queue id.
+	 */
+	__s32 exec_queue_id;
 
 	/**
-	 * Pointer to array of u64 (id, value) pairs configuring the stream
-	 * to open.
+	 * @engine_instance: engine instance to use with @exec_queue_id.
 	 */
-	__u64 properties_ptr;
+	__u32 engine_instance;
+
+	/**
+	 * @hold_preemption: If true, this will disable preemption for the
+	 * exec queue selected with @exec_queue_id
+	 */
+	__u32 hold_preemption;
+
+	/** @reserved: reserved (MBZ) */
+	__u64 reserved[4];
 };
 
 struct drm_xe_oa_record_header {
