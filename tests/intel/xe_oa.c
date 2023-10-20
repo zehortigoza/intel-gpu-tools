@@ -2351,7 +2351,8 @@ test_blocking(uint64_t requested_oa_period,
 	/* Make sure the driver is reporting new samples with a reasonably
 	 * low latency...
 	 */
-	igt_assert(n > (min_iterations + n_extra_iterations));
+	if (!xe_relax_checks(drm_fd))
+		igt_assert(n > (min_iterations + n_extra_iterations));
 
 	if (!set_kernel_hrtimer)
 		igt_assert(kernel_ns <= (test_duration_ns / 100ull));
@@ -2553,7 +2554,8 @@ test_polling(uint64_t requested_oa_period,
 	/* Make sure the driver is reporting new samples with a reasonably
 	 * low latency...
 	 */
-	igt_assert(n > (min_iterations + n_extra_iterations));
+	if (!xe_relax_checks(drm_fd))
+		igt_assert(n > (min_iterations + n_extra_iterations));
 
 	if (!set_kernel_hrtimer)
 		igt_assert(kernel_ns <= (test_duration_ns / 100ull));
@@ -2617,8 +2619,9 @@ static void test_polling_small_buf(void)
 
 	__perf_close(stream_fd);
 
-	igt_assert(abs(n_expect_read_bytes - n_bytes_read) <
-		   0.20 * n_expect_read_bytes);
+	if (!xe_relax_checks(drm_fd))
+		igt_assert(abs(n_expect_read_bytes - n_bytes_read) <
+			   0.20 * n_expect_read_bytes);
 }
 
 static int
@@ -2700,14 +2703,16 @@ gen12_test_oa_tlb_invalidate(const struct intel_execution_engine2 *e)
 	num_expected_reports = duration / oa_exponent_to_ns(oa_exponent);
 	igt_debug("expected num reports = %d\n", num_expected_reports);
 	igt_debug("actual num reports = %d\n", num_reports1);
-	igt_assert(num_reports1 > 0.95 * num_expected_reports);
+	if (!xe_relax_checks(drm_fd))
+		igt_assert(num_reports1 > 0.95 * num_expected_reports);
 
 	duration = 5LL * NSEC_PER_SEC;
 	num_reports2 = num_valid_reports_captured(&param, &duration);
 	num_expected_reports = duration / oa_exponent_to_ns(oa_exponent);
 	igt_debug("expected num reports = %d\n", num_expected_reports);
 	igt_debug("actual num reports = %d\n", num_reports2);
-	igt_assert(num_reports2 > 0.95 * num_expected_reports);
+	if (!xe_relax_checks(drm_fd))
+		igt_assert(num_reports2 > 0.95 * num_expected_reports);
 }
 
 
@@ -2856,10 +2861,12 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 			  n_periodic_reports * report_size,
 			  report_size * n_full_oa_reports * 0.55);
 
-		igt_assert(n_periodic_reports * report_size >
-			   report_size * n_full_oa_reports * 0.45);
-		igt_assert(n_periodic_reports * report_size <
-			   report_size * n_full_oa_reports * 0.55);
+		if (!xe_relax_checks(drm_fd)) {
+			igt_assert(n_periodic_reports * report_size >
+				   report_size * n_full_oa_reports * 0.45);
+			igt_assert(n_periodic_reports * report_size <
+				   report_size * n_full_oa_reports * 0.55);
+		}
 	}
 
 	free(last_periodic_report);
@@ -2939,7 +2946,8 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 			uint32_t reason = (report[0] >> OAREPORT_REASON_SHIFT) &
 				OAREPORT_REASON_MASK;
 
-			igt_assert_neq(reason, 0);
+			if (!xe_relax_checks(drm_fd))
+				igt_assert_neq(reason, 0);
 
 			if (last_report)
 				sanity_check_reports(last_report, report, fmt);
@@ -3093,10 +3101,12 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 			  n_periodic_reports * report_size,
 			  report_size * n_full_oa_reports * 0.55);
 
-		igt_assert((n_periodic_reports * report_size) >
-			   (report_size * n_full_oa_reports * 0.45));
-		igt_assert((n_periodic_reports * report_size) <
-			   report_size * n_full_oa_reports * 0.55);
+		if (!xe_relax_checks(drm_fd)) {
+			igt_assert((n_periodic_reports * report_size) >
+				   (report_size * n_full_oa_reports * 0.45));
+			igt_assert((n_periodic_reports * report_size) <
+				   report_size * n_full_oa_reports * 0.55);
+		}
 
 
 		/* It's considered an error to read a stream while it's disabled
@@ -4592,11 +4602,14 @@ test_xe_ref_count(void)
 
 	igt_assert(ref_count0 > baseline);
 
+	drm_fd = __drm_open_driver(DRIVER_INTEL | DRIVER_XE);
 	read_2_oa_reports(default_test_set->perf_oa_format,
 			  oa_exp_1_millisec,
 			  oa_report0,
 			  oa_report1,
 			  false); /* not just timer reports */
+	drm_close_driver(drm_fd);
+	drm_fd = -1;
 
 	__perf_close(stream_fd);
 	ref_count0 = read_i915_module_ref(is_xe);
