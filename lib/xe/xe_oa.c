@@ -39,6 +39,8 @@
 #include "xe_oa_metrics_mtlgt3.h"
 #include "xe_oa_metrics_lnl.h"
 
+#define xe_relax_checks(drm_fd) (IS_LUNARLAKE(xe_dev_id(drm_fd)))
+
 static int
 perf_ioctl(int fd, unsigned long request, void *arg)
 {
@@ -691,8 +693,8 @@ xe_perf_for_fd(int drm_fd, int gt)
 	uint32_t device_id;
 	uint32_t device_revision = 0;
 	uint32_t timestamp_frequency;
-	uint64_t gt_min_freq;
-	uint64_t gt_max_freq;
+	uint64_t gt_min_freq = 0;
+	uint64_t gt_max_freq = 0;
 	struct drm_i915_query_topology_info *topology;
 	struct intel_perf *ret;
 	int sysfs_dir_fd = open_master_sysfs_dir(drm_fd);
@@ -714,8 +716,10 @@ xe_perf_for_fd(int drm_fd, int gt)
 	if (!read_sysfs(sysfs_dir_fd, path_min, &gt_min_freq) ||
 	    !read_sysfs(sysfs_dir_fd, path_max, &gt_max_freq)) {
 		igt_warn("Unable to read freqs from sysfs\n");
-		close(sysfs_dir_fd);
-		return NULL;
+		if (!xe_relax_checks(drm_fd)) {
+			close(sysfs_dir_fd);
+			return NULL;
+		}
 	}
 	close(sysfs_dir_fd);
 
