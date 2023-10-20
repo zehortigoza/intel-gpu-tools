@@ -214,6 +214,8 @@
 
 IGT_TEST_DESCRIPTION("Test the xe perf metrics streaming interface");
 
+#define xe_relax_checks(drm_fd) (IS_LUNARLAKE(xe_dev_id(drm_fd)))
+
 #define GEN6_MI_REPORT_PERF_COUNT ((0x28 << 23) | (3 - 2))
 #define GEN8_MI_REPORT_PERF_COUNT ((0x28 << 23) | (4 - 2))
 
@@ -2774,7 +2776,9 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 				overflow_seen = true;
 		}
 
-		igt_assert_eq(overflow_seen, true);
+		/* Overrun mode is disabled in the kernel for Xe2+ */
+		if (!xe_relax_checks(drm_fd))
+			igt_assert_eq(overflow_seen, true);
 
 		do_ioctl(stream_fd, XE_PERF_IOCTL_DISABLE, 0);
 
@@ -5038,7 +5042,8 @@ igt_main
 		write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 		write_u64_file("/proc/sys/dev/xe/oa_max_sample_rate", 100000);
 
-		gt_max_freq_mhz = sysfs_read(RPS_RP0_FREQ_MHZ);
+		if (!xe_relax_checks(drm_fd))
+			gt_max_freq_mhz = sysfs_read(RPS_RP0_FREQ_MHZ);
 		perf_oa_groups = get_engine_groups(drm_fd, &num_perf_oa_groups);
 		igt_assert(perf_oa_groups && num_perf_oa_groups);
 
@@ -5150,8 +5155,10 @@ igt_main
 	igt_subtest("polling-small-buf")
 		test_polling_small_buf();
 
-	igt_subtest("short-reads")
+	igt_subtest("short-reads") {
+		igt_require(!xe_relax_checks(drm_fd));
 		test_short_reads();
+	}
 
 	igt_subtest_group {
 		igt_fixture igt_require(intel_gen(devid) >= 12);
