@@ -250,6 +250,10 @@ IGT_TEST_DESCRIPTION("Test the xe perf metrics streaming interface");
 		*_tail++ = _value; \
 	} while (0)
 
+/*
+ * If formats are added here remember to change
+ * lib/xe/oa-configs/oa-metricset-codegen.py
+ */
 enum xe_oa_format_name {
 	XE_OA_FORMAT_C4_B8 = 7,
 
@@ -261,6 +265,10 @@ enum xe_oa_format_name {
 	/* DG2 */
 	XE_OAR_FORMAT_A32u40_A4u32_B8_C8,
 	XE_OA_FORMAT_A24u40_A14u32_B8_C8,
+
+	/* DG2/MTL OAC */
+	XE_OAC_FORMAT_A24u64_B8_C8,
+	XE_OAC_FORMAT_A22u32_R2u32_B8_C8,
 
 	/* MTL OAM */
 	XE_OAM_FORMAT_MPEC8u64_B8_C8,
@@ -352,6 +360,16 @@ static struct oa_format dg2_oa_formats[XE_OA_FORMAT_MAX] = {
 		.c_off = 224, .n_c = 8, .oa_type = XE_OA_FMT_TYPE_OAG,
 		.counter_select = 5,
 	},
+	/* This format has 24 u64 counters ranging from A0 - A35. Until we come
+	 * up with a better mechanism to define missing counters, we will use a
+	 * subset of counters that are indexed by one-increments - A28 - A35.
+	 */
+	[XE_OAC_FORMAT_A24u64_B8_C8] = {
+		"OAC_A24u64_B8_C8", .size = 320,
+		.a64_off = 160, .n_a64 = 8,
+		.b_off = 224, .n_b = 8,
+		.c_off = 256, .n_c = 8, .oa_type = XE_OA_FMT_TYPE_OAC,
+		.counter_select = 1, },
 };
 
 static struct oa_format mtl_oa_formats[XE_OA_FORMAT_MAX] = {
@@ -394,6 +412,16 @@ static struct oa_format mtl_oa_formats[XE_OA_FORMAT_MAX] = {
 		.report_hdr_64bit = true,
 		.counter_select = 2,
 	},
+	/* This format has 24 u64 counters ranging from A0 - A35. Until we come
+	 * up with a better mechanism to define missing counters, we will use a
+	 * subset of counters that are indexed by one-increments - A28 - A35.
+	 */
+	[XE_OAC_FORMAT_A24u64_B8_C8] = {
+		"OAC_A24u64_B8_C8", .size = 320,
+		.a64_off = 160, .n_a64 = 8,
+		.b_off = 224, .n_b = 8,
+		.c_off = 256, .n_c = 8, .oa_type = XE_OA_FMT_TYPE_OAC,
+		.counter_select = 1, },
 };
 
 static struct oa_format lnl_oa_formats[XE_OA_FORMAT_MAX] = {
@@ -3314,7 +3342,9 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e2,
 		  struct drm_xe_engine_class_instance *hwe)
 
 {
-	uint64_t fmt = oar_unit_default_format();
+	uint64_t fmt = ((IS_DG2(devid) || IS_METEORLAKE(devid)) &&
+			hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE) ?
+		XE_OAC_FORMAT_A24u64_B8_C8 : oar_unit_default_format();
 	struct intel_perf_metric_set *test_set = metric_set(e2);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
