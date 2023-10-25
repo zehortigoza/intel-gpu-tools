@@ -110,6 +110,10 @@ def generate_metric_sets(args, gen):
 		XE_OAR_FORMAT_A32u40_A4u32_B8_C8,
 		XE_OA_FORMAT_A24u40_A14u32_B8_C8,
 
+                /* DG2/MTL OAC */
+                XE_OAC_FORMAT_A24u64_B8_C8,
+                XE_OAC_FORMAT_A22u32_R2u32_B8_C8,
+
 		/* MTL OAM */
 		XE_OAM_FORMAT_MPEC8u64_B8_C8,
 		XE_OAM_FORMAT_MPEC8u32_B8_C8,
