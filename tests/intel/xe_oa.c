@@ -3310,10 +3310,12 @@ test_disabled_read_error(void)
 }
 
 static void
-gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
+gen12_test_mi_rpc(const struct intel_execution_engine2 *e2,
+		  struct drm_xe_engine_class_instance *hwe)
+
 {
 	uint64_t fmt = oar_unit_default_format();
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(e2);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROP_OA_UNIT_ID, 0,
 
@@ -3337,7 +3339,7 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
 		 */
 		DRM_XE_OA_PROP_OA_METRICS_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROP_OA_FORMAT, __ff(fmt),
-		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, e->instance,
+		DRM_XE_OA_PROP_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
 		.flags = I915_PERF_FLAG_FD_CLOEXEC,
@@ -3362,7 +3364,7 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e)
 	bops = buf_ops_create(drm_fd);
 	if (is_xe_device(drm_fd)) {
 		vm = xe_vm_create(drm_fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
-		ctx_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
+		ctx_id = xe_exec_queue_create(drm_fd, vm, hwe, 0);
 	} else {
 		ctx_id = gem_context_create(drm_fd);
 	}
@@ -5165,14 +5167,25 @@ igt_main
 
 		igt_describe("Test MI REPORT PERF COUNT for Gen 12");
 		igt_subtest_with_dynamic("gen12-mi-rpc") {
-			igt_require(has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0));
-			if (is_xe_device(drm_fd)) {
-				const struct intel_execution_engine2 e2 = {};
-				igt_dynamic_f("%s", "rcs")
-					gen12_test_mi_rpc(&e2);
-			} else {
-				__for_each_render_engine(drm_fd, e)
-					gen12_test_mi_rpc(e);
+			const struct intel_execution_engine2 e2 = {};
+			struct drm_xe_engine_class_instance *hwe;
+
+			xe_for_each_engine(drm_fd, hwe) {
+				if (hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER)
+					break;
+			}
+			igt_dynamic_f("%s", "rcs") {
+				igt_require(hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER);
+				gen12_test_mi_rpc(&e2, hwe);
+			}
+
+			xe_for_each_engine(drm_fd, hwe) {
+				if (hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE)
+					break;
+			}
+			igt_dynamic_f("%s", "ccs") {
+				igt_require(hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE);
+				gen12_test_mi_rpc(&e2, hwe);
 			}
 		}
 
