@@ -17,6 +17,7 @@
  * Test category: functionality test
  */
 
+#include <limits.h> // PATH_MAX
 #if defined(__linux__)
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
