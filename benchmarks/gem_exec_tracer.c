@@ -271,7 +271,11 @@ static int is_i915(int fd)
 }
 
 int
+#ifdef __GLIBC__
 ioctl(int fd, unsigned long request, ...)
+#else
+ioctl(int fd, int request, ...)
+#endif
 {
 	struct trace *t, **p;
 	va_list args;
