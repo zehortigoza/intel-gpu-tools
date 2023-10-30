@@ -29,6 +29,7 @@
 #define IGT_AUX_H
 
 #include <inttypes.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <sys/time.h>
@@ -48,7 +49,9 @@
 # ifndef HAVE_GETTID
 #  define gettid() (pid_t)(syscall(__NR_gettid))
 # endif
-# define sigev_notify_thread_id _sigev_un._tid
+# ifndef sigev_notify_thread_id
+#  define sigev_notify_thread_id _sigev_un._tid
+# endif
 #endif
 
 /* auxialiary igt helpers from igt_aux.c */
