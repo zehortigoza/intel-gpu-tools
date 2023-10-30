@@ -220,7 +220,7 @@ endif
 if cc.has_header('libgen.h')
 	config.set('HAVE_LIBGEN_H', 1)
 endif
-if cc.has_header('sys/io.h')
+if cc.has_header('sys/io.h') and cc.has_function('outb', prefix: '#include <sys/io.h>')
 	config.set('HAVE_SYS_IO_H', 1)
 endif
 if cc.links('''
