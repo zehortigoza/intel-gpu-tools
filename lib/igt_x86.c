@@ -190,7 +190,7 @@ char *igt_x86_features_to_string(unsigned features, char *line)
 }
 #endif
 
-#if defined(__x86_64__) && !defined(__clang__)
+#if defined(__x86_64__) && !defined(__clang__) && defined(__GLIBC__) && !defined(__UCLIBC__)
 #pragma GCC push_options
 #pragma GCC target("sse4.1")
 #pragma GCC diagnostic ignored "-Wpointer-arith"
