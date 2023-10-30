@@ -2,6 +2,7 @@
 /*
  * Copyright © 2022 Intel Corporation
  */
+#include <limits.h> // PATH_MAX
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <dirent.h>

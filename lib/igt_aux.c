@@ -31,6 +31,7 @@
 #endif
 #include <stdio.h>
 #include <fcntl.h>
+#include <limits.h> // PATH_MAX
 #include <pwd.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>

@@ -28,6 +28,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <glob.h>
+#include <limits.h> // PATH_MAX
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
