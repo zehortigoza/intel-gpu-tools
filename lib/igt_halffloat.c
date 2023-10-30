@@ -162,7 +162,7 @@ static inline float _half_to_float(uint16_t val)
 	return fi.f;
 }
 
-#if defined(__x86_64__) && !defined(__clang__)
+#if defined(__x86_64__) && !defined(__clang__) && defined(__GLIBC__) && !defined(__UCLIBC__)
 #pragma GCC push_options
 #pragma GCC target("f16c")
 
