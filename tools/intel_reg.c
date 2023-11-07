@@ -586,6 +586,7 @@ static int write_register(struct config *config, struct reg *reg, uint32_t val)
 	}
 
 	switch (reg->port_desc.port) {
+	case PORT_MCHBAR_32:
 	case PORT_MMIO_32:
 		if (reg->engine) {
 			register_srm(config, reg, &val);
@@ -593,6 +594,7 @@ static int write_register(struct config *config, struct reg *reg, uint32_t val)
 			OUTREG(reg->mmio_offset + reg->addr, val);
 		}
 		break;
+	case PORT_MCHBAR_16:
 	case PORT_MMIO_16:
 		if (val > 0xffff) {
 			fprintf(stderr, "value 0x%08x out of range for port %s\n",
@@ -601,6 +603,7 @@ static int write_register(struct config *config, struct reg *reg, uint32_t val)
 		}
 		OUTREG16(reg->mmio_offset + reg->addr, val);
 		break;
+	case PORT_MCHBAR_8:
 	case PORT_MMIO_8:
 		if (val > 0xff) {
 			fprintf(stderr, "value 0x%08x out of range for port %s\n",
