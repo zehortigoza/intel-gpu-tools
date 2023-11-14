@@ -600,12 +600,12 @@ int xe_perf_ioctl(int fd, unsigned long request,
 	/* Chain the PERF layer struct */
 	struct drm_xe_perf_param p = {
 		.extensions = 0,
-		.perf_type = XE_PERF_TYPE_OA,
+		.perf_type = DRM_XE_PERF_TYPE_OA,
 		.perf_op = op,
-		.param = (op == XE_PERF_STREAM_OPEN) ? (__u64)&param : (__u64)arg,
+		.param = (op == DRM_XE_PERF_OP_STREAM_OPEN) ? (__u64)&param : (__u64)arg,
 	};
 
-	if (op == XE_PERF_STREAM_OPEN)
+	if (op == DRM_XE_PERF_OP_STREAM_OPEN)
 		xe_oa_prop_to_param((struct drm_xe_oa_open_prop *)arg, &param);
 
 	return igt_ioctl(fd, request, &p);

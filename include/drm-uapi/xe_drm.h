@@ -100,7 +100,7 @@ extern "C" {
 #define DRM_XE_EXEC_QUEUE_GET_PROPERTY	0x08
 #define DRM_XE_EXEC			0x09
 #define DRM_XE_WAIT_USER_FENCE		0x0a
-#define DRM_XE_PERF			0x16
+#define DRM_XE_PERF			0x0f
 
 /* Must be kept compact -- no holes */
 
@@ -1373,18 +1373,30 @@ struct drm_xe_wait_user_fence {
 	__u64 reserved[2];
 };
 
+/**
+ * enum drm_xe_perf_type - Perf stream types
+ */
 enum drm_xe_perf_type {
-	XE_PERF_TYPE_OA,
-};
-
-enum drm_xe_perf_op {
-	XE_PERF_STREAM_OPEN,
-	XE_PERF_ADD_CONFIG,
-	XE_PERF_REMOVE_CONFIG,
+	DRM_XE_PERF_TYPE_OA,
+	DRM_XE_PERF_TYPE_MAX,
 };
 
 /**
- * struct drm_xe_perf_param - XE perf layer param
+ * enum drm_xe_perf_op - Perf stream ops
+ */
+enum drm_xe_perf_op {
+	/** @DRM_XE_PERF_OP_STREAM_OPEN: Open a perf counter stream */
+	DRM_XE_PERF_OP_STREAM_OPEN,
+
+	/** @DRM_XE_PERF_OP_ADD_CONFIG: Add perf stream config */
+	DRM_XE_PERF_OP_ADD_CONFIG,
+
+	/** @DRM_XE_PERF_OP_REMOVE_CONFIG: Remove perf stream config */
+	DRM_XE_PERF_OP_REMOVE_CONFIG,
+};
+
+/**
+ * struct drm_xe_perf_param - Perf layer param
  *
  * The perf layer enables multiplexing perf counter streams of multiple
  * types. The actual params for a particular stream operation are supplied
@@ -1393,14 +1405,30 @@ enum drm_xe_perf_op {
 struct drm_xe_perf_param {
 	/** @extensions: Pointer to the first extension struct, if any */
 	__u64 extensions;
-	/** @perf_type: Type, of enum @drm_xe_perf_type, of perf stream  */
+	/** @perf_type: Perf stream type, of enum @drm_xe_perf_type */
 	__u64 perf_type;
 	/** @perf_op: Perf op, of enum @drm_xe_perf_op */
 	__u64 perf_op;
-	/** @param_size: size of data struct pointed to by @param */
-	__u64 param_size;
 	/** @param: Pointer to actual stream params */
 	__u64 param;
+};
+
+/**
+ * enum drm_xe_perf_ioctls - Perf fd ioctl's
+ */
+enum drm_xe_perf_ioctls {
+	/**
+	 * @DRM_XE_PERF_IOCTL_ENABLE: Enable data capture for a stream that
+	 * was e.g. either opened in a disabled state or was disabled via
+	 * DRM_XE_PERF_IOCTL_DISABLE
+	 */
+	DRM_XE_PERF_IOCTL_ENABLE = _IO('i', 0x0),
+
+	/** @DRM_XE_PERF_IOCTL_DISABLE: Disable data capture for a stream */
+	DRM_XE_PERF_IOCTL_DISABLE = _IO('i', 0x1),
+
+	/** @DRM_XE_PERF_IOCTL_CONFIG: Change stream configuration */
+	DRM_XE_PERF_IOCTL_CONFIG = _IO('i', 0x2),
 };
 
 enum drm_xe_oa_format_type {
@@ -1608,6 +1636,11 @@ enum drm_xe_oa_record_type {
 	 */
 	DRM_XE_OA_RECORD_OA_BUFFER_LOST = 3,
 
+	/**
+	 * MMIO trigger queue full error
+	 */
+	DRM_XE_OA_RECORD_OA_MMIO_TRG_Q_FULL = 4,
+
 	DRM_XE_OA_RECORD_MAX /* non-ABI */
 };
 
@@ -1638,30 +1671,6 @@ struct drm_xe_oa_config {
 	 */
 	__u64 regs_ptr;
 };
-
-/*
- * Enable data capture for a stream that was either opened in a disabled state
- * via I915_PERF_FLAG_DISABLED or was later disabled via
- * I915_PERF_IOCTL_DISABLE.
- *
- * It is intended to be cheaper to disable and enable a stream than it may be
- * to close and re-open a stream with the same configuration.
- *
- * It's undefined whether any pending data for the stream will be lost.
- */
-#define XE_PERF_IOCTL_ENABLE	_IO('i', 0x0)
-
-/*
- * Disable data capture for a stream
- *
- * It is an error to try and read a stream that is disabled.
- */
-#define XE_PERF_IOCTL_DISABLE	_IO('i', 0x1)
-
-/*
- * Change stream configuration
- */
-#define XE_PERF_IOCTL_CONFIG	_IO('i', 0x2)
 
 #if defined(__cplusplus)
 }
