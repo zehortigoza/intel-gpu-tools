@@ -646,7 +646,7 @@ __perf_open(int fd, struct drm_xe_oa_open_prop *param, bool prevent_pm)
 		pm_fd = -1;
 	}
 
-	ret = xe_perf_ioctl(fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, param);
+	ret = xe_perf_ioctl(fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, param);
 
 	igt_assert(ret >= 0);
 	errno = 0;
@@ -1322,7 +1322,7 @@ test_system_wide_paranoid(void)
 
 		igt_drop_root();
 
-		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN,
+		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
 				  &param, EACCES);
 	}
 
@@ -1380,7 +1380,7 @@ test_invalid_open_flags(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN,
+	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
 			  &param, EINVAL);
 }
 
@@ -1405,10 +1405,10 @@ test_invalid_oa_metric_set_id(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 
 	properties[ARRAY_SIZE(properties) - 1] = 0; /* ID 0 is also be reserved as invalid */
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 
 	/* Check that we aren't just seeing false positives... */
 	properties[ARRAY_SIZE(properties) - 1] = default_test_set->perf_oa_metrics_set;
@@ -1417,7 +1417,7 @@ test_invalid_oa_metric_set_id(void)
 
 	/* There's no valid default OA metric set ID... */
 	param.num_properties--;
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 }
 
 static void
@@ -1441,10 +1441,10 @@ test_invalid_oa_format_id(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 
 	properties[ARRAY_SIZE(properties) - 1] = __ff(0); /* ID 0 is also be reserved as invalid */
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 
 	/* Check that we aren't just seeing false positives... */
 	properties[ARRAY_SIZE(properties) - 1] = __ff(default_test_set->perf_oa_format);
@@ -1476,7 +1476,7 @@ test_missing_sample_flags(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 }
 
 static void
@@ -2160,7 +2160,7 @@ test_invalid_oa_exponent(void)
 
 	for (int i = 32; i < 65; i++) {
 		properties[7] = i;
-		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN,
+		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
 				  &param, EINVAL);
 	}
 }
@@ -2199,7 +2199,7 @@ test_low_oa_exponent_permissions(void)
 	igt_fork(child, 1) {
 		igt_drop_root();
 
-		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN,
+		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
 				  &param, EACCES);
 	}
 
@@ -2223,7 +2223,7 @@ test_low_oa_exponent_permissions(void)
 	igt_fork(child, 1) {
 		igt_drop_root();
 
-		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN,
+		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
 				  &param, EACCES);
 	}
 
@@ -2350,7 +2350,7 @@ test_blocking(uint64_t requested_oa_period,
 	 * the error delta.
 	 */
 	start = get_time();
-	do_ioctl(perf_fd, XE_PERF_IOCTL_ENABLE, 0);
+	do_ioctl(perf_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < test_duration_ns; /* nop */) {
 		struct drm_xe_oa_record_header *header;
 		bool timer_report_read = false;
@@ -2514,7 +2514,7 @@ test_polling(uint64_t requested_oa_period,
 	 * the error delta.
 	 */
 	start = get_time();
-	do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
+	do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < test_duration_ns; /* nop */) {
 		struct pollfd pollfd = { .fd = stream_fd, .events = POLLIN };
 		struct drm_xe_oa_record_header *header;
@@ -2661,7 +2661,7 @@ static void test_polling_small_buf(void)
 	uint32_t n_polls = 0;
 
 	stream_fd = __perf_open(drm_fd, &param, true /* prevent_pm */);
-	do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
+	do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 
 	while (igt_nsec_elapsed(&ts) < test_duration) {
 		struct pollfd pollfd = { .fd = stream_fd, .events = POLLIN };
@@ -2703,7 +2703,7 @@ num_valid_reports_captured(struct drm_xe_oa_open_prop *param,
 	stream_fd = __perf_open(drm_fd, param, true);
 
 	start = get_time();
-	do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
+	do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < *duration_ns; /* nop */) {
 		struct drm_xe_oa_record_header *header;
 		int ret;
@@ -2826,7 +2826,7 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 		uint32_t n_periodic_reports;
 		uint32_t first_timestamp = 0, last_timestamp = 0;
 
-		do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
+		do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 
 		nanosleep(&(struct timespec){ .tv_sec = 0,
 					      .tv_nsec = fill_duration * 1.25 },
@@ -2849,12 +2849,12 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 		if (!xe_relax_checks(drm_fd))
 			igt_assert_eq(overflow_seen, true);
 
-		do_ioctl(stream_fd, XE_PERF_IOCTL_DISABLE, 0);
+		do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_DISABLE, 0);
 
 		igt_debug("fill_duration = %"PRIu64"ns, oa_exponent = %u\n",
 			  fill_duration, oa_exponent);
 
-		do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
+		do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 
 		nanosleep(&(struct timespec){ .tv_sec = 0,
 					.tv_nsec = fill_duration / 2 },
@@ -2916,7 +2916,7 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 			}
 		}
 
-		do_ioctl(stream_fd, XE_PERF_IOCTL_DISABLE, 0);
+		do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_DISABLE, 0);
 
 		igt_debug("first ts = %u, last ts = %u\n", first_timestamp, last_timestamp);
 
@@ -3088,7 +3088,7 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 		igt_assert_eq(len, -1);
 		igt_assert_eq(errno, EIO);
 
-		do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
+		do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 
 		nanosleep(&(struct timespec){ .tv_sec = 0,
 					      .tv_nsec = fill_duration / 2 },
@@ -3153,7 +3153,7 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 
 		}
 
-		do_ioctl(stream_fd, XE_PERF_IOCTL_DISABLE, 0);
+		do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_DISABLE, 0);
 
 		igt_debug("first ts = %lu, last ts = %lu\n", first_timestamp, last_timestamp);
 
@@ -3361,13 +3361,13 @@ test_disabled_read_error(void)
 			  oa_report1,
 			  false); /* not just timer reports */
 
-	do_ioctl(stream_fd, XE_PERF_IOCTL_DISABLE, 0);
+	do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_DISABLE, 0);
 
 	ret = read(stream_fd, buf, sizeof(buf));
 	igt_assert_eq(ret, -1);
 	igt_assert_eq(errno, EIO);
 
-	do_ioctl(stream_fd, XE_PERF_IOCTL_ENABLE, 0);
+	do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 
 	read_2_oa_reports(default_test_set->perf_oa_format,
 			  oa_exponent,
@@ -4237,7 +4237,7 @@ test_stress_open_close(const struct intel_execution_engine2 *e)
 
 static int __i915_perf_add_config(int fd, struct drm_xe_oa_config *config)
 {
-	int ret = xe_perf_ioctl(fd, DRM_IOCTL_XE_PERF, XE_PERF_ADD_CONFIG, config);
+	int ret = xe_perf_ioctl(fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_ADD_CONFIG, config);
 	if (ret < 0)
 		ret = -errno;
 	return ret;
@@ -4255,14 +4255,14 @@ static int i915_perf_add_config(int fd, struct drm_xe_oa_config *config)
 
 static void i915_perf_remove_config(int fd, uint64_t config_id)
 {
-	igt_assert_eq(xe_perf_ioctl(fd, DRM_IOCTL_XE_PERF, XE_PERF_REMOVE_CONFIG,
+	igt_assert_eq(xe_perf_ioctl(fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_REMOVE_CONFIG,
 				    &config_id), 0);
 }
 
 static bool has_i915_perf_userspace_config(int fd)
 {
 	uint64_t config = 0;
-	int ret = xe_perf_ioctl(fd, DRM_IOCTL_XE_PERF, XE_PERF_REMOVE_CONFIG, &config);
+	int ret = xe_perf_ioctl(fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_REMOVE_CONFIG, &config);
 	igt_assert_eq(ret, -1);
 
 	igt_debug("errno=%i\n", errno);
@@ -4352,13 +4352,13 @@ test_invalid_remove_userspace_config(void)
 	igt_fork(child, 1) {
 		igt_drop_root();
 
-		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_REMOVE_CONFIG,
+		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_REMOVE_CONFIG,
 				  &config_id, EACCES);
 	}
 	igt_waitchildren();
 
 	/* Removing invalid config ID should fail. */
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_REMOVE_CONFIG,
+	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_REMOVE_CONFIG,
 			  &wrong_config_id, ENOENT);
 
 	i915_perf_remove_config(drm_fd, config_id);
@@ -4537,7 +4537,7 @@ test_whitelisted_registers_userspace_config(void)
 	config.regs_ptr = (uintptr_t) regs;
 
 	/* Create a new config */
-	ret = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_ADD_CONFIG, &config);
+	ret = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_ADD_CONFIG, &config);
 	igt_assert(ret > 0); /* Config 0 should be used by the kernel */
 	config_id = ret;
 
@@ -5307,7 +5307,7 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 		properties[7] = __ff(test_set->perf_oa_format);
 		properties[9] = ci->engine_instance;
 		grp->perf_fd = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF,
-					     XE_PERF_STREAM_OPEN, &param);
+					     DRM_XE_PERF_OP_STREAM_OPEN, &param);
 		igt_assert(grp->perf_fd >= 0);
 		igt_debug("opened OA buffer with c:i %d:%d\n",
 			  ci->engine_class, ci->engine_instance);
@@ -5335,7 +5335,7 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 			properties[9] = ci->engine_instance;
 			/* for SAMPLE OA use case, we must pass exponent */
 			param.num_properties = ARRAY_SIZE(properties) / 2;
-			xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN,
+			xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
 					  &param, EBUSY);
 			igt_debug("try OA buffer with c:i %d:%d\n",
 				  ci->engine_class, ci->engine_instance);
@@ -5350,7 +5350,7 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 			param.num_properties = ARRAY_SIZE(properties) / 2 - 1;
 			errno = 0;
 			err = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF,
-					    XE_PERF_STREAM_OPEN, &param);
+					    DRM_XE_PERF_OP_STREAM_OPEN, &param);
 			igt_assert(err < 0);
 			igt_assert(errno == EBUSY || errno == ENODEV);
 			igt_debug("try OA ci unit with c:i %d:%d\n",
