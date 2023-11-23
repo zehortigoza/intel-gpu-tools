@@ -724,7 +724,7 @@ xe_perf_for_fd(int drm_fd, int gt)
 	close(sysfs_dir_fd);
 
 	device_id = intel_get_drm_devid(drm_fd);
-	timestamp_frequency = xe_gt_list(drm_fd)->gt_list[0].oa_timestamp_freq;
+	timestamp_frequency = xe_oa_units(drm_fd)->oa_units[0].oa_timestamp_freq;
 
 	topology = xe_fill_i915_topology_info(drm_fd);
 	if (!topology) {

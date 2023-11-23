@@ -3,8 +3,8 @@
  * Copyright © 2023 Intel Corporation
  */
 
-#ifndef _UAPI_XE_DRM_H_
-#define _UAPI_XE_DRM_H_
+#ifndef _XE_DRM_H_
+#define _XE_DRM_H_
 
 #include "drm.h"
 
@@ -240,8 +240,8 @@ struct drm_xe_engine_class_instance {
 	__u16 engine_instance;
 	/** @gt_id: Unique ID of this GT within the PCI Device */
 	__u16 gt_id;
-	__u16 oa_unit_id;
-	__u32 pad;
+	/** @pad: MBZ */
+	__u16 pad;
 };
 
 /**
@@ -470,7 +470,6 @@ struct drm_xe_gt {
 	__u16 ip_ver_rev;
 	/** @pad2: MBZ */
 	__u16 pad2;
-	__u64 oa_timestamp_freq;
 	/** @reserved: Reserved */
 	__u64 reserved[7];
 };
@@ -687,7 +686,7 @@ struct drm_xe_device_query {
 #define DRM_XE_DEVICE_QUERY_GT_TOPOLOGY		5
 #define DRM_XE_DEVICE_QUERY_ENGINE_CYCLES	6
 #define DRM_XE_DEVICE_QUERY_UC_FW_VERSION	7
-#define DRM_XE_DEVICE_QUERY_OA_INFO		8
+#define DRM_XE_DEVICE_QUERY_OA_UNITS		8
 	/** @query: The type of data to query */
 	__u32 query;
 
@@ -1440,24 +1439,27 @@ enum drm_xe_oa_format_type {
 	XE_OA_FMT_TYPE_PEC,
 };
 
+enum drm_xe_oa_unit_type {
+	DRM_XE_OA_UNIT_TYPE_OAG,
+	DRM_XE_OA_UNIT_TYPE_OAM,
+};
+
 /**
- * struct drm_xe_query_oa_info - describe OA units
+ * struct drm_xe_query_oa_units - describe OA units
  *
  * If a query is made with a struct drm_xe_device_query where .query
- * is equal to DRM_XE_DEVICE_QUERY_OA_INFO, then the reply uses struct
- * drm_xe_query_oa_info in .data.
+ * is equal to DRM_XE_DEVICE_QUERY_OA_UNITS, then the reply uses struct
+ * drm_xe_query_oa_units in .data.
  *
- * FIXME: this is not implemented yet
+ * When there is an @open_stream, the query returns properties specific to
+ * that @open_stream. Else default properties are returned.
  */
-struct drm_xe_query_oa_info {
+struct drm_xe_query_oa_units {
 	/** @extensions: Pointer to the first extension struct, if any */
 	__u64 extensions;
 
-	/** @capabilities: OA capabilities bit-mask */
-	__u64 capabilities;
-
-	/** @oa_unit_count: number of OA units returned in oau[] */
-	__u32 oa_unit_count;
+	/** @num_oa_units: number of OA units returned in oau[] */
+	__u32 num_oa_units;
 
 	/** @pad: MBZ */
 	__u32 pad;
@@ -1465,22 +1467,31 @@ struct drm_xe_query_oa_info {
 	/** @reserved: MBZ */
 	__u64 reserved[4];
 
-	/** @oau: OA units returned for this device */
-	struct drm_xe_query_oa_unit {
+	/** @oa_units: OA units returned for this device */
+	struct drm_xe_oa_unit {
 		/** @oa_unit_id: OA unit ID */
 		__u16 oa_unit_id;
+
+		/** @oa_unit_type: OA unit type of @drm_xe_oa_unit_type */
+		__u16 oa_unit_type;
 
 		/** @gt_id: GT ID for this OA unit */
 		__u16 gt_id;
 
+		/** @open_stream: True if a stream is open on the OA unit */
+		__u16 open_stream;
+
+		/** @internal_events: True if internal events are available */
+		__u16 internal_events;
+
 		/** @pad: MBZ */
-		__u32 pad;
+		__u16 pad;
+
+		/** @capabilities: OA capabilities bit-mask */
+		__u64 capabilities;
 
 		/** @oa_timestamp_freq: OA timestamp freq */
 		__u64 oa_timestamp_freq;
-
-		/** @oa_buf_mmap_offset: offset to use for OA buffer mmap */
-		__u64 oa_buf_mmap_offset;
 
 		/** @oa_buf_size: OA buffer size */
 		__u64 oa_buf_size;
@@ -1488,9 +1499,12 @@ struct drm_xe_query_oa_info {
 		/** @reserved: MBZ */
 		__u64 reserved[4];
 
+		/** @num_engines: number of engines in @eci array */
+		__u64 num_engines;
+
 		/** @eci: engines attached to this OA unit */
 		struct drm_xe_engine_class_instance eci[];
-	} oau[];
+	} oa_units[];
 };
 
 enum drm_xe_oa_property_id {
@@ -1677,4 +1691,4 @@ struct drm_xe_oa_config {
 }
 #endif
 
-#endif /* _UAPI_XE_DRM_H_ */
+#endif /* _XE_DRM_H_ */
