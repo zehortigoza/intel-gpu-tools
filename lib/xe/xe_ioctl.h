@@ -93,20 +93,6 @@ int64_t xe_wait_ufence(int fd, uint64_t *addr, uint64_t value,
 		       uint32_t exec_queue, int64_t timeout);
 void xe_force_gt_reset(int fd, int gt);
 
-enum xe_oa_property_id {
-	DRM_XE_OA_PROP_OA_UNIT_ID = 1,
-	DRM_XE_OA_PROP_SAMPLE_OA,
-	DRM_XE_OA_PROP_OA_METRICS_SET,
-	DRM_XE_OA_PROP_OA_FORMAT,
-	DRM_XE_OA_PROP_OA_EXPONENT,
-	DRM_XE_OA_PROP_HOLD_PREEMPTION,
-	DRM_XE_OA_PROP_OA_BUFFER_SIZE,
-	DRM_XE_OA_PROP_POLL_OA_PERIOD,
-	DRM_XE_OA_PROP_EXEC_QUEUE_ID,
-	DRM_XE_OA_PROP_OA_ENGINE_INSTANCE,
-	DRM_XE_OA_PROP_MAX,
-};
-
 struct drm_xe_oa_open_prop {
 	__u64 extensions;
 	__u32 config_syncobj;
