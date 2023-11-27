@@ -3,8 +3,8 @@
  * Copyright © 2023 Intel Corporation
  */
 
-#ifndef _XE_DRM_H_
-#define _XE_DRM_H_
+#ifndef _UAPI_XE_DRM_H_
+#define _UAPI_XE_DRM_H_
 
 #include "drm.h"
 
@@ -1493,32 +1493,30 @@ struct drm_xe_query_oa_info {
 	} oau[];
 };
 
-struct drm_xe_oa_open_param {
-	/** @extensions: Pointer to the first extension struct, if any */
-	__u64 extensions;
-
-	/** @num_syncs: Amount of struct drm_xe_sync in array. */
-	__u32 num_syncs;
-
-	/** @syncs: Pointer to struct drm_xe_sync array. */
-	__u64 syncs;
+enum drm_xe_oa_property_id {
+	/**
+	 * ID of the OA unit on which to open the OA stream, see
+	 * @oa_unit_id in 'struct drm_xe_engine_class_instance'. Defaults
+	 * to 0 if not provided.
+	 */
+	DRM_XE_OA_PROPERTY_OA_UNIT_ID = 1,
 
 	/**
-	 * @oa_unit_id: ID of the OA unit on which to open the OA stream,
-	 * see @oa_unit_id in struct @drm_xe_engine_class_instance
+	 * A value of 1 requests the inclusion of raw OA unit reports as
+	 * part of stream samples.
 	 */
-	__u32 oa_unit_id;
+	DRM_XE_OA_PROPERTY_SAMPLE_OA,
 
 	/**
-	 * @sample_oa: A value of 1 requests the inclusion of raw OA unit
-	 * reports as part of stream samples
+	 * The value specifies which set of OA unit metrics should be
+	 * configured, defining the contents of any OA unit reports.
 	 */
-	__u32 sample_oa;
+	DRM_XE_OA_PROPERTY_OA_METRIC_SET,
 
 	/**
-	 * @oa_format: The value specifies the size and layout of OA unit reports
+	 * The value specifies the size and layout of OA unit reports.
 	 */
-	__u64 oa_format;
+	DRM_XE_OA_PROPERTY_OA_FORMAT,
 	/**
 	 * OA_FORMAT's are specified the same way as in Bspec, in terms of
 	 * the following quantities: a. enum @drm_xe_oa_format_type
@@ -1530,69 +1528,72 @@ struct drm_xe_oa_open_param {
 #define XE_OA_MASK_BC_REPORT	(0xff << 24)
 
 	/**
-	 * @metric_set: specifies which set of OA unit metrics should be
-	 * configured, defining the contents of any OA unit reports. Metric
-	 * set ID is returned by the XE_PERF_ADD_CONFIG op of the PREF ioctl
-	 */
-	__u32 metric_set;
-
-	/**
-	 * @period_exponent: Specifying this property implicitly requests
-	 * periodic OA unit sampling. The sampling period is:
+	 * Specifying this property implicitly requests periodic OA unit
+	 * sampling and (at least on Haswell) the sampling frequency is derived
+	 * from this exponent as follows:
 	 *
-	 *   2^(period_exponent + 1) / @oa_timestamp_freq
-	 *
-	 * Set period_exponent *negative* to disable periodic sampling
+	 *   80ns * 2^(period_exponent + 1)
 	 */
-	__s32 period_exponent;
+	DRM_XE_OA_PROPERTY_OA_EXPONENT,
 
 	/**
-	 * @oa_buffer_size: Specify a global OA buffer size to be allocated
-	 * in bytes. The size specified must be supported by HW (powers of
-	 * 2 ranging from 128 KB to 128Mb depending on the platform). A
-	 * value of 0 will choose a default size of 16 MB.
+	 * This optional parameter specifies the timer interval in microseconds
+	 * at which the xe driver will check the OA buffer for available data.
+	 * Minimum allowed value is 100 microseconds. A default value is used by
+	 * the driver if this parameter is not specified. Note that larger timer
+	 * values will reduce cpu consumption during OA perf captures. However,
+	 * excessively large values would potentially result in OA buffer
+	 * overwrites as captures reach end of the OA buffer.
 	 */
-	__u32 oa_buffer_size;
+	DRM_XE_OA_PROPERTY_POLL_OA_PERIOD_US,
 
-	/**
-	 * @poll_period: Specify timer interval in micro-seconds at which
-	 * the xe driver will check the OA buffer for available
-	 * data. Minimum allowed value is 100 microseconds. A value of 0
-	 * selects a default value is used by the driver. Note that larger
-	 * timer values will reduce cpu consumption during OA perf
-	 * captures. However, excessively large values would potentially
-	 * result in OA buffer overwrites as captures reach end of the OA
-	 * buffer.
-	 */
-	__u32 poll_period_us;
-
-	/** @open_flags: Flags */
-	__u32 open_flags;
+	/** open flags */
+	DRM_XE_OA_PROPERTY_OPEN_FLAGS,
 #define XE_OA_FLAG_FD_CLOEXEC	(1 << 0)
 #define XE_OA_FLAG_FD_NONBLOCK	(1 << 1)
 #define XE_OA_FLAG_DISABLED	(1 << 2)
 
 	/**
-	 * @exec_queue_id: Open the stream for a specific exec queue id (as
-	 * used with drm_xe_exec). A stream opened for a specific exec
-	 * queue id this way won't typically require root
-	 * privileges. Pass a value <= 0 to not specify an exec queue id.
+	 * Open the stream for a specific exec queue id (as used with
+	 * drm_xe_exec). A stream opened for a specific exec queue id this
+	 * way won't typically require root privileges.
 	 */
-	__s32 exec_queue_id;
+	DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID,
 
 	/**
-	 * @engine_instance: engine instance to use with @exec_queue_id.
+	 * This parameter specifies the engine instance and can be passed along
+	 * with DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID or will default to 0.
 	 */
-	__u32 engine_instance;
+	DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE,
+
+	/** Amount of struct drm_xe_sync in array. */
+	DRM_XE_OA_PROPERTY_OA_NUM_SYNCS,
+
+	/** Pointer to struct drm_xe_sync array. */
+	DRM_XE_OA_PROPERTY_OA_SYNCS,
 
 	/**
-	 * @hold_preemption: If true, this will disable preemption for the
-	 * exec queue selected with @exec_queue_id
+	 * Specifying this property is only valid when specify a context to
+	 * filter with DRM_XE_OA_PROPERTY_ENGINE_ID. Specifying this property
+	 * will hold preemption of the particular engine we want to gather
+	 * performance data about.
 	 */
-	__u32 hold_preemption;
+	DRM_XE_OA_PROPERTY_HOLD_PREEMPTION,
 
-	/** @reserved: reserved (MBZ) */
-	__u64 reserved[4];
+	/**
+	 * Specify a global OA buffer size to be allocated in bytes. The
+	 * size specified must be supported by HW (powers of 2 ranging from
+	 * 128 KB to 128Mb depending on the platform)
+	 */
+	DRM_XE_OA_PROPERTY_OA_BUFFER_SIZE,
+
+	DRM_XE_OA_PROPERTY_MAX /* non-ABI */
+};
+
+struct drm_xe_oa_open_param {
+#define XE_OA_EXTENSION_SET_PROPERTY	0
+	/** @extensions: Pointer to the first extension struct */
+	__u64 extensions;
 };
 
 struct drm_xe_oa_record_header {
@@ -1618,7 +1619,7 @@ enum drm_xe_oa_record_type {
 	 * struct {
 	 *     struct drm_xe_oa_record_header header;
 	 *
-	 *     { u32 oa_report[]; } && DRM_XE_OA_PROP_SAMPLE_OA
+	 *     { u32 oa_report[]; } && DRM_XE_OA_PROPERTY_SAMPLE_OA
 	 * };
 	 */
 	DRM_XE_OA_RECORD_SAMPLE = 1,
@@ -1676,4 +1677,4 @@ struct drm_xe_oa_config {
 }
 #endif
 
-#endif /* _XE_DRM_H_ */
+#endif /* _UAPI_XE_DRM_H_ */
