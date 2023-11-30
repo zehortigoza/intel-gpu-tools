@@ -551,14 +551,14 @@ static void xe_oa_prop_to_ext(struct drm_xe_oa_open_prop *properties,
 
 	ext = (struct drm_xe_ext_set_property *)p->extensions;
 	for (i = 0; i < properties->num_properties; i++) {
-		ext->base.name = XE_OA_EXTENSION_SET_PROPERTY;
+		ext->base.name = DRM_XE_OA_EXTENSION_SET_PROPERTY;
 		ext->property = *prop++;
 		ext->value = *prop++;
 		ext++;
 	}
 
 	if (properties->flags) {
-		ext->base.name = XE_OA_EXTENSION_SET_PROPERTY;
+		ext->base.name = DRM_XE_OA_EXTENSION_SET_PROPERTY;
 		ext->property = DRM_XE_OA_PROPERTY_OPEN_FLAGS;
 		ext->value = properties->flags;
 		ext++;
