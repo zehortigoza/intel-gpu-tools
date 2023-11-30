@@ -1431,12 +1431,12 @@ enum drm_xe_perf_ioctls {
 };
 
 enum drm_xe_oa_format_type {
-	XE_OA_FMT_TYPE_OAG,
-	XE_OA_FMT_TYPE_OAR,
-	XE_OA_FMT_TYPE_OAM,
-	XE_OA_FMT_TYPE_OAC,
-	XE_OA_FMT_TYPE_OAM_MPEC,
-	XE_OA_FMT_TYPE_PEC,
+	DRM_XE_OA_FMT_TYPE_OAG,
+	DRM_XE_OA_FMT_TYPE_OAR,
+	DRM_XE_OA_FMT_TYPE_OAM,
+	DRM_XE_OA_FMT_TYPE_OAC,
+	DRM_XE_OA_FMT_TYPE_OAM_MPEC,
+	DRM_XE_OA_FMT_TYPE_PEC,
 };
 
 enum drm_xe_oa_unit_type {
@@ -1536,10 +1536,10 @@ enum drm_xe_oa_property_id {
 	 * the following quantities: a. enum @drm_xe_oa_format_type
 	 * b. Counter select c. Counter size and d. BC report
 	 */
-#define XE_OA_MASK_FMT_TYPE	(0xff << 0)
-#define XE_OA_MASK_COUNTER_SEL	(0xff << 8)
-#define XE_OA_MASK_COUNTER_SIZE	(0xff << 16)
-#define XE_OA_MASK_BC_REPORT	(0xff << 24)
+#define DRM_XE_OA_MASK_FMT_TYPE		(0xff << 0)
+#define DRM_XE_OA_MASK_COUNTER_SEL	(0xff << 8)
+#define DRM_XE_OA_MASK_COUNTER_SIZE	(0xff << 16)
+#define DRM_XE_OA_MASK_BC_REPORT	(0xff << 24)
 
 	/**
 	 * Specifying this property implicitly requests periodic OA unit
@@ -1563,9 +1563,9 @@ enum drm_xe_oa_property_id {
 
 	/** open flags */
 	DRM_XE_OA_PROPERTY_OPEN_FLAGS,
-#define XE_OA_FLAG_FD_CLOEXEC	(1 << 0)
-#define XE_OA_FLAG_FD_NONBLOCK	(1 << 1)
-#define XE_OA_FLAG_DISABLED	(1 << 2)
+#define DRM_XE_OA_FLAG_FD_CLOEXEC	(1 << 0)
+#define DRM_XE_OA_FLAG_FD_NONBLOCK	(1 << 1)
+#define DRM_XE_OA_FLAG_DISABLED		(1 << 2)
 
 	/**
 	 * Open the stream for a specific exec queue id (as used with
@@ -1605,15 +1605,15 @@ enum drm_xe_oa_property_id {
 };
 
 struct drm_xe_oa_open_param {
-#define XE_OA_EXTENSION_SET_PROPERTY	0
+#define DRM_XE_OA_EXTENSION_SET_PROPERTY	0
 	/** @extensions: Pointer to the first extension struct */
 	__u64 extensions;
 };
 
 struct drm_xe_oa_record_header {
-	__u32 type;
+	__u16 type;
 	__u16 pad;
-	__u16 size;
+	__u32 size;
 };
 
 enum drm_xe_oa_record_type {
