@@ -841,7 +841,7 @@ static void emit_pipectrl(struct intel_bb *ibb, struct intel_buf *fenceb, bool b
 	uint32_t pipe_ctl_flags = 0;
 	uint32_t ps_op_id;
 
-	intel_bb_out(ibb, GFX_OP_PIPE_CONTROL(4));
+	intel_bb_out(ibb, GFX_OP_PIPE_CONTROL(2));
 	intel_bb_out(ibb, pipe_ctl_flags);
 
 	if (before)
