@@ -4532,6 +4532,9 @@ igt_main_args("", long_options, help_str, opt_handler, NULL)
 					continue;
 				}
 
+				pipe_crc = NULL;
+				setup_crcs();
+
 				for_each_valid_output_on_pipe(&drm.display, pipe, output) {
 					init_mode_params(&prim_mode_params, output, pipe);
 					setup_fbc();
