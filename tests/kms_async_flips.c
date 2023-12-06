@@ -100,6 +100,7 @@ typedef struct {
 	enum pipe pipe;
 	bool alternate_sync_async;
 	bool allow_fail;
+	struct buf_ops *bops;
 } data_t;
 
 static void flip_handler(int fd_, unsigned int sequence, unsigned int tv_sec,
@@ -230,8 +231,6 @@ static void test_init_fbs(data_t *data)
 
 	igt_plane_set_fb(data->plane, &data->bufs[0]);
 	igt_plane_set_size(data->plane, width, height);
-
-	igt_display_commit2(&data->display, data->display.is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY);
 }
 
 static void test_async_flip(data_t *data)
@@ -239,6 +238,8 @@ static void test_async_flip(data_t *data)
 	int ret, frame;
 	long long int fps;
 	struct timeval start, end, diff;
+
+	igt_display_commit2(&data->display, data->display.is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY);
 
 	gettimeofday(&start, NULL);
 	frame = 1;
@@ -336,6 +337,8 @@ static void test_timestamp(data_t *data)
 	unsigned int seq, seq1;
 	int ret;
 
+	igt_display_commit2(&data->display, data->display.is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY);
+
 	/*
 	 * In older platforms(<= gen10), async address update bit is double buffered.
 	 * So flip timestamp can be verified only from the second flip.
@@ -380,6 +383,8 @@ static void test_cursor(data_t *data)
 	uint64_t width, height;
 	struct igt_fb cursor_fb;
 	struct drm_mode_cursor cur;
+
+	igt_display_commit2(&data->display, data->display.is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY);
 
 	/*
 	 * Intel's PSR2 selective fetch adds other planes to state when
@@ -428,6 +433,8 @@ static void test_invalid(data_t *data)
 	uint32_t width, height;
 	struct igt_fb fb;
 	drmModeModeInfo *mode;
+
+	igt_display_commit2(&data->display, data->display.is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY);
 
 	mode = igt_output_get_mode(data->output);
 	width = mode->hdisplay;
@@ -525,28 +532,48 @@ static unsigned int clock_ms(void)
 	return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
 
+static void paint_fb(data_t *data, struct igt_fb *fb,
+		     int width, int height,
+		     uint32_t color)
+{
+	if (is_intel_device(data->drm_fd)) {
+		igt_draw_rect_fb(data->drm_fd, data->bops, 0, fb,
+				 igt_draw_supports_method(data->drm_fd, IGT_DRAW_MMAP_GTT) ?
+				 IGT_DRAW_MMAP_GTT : IGT_DRAW_MMAP_WC,
+				 0, 0, width, height, color);
+	} else {
+		cairo_t *cr;
+
+		cr = igt_get_cairo_ctx(data->drm_fd, fb);
+		igt_paint_color(cr, 0, 0, width, height,
+				((color & 0xff0000) >> 16) / 255.0,
+				((color & 0xff00) >> 8) / 255.0,
+				((color & 0xff) >> 9) / 255.0);
+		igt_put_cairo_ctx(cr);
+	}
+}
+
 static void test_crc(data_t *data)
 {
 	unsigned int frame = 0;
 	unsigned int start;
-	cairo_t *cr;
-	int ret;
+	int ret, width, height;
+	drmModeModeInfoPtr mode;
+
+	/* make things faster by using a smallish mode */
+	mode = &data->output->config.connector->modes[0];
+	width = mode->hdisplay;
+	height = mode->vdisplay;
 
 	data->flip_count = 0;
 	data->frame_count = 0;
 	data->flip_pending = false;
 
-	cr = igt_get_cairo_ctx(data->drm_fd, &data->bufs[frame]);
-	igt_paint_color(cr, 0, 0, data->bufs[frame].width, data->bufs[frame].height, 1.0, 0.0, 0.0);
-	igt_put_cairo_ctx(cr);
-
-	cr = igt_get_cairo_ctx(data->drm_fd, &data->bufs[!frame]);
-	igt_paint_color(cr, 0, 0, data->bufs[!frame].width, data->bufs[!frame].height, 1.0, 0.0, 0.0);
-	igt_put_cairo_ctx(cr);
+	paint_fb(data, &data->bufs[frame], width, height, 0xff0000ff);
+	paint_fb(data, &data->bufs[!frame], width, height, 0xff0000ff);
 
 	ret = drmModeSetCrtc(data->drm_fd, data->crtc_id, data->bufs[frame].fb_id, 0, 0,
-			     &data->output->config.connector->connector_id, 1,
-			     &data->output->config.connector->modes[0]);
+			     &data->output->config.connector->connector_id, 1, mode);
 	igt_assert_eq(ret, 0);
 
 	data->pipe_crc = igt_pipe_crc_new(data->drm_fd,
@@ -562,9 +589,7 @@ static void test_crc(data_t *data)
 
 	while (clock_ms() - start < 2000) {
 		/* fill the next fb with the expected color */
-		cr = igt_get_cairo_ctx(data->drm_fd, &data->bufs[frame]);
-		igt_paint_color(cr, 0, 0, 1, data->bufs[frame].height, 1.0, 0.0, 0.0);
-		igt_put_cairo_ctx(cr);
+		paint_fb(data, &data->bufs[frame], 1, height, 0xff0000ff);
 
 		data->flip_pending = true;
 		ret = drmModePageFlip(data->drm_fd, data->crtc_id, data->bufs[frame].fb_id,
@@ -575,9 +600,7 @@ static void test_crc(data_t *data)
 
 		/* clobber the previous fb which should no longer be scanned out */
 		frame = !frame;
-		cr = igt_get_cairo_ctx(data->drm_fd, &data->bufs[frame]);
-		igt_paint_color_rand(cr, 0, 0, 1, data->bufs[frame].height);
-		igt_put_cairo_ctx(cr);
+		paint_fb(data, &data->bufs[frame], 1, height, rand());
 	}
 
 	igt_pipe_crc_stop(data->pipe_crc);
@@ -644,6 +667,9 @@ igt_main
 
 		igt_require_f(igt_has_drm_cap(data.drm_fd, DRM_CAP_ASYNC_PAGE_FLIP),
 			      "Async Flip is not supported\n");
+
+		if (is_intel_device(data.drm_fd))
+			data.bops = buf_ops_create(data.drm_fd);
 	}
 
 	igt_describe("Verify the async flip functionality and the fps during async flips");
@@ -707,6 +733,8 @@ igt_main
 		for (i = 0; i < NUM_FBS; i++)
 			igt_remove_fb(data.drm_fd, &data.bufs[i]);
 
+		if (is_intel_device(data.drm_fd))
+			buf_ops_destroy(data.bops);
 		igt_display_reset(&data.display);
 		igt_display_commit(&data.display);
 		igt_display_fini(&data.display);
