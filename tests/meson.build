@@ -302,6 +302,7 @@ intel_xe_progs = [
 	'xe_module_load',
 	'xe_noexec_ping_pong',
 	'xe_pat',
+	'xe_peer2peer',
 	'xe_pm',
 	'xe_pm_residency',
 	'xe_prime_self_import',
