@@ -1784,7 +1784,7 @@ xe_alloc_step_batch(struct workload *wrk, struct w_step *w)
 	i = 0;
 	/* out fence */
 	w->xe.syncs[i].handle = syncobj_create(fd, 0);
-	w->xe.syncs[i++].type = DRM_XE_SYNC_TYPE_SYNCOBJ;
+	w->xe.syncs[i].type = DRM_XE_SYNC_TYPE_SYNCOBJ;
 	w->xe.syncs[i++].flags = DRM_XE_SYNC_FLAG_SIGNAL;
 	/* in fence(s) */
 	for_each_dep(dep, w->data_deps) {
