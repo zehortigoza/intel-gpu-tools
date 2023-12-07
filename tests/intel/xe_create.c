@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "igt.h"
+#include "igt_syncobj.h"
 #include "xe_drm.h"
 #include "xe/xe_ioctl.h"
 #include "xe/xe_query.h"
@@ -19,11 +20,11 @@
 #define PAGE_SIZE 0x1000
 
 static struct param {
-	unsigned int size_mb;
-	unsigned int vram_percent;
+	unsigned int quantity;
+	unsigned int percent;
 } params = {
-	.size_mb = 0,
-	.vram_percent = 100,
+	.quantity = 0,
+	.percent = 100,
 };
 
 static int __ioctl_create(int fd, struct drm_xe_gem_create *create)
@@ -266,8 +267,8 @@ static void create_big_vram(int fd, int gt)
 	visible_avail_size = xe_visible_available_vram_size(fd, gt);
 	igt_require(visible_avail_size);
 
-	bo_size = params.size_mb ? params.size_mb * 1024ULL * 1024ULL
-		  : ALIGN_DOWN(visible_avail_size * params.vram_percent / 100, alignment);
+	bo_size = params.quantity ? params.quantity * 1024ULL * 1024ULL
+		  : ALIGN_DOWN(visible_avail_size * params.percent / 100, alignment);
 	igt_require(bo_size);
 	igt_info("gt%u bo_size=%lu visible_available_vram_size=%lu\n",
 		gt, bo_size, visible_avail_size);
@@ -290,16 +291,71 @@ static void create_big_vram(int fd, int gt)
 	xe_vm_destroy(fd, vm);
 }
 
+/**
+ * SUBTEST: create-contexts
+ * Functionality: contexts creation
+ * Test category: functionality test
+ * Description: Verifies the creation of substantial number of HW contexts
+ *		(4096 as default).
+ */
+static void create_contexts(int fd)
+{
+	unsigned int i, n = params.quantity ? params.quantity : 4096;
+	uint64_t bo_size = xe_get_default_alignment(fd), bo_addr = 0x1a0000;
+	uint32_t vm, bo, *batch, exec_queues[n];
+	struct drm_xe_sync sync = {
+		.type = DRM_XE_SYNC_TYPE_SYNCOBJ,
+		.flags = DRM_XE_SYNC_FLAG_SIGNAL,
+		.handle = syncobj_create(fd, 0),
+	};
+	struct drm_xe_exec exec = {
+		.num_syncs = 1,
+		.syncs = to_user_pointer(&sync),
+		.address = bo_addr,
+		.num_batch_buffer = 1,
+	};
+
+	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_SCRATCH_PAGE, 0);
+	bo = xe_bo_create(fd, vm, bo_size, system_memory(fd), 0);
+
+	batch = xe_bo_map(fd, bo, bo_size);
+	*batch = MI_BATCH_BUFFER_END;
+	munmap(batch, bo_size);
+
+	xe_vm_bind_sync(fd, vm, bo, 0, bo_addr, bo_size);
+
+	for (i = 0; i < n; i++) {
+		int err = __xe_exec_queue_create(fd, vm, &xe_engine(fd, 0)->instance, 0,
+						 &exec_queues[i]);
+		igt_assert_f(!err, "Failed to create exec queue (%d), iteration: %d\n", err,
+			     i + 1);
+
+		exec.exec_queue_id = exec_queues[i];
+		err = __xe_exec(fd, &exec);
+		igt_assert_f(!err, "Failed to execute batch (%d), iteration: %d\n", err, i + 1);
+
+		err = syncobj_wait(fd, &sync.handle, 1, INT64_MAX, 0, NULL);
+		igt_assert_f(err, "Timeout while waiting for syncobj signal, iteration: %d\n",
+			     i + 1);
+	}
+
+	for (i = 0; i < n; i++)
+		xe_exec_queue_destroy(fd, exec_queues[i]);
+	gem_close(fd, bo);
+	xe_vm_destroy(fd, vm);
+	syncobj_destroy(fd, sync.handle);
+}
+
 static int opt_handler(int opt, int opt_index, void *data)
 {
 	switch (opt) {
-	case 'S':
-		params.size_mb = atoi(optarg);
-		igt_debug("Size MB: %d\n", params.size_mb);
+	case 'Q':
+		params.quantity = atoi(optarg);
+		igt_debug("Resource quantity (memory in MB): %d\n", params.quantity);
 		break;
 	case 'p':
-		params.vram_percent = atoi(optarg);
-		igt_debug("Percent of VRAM: %d\n", params.vram_percent);
+		params.percent = atoi(optarg);
+		igt_debug("Percent of available resource: %d\n", params.percent);
 		break;
 	default:
 		return IGT_OPT_HANDLER_ERROR;
@@ -309,11 +365,11 @@ static int opt_handler(int opt, int opt_index, void *data)
 }
 
 const char *help_str =
-	"  -S\tBO size in MB\n"
-	"  -p\tPercent of VRAM for BO\n"
+	"  -Q\tresource quantity (memory in MB)\n"
+	"  -p\tpercent of available resource\n"
 	;
 
-igt_main_args("S:p:", NULL, help_str, opt_handler, NULL)
+igt_main_args("Q:p:", NULL, help_str, opt_handler, NULL)
 {
 	int xe;
 
@@ -345,6 +401,10 @@ igt_main_args("S:p:", NULL, help_str, opt_handler, NULL)
 		xe_for_each_gt(xe, gt)
 			igt_dynamic_f("gt%u", gt)
 				create_big_vram(xe, gt);
+	}
+
+	igt_subtest("create-contexts") {
+		create_contexts(xe);
 	}
 
 	igt_subtest("multigpu-create-massive-size") {
