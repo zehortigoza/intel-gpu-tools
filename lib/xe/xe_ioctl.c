@@ -543,13 +543,12 @@ void xe_force_gt_reset(int fd, int gt)
 }
 
 static void xe_oa_prop_to_ext(struct drm_xe_oa_open_prop *properties,
-			      struct drm_xe_oa_open_param *p)
+			      struct drm_xe_ext_set_property *extn)
 {
 	__u64 *prop = (__u64 *)properties->properties_ptr;
-	struct drm_xe_ext_set_property *ext;
+	struct drm_xe_ext_set_property *ext = extn;
 	int i, j;
 
-	ext = (struct drm_xe_ext_set_property *)p->extensions;
 	for (i = 0; i < properties->num_properties; i++) {
 		ext->base.name = DRM_XE_OA_EXTENSION_SET_PROPERTY;
 		ext->property = *prop++;
@@ -566,7 +565,7 @@ static void xe_oa_prop_to_ext(struct drm_xe_oa_open_prop *properties,
 	}
 
 	igt_assert_lte(1, i);
-	ext = (struct drm_xe_ext_set_property *)p->extensions;
+	ext = extn;
 	for (j = 0; j < i - 1; j++)
 		ext[j].base.next_extension = (__u64)&ext[j + 1];
 }
@@ -577,22 +576,20 @@ int xe_perf_ioctl(int fd, unsigned long request,
 #define XE_OA_MAX_SET_PROPERTIES 16
 
 	struct drm_xe_ext_set_property ext[XE_OA_MAX_SET_PROPERTIES] = {};
-	struct drm_xe_oa_open_param param = {};
 
 	/* Chain the PERF layer struct */
 	struct drm_xe_perf_param p = {
 		.extensions = 0,
 		.perf_type = DRM_XE_PERF_TYPE_OA,
 		.perf_op = op,
-		.param = (op == DRM_XE_PERF_OP_STREAM_OPEN) ? (__u64)&param : (__u64)arg,
+		.param = (__u64)((op == DRM_XE_PERF_OP_STREAM_OPEN) ? ext : arg),
 	};
 
 	if (op == DRM_XE_PERF_OP_STREAM_OPEN) {
 		struct drm_xe_oa_open_prop *oprop = (struct drm_xe_oa_open_prop *)arg;
 
 		igt_assert_lte(oprop->num_properties, XE_OA_MAX_SET_PROPERTIES);
-		param.extensions = (__u64)ext;
-		xe_oa_prop_to_ext(oprop, &param);
+		xe_oa_prop_to_ext(oprop, ext);
 	}
 
 	return igt_ioctl(fd, request, &p);
