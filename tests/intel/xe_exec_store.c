@@ -21,6 +21,8 @@
  */
 
 #define MAX_INSTANCE 9
+#define STORE 0
+#define COND_BATCH 1
 
 struct data {
 	uint32_t batch[16];
@@ -48,11 +50,37 @@ static void store_dword_batch(struct data *data, uint64_t addr, int value)
 	data->addr = batch_addr;
 }
 
+static void cond_batch(struct data *data, uint64_t addr, int value)
+{
+	int b;
+	uint64_t batch_offset = (char *)&(data->batch) - (char *)data;
+	uint64_t batch_addr = addr + batch_offset;
+	uint64_t sdi_offset = (char *)&(data->data) - (char *)data;
+	uint64_t sdi_addr = addr + sdi_offset;
+
+	b = 0;
+	data->batch[b++] = MI_ATOMIC | MI_ATOMIC_INC;
+	data->batch[b++] = sdi_addr;
+	data->batch[b++] = sdi_addr >> 32;
+	data->batch[b++] = MI_CONDITIONAL_BATCH_BUFFER_END | MI_DO_COMPARE | 5 << 12 | 2;
+	data->batch[b++] = value;
+	data->batch[b++] = sdi_addr;
+	data->batch[b++] = sdi_addr >> 32;
+	data->batch[b++] = MI_BATCH_BUFFER_START | 1;
+	data->batch[b++] = lower_32_bits(batch_addr);
+	data->batch[b++] = upper_32_bits(batch_addr);
+	igt_assert(b <= ARRAY_SIZE(data->batch));
+
+	data->addr = batch_addr;
+}
+
 /**
  * SUBTEST: basic-store
  * Description: Basic test to verify store dword.
+ * SUBTEST: basic-cond-batch
+ * Description: Basic test to verify cond batch end instruction.
  */
-static void store(int fd)
+static void basic_inst(int fd, int inst_type)
 {
 	struct drm_xe_sync sync = {
 		.type = DRM_XE_SYNC_TYPE_SYNCOBJ,
@@ -88,7 +116,16 @@ static void store(int fd)
 
 	xe_vm_bind_async(fd, vm, engine->instance.gt_id, bo, 0, addr, bo_size, &sync, 1);
 	data = xe_bo_map(fd, bo, bo_size);
-	store_dword_batch(data, addr, value);
+
+	if (inst_type == STORE)
+		store_dword_batch(data, addr, value);
+	else if (inst_type == COND_BATCH) {
+		/* A random value where it stops at the below value. */
+		value = 20 + random() % 10;
+		cond_batch(data, addr, value);
+	}
+	else
+		igt_assert_f(inst_type < 2, "Entered wrong inst_type.\n");
 
 	exec_queue = xe_exec_queue_create(fd, vm, &engine->instance, 0);
 	exec.exec_queue_id = exec_queue;
@@ -306,7 +343,10 @@ igt_main
 	}
 
 	igt_subtest("basic-store")
-		store(fd);
+		basic_inst(fd, STORE);
+
+	igt_subtest("basic-cond-batch")
+		basic_inst(fd, COND_BATCH);
 
 	igt_subtest("basic-all") {
 		xe_for_each_gt(fd, gt)
