@@ -100,7 +100,7 @@ extern "C" {
 #define DRM_XE_EXEC_QUEUE_GET_PROPERTY	0x08
 #define DRM_XE_EXEC			0x09
 #define DRM_XE_WAIT_USER_FENCE		0x0a
-#define DRM_XE_PERF			0x0f
+#define DRM_XE_PERF			0x0e
 
 /* Must be kept compact -- no holes */
 
@@ -1416,11 +1416,7 @@ struct drm_xe_perf_param {
  * enum drm_xe_perf_ioctls - Perf fd ioctl's
  */
 enum drm_xe_perf_ioctls {
-	/**
-	 * @DRM_XE_PERF_IOCTL_ENABLE: Enable data capture for a stream that
-	 * was e.g. either opened in a disabled state or was disabled via
-	 * DRM_XE_PERF_IOCTL_DISABLE
-	 */
+	/** @DRM_XE_PERF_IOCTL_ENABLE: Enable data capture for a stream */
 	DRM_XE_PERF_IOCTL_ENABLE = _IO('i', 0x0),
 
 	/** @DRM_XE_PERF_IOCTL_DISABLE: Disable data capture for a stream */
@@ -1430,15 +1426,7 @@ enum drm_xe_perf_ioctls {
 	DRM_XE_PERF_IOCTL_CONFIG = _IO('i', 0x2),
 };
 
-enum drm_xe_oa_format_type {
-	DRM_XE_OA_FMT_TYPE_OAG,
-	DRM_XE_OA_FMT_TYPE_OAR,
-	DRM_XE_OA_FMT_TYPE_OAM,
-	DRM_XE_OA_FMT_TYPE_OAC,
-	DRM_XE_OA_FMT_TYPE_OAM_MPEC,
-	DRM_XE_OA_FMT_TYPE_PEC,
-};
-
+/** enum drm_xe_oa_unit_type - OA unit types */
 enum drm_xe_oa_unit_type {
 	DRM_XE_OA_UNIT_TYPE_OAG,
 	DRM_XE_OA_UNIT_TYPE_OAM,
@@ -1507,182 +1495,149 @@ struct drm_xe_query_oa_units {
 	} oa_units[];
 };
 
+/** enum drm_xe_oa_format_type - OA format types */
+enum drm_xe_oa_format_type {
+	DRM_XE_OA_FMT_TYPE_OAG,
+	DRM_XE_OA_FMT_TYPE_OAR,
+	DRM_XE_OA_FMT_TYPE_OAM,
+	DRM_XE_OA_FMT_TYPE_OAC,
+	DRM_XE_OA_FMT_TYPE_OAM_MPEC,
+	DRM_XE_OA_FMT_TYPE_PEC,
+};
+
+/**
+ * enum drm_xe_oa_property_id - OA stream property id's
+ *
+ * Stream params are specified as a chain of @drm_xe_ext_set_property
+ * struct's, with @property values from enum @drm_xe_oa_property_id and
+ * @xe_user_extension base.name set to @DRM_XE_OA_EXTENSION_SET_PROPERTY.
+ * @param field in struct @drm_xe_perf_param points to the first
+ * @drm_xe_ext_set_property struct.
+ */
 enum drm_xe_oa_property_id {
+#define DRM_XE_OA_EXTENSION_SET_PROPERTY	0
 	/**
-	 * ID of the OA unit on which to open the OA stream, see
-	 * @oa_unit_id in 'struct drm_xe_engine_class_instance'. Defaults
-	 * to 0 if not provided.
+	 * @DRM_XE_OA_PROPERTY_OA_UNIT_ID: ID of the OA unit on which to open
+	 * the OA stream, see @oa_unit_id in 'struct
+	 * drm_xe_query_oa_units'. Defaults to 0 if not provided.
 	 */
 	DRM_XE_OA_PROPERTY_OA_UNIT_ID = 1,
 
 	/**
-	 * A value of 1 requests the inclusion of raw OA unit reports as
-	 * part of stream samples.
+	 * @DRM_XE_OA_PROPERTY_SAMPLE_OA: A value of 1 requests the inclusion of
+	 * raw OA unit reports as part of stream samples.
 	 */
 	DRM_XE_OA_PROPERTY_SAMPLE_OA,
 
 	/**
-	 * The value specifies which set of OA unit metrics should be
-	 * configured, defining the contents of any OA unit reports.
+	 * @DRM_XE_OA_PROPERTY_OA_METRIC_SET: OA metrics defining contents of OA
+	 * reportst, previously added via @@DRM_XE_PERF_OP_ADD_CONFIG.
 	 */
 	DRM_XE_OA_PROPERTY_OA_METRIC_SET,
 
-	/**
-	 * The value specifies the size and layout of OA unit reports.
-	 */
+	/** @DRM_XE_OA_PROPERTY_OA_FORMAT: Perf counter report format */
 	DRM_XE_OA_PROPERTY_OA_FORMAT,
 	/**
 	 * OA_FORMAT's are specified the same way as in Bspec, in terms of
 	 * the following quantities: a. enum @drm_xe_oa_format_type
 	 * b. Counter select c. Counter size and d. BC report
 	 */
-#define DRM_XE_OA_MASK_FMT_TYPE		(0xff << 0)
-#define DRM_XE_OA_MASK_COUNTER_SEL	(0xff << 8)
-#define DRM_XE_OA_MASK_COUNTER_SIZE	(0xff << 16)
-#define DRM_XE_OA_MASK_BC_REPORT	(0xff << 24)
+#define DRM_XE_OA_FORMAT_MASK_FMT_TYPE		(0xff << 0)
+#define DRM_XE_OA_FORMAT_MASK_COUNTER_SEL	(0xff << 8)
+#define DRM_XE_OA_FORMAT_MASK_COUNTER_SIZE	(0xff << 16)
+#define DRM_XE_OA_FORMAT_MASK_BC_REPORT		(0xff << 24)
 
 	/**
-	 * Specifying this property implicitly requests periodic OA unit
-	 * sampling and (at least on Haswell) the sampling frequency is derived
-	 * from this exponent as follows:
-	 *
-	 *   80ns * 2^(period_exponent + 1)
+	 * @DRM_XE_OA_PROPERTY_OA_EXPONENT: Requests periodic OA unit sampling
+	 * with sampling frequency proportional to 2^(period_exponent + 1)
 	 */
 	DRM_XE_OA_PROPERTY_OA_EXPONENT,
 
 	/**
-	 * This optional parameter specifies the timer interval in microseconds
-	 * at which the xe driver will check the OA buffer for available data.
-	 * Minimum allowed value is 100 microseconds. A default value is used by
-	 * the driver if this parameter is not specified. Note that larger timer
-	 * values will reduce cpu consumption during OA perf captures. However,
-	 * excessively large values would potentially result in OA buffer
-	 * overwrites as captures reach end of the OA buffer.
+	 * @DRM_XE_OA_PROPERTY_POLL_OA_PERIOD_US: Timer interval in microseconds
+	 * to check OA buffer for available data. Minimum allowed value is 100
+	 * microseconds. A default value is used by the driver if this parameter
+	 * is skipped. Larger timer values will reduce cpu consumption during OA
+	 * perf captures, but excessively large values could result in data loss
+	 * due to OA buffer overwrites.
 	 */
 	DRM_XE_OA_PROPERTY_POLL_OA_PERIOD_US,
 
-	/** open flags */
+	/**
+	 * @DRM_XE_OA_PROPERTY_OPEN_FLAGS: CLOEXEC and NONBLOCK flags are
+	 * directly applied to returned OA fd. DISABLED opens the OA stream in a
+	 * DISABLED state (see @DRM_XE_PERF_IOCTL_ENABLE).
+	 */
 	DRM_XE_OA_PROPERTY_OPEN_FLAGS,
 #define DRM_XE_OA_FLAG_FD_CLOEXEC	(1 << 0)
 #define DRM_XE_OA_FLAG_FD_NONBLOCK	(1 << 1)
 #define DRM_XE_OA_FLAG_DISABLED		(1 << 2)
 
 	/**
-	 * Open the stream for a specific exec queue id (as used with
-	 * drm_xe_exec). A stream opened for a specific exec queue id this
-	 * way won't typically require root privileges.
+	 * @DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID: Open the stream for a specific
+	 * @exec_queue_id. Perf queries can be executed on this exec queue.
 	 */
 	DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID,
 
 	/**
-	 * This parameter specifies the engine instance and can be passed along
-	 * with DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID or will default to 0.
+	 * @DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE: Optional engine instance to
+	 * pass along with @DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID or will default to 0.
 	 */
 	DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE,
-
-	/** Amount of struct drm_xe_sync in array. */
-	DRM_XE_OA_PROPERTY_OA_NUM_SYNCS,
-
-	/** Pointer to struct drm_xe_sync array. */
-	DRM_XE_OA_PROPERTY_OA_SYNCS,
-
-	/**
-	 * Specifying this property is only valid when specify a context to
-	 * filter with DRM_XE_OA_PROPERTY_ENGINE_ID. Specifying this property
-	 * will hold preemption of the particular engine we want to gather
-	 * performance data about.
-	 */
-	DRM_XE_OA_PROPERTY_HOLD_PREEMPTION,
-
-	/**
-	 * Specify a global OA buffer size to be allocated in bytes. The
-	 * size specified must be supported by HW (powers of 2 ranging from
-	 * 128 KB to 128Mb depending on the platform)
-	 */
-	DRM_XE_OA_PROPERTY_OA_BUFFER_SIZE,
 
 	DRM_XE_OA_PROPERTY_MAX /* non-ABI */
 };
 
-struct drm_xe_oa_open_param {
-#define DRM_XE_OA_EXTENSION_SET_PROPERTY	0
-	/** @extensions: Pointer to the first extension struct */
-	__u64 extensions;
-};
-
-struct drm_xe_oa_record_header {
-	__u16 type;
-	__u16 pad;
-	__u32 size;
-};
-
+/** enum drm_xe_oa_record_type - Type of OA packet read from OA fd */
 enum drm_xe_oa_record_type {
-	/**
-	 * Samples are the work horse record type whose contents are
-	 * extensible and defined when opening an xe oa stream based on the
-	 * given properties.
-	 *
-	 * Boolean properties following the naming convention
-	 * DRM_XE_OA_SAMPLE_xyz_PROP request the inclusion of 'xyz' data in
-	 * every sample.
-	 *
-	 * The order of these sample properties given by userspace has no
-	 * affect on the ordering of data within a sample. The order is
-	 * documented here.
-	 *
-	 * struct {
-	 *     struct drm_xe_oa_record_header header;
-	 *
-	 *     { u32 oa_report[]; } && DRM_XE_OA_PROPERTY_SAMPLE_OA
-	 * };
-	 */
+	/** @DRM_XE_OA_RECORD_SAMPLE: Regular OA data sample */
 	DRM_XE_OA_RECORD_SAMPLE = 1,
 
-	/**
-	 * Indicates that one or more OA reports were not written by the
-	 * hardware. This can happen for example if an MI_REPORT_PERF_COUNT
-	 * command collides with periodic sampling - which would be more likely
-	 * at higher sampling frequencies.
-	 */
-	DRM_XE_OA_RECORD_OA_REPORT_LOST = 2,
+	/** @DRM_XE_OA_RECORD_OA_REPORT_LOST: Status indicating lost OA reports */
+	DRM_XE_OA_RECORD_OA_REPORT_LOST,
 
 	/**
-	 * An error occurred that resulted in all pending OA reports being lost.
+	 * @DRM_XE_OA_RECORD_OA_BUFFER_LOST: Status indicating lost OA
+	 * reports and OA buffer reset in the process
 	 */
-	DRM_XE_OA_RECORD_OA_BUFFER_LOST = 3,
+	DRM_XE_OA_RECORD_OA_BUFFER_LOST,
 
-	/**
-	 * MMIO trigger queue full error
-	 */
-	DRM_XE_OA_RECORD_OA_MMIO_TRG_Q_FULL = 4,
+	/** @DRM_XE_OA_RECORD_OA_MMIO_TRG_Q_FULL: Status indicating MMIO trigger queue full */
+	DRM_XE_OA_RECORD_OA_MMIO_TRG_Q_FULL,
 
 	DRM_XE_OA_RECORD_MAX /* non-ABI */
 };
 
+/** struct drm_xe_oa_record_header - Header for OA packets read from OA fd */
+struct drm_xe_oa_record_header {
+	/** @type: Of enum @drm_xe_oa_record_type */
+	__u16 type;
+	/** @pad: MBZ */
+	__u16 pad;
+	/** @size: size in bytes */
+	__u32 size;
+};
+
+/**
+ * struct drm_xe_oa_config - OA metric configuration
+ *
+ * Multiple OA configs can be added using @DRM_XE_PERF_OP_ADD_CONFIG. A
+ * particular config can be specified when opening an OA stream using
+ * @DRM_XE_OA_PROPERTY_OA_METRIC_SET property.
+ */
 struct drm_xe_oa_config {
 	/** @extensions: Pointer to the first extension struct, if any */
 	__u64 extensions;
 
-	/**
-	 * @uuid:
-	 *
-	 * String formatted like "%\08x-%\04x-%\04x-%\04x-%\012x"
-	 */
+	/** * @uuid: String formatted like "%\08x-%\04x-%\04x-%\04x-%\012x" */
 	char uuid[36];
 
-	/**
-	 * @n_regs:
-	 *
-	 * Number of regs in @regs_ptr.
-	 */
+	/** @n_regs: Number of regs in @regs_ptr */
 	__u32 n_regs;
 
 	/**
-	 * @regs_ptr:
-	 *
-	 * Pointer to tuples of u32 values (register address, value) for OA
-	 * config registers. Expected length of buffer is (2 * sizeof(u32) *
-	 * @n_regs).
+	 * @regs_ptr: Pointer to (register address, value) pairs for OA config
+	 * registers. Expected length of buffer is: (2 * sizeof(u32) * @n_regs).
 	 */
 	__u64 regs_ptr;
 };

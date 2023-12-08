@@ -596,10 +596,10 @@ static u64 oa_format_fields(u64 name)
 	if (!name)
 		memset(&f, 0xff, sizeof(f));
 
-	return FIELD_PREP_ULL(DRM_XE_OA_MASK_FMT_TYPE, (u64)f.oa_type) |
-		FIELD_PREP_ULL(DRM_XE_OA_MASK_COUNTER_SEL, (u64)f.counter_select) |
-		FIELD_PREP_ULL(DRM_XE_OA_MASK_COUNTER_SIZE, (u64)f.counter_size) |
-		FIELD_PREP_ULL(DRM_XE_OA_MASK_BC_REPORT, (u64)f.bc_report);
+	return FIELD_PREP_ULL(DRM_XE_OA_FORMAT_MASK_FMT_TYPE, (u64)f.oa_type) |
+		FIELD_PREP_ULL(DRM_XE_OA_FORMAT_MASK_COUNTER_SEL, (u64)f.counter_select) |
+		FIELD_PREP_ULL(DRM_XE_OA_FORMAT_MASK_COUNTER_SIZE, (u64)f.counter_size) |
+		FIELD_PREP_ULL(DRM_XE_OA_FORMAT_MASK_BC_REPORT, (u64)f.bc_report);
 }
 #define __ff oa_format_fields
 
@@ -1804,17 +1804,25 @@ print_report(uint32_t *report, int fmt)
 #endif
 
 static bool
-oa_unit_supports_engine(int oa_unit, const struct intel_execution_engine2 *e)
+oa_unit_supports_engine(int oa_type, const struct intel_execution_engine2 *e)
 {
-	switch (oa_unit) {
-	case OAM:
+	switch (oa_type) {
+	case DRM_XE_OA_FMT_TYPE_OAM:
+	case DRM_XE_OA_FMT_TYPE_OAM_MPEC:
 		return e->class == DRM_XE_ENGINE_CLASS_VIDEO_DECODE ||
 		       e->class == DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE;
-	case OAG:
+	case DRM_XE_OA_FMT_TYPE_OAG:
+	case DRM_XE_OA_FMT_TYPE_OAR:
 		return e->class == DRM_XE_ENGINE_CLASS_RENDER;
+	case DRM_XE_OA_FMT_TYPE_OAC:
+		return e->class == DRM_XE_ENGINE_CLASS_COMPUTE;
+	case DRM_XE_OA_FMT_TYPE_PEC:
+		return e->class == DRM_XE_ENGINE_CLASS_RENDER ||
+		       e->class == DRM_XE_ENGINE_CLASS_COMPUTE;
+	default:
+		return false;
 	}
 
-	return false;
 }
 
 static void
