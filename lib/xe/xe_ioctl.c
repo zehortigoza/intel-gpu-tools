@@ -230,10 +230,10 @@ void xe_vm_destroy(int fd, uint32_t vm)
 	igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_VM_DESTROY, &destroy), 0);
 }
 
-uint16_t __xe_default_cpu_caching_from_placement(int fd, uint32_t placement)
+uint16_t __xe_default_cpu_caching(int fd, uint32_t placement, uint32_t flags)
 {
 	if ((placement & all_memory_regions(fd)) != system_memory(fd) ||
-	    placement & DRM_XE_GEM_CREATE_FLAG_SCANOUT)
+	    flags & DRM_XE_GEM_CREATE_FLAG_SCANOUT)
 		/* VRAM placements or scanout should always use WC */
 		return DRM_XE_GEM_CPU_CACHING_WC;
 
@@ -283,7 +283,7 @@ static uint32_t ___xe_bo_create(int fd, uint32_t vm, uint64_t size, uint32_t pla
 uint32_t __xe_bo_create(int fd, uint32_t vm, uint64_t size, uint32_t placement,
 			uint32_t flags, uint32_t *handle)
 {
-	uint16_t cpu_caching = __xe_default_cpu_caching_from_placement(fd, placement);
+	uint16_t cpu_caching = __xe_default_cpu_caching(fd, placement, flags);
 
 	return ___xe_bo_create(fd, vm, size, placement, flags, cpu_caching, handle);
 }

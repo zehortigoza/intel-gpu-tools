@@ -32,7 +32,7 @@ static int __create_bo(int fd, uint32_t vm, uint64_t size, uint32_t placement,
 	struct drm_xe_gem_create create = {
 		.vm_id = vm,
 		.size = size,
-		.cpu_caching = __xe_default_cpu_caching_from_placement(fd, placement),
+		.cpu_caching = __xe_default_cpu_caching(fd, placement, 0),
 		.placement = placement,
 	};
 	int ret = 0;
