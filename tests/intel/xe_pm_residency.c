@@ -204,13 +204,6 @@ static void test_idle_residency(int fd, int gt, enum test_type flag)
 		residency_start = read_idle_residency(fd, gt);
 		igt_system_suspend_autoresume(SUSPEND_STATE_FREEZE, SUSPEND_TEST_NONE);
 		residency_end = read_idle_residency(fd, gt);
-
-		/*
-		 * Idle residency may increase even after suspend, only assert if residency
-		 * is lesser than autoresume delay and is not within tolerance.
-		 */
-		if ((residency_end - residency_start) >= elapsed_ms)
-			return;
 	}
 
 	if (flag == TEST_IDLE) {
@@ -221,6 +214,14 @@ static void test_idle_residency(int fd, int gt, enum test_type flag)
 
 	igt_info("Measured %lums of idle residency in %lums\n",
 		 residency_end - residency_start, elapsed_ms);
+
+	/*
+	 * When suspended (system or runtime suspend), device needs to be woken up to read
+	 * residency. Idle residency may increase during resume thus being greater than
+	 * elapsed ms.
+	 */
+	if ((residency_end - residency_start) >= elapsed_ms)
+		return;
 
 	assert_within_epsilon(residency_end - residency_start, elapsed_ms, tolerance);
 }
