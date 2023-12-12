@@ -129,7 +129,6 @@ struct xe_user_extension {
  * It is returned as part of the @drm_xe_engine, but it also is used as
  * the input of engine selection for both @drm_xe_exec_queue_create and
  * @drm_xe_query_engine_cycles
- *
  */
 struct drm_xe_engine_class_instance {
 #define DRM_XE_ENGINE_CLASS_RENDER		0
@@ -143,9 +142,11 @@ struct drm_xe_engine_class_instance {
 	 */
 #define DRM_XE_ENGINE_CLASS_VM_BIND_ASYNC	5
 #define DRM_XE_ENGINE_CLASS_VM_BIND_SYNC	6
+	/** @engine_class: engine class id */
 	__u16 engine_class;
-
+	/** @engine_instance: engine instance id */
 	__u16 engine_instance;
+	/** @gt_id: Unique ID of this GT within the PCI Device */
 	__u16 gt_id;
 	/** @pad: MBZ */
 	__u16 pad;
@@ -736,6 +737,12 @@ struct drm_xe_vm_bind_op {
 	 *
 	 * Note: For userptr and externally imported dma-buf the kernel expects
 	 * either 1WAY or 2WAY for the @pat_index.
+	 *
+	 * For DRM_XE_VM_BIND_FLAG_NULL bindings there are no KMD restrictions
+	 * on the @pat_index. For such mappings there is no actual memory being
+	 * mapped (the address in the PTE is invalid), so the various PAT memory
+	 * attributes likely do not apply.  Simply leaving as zero is one
+	 * option (still a valid pat_index).
 	 */
 	__u16 pat_index;
 
