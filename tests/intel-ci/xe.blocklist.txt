@@ -66,7 +66,7 @@ igt@kms_force_connector_basic@force-load-detect
 igt@kms_frontbuffer_tracking@.*-(cpu|gtt|pwrite)
 igt@kms_legacy_colorkey@.*
 igt@kms_pipe_b_c_ivb@.*
-igt@kms_psr@.*_mmap_(cpu|gtt)
+igt@kms_psr@.*-mmap-(cpu|gtt)
 igt@kms_pwrite_crc
 igt@kms_rotation_crc@exhaust-fences
 ##################################################################
