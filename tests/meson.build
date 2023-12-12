@@ -307,7 +307,6 @@ intel_xe_progs = [
 	'xe_pm_residency',
 	'xe_prime_self_import',
 	'xe_query',
-	'xe_sysfs_tile',
 	'xe_uevent',
 	'xe_vm',
 	'xe_waitfence',
