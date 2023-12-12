@@ -317,7 +317,7 @@ test_evict_cm(int fd, struct drm_xe_engine_class_instance *eci,
 			}
 #define TWENTY_SEC	MS_TO_NS(20000)
 			xe_wait_ufence(fd, &data[i].vm_sync, USER_FENCE_VALUE,
-				       NULL, TWENTY_SEC);
+				       bind_exec_queues[0], TWENTY_SEC);
 		}
 		sync[0].addr = addr + (char *)&data[i].exec_sync -
 			(char *)data;
@@ -352,7 +352,7 @@ test_evict_cm(int fd, struct drm_xe_engine_class_instance *eci,
 		data = xe_bo_map(fd, __bo,
 				 ALIGN(sizeof(*data) * n_execs, 0x1000));
 		xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE,
-			       NULL, TWENTY_SEC);
+			       exec_queues[i % n_exec_queues], TWENTY_SEC);
 		igt_assert_eq(data[i].data, 0xc0ffee);
 	}
 	munmap(data, ALIGN(sizeof(*data) * n_execs, 0x1000));

@@ -171,8 +171,8 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 
 	fence_timeout = igt_run_in_simulation() ? HUNDRED_SEC : ONE_SEC;
 
-	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE, NULL,
-		       fence_timeout);
+	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE,
+		       bind_exec_queues[0], fence_timeout);
 	data[0].vm_sync = 0;
 
 	for (i = 0; i < n_execs; i++) {
@@ -198,7 +198,7 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 
 		if (flags & REBIND && i + 1 != n_execs) {
 			xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE,
-				       NULL, fence_timeout);
+				       exec_queues[e], fence_timeout);
 			xe_vm_unbind_async(fd, vm, bind_exec_queues[e], 0,
 					   addr, bo_size, NULL, 0);
 
@@ -214,7 +214,7 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 							 addr, bo_size, sync,
 							 1);
 			xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE,
-				       NULL, fence_timeout);
+				       bind_exec_queues[e], fence_timeout);
 			data[0].vm_sync = 0;
 		}
 
@@ -227,7 +227,7 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 				 * an invalidate.
 				 */
 				xe_wait_ufence(fd, &data[i].exec_sync,
-					       USER_FENCE_VALUE, NULL,
+					       USER_FENCE_VALUE, exec_queues[e],
 					       fence_timeout);
 				igt_assert_eq(data[i].data, 0xc0ffee);
 			} else if (i * 2 != n_execs) {
@@ -257,8 +257,8 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 
 	j = flags & INVALIDATE ? n_execs - 1 : 0;
 	for (i = j; i < n_execs; i++)
-		xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE, NULL,
-			       fence_timeout);
+		xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE,
+			       exec_queues[i % n_exec_queues], fence_timeout);
 
 	/* Wait for all execs to complete */
 	if (flags & INVALIDATE)
@@ -267,8 +267,8 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 	sync[0].addr = to_user_pointer(&data[0].vm_sync);
 	xe_vm_unbind_async(fd, vm, bind_exec_queues[0], 0, addr, bo_size,
 			   sync, 1);
-	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE, NULL,
-		       fence_timeout);
+	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE,
+		       bind_exec_queues[0], fence_timeout);
 
 	for (i = j; i < n_execs; i++)
 		igt_assert_eq(data[i].data, 0xc0ffee);

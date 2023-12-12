@@ -483,7 +483,7 @@ test_cm(int fd, int gt, int class, int n_exec_queues, int n_execs,
 					 bo_size, sync, 1);
 
 #define ONE_SEC	MS_TO_NS(1000)
-	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE, NULL, ONE_SEC);
+	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE, 0, ONE_SEC);
 	data[0].vm_sync = 0;
 
 	for (i = 0; i < n_execs; i++) {
@@ -514,7 +514,7 @@ test_cm(int fd, int gt, int class, int n_exec_queues, int n_execs,
 
 		if (flags & REBIND && i + 1 != n_execs) {
 			xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE,
-				       NULL, ONE_SEC);
+				       exec_queues[e], ONE_SEC);
 			xe_vm_unbind_async(fd, vm, 0, 0, addr, bo_size, NULL,
 					   0);
 
@@ -529,7 +529,7 @@ test_cm(int fd, int gt, int class, int n_exec_queues, int n_execs,
 							 addr, bo_size, sync,
 							 1);
 			xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE,
-				       NULL, ONE_SEC);
+				       0, ONE_SEC);
 			data[0].vm_sync = 0;
 		}
 
@@ -542,7 +542,8 @@ test_cm(int fd, int gt, int class, int n_exec_queues, int n_execs,
 				 * an invalidate.
 				 */
 				xe_wait_ufence(fd, &data[i].exec_sync,
-					       USER_FENCE_VALUE, NULL, ONE_SEC);
+					       USER_FENCE_VALUE, exec_queues[e],
+					       ONE_SEC);
 				igt_assert_eq(data[i].data, 0xc0ffee);
 			} else if (i * 2 != n_execs) {
 				/*
@@ -571,8 +572,8 @@ test_cm(int fd, int gt, int class, int n_exec_queues, int n_execs,
 
 	j = flags & INVALIDATE && n_execs ? n_execs - 1 : 0;
 	for (i = j; i < n_execs; i++)
-		xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE, NULL,
-			       ONE_SEC);
+		xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE,
+			       exec_queues[i % n_exec_queues], ONE_SEC);
 
 	/* Wait for all execs to complete */
 	if (flags & INVALIDATE)
@@ -580,7 +581,7 @@ test_cm(int fd, int gt, int class, int n_exec_queues, int n_execs,
 
 	sync[0].addr = to_user_pointer(&data[0].vm_sync);
 	xe_vm_unbind_async(fd, vm, 0, 0, addr, bo_size, sync, 1);
-	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE, NULL, ONE_SEC);
+	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE, 0, ONE_SEC);
 
 	for (i = (flags & INVALIDATE && n_execs) ? n_execs - 1 : 0;
 	     i < n_execs; i++)

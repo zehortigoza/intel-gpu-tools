@@ -37,22 +37,20 @@ static void do_bind(int fd, uint32_t vm, uint32_t bo, uint64_t offset,
 }
 
 static int64_t wait_with_eci_abstime(int fd, uint64_t *addr, uint64_t value,
-				     struct drm_xe_engine_class_instance *eci,
-				     int64_t timeout)
+				     uint32_t exec_queue, int64_t timeout,
+				     uint16_t flag)
 {
 	struct drm_xe_wait_user_fence wait = {
 		.addr = to_user_pointer(addr),
 		.op = DRM_XE_UFENCE_WAIT_OP_EQ,
-		.flags = !eci ? 0 : DRM_XE_UFENCE_WAIT_FLAG_ABSTIME,
+		.flags = flag,
 		.value = value,
 		.mask = DRM_XE_UFENCE_WAIT_MASK_U64,
 		.timeout = timeout,
-		.num_engines = eci ? 1 : 0,
-		.instances = eci ? to_user_pointer(eci) : 0,
+		.exec_queue_id = exec_queue,
 	};
 	struct timespec ts;
 
-	igt_assert(eci);
 	igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_WAIT_USER_FENCE, &wait), 0);
 	igt_assert_eq(clock_gettime(CLOCK_MONOTONIC, &ts), 0);
 
@@ -82,7 +80,7 @@ enum waittype {
 static void
 waitfence(int fd, enum waittype wt)
 {
-	struct drm_xe_engine *engine = NULL;
+	uint32_t exec_queue;
 	struct timespec ts;
 	int64_t current, signalled;
 	uint32_t bo_1;
@@ -111,15 +109,17 @@ waitfence(int fd, enum waittype wt)
 	do_bind(fd, vm, bo_7, 0, 0xeffff0000, 0x10000, 7);
 
 	if (wt == RELTIME) {
-		timeout = xe_wait_ufence(fd, &wait_fence, 7, NULL, MS_TO_NS(10));
+		timeout = xe_wait_ufence(fd, &wait_fence, 7, 0, MS_TO_NS(10));
 		igt_debug("wait type: RELTIME - timeout: %ld, timeout left: %ld\n",
 			  MS_TO_NS(10), timeout);
 	} else if (wt == ENGINE) {
-		engine = xe_engine(fd, 1);
+		exec_queue = xe_exec_queue_create_class(fd, vm, DRM_XE_ENGINE_CLASS_COPY);
 		clock_gettime(CLOCK_MONOTONIC, &ts);
 		current = ts.tv_sec * 1e9 + ts.tv_nsec;
 		timeout = current + MS_TO_NS(10);
-		signalled = wait_with_eci_abstime(fd, &wait_fence, 7, &engine->instance, timeout);
+		signalled = wait_with_eci_abstime(fd, &wait_fence, 7,
+						  exec_queue, timeout,
+						  DRM_XE_UFENCE_WAIT_FLAG_ABSTIME);
 		igt_debug("wait type: ENGINE ABSTIME - timeout: %" PRId64
 			  ", signalled: %" PRId64
 			  ", elapsed: %" PRId64 "\n",
@@ -128,7 +128,8 @@ waitfence(int fd, enum waittype wt)
 		clock_gettime(CLOCK_MONOTONIC, &ts);
 		current = ts.tv_sec * 1e9 + ts.tv_nsec;
 		timeout = current + MS_TO_NS(10);
-		signalled = xe_wait_ufence_abstime(fd, &wait_fence, 7, NULL, timeout);
+		signalled = xe_wait_ufence_abstime(fd, &wait_fence, 7, 0,
+						   timeout, 0);
 		igt_debug("wait type: ABSTIME - timeout: %" PRId64
 			  ", signalled: %" PRId64
 			  ", elapsed: %" PRId64 "\n",
@@ -166,8 +167,7 @@ invalid_flag(int fd)
 		.value = 1,
 		.mask = DRM_XE_UFENCE_WAIT_MASK_U64,
 		.timeout = -1,
-		.num_engines = 0,
-		.instances = 0,
+		.exec_queue_id = 0,
 	};
 
 	uint32_t vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
@@ -191,8 +191,7 @@ invalid_ops(int fd)
 		.value = 1,
 		.mask = DRM_XE_UFENCE_WAIT_MASK_U64,
 		.timeout = 1,
-		.num_engines = 0,
-		.instances = 0,
+		.exec_queue_id = 0,
 	};
 
 	uint32_t vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
@@ -216,8 +215,7 @@ invalid_engine(int fd)
 		.value = 1,
 		.mask = DRM_XE_UFENCE_WAIT_MASK_U64,
 		.timeout = -1,
-		.num_engines = 1,
-		.instances = 0,
+		.exec_queue_id = 0,
 	};
 
 	uint32_t vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);

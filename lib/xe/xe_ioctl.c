@@ -481,7 +481,7 @@ void xe_exec_wait(int fd, uint32_t exec_queue, uint64_t addr)
  * @fd: xe device fd
  * @addr: address of value to compare
  * @value: expected value (equal) in @address
- * @eci: engine class instance
+ * @exec_queue: exec_queue id
  * @timeout: pointer to time to wait in nanoseconds
  *
  * Function compares @value with memory pointed by @addr until they are equal.
@@ -490,17 +490,15 @@ void xe_exec_wait(int fd, uint32_t exec_queue, uint64_t addr)
  * signalled. Returns 0 on success, -errno of ioctl on error.
  */
 int __xe_wait_ufence(int fd, uint64_t *addr, uint64_t value,
-		     struct drm_xe_engine_class_instance *eci,
-		     int64_t *timeout)
+		     uint32_t exec_queue, int64_t *timeout)
 {
 	struct drm_xe_wait_user_fence wait = {
 		.addr = to_user_pointer(addr),
 		.op = DRM_XE_UFENCE_WAIT_OP_EQ,
-		.flags = !eci ? DRM_XE_UFENCE_WAIT_FLAG_SOFT_OP : 0,
+		.flags = 0,
 		.value = value,
 		.mask = DRM_XE_UFENCE_WAIT_MASK_U64,
-		.num_engines = eci ? 1 :0,
-		.instances = eci ? to_user_pointer(eci) : 0,
+		.exec_queue_id = exec_queue,
 	};
 
 	igt_assert(timeout);
@@ -518,7 +516,7 @@ int __xe_wait_ufence(int fd, uint64_t *addr, uint64_t value,
  * @fd: xe device fd
  * @addr: address of value to compare
  * @value: expected value (equal) in @address
- * @eci: engine class instance
+ * @exec_queue: exec_queue id
  * @timeout: time to wait in nanoseconds
  *
  * Function compares @value with memory pointed by @addr until they are equal.
@@ -527,10 +525,9 @@ int __xe_wait_ufence(int fd, uint64_t *addr, uint64_t value,
  * Returns elapsed time in nanoseconds if user fence was signalled.
  */
 int64_t xe_wait_ufence(int fd, uint64_t *addr, uint64_t value,
-		       struct drm_xe_engine_class_instance *eci,
-		       int64_t timeout)
+		       uint32_t exec_queue, int64_t timeout)
 {
-	igt_assert_eq(__xe_wait_ufence(fd, addr, value, eci, &timeout), 0);
+	igt_assert_eq(__xe_wait_ufence(fd, addr, value, exec_queue, &timeout), 0);
 	return timeout;
 }
 
@@ -539,8 +536,9 @@ int64_t xe_wait_ufence(int fd, uint64_t *addr, uint64_t value,
  * @fd: xe device fd
  * @addr: address of value to compare
  * @value: expected value (equal) in @address
- * @eci: engine class instance
+ * @exec_queue: exec_queue id
  * @timeout: absolute time when wait expire
+ * @flag: wait flag
  *
  * Function compares @value with memory pointed by @addr until they are equal.
  * Asserts that ioctl returned without error.
@@ -548,18 +546,17 @@ int64_t xe_wait_ufence(int fd, uint64_t *addr, uint64_t value,
  * Returns elapsed time in nanoseconds if user fence was signalled.
  */
 int64_t xe_wait_ufence_abstime(int fd, uint64_t *addr, uint64_t value,
-			       struct drm_xe_engine_class_instance *eci,
-			       int64_t timeout)
+			       uint32_t exec_queue, int64_t timeout,
+			       uint16_t flag)
 {
 	struct drm_xe_wait_user_fence wait = {
 		.addr = to_user_pointer(addr),
 		.op = DRM_XE_UFENCE_WAIT_OP_EQ,
-		.flags = !eci ? DRM_XE_UFENCE_WAIT_FLAG_SOFT_OP | DRM_XE_UFENCE_WAIT_FLAG_ABSTIME : 0,
+		.flags = flag,
 		.value = value,
 		.mask = DRM_XE_UFENCE_WAIT_MASK_U64,
 		.timeout = timeout,
-		.num_engines = eci ? 1 : 0,
-		.instances = eci ? to_user_pointer(eci) : 0,
+		.exec_queue_id = exec_queue,
 	};
 	struct timespec ts;
 

@@ -195,15 +195,16 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 	}
 
 #define ONE_SEC	MS_TO_NS(1000)
-	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE, NULL, ONE_SEC);
+	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE,
+		       bind_exec_queues[0], ONE_SEC);
 	data[0].vm_sync = 0;
 
 	if (flags & PREFETCH) {
 		/* Should move to system memory */
 		xe_vm_prefetch_async(fd, vm, bind_exec_queues[0], 0, addr,
 				     bo_size, sync, 1, 0);
-		xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE, NULL,
-			       ONE_SEC);
+		xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE,
+			       bind_exec_queues[0], ONE_SEC);
 		data[0].vm_sync = 0;
 	}
 
@@ -230,7 +231,7 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 
 		if (flags & REBIND && i + 1 != n_execs) {
 			xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE,
-				       NULL, ONE_SEC);
+				       exec_queues[e], ONE_SEC);
 			xe_vm_unbind_async(fd, vm, bind_exec_queues[e], 0,
 					   addr, bo_size, NULL, 0);
 
@@ -246,7 +247,7 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 							 addr, bo_size, sync,
 							 1);
 			xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE,
-				       NULL, ONE_SEC);
+				       bind_exec_queues[e], ONE_SEC);
 			data[0].vm_sync = 0;
 		}
 
@@ -259,7 +260,8 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 				 * an invalidate.
 				 */
 				xe_wait_ufence(fd, &data[i].exec_sync,
-					       USER_FENCE_VALUE, NULL, ONE_SEC);
+					       USER_FENCE_VALUE, exec_queues[e],
+					       ONE_SEC);
 				igt_assert_eq(data[i].data, 0xc0ffee);
 			} else if (i * 2 != n_execs) {
 				/*
@@ -289,14 +291,15 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 	if (!(flags & INVALID_FAULT)) {
 		j = flags & INVALIDATE ? n_execs - 1 : 0;
 		for (i = j; i < n_execs; i++)
-			xe_wait_ufence(fd, &data[i].exec_sync,
-				       USER_FENCE_VALUE, NULL, ONE_SEC);
+			xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE,
+				       exec_queues[i % n_exec_queues], ONE_SEC);
 	}
 
 	sync[0].addr = to_user_pointer(&data[0].vm_sync);
 	xe_vm_unbind_async(fd, vm, bind_exec_queues[0], 0, addr, bo_size,
 			   sync, 1);
-	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE, NULL, ONE_SEC);
+	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE,
+		       bind_exec_queues[0], ONE_SEC);
 
 	if (!(flags & INVALID_FAULT)) {
 		for (i = j; i < n_execs; i++)
