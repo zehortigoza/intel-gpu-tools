@@ -26,6 +26,18 @@ static struct param {
 	.vram_percent = 100,
 };
 
+static int __ioctl_create(int fd, struct drm_xe_gem_create *create)
+{
+	int ret = 0;
+
+	if (igt_ioctl(fd, DRM_IOCTL_XE_GEM_CREATE, create)) {
+		ret = -errno;
+		errno = 0;
+	}
+
+	return ret;
+}
+
 static int __create_bo(int fd, uint32_t vm, uint64_t size, uint32_t placement,
 		       uint32_t *handlep)
 {
@@ -35,14 +47,11 @@ static int __create_bo(int fd, uint32_t vm, uint64_t size, uint32_t placement,
 		.cpu_caching = __xe_default_cpu_caching(fd, placement, 0),
 		.placement = placement,
 	};
-	int ret = 0;
+	int ret;
 
 	igt_assert(handlep);
 
-	if (igt_ioctl(fd, DRM_IOCTL_XE_GEM_CREATE, &create)) {
-		ret = -errno;
-		errno = 0;
-	}
+	ret = __ioctl_create(fd, &create);
 	*handlep = create.handle;
 
 	return ret;
@@ -94,6 +103,45 @@ static void create_invalid_size(int fd)
 	}
 
 	xe_vm_destroy(fd, vm);
+}
+
+/**
+ * SUBTEST: create-invalid-mbz
+ * Functionality: ioctl
+ * Test category: negative test
+ * Description: Verifies xe bo create returns expected error code on all MBZ fields.
+ */
+static void create_invalid_mbz(int fd)
+{
+	struct drm_xe_gem_create create = {
+		.size = PAGE_SIZE,
+		.placement = system_memory(fd),
+		.cpu_caching = DRM_XE_GEM_CPU_CACHING_WB,
+	};
+	int i;
+
+	/* Make sure the baseline passes */
+	igt_assert_eq(__ioctl_create(fd, &create), 0);
+	gem_close(fd, create.handle);
+	create.handle = 0;
+
+	/* No supported extensions yet */
+	create.extensions = -1;
+	igt_assert_eq(__ioctl_create(fd, &create), -EINVAL);
+	create.extensions = 0;
+
+	/* Make sure KMD rejects non-zero padding/reserved fields */
+	for (i = 0; i < ARRAY_SIZE(create.pad); i++) {
+		create.pad[i] = -1;
+		igt_assert_eq(__ioctl_create(fd, &create), -EINVAL);
+		create.pad[i] = 0;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(create.reserved); i++) {
+		create.reserved[i] = -1;
+		igt_assert_eq(__ioctl_create(fd, &create), -EINVAL);
+		create.reserved[i] = 0;
+	}
 }
 
 enum exec_queue_destroy {
@@ -271,6 +319,9 @@ igt_main_args("S:p:", NULL, help_str, opt_handler, NULL)
 
 	igt_fixture
 		xe = drm_open_driver(DRIVER_XE);
+
+	igt_subtest("create-invalid-mbz")
+		create_invalid_mbz(xe);
 
 	igt_subtest("create-invalid-size") {
 		create_invalid_size(xe);
