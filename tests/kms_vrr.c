@@ -65,13 +65,6 @@
  */
 #define TEST_DURATION_NS (5000000000ull)
 
-#define DRM_MODE_FMT    "\"%s\": %d %d %d %d %d %d %d %d %d %d 0x%x 0x%x"
-#define DRM_MODE_ARG(m) \
-	(m)->name, (m)->vrefresh, (m)->clock, \
-	(m)->hdisplay, (m)->hsync_start, (m)->hsync_end, (m)->htotal, \
-	(m)->vdisplay, (m)->vsync_start, (m)->vsync_end, (m)->vtotal, \
-	(m)->type, (m)->flags
-
 enum {
 	TEST_BASIC = 1 << 0,
 	TEST_DPMS = 1 << 1,
@@ -162,14 +155,16 @@ output_mode_with_maxrate(igt_output_t *output, unsigned int vrr_max)
 	drmModeConnectorPtr connector = output->config.connector;
 	drmModeModeInfo mode = *igt_output_get_mode(output);
 
-	igt_debug("Default Mode " DRM_MODE_FMT "\n", DRM_MODE_ARG(&mode));
+	igt_info("Default Mode: ");
+	kmstest_dump_mode(&mode);
 
 	for (i = 0; i < connector->count_modes; i++)
 		if (connector->modes[i].vrefresh > mode.vrefresh &&
 		    connector->modes[i].vrefresh <= vrr_max)
 			mode = connector->modes[i];
 
-	igt_debug("Override Mode " DRM_MODE_FMT "\n", DRM_MODE_ARG(&mode));
+	igt_info("Override Mode: ");
+	kmstest_dump_mode(&mode);
 
 	return mode;
 }
