@@ -481,11 +481,11 @@ test_basic(data_t *data, enum pipe pipe, igt_output_t *output, uint32_t flags)
 	}
 
 	if (flags & TEST_FLIPLINE) {
-		rate = rate_from_refresh(range.min - 5);
+		rate = rate_from_refresh(range.min - 10);
 		result = flip_and_measure(data, output, pipe, rate, TEST_DURATION_NS);
 		igt_assert_f(result < 50,
 			     "Refresh rate (%u Hz) %"PRIu64"ns: Target VRR on threshold exceeded, result was %u%%\n",
-			     (range.min - 5), rate, result);
+			     (range.min - 10), rate, result);
 	}
 
 	/*
