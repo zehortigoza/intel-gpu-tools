@@ -163,9 +163,6 @@ output_mode_with_maxrate(igt_output_t *output, unsigned int vrr_max)
 		    connector->modes[i].vrefresh <= vrr_max)
 			mode = connector->modes[i];
 
-	igt_info("Override Mode: ");
-	kmstest_dump_mode(&mode);
-
 	return mode;
 }
 
@@ -233,21 +230,7 @@ static void prepare_test(data_t *data, igt_output_t *output, enum pipe pipe)
 	drmModeModeInfo mode;
 	cairo_t *cr;
 
-	/* Reset output */
-	igt_display_reset(&data->display);
-	igt_output_set_pipe(output, pipe);
-
-	/* Capture VRR range */
-	data->range = get_vrr_range(data, output);
-
-	/* Override mode with max vrefresh.
-	 *   - vrr_min range should be less than the override mode vrefresh.
-	 *   - Limit the vrr_max range with the override mode vrefresh.
-	 */
-	mode = output_mode_with_maxrate(output, data->range.max);
-	igt_require(mode.vrefresh > data->range.min);
-	data->range.max = mode.vrefresh;
-	igt_output_override_mode(output, &mode);
+	mode = *igt_output_get_mode(output);
 
 	/* Prepare resources */
 	igt_create_color_fb(data->drm_fd, mode.hdisplay, mode.vdisplay,
@@ -483,7 +466,36 @@ static void test_cleanup(data_t *data, enum pipe pipe, igt_output_t *output)
 	igt_remove_fb(data->drm_fd, &data->fb0);
 }
 
-static bool config_constraint(igt_output_t *output, uint32_t flags)
+static bool output_constraint(data_t *data, igt_output_t *output)
+{
+	drmModeModeInfo mode;
+
+	/* Reset output */
+	igt_display_reset(&data->display);
+
+	/* Capture VRR range */
+	data->range = get_vrr_range(data, output);
+
+	/*
+	 * Override mode with max vrefresh.
+	 *   - vrr_min range should be less than the override mode vrefresh.
+	 *   - Limit the vrr_max range with the override mode vrefresh.
+	 */
+	mode = output_mode_with_maxrate(output, data->range.max);
+	if (mode.vrefresh < data->range.min)
+		return false;
+
+	data->range.max = mode.vrefresh;
+
+	igt_info("Override Mode: ");
+	kmstest_dump_mode(&mode);
+
+	igt_output_override_mode(output, &mode);
+
+	return true;
+}
+
+static bool config_constraint(data_t *data, igt_output_t *output, uint32_t flags)
 {
 	if (!has_vrr(output))
 		return false;
@@ -493,6 +505,9 @@ static bool config_constraint(igt_output_t *output, uint32_t flags)
 		return false;
 
 	if ((flags & ~TEST_NEGATIVE) && !vrr_capable(output))
+		return false;
+
+	if (!output_constraint(data, output))
 		return false;
 
 	return true;
@@ -507,16 +522,17 @@ run_vrr_test(data_t *data, test_t test, uint32_t flags)
 	for_each_connected_output(&data->display, output) {
 		enum pipe pipe;
 
-		if (!config_constraint(output, flags))
+		if (!config_constraint(data, output, flags))
 			continue;
 
 		for_each_pipe(&data->display, pipe) {
 			if (igt_pipe_connector_valid(pipe, output)) {
-				igt_display_reset(&data->display);
-
 				igt_output_set_pipe(output, pipe);
-				if (!intel_pipe_output_combo_valid(&data->display))
+
+				if (!intel_pipe_output_combo_valid(&data->display)) {
+					igt_output_set_pipe(output, PIPE_NONE);
 					continue;
+				}
 
 				igt_dynamic_f("pipe-%s-%s",
 					      kmstest_pipe_name(pipe), output->name)
