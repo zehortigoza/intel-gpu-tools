@@ -1,5 +1,21 @@
 #!/bin/sh
 
+# Usage:
+#    ./meson.sh [<options>] [target]
+#
+# Where options can be:
+#	V=0         - disable non-error messages on ninja
+#	V=1         - print all ninja messages (default)
+#
+# And target is the Makefile target. It can be:
+#	all         - build all files
+#	clean       - cleans build
+#	test        - excecute unit tests
+#	reconfigure - run Meson reconfigure via ninja
+#	install     - builds and install IGT
+#	uninstall   - uninstalls IGT from a past installation
+#	docs	    - builds igt-gpu-tools-doc
+
 cat > Makefile <<EOF
 
 quiet_build =
