@@ -37,7 +37,7 @@ default: all
 
 build/build.ninja:
 	\$(Q)mkdir -p build
-	\$(Q)meson build \$(quiet_build)
+	\$(Q)meson build
 
 all: build/build.ninja
 	\$(Q)ninja -C build \$(quiet_build)
