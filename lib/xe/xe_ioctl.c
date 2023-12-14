@@ -68,7 +68,7 @@ void xe_vm_unbind_all_async(int fd, uint32_t vm, uint32_t exec_queue,
 			    uint32_t num_syncs)
 {
 	__xe_vm_bind_assert(fd, vm, exec_queue, bo, 0, 0, 0,
-			    DRM_XE_VM_BIND_OP_UNMAP_ALL, DRM_XE_VM_BIND_FLAG_ASYNC,
+			    DRM_XE_VM_BIND_OP_UNMAP_ALL, 0,
 			    sync, num_syncs, 0, 0);
 }
 
@@ -129,29 +129,13 @@ void  __xe_vm_bind_assert(int fd, uint32_t vm, uint32_t exec_queue, uint32_t bo,
 				   DEFAULT_PAT_INDEX, ext), 0);
 }
 
-void xe_vm_bind(int fd, uint32_t vm, uint32_t bo, uint64_t offset,
-		uint64_t addr, uint64_t size,
-		struct drm_xe_sync *sync, uint32_t num_syncs)
-{
-	__xe_vm_bind_assert(fd, vm, 0, bo, offset, addr, size,
-			    DRM_XE_VM_BIND_OP_MAP, 0, sync, num_syncs, 0, 0);
-}
-
-void xe_vm_unbind(int fd, uint32_t vm, uint64_t offset,
-		  uint64_t addr, uint64_t size,
-		  struct drm_xe_sync *sync, uint32_t num_syncs)
-{
-	__xe_vm_bind_assert(fd, vm, 0, 0, offset, addr, size,
-			    DRM_XE_VM_BIND_OP_UNMAP, 0, sync, num_syncs, 0, 0);
-}
-
 void xe_vm_prefetch_async(int fd, uint32_t vm, uint32_t exec_queue, uint64_t offset,
 			  uint64_t addr, uint64_t size,
 			  struct drm_xe_sync *sync, uint32_t num_syncs,
 			  uint32_t region)
 {
 	__xe_vm_bind_assert(fd, vm, exec_queue, 0, offset, addr, size,
-			    DRM_XE_VM_BIND_OP_PREFETCH, DRM_XE_VM_BIND_FLAG_ASYNC,
+			    DRM_XE_VM_BIND_OP_PREFETCH, 0,
 			    sync, num_syncs, region, 0);
 }
 
@@ -160,7 +144,7 @@ void xe_vm_bind_async(int fd, uint32_t vm, uint32_t exec_queue, uint32_t bo,
 		      struct drm_xe_sync *sync, uint32_t num_syncs)
 {
 	__xe_vm_bind_assert(fd, vm, exec_queue, bo, offset, addr, size,
-			    DRM_XE_VM_BIND_OP_MAP, DRM_XE_VM_BIND_FLAG_ASYNC, sync,
+			    DRM_XE_VM_BIND_OP_MAP, 0, sync,
 			    num_syncs, 0, 0);
 }
 
@@ -170,7 +154,7 @@ void xe_vm_bind_async_flags(int fd, uint32_t vm, uint32_t exec_queue, uint32_t b
 			    uint32_t flags)
 {
 	__xe_vm_bind_assert(fd, vm, exec_queue, bo, offset, addr, size,
-			    DRM_XE_VM_BIND_OP_MAP, DRM_XE_VM_BIND_FLAG_ASYNC | flags,
+			    DRM_XE_VM_BIND_OP_MAP, flags,
 			    sync, num_syncs, 0, 0);
 }
 
@@ -179,7 +163,7 @@ void xe_vm_bind_userptr_async(int fd, uint32_t vm, uint32_t exec_queue,
 			      struct drm_xe_sync *sync, uint32_t num_syncs)
 {
 	__xe_vm_bind_assert(fd, vm, exec_queue, 0, userptr, addr, size,
-			    DRM_XE_VM_BIND_OP_MAP_USERPTR, DRM_XE_VM_BIND_FLAG_ASYNC,
+			    DRM_XE_VM_BIND_OP_MAP_USERPTR, 0,
 			    sync, num_syncs, 0, 0);
 }
 
@@ -189,8 +173,8 @@ void xe_vm_bind_userptr_async_flags(int fd, uint32_t vm, uint32_t exec_queue,
 				    uint32_t num_syncs, uint32_t flags)
 {
 	__xe_vm_bind_assert(fd, vm, exec_queue, 0, userptr, addr, size,
-			    DRM_XE_VM_BIND_OP_MAP_USERPTR, DRM_XE_VM_BIND_FLAG_ASYNC |
-			    flags, sync, num_syncs, 0, 0);
+			    DRM_XE_VM_BIND_OP_MAP_USERPTR, flags,
+			    sync, num_syncs, 0, 0);
 }
 
 void xe_vm_unbind_async(int fd, uint32_t vm, uint32_t exec_queue,
@@ -198,15 +182,24 @@ void xe_vm_unbind_async(int fd, uint32_t vm, uint32_t exec_queue,
 			struct drm_xe_sync *sync, uint32_t num_syncs)
 {
 	__xe_vm_bind_assert(fd, vm, exec_queue, 0, offset, addr, size,
-			    DRM_XE_VM_BIND_OP_UNMAP, DRM_XE_VM_BIND_FLAG_ASYNC, sync,
+			    DRM_XE_VM_BIND_OP_UNMAP, 0, sync,
 			    num_syncs, 0, 0);
 }
 
 static void __xe_vm_bind_sync(int fd, uint32_t vm, uint32_t bo, uint64_t offset,
 			      uint64_t addr, uint64_t size, uint32_t op)
 {
-	__xe_vm_bind_assert(fd, vm, 0, bo, offset, addr, size, op, 0, NULL, 0,
+	struct drm_xe_sync sync = {
+		.type = DRM_XE_SYNC_TYPE_SYNCOBJ,
+		.flags = DRM_XE_SYNC_FLAG_SIGNAL,
+		.handle = syncobj_create(fd, 0),
+	};
+
+	__xe_vm_bind_assert(fd, vm, 0, bo, offset, addr, size, op, 0, &sync, 1,
 			    0, 0);
+
+	igt_assert(syncobj_wait(fd, &sync.handle, 1, INT64_MAX, 0, NULL));
+	syncobj_destroy(fd, sync.handle);
 }
 
 void xe_vm_bind_sync(int fd, uint32_t vm, uint32_t bo, uint64_t offset,
@@ -315,11 +308,10 @@ uint32_t xe_bo_create_caching(int fd, uint32_t vm, uint64_t size, uint32_t place
 	return handle;
 }
 
-uint32_t xe_bind_exec_queue_create(int fd, uint32_t vm, uint64_t ext, bool async)
+uint32_t xe_bind_exec_queue_create(int fd, uint32_t vm, uint64_t ext)
 {
 	struct drm_xe_engine_class_instance instance = {
-		.engine_class = async ? DRM_XE_ENGINE_CLASS_VM_BIND_ASYNC :
-			DRM_XE_ENGINE_CLASS_VM_BIND_SYNC,
+		.engine_class = DRM_XE_ENGINE_CLASS_VM_BIND,
 	};
 	struct drm_xe_exec_queue_create create = {
 		.extensions = ext,

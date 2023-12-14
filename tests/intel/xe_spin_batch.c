@@ -190,7 +190,7 @@ static void preempter(int fd, struct drm_xe_engine_class_instance *hwe)
 	syncobj = syncobj_create(fd, 0);
 	sync.handle = syncobj;
 
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(*data);
 	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
 			xe_get_default_alignment(fd));

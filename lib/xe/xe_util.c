@@ -118,7 +118,7 @@ static struct drm_xe_vm_bind_op *xe_alloc_bind_ops(int xe,
 {
 	struct drm_xe_vm_bind_op *bind_ops, *ops;
 	struct xe_object *obj;
-	uint32_t num_objects = 0, i = 0, op, flags;
+	uint32_t num_objects = 0, i = 0, op, flags = 0;
 
 	igt_list_for_each_entry(obj, obj_list, link)
 		num_objects++;
@@ -137,11 +137,9 @@ static struct drm_xe_vm_bind_op *xe_alloc_bind_ops(int xe,
 
 		if (obj->bind_op == XE_OBJECT_BIND) {
 			op = DRM_XE_VM_BIND_OP_MAP;
-			flags = DRM_XE_VM_BIND_FLAG_ASYNC;
 			ops->obj = obj->handle;
 		} else {
 			op = DRM_XE_VM_BIND_OP_UNMAP;
-			flags = DRM_XE_VM_BIND_FLAG_ASYNC;
 		}
 
 		ops->op = op;

@@ -63,17 +63,15 @@ test_evict(int fd, struct drm_xe_engine_class_instance *eci,
 
 	fd = drm_open_driver(DRIVER_XE);
 
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(fd, 0, 0);
 	if (flags & BIND_EXEC_QUEUE)
-		bind_exec_queues[0] = xe_bind_exec_queue_create(fd, vm, 0, true);
+		bind_exec_queues[0] = xe_bind_exec_queue_create(fd, vm, 0);
 	if (flags & MULTI_VM) {
-		vm2 = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
-		vm3 = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		vm2 = xe_vm_create(fd, 0, 0);
+		vm3 = xe_vm_create(fd, 0, 0);
 		if (flags & BIND_EXEC_QUEUE) {
-			bind_exec_queues[1] = xe_bind_exec_queue_create(fd, vm2,
-									0, true);
-			bind_exec_queues[2] = xe_bind_exec_queue_create(fd, vm3,
-									0, true);
+			bind_exec_queues[1] = xe_bind_exec_queue_create(fd, vm2, 0);
+			bind_exec_queues[2] = xe_bind_exec_queue_create(fd, vm3, 0);
 		}
 	}
 
@@ -245,16 +243,13 @@ test_evict_cm(int fd, struct drm_xe_engine_class_instance *eci,
 
 	fd = drm_open_driver(DRIVER_XE);
 
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT |
-			  DRM_XE_VM_CREATE_FLAG_LR_MODE, 0);
+	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_LR_MODE, 0);
 	if (flags & BIND_EXEC_QUEUE)
-		bind_exec_queues[0] = xe_bind_exec_queue_create(fd, vm, 0, true);
+		bind_exec_queues[0] = xe_bind_exec_queue_create(fd, vm, 0);
 	if (flags & MULTI_VM) {
-		vm2 = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT |
-				   DRM_XE_VM_CREATE_FLAG_LR_MODE, 0);
+		vm2 = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_LR_MODE, 0);
 		if (flags & BIND_EXEC_QUEUE)
-			bind_exec_queues[1] = xe_bind_exec_queue_create(fd, vm2,
-									0, true);
+			bind_exec_queues[1] = xe_bind_exec_queue_create(fd, vm2, 0);
 	}
 
 	for (i = 0; i < n_exec_queues; i++) {

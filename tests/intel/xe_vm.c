@@ -268,7 +268,7 @@ test_bind_one_bo_many_times_many_vm(int fd)
 
 static void test_partial_unbinds(int fd)
 {
-	uint32_t vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	uint32_t vm = xe_vm_create(fd, 0, 0);
 	size_t bo_size = 3 * xe_get_default_alignment(fd);
 	uint32_t bo = xe_bo_create(fd, vm, bo_size, vram_if_possible(fd, 0), 0);
 	uint64_t unbind_size = bo_size / 3;
@@ -318,7 +318,7 @@ static void unbind_all(int fd, int n_vmas)
 		{ .type = DRM_XE_SYNC_TYPE_SYNCOBJ, .flags = DRM_XE_SYNC_FLAG_SIGNAL, },
 	};
 
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(fd, 0, 0);
 	bo = xe_bo_create(fd, vm, bo_size, vram_if_possible(fd, 0), 0);
 
 	for (i = 0; i < n_vmas; ++i)
@@ -416,7 +416,7 @@ shared_pte_page(int fd, struct drm_xe_engine_class_instance *eci, int n_bo,
 	data = malloc(sizeof(*data) * n_bo);
 	igt_assert(data);
 
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(struct shared_pte_page_data);
 	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
 			xe_get_default_alignment(fd));
@@ -601,7 +601,7 @@ test_bind_execqueues_independent(int fd, struct drm_xe_engine_class_instance *ec
 	struct xe_spin_opts spin_opts = { .preempt = true };
 	int i, b;
 
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(*data) * N_EXEC_QUEUES;
 	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
 			xe_get_default_alignment(fd));
@@ -612,7 +612,7 @@ test_bind_execqueues_independent(int fd, struct drm_xe_engine_class_instance *ec
 
 	for (i = 0; i < N_EXEC_QUEUES; i++) {
 		exec_queues[i] = xe_exec_queue_create(fd, vm, eci, 0);
-		bind_exec_queues[i] = xe_bind_exec_queue_create(fd, vm, 0, true);
+		bind_exec_queues[i] = xe_bind_exec_queue_create(fd, vm, 0);
 		syncobjs[i] = syncobj_create(fd, 0);
 	}
 	syncobjs[N_EXEC_QUEUES] = syncobj_create(fd, 0);
@@ -782,7 +782,7 @@ test_bind_array(int fd, struct drm_xe_engine_class_instance *eci, int n_execs,
 
 	igt_assert(n_execs <= BIND_ARRAY_MAX_N_EXEC);
 
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(*data) * n_execs;
 	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
 			xe_get_default_alignment(fd));
@@ -793,7 +793,7 @@ test_bind_array(int fd, struct drm_xe_engine_class_instance *eci, int n_execs,
 	data = xe_bo_map(fd, bo, bo_size);
 
 	if (flags & BIND_ARRAY_BIND_EXEC_QUEUE_FLAG)
-		bind_exec_queue = xe_bind_exec_queue_create(fd, vm, 0, true);
+		bind_exec_queue = xe_bind_exec_queue_create(fd, vm, 0);
 	exec_queue = xe_exec_queue_create(fd, vm, eci, 0);
 
 	for (i = 0; i < n_execs; ++i) {
@@ -802,7 +802,7 @@ test_bind_array(int fd, struct drm_xe_engine_class_instance *eci, int n_execs,
 		bind_ops[i].range = bo_size;
 		bind_ops[i].addr = addr;
 		bind_ops[i].op = DRM_XE_VM_BIND_OP_MAP;
-		bind_ops[i].flags = DRM_XE_VM_BIND_FLAG_ASYNC;
+		bind_ops[i].flags = 0;
 		bind_ops[i].prefetch_mem_region_instance = 0;
 		bind_ops[i].pat_index = intel_get_pat_idx_wb(fd);
 		bind_ops[i].reserved[0] = 0;
@@ -848,7 +848,7 @@ test_bind_array(int fd, struct drm_xe_engine_class_instance *eci, int n_execs,
 	for (i = 0; i < n_execs; ++i) {
 		bind_ops[i].obj = 0;
 		bind_ops[i].op = DRM_XE_VM_BIND_OP_UNMAP;
-		bind_ops[i].flags = DRM_XE_VM_BIND_FLAG_ASYNC;
+		bind_ops[i].flags = 0;
 	}
 
 	syncobj_reset(fd, &sync[0].handle, 1);
@@ -977,7 +977,7 @@ test_large_binds(int fd, struct drm_xe_engine_class_instance *eci,
 	}
 
 	igt_assert(n_exec_queues <= MAX_N_EXEC_QUEUES);
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(fd, 0, 0);
 
 	if (flags & LARGE_BIND_FLAG_USERPTR) {
 		map = aligned_alloc(xe_get_default_alignment(fd), bo_size);
@@ -1272,7 +1272,7 @@ test_munmap_style_unbind(int fd, struct drm_xe_engine_class_instance *eci,
 			unbind_n_page_offset *= n_page_per_2mb;
 	}
 
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(fd, 0, 0);
 	bo_size = page_size * bo_n_pages;
 
 	if (flags & MAP_FLAG_USERPTR) {
@@ -1572,7 +1572,7 @@ test_mmap_style_bind(int fd, struct drm_xe_engine_class_instance *eci,
 			unbind_n_page_offset *= n_page_per_2mb;
 	}
 
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(fd, 0, 0);
 	bo_size = page_size * bo_n_pages;
 
 	if (flags & MAP_FLAG_USERPTR) {

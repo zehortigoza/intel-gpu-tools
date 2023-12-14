@@ -192,7 +192,7 @@ static void simple_bb(struct buf_ops *bops, bool new_context)
 	intel_bb_reset(ibb, true);
 
 	if (new_context) {
-		vm = xe_vm_create(xe, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		vm = xe_vm_create(xe, 0, 0);
 		ctx = xe_exec_queue_create(xe, vm, &xe_engine(xe, 0)->instance,
 					   0);
 		intel_bb_destroy(ibb);

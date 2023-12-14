@@ -56,7 +56,7 @@ static void test_set_property(int xe, int property_name,
 			      int property_value, int err_val)
 {
 	struct drm_xe_engine_class_instance instance = {
-			.engine_class = DRM_XE_ENGINE_CLASS_VM_BIND_SYNC,
+			.engine_class = DRM_XE_ENGINE_CLASS_VM_BIND,
 	};
 	struct drm_xe_ext_set_property ext = {
 		.base.next_extension = 0,

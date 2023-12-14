@@ -77,7 +77,7 @@ test_balancer(int fd, int gt, uint32_t vm, uint64_t addr, uint64_t userptr,
 	}
 
 	if (!vm) {
-		vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		vm = xe_vm_create(fd, 0, 0);
 		owns_vm = true;
 	}
 
@@ -286,8 +286,7 @@ test_compute_mode(int fd, uint32_t vm, uint64_t addr, uint64_t userptr,
 	}
 
 	if (!vm) {
-		vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT |
-				  DRM_XE_VM_CREATE_FLAG_LR_MODE, 0);
+		vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_LR_MODE, 0);
 		owns_vm = true;
 	}
 
@@ -492,7 +491,7 @@ test_legacy_mode(int fd, uint32_t vm, uint64_t addr, uint64_t userptr,
 	}
 
 	if (!vm) {
-		vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		vm = xe_vm_create(fd, 0, 0);
 		owns_vm = true;
 	}
 
@@ -536,7 +535,7 @@ test_legacy_mode(int fd, uint32_t vm, uint64_t addr, uint64_t userptr,
 			exec_queues[i] = xe_exec_queue_create(fd, vm, eci, 0);
 		if (flags & BIND_EXEC_QUEUE)
 			bind_exec_queues[i] = xe_bind_exec_queue_create(fd, vm,
-									0, true);
+									0);
 		else
 			bind_exec_queues[i] = 0;
 		syncobjs[i] = syncobj_create(fd, 0);
@@ -1004,11 +1003,8 @@ static void threads(int fd, int flags)
 	pthread_cond_init(&cond, 0);
 
 	if (flags & SHARED_VM) {
-		vm_legacy_mode = xe_vm_create(fd,
-					      DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT,
-					      0);
+		vm_legacy_mode = xe_vm_create(fd, 0, 0);
 		vm_compute_mode = xe_vm_create(fd,
-					       DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT |
 					       DRM_XE_VM_CREATE_FLAG_LR_MODE,
 					       0);
 	}

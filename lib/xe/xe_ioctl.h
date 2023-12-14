@@ -27,12 +27,6 @@ void  __xe_vm_bind_assert(int fd, uint32_t vm, uint32_t exec_queue, uint32_t bo,
 			  uint64_t offset, uint64_t addr, uint64_t size,
 			  uint32_t op, uint32_t flags, struct drm_xe_sync *sync,
 			  uint32_t num_syncs, uint32_t prefetch_region, uint64_t ext);
-void xe_vm_bind(int fd, uint32_t vm, uint32_t bo, uint64_t offset,
-		uint64_t addr, uint64_t size,
-		struct drm_xe_sync *sync, uint32_t num_syncs);
-void xe_vm_unbind(int fd, uint32_t vm, uint64_t offset,
-		  uint64_t addr, uint64_t size,
-		  struct drm_xe_sync *sync, uint32_t num_syncs);
 void xe_vm_prefetch_async(int fd, uint32_t vm, uint32_t exec_queue,
 			  uint64_t offset, uint64_t addr, uint64_t size,
 			  struct drm_xe_sync *sync, uint32_t num_syncs,
@@ -81,8 +75,7 @@ int __xe_exec_queue_create(int fd, uint32_t vm,
 uint32_t xe_exec_queue_create(int fd, uint32_t vm,
 			  struct drm_xe_engine_class_instance *instance,
 			  uint64_t ext);
-uint32_t xe_bind_exec_queue_create(int fd, uint32_t vm, uint64_t ext,
-				   bool async);
+uint32_t xe_bind_exec_queue_create(int fd, uint32_t vm, uint64_t ext);
 uint32_t xe_exec_queue_create_class(int fd, uint32_t vm, uint16_t class);
 void xe_exec_queue_destroy(int fd, uint32_t exec_queue);
 uint64_t xe_bo_mmap_offset(int fd, uint32_t bo);

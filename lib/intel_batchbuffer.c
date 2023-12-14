@@ -967,7 +967,7 @@ __intel_bb_create(int fd, uint32_t ctx, uint32_t vm, const intel_ctx_cfg_t *cfg,
 
 		if (!vm) {
 			igt_assert_f(!ctx, "No vm provided for engine");
-			vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+			vm = xe_vm_create(fd, 0, 0);
 		}
 
 		ibb->uses_full_ppgtt = true;
@@ -1347,9 +1347,8 @@ static void __unbind_xe_objects(struct intel_bb *ibb)
 	if (ibb->num_objects > 1) {
 		struct drm_xe_vm_bind_op *bind_ops;
 		uint32_t op = DRM_XE_VM_BIND_OP_UNMAP;
-		uint32_t flags = DRM_XE_VM_BIND_FLAG_ASYNC;
 
-		bind_ops = xe_alloc_bind_ops(ibb, op, flags, 0);
+		bind_ops = xe_alloc_bind_ops(ibb, op, 0, 0);
 		xe_vm_bind_array(ibb->fd, ibb->vm_id, 0, bind_ops,
 				 ibb->num_objects, syncs, 2);
 		free(bind_ops);
@@ -2395,7 +2394,7 @@ __xe_bb_exec(struct intel_bb *ibb, uint64_t flags, bool sync)
 
 	syncs[0].handle = syncobj_create(ibb->fd, 0);
 	if (ibb->num_objects > 1) {
-		bind_ops = xe_alloc_bind_ops(ibb, DRM_XE_VM_BIND_OP_MAP, DRM_XE_VM_BIND_FLAG_ASYNC, 0);
+		bind_ops = xe_alloc_bind_ops(ibb, DRM_XE_VM_BIND_OP_MAP, 0, 0);
 		xe_vm_bind_array(ibb->fd, ibb->vm_id, 0, bind_ops,
 				 ibb->num_objects, syncs, 1);
 		free(bind_ops);

@@ -39,7 +39,7 @@ igt_main
 
 	igt_subtest("invalid-param") {
 		struct drm_xe_engine_class_instance instance = {
-			 .engine_class = DRM_XE_ENGINE_CLASS_VM_BIND_SYNC,
+			 .engine_class = DRM_XE_ENGINE_CLASS_VM_BIND,
 		 };
 
 		int ret;

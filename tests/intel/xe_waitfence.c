@@ -92,7 +92,7 @@ waitfence(int fd, enum waittype wt)
 	uint32_t bo_7;
 	int64_t timeout;
 
-	uint32_t vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	uint32_t vm = xe_vm_create(fd, 0, 0);
 	bo_1 = xe_bo_create(fd, vm, 0x40000, vram_if_possible(fd, 0), 0);
 	do_bind(fd, vm, bo_1, 0, 0x200000, 0x40000, 1);
 	bo_2 = xe_bo_create(fd, vm, 0x40000, vram_if_possible(fd, 0), 0);
@@ -173,7 +173,7 @@ invalid_flag(int fd)
 		.exec_queue_id = 0,
 	};
 
-	uint32_t vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	uint32_t vm = xe_vm_create(fd, 0, 0);
 
 	bo = xe_bo_create(fd, vm, 0x40000, vram_if_possible(fd, 0), 0);
 
@@ -197,7 +197,7 @@ invalid_ops(int fd)
 		.exec_queue_id = 0,
 	};
 
-	uint32_t vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	uint32_t vm = xe_vm_create(fd, 0, 0);
 
 	bo = xe_bo_create(fd, vm, 0x40000, vram_if_possible(fd, 0), 0);
 
@@ -221,7 +221,7 @@ invalid_engine(int fd)
 		.exec_queue_id = 0,
 	};
 
-	uint32_t vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	uint32_t vm = xe_vm_create(fd, 0, 0);
 
 	bo = xe_bo_create(fd, vm, 0x40000, vram_if_possible(fd, 0), 0);
 
@@ -260,7 +260,7 @@ exec_queue_reset_wait(int fd)
 		.syncs = to_user_pointer(sync),
 	};
 
-	uint32_t vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	uint32_t vm = xe_vm_create(fd, 0, 0);
 	uint32_t exec_queue = xe_exec_queue_create_class(fd, vm, DRM_XE_ENGINE_CLASS_COPY);
 	struct drm_xe_wait_user_fence wait = {
 		.op = DRM_XE_UFENCE_WAIT_OP_EQ,

@@ -106,7 +106,7 @@ static void basic_inst(int fd, int inst_type, struct drm_xe_engine_class_instanc
 	syncobj = syncobj_create(fd, 0);
 	sync.handle = syncobj;
 
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(*data);
 	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
 			xe_get_default_alignment(fd));
@@ -116,7 +116,7 @@ static void basic_inst(int fd, int inst_type, struct drm_xe_engine_class_instanc
 			  DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
 
 	exec_queue = xe_exec_queue_create(fd, vm, eci, 0);
-	bind_engine = xe_bind_exec_queue_create(fd, vm, 0, true);
+	bind_engine = xe_bind_exec_queue_create(fd, vm, 0);
 	xe_vm_bind_async(fd, vm, bind_engine, bo, 0, addr, bo_size, &sync, 1);
 	data = xe_bo_map(fd, bo, bo_size);
 
@@ -185,7 +185,7 @@ static void store_cachelines(int fd, struct drm_xe_engine_class_instance *eci,
 	size_t bo_size = 4096;
 
 	bo_size = ALIGN(bo_size, xe_get_default_alignment(fd));
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(fd, 0, 0);
 	ahnd = intel_allocator_open(fd, 0, INTEL_ALLOCATOR_SIMPLE);
 	exec_queues = xe_exec_queue_create(fd, vm, eci, 0);
 	syncobjs = syncobj_create(fd, 0);

@@ -121,7 +121,7 @@ static void test_read(struct gpu_info *ex_gpu, struct gpu_info *im_gpu,
 	};
 	intel_ctx_t *ctx;
 
-	vm = xe_vm_create(im_xe, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(im_xe, 0, 0);
 	exec_queue = xe_exec_queue_create(im_xe, vm, &inst, 0);
 	ctx = intel_ctx_xe(im_xe, vm, exec_queue, 0, 0, 0);
 	ahnd = intel_allocator_open_full(im_xe, ctx->vm, 0, 0,
@@ -203,7 +203,7 @@ static void test_write(struct gpu_info *ex_gpu, struct gpu_info *im_gpu,
 	};
 	intel_ctx_t *ctx;
 
-	vm = xe_vm_create(im_xe, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(im_xe, 0, 0);
 	exec_queue = xe_exec_queue_create(im_xe, vm, &inst, 0);
 	ctx = intel_ctx_xe(im_xe, vm, exec_queue, 0, 0, 0);
 	ahnd = intel_allocator_open_full(im_xe, ctx->vm, 0, 0,

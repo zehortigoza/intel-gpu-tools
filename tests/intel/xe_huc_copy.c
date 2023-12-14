@@ -157,7 +157,7 @@ test_huc_copy(int fd)
 	uint32_t vm;
 	uint32_t tested_gts = 0;
 
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+	vm = xe_vm_create(fd, 0, 0);
 
 	xe_for_each_engine(fd, hwe) {
 		if (hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_DECODE &&
