@@ -92,7 +92,7 @@ static void test_bad_flags(int fd)
 static void test_bad_extensions(int fd)
 {
 	uint64_t size = xe_get_default_alignment(fd);
-	struct xe_user_extension ext;
+	struct drm_xe_user_extension ext;
 	struct drm_xe_gem_mmap_offset mmo = {
 		.handle = xe_bo_create(fd, 0, size,
 				       vram_if_possible(fd, 0),
