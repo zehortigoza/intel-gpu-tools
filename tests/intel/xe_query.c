@@ -679,43 +679,32 @@ static void test_engine_cycles_invalid(int fd)
 
 igt_main
 {
+	const struct {
+		const char *name;
+		void (*func)(int);
+	} funcs[] = {
+		{ "query-engines", test_query_engines },
+		{ "query-mem-usage", test_query_mem_regions },
+		{ "query-gt-list", test_query_gt_list },
+		{ "query-config", test_query_config },
+		{ "query-hwconfig", test_query_hwconfig },
+		{ "query-topology", test_query_gt_topology },
+		{ "query-cs-cycles", test_query_engine_cycles },
+		{ "query-invalid-cs-cycles", test_engine_cycles_invalid },
+		{ "query-invalid-query", test_query_invalid_query },
+		{ "query-invalid-size", test_query_invalid_size },
+		{ "query-invalid-extension", test_query_invalid_extension },
+		{ }
+	}, *f;
 	int xe;
 
 	igt_fixture
 		xe = drm_open_driver(DRIVER_XE);
 
-	igt_subtest("query-engines")
-		test_query_engines(xe);
-
-	igt_subtest("query-mem-usage")
-		test_query_mem_regions(xe);
-
-	igt_subtest("query-gt-list")
-		test_query_gt_list(xe);
-
-	igt_subtest("query-config")
-		test_query_config(xe);
-
-	igt_subtest("query-hwconfig")
-		test_query_hwconfig(xe);
-
-	igt_subtest("query-topology")
-		test_query_gt_topology(xe);
-
-	igt_subtest("query-cs-cycles")
-		test_query_engine_cycles(xe);
-
-	igt_subtest("query-invalid-cs-cycles")
-		test_engine_cycles_invalid(xe);
-
-	igt_subtest("query-invalid-query")
-		test_query_invalid_query(xe);
-
-	igt_subtest("query-invalid-size")
-		test_query_invalid_size(xe);
-
-	igt_subtest("query-invalid-extension")
-		test_query_invalid_extension(xe);
+	for (f = funcs; f->name; f++) {
+		igt_subtest_f("%s", f->name)
+			f->func(xe);
+	}
 
 	igt_fixture
 		drm_close_driver(xe);
