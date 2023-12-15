@@ -29,8 +29,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#define MULTIPLIER_TO_LR 270000
-
 IGT_TEST_DESCRIPTION("This igt test validates ILR (Intermediate Link Rate) "
 	"feature from two perspective: "
 	"1. Test if we can sucessfully train link rate at all supported ILRs"

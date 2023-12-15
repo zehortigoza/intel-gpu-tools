@@ -34,6 +34,7 @@ typedef struct
         enum pipe pipe_id;
 	int connector_type;
 	int w, h;
+	int supported_ilr[MAX_SUPPORTED_ILR];
 } data_t;
 
 const enum dc_lane_count lane_count_values[] =
@@ -51,12 +52,17 @@ const enum dc_link_rate dp_link_rate_values[] =
 	LINK_RATE_HIGH3
 };
 
+/* eDP 1.4b */
 const enum dc_link_rate edp_link_rate_values[] =
 {
-	LINK_RATE_LOW,
-	LINK_RATE_HIGH,
-	LINK_RATE_RBR2,
-	LINK_RATE_HIGH2
+	LINK_RATE_LOW,		/* 0x6 Rate_1 (RBR)	- 1.62 Gbps/Lane */
+	LINK_RATE_RATE_2,	/* 0x8 Rate_2		- 2.16 Gbps/Lane */
+	LINK_RATE_RATE_3,	/* 0x9 Rate_3		- 2.43 Gbps/Lane */
+	LINK_RATE_HIGH,		/* 0xA Rate_4 (HBR)	- 2.70 Gbps/Lane */
+	LINK_RATE_RBR2,		/* 0xC Rate_5 (RBR2)	- 3.24 Gbps/Lane */
+	LINK_RATE_RATE_6,	/* 0x10 Rate_6		- 4.32 Gbps/Lane */
+	LINK_RATE_HIGH2,	/* 0x14 Rate_7 (HBR2)	- 5.40 Gbps/Lane */
+	LINK_RATE_HIGH3		/* 0x1E Rate_8 (HBR3)	- 8.10 Gbps/Lane */
 };
 
 static void test_fini(data_t *data)
@@ -116,6 +122,8 @@ static void run_link_training_config(data_t *data, igt_output_t *output)
 	} else if (data->connector_type == DRM_MODE_CONNECTOR_eDP) {
 		link_rate_values = edp_link_rate_values;
 		num_link_rates = ARRAY_SIZE(edp_link_rate_values);
+		igt_amd_read_ilr_setting(data->drm_fd, connector_name,
+			data->supported_ilr);
 	} else {
 		igt_info("Not a DP or eDP connector\n");
 		return;
@@ -136,6 +144,22 @@ static void run_link_training_config(data_t *data, igt_output_t *output)
 		{
 			if (link_rate_values[j] > max_lr)
 				continue;
+
+			/* Check if ilr link rate is supported */
+			if (data->connector_type == DRM_MODE_CONNECTOR_eDP) {
+				bool valid_link_rate = false;
+
+				for (int k = 0; k < MAX_SUPPORTED_ILR; k++) {
+					if (data->supported_ilr[k] ==
+						link_rate_values[j] * MULTIPLIER_TO_LR) {
+						valid_link_rate = true;
+						break;
+					} else if (data->supported_ilr[k] == 0)
+						break;
+				}
+				if (!valid_link_rate)
+					continue;
+			}
 
 			/* Write link settings */
 			igt_info("Applying lane count: %d, link rate 0x%02x, on default training\n",
