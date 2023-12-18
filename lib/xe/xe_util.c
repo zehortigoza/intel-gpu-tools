@@ -146,7 +146,7 @@ static struct drm_xe_vm_bind_op *xe_alloc_bind_ops(int xe,
 		ops->flags = flags;
 		ops->obj_offset = 0;
 		ops->addr = obj->offset;
-		ops->range = obj->size;
+		ops->range = ALIGN(obj->size, 4096);
 		ops->prefetch_mem_region_instance = 0;
 		if (obj->pat_index == DEFAULT_PAT_INDEX)
 			ops->pat_index = intel_get_pat_idx_wb(xe);
