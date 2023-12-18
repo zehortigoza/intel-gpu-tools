@@ -115,11 +115,11 @@ amdgpu_vmid_reserve_test(amdgpu_device_handle device_handle,
 static void
 amdgpu_vm_unaligned_map(amdgpu_device_handle device_handle)
 {
-	const uint64_t map_size = (4ULL << 30) - (2 << 12);
+	uint64_t map_size = (4ULL << 30) - (2 << 12);
 	struct amdgpu_bo_alloc_request request = {};
 	amdgpu_bo_handle buf_handle;
 	amdgpu_va_handle handle;
-	uint64_t vmc_addr;
+	uint64_t vmc_addr, alignment = 1ULL << 30;
 	int r;
 
 	request.alloc_size = 4ULL << 30;
@@ -127,11 +127,18 @@ amdgpu_vm_unaligned_map(amdgpu_device_handle device_handle)
 	request.preferred_heap = AMDGPU_GEM_DOMAIN_VRAM;
 	request.flags = AMDGPU_GEM_CREATE_NO_CPU_ACCESS;
 
-	r = amdgpu_bo_alloc(device_handle, &request, &buf_handle);
+	if (-ENOMEM == amdgpu_bo_alloc(device_handle, &request, &buf_handle)) {
+		/* Try allocate on the device of small memory */
+		request.alloc_size = 8ULL << 20;
+		map_size = (8ULL << 20) - (2 << 12);
+		alignment = 2ULL << 20;
+		r = amdgpu_bo_alloc(device_handle, &request, &buf_handle);
+	}
+
 	igt_assert_eq(r, 0);
 
 	r = amdgpu_va_range_alloc(device_handle, amdgpu_gpu_va_range_general,
-				4ULL << 30, 1ULL << 30, 0, &vmc_addr,
+				request.alloc_size, alignment, 0, &vmc_addr,
 				&handle, 0);
 	igt_assert_eq(r, 0);
 
