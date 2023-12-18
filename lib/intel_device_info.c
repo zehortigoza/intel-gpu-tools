@@ -511,7 +511,7 @@ static const struct intel_device_info intel_lunarlake_info = {
 	.has_4tile = true,
 	.is_lunarlake = true,
 	.codename = "lunarlake",
-	.cmds_info = &gen12_pvc_cmds_info,
+	.cmds_info = &xe2_cmds_info,
 };
 
 static const struct pci_id_match intel_device_match[] = {
