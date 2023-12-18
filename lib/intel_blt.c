@@ -948,15 +948,16 @@ int blt_block_copy(int fd,
 	return ret;
 }
 
-static uint16_t __ccs_size(const struct blt_ctrl_surf_copy_data *surf)
+static uint16_t __ccs_size(int fd, const struct blt_ctrl_surf_copy_data *surf)
 {
 	uint32_t src_size, dst_size;
+	uint16_t ccsratio = CCS_RATIO(fd);
 
 	src_size = surf->src.access_type == DIRECT_ACCESS ?
-				surf->src.size : surf->src.size / CCS_RATIO;
+				surf->src.size : surf->src.size / ccsratio;
 
 	dst_size = surf->dst.access_type == DIRECT_ACCESS ?
-				surf->dst.size : surf->dst.size / CCS_RATIO;
+				surf->dst.size : surf->dst.size / ccsratio;
 
 	igt_assert_f(src_size <= dst_size, "dst size must be >= src size for CCS copy\n");
 
@@ -1118,6 +1119,8 @@ uint64_t emit_blt_ctrl_surf_copy(int fd,
 	uint64_t dst_offset, src_offset, bb_offset, alignment;
 	uint32_t bbe = MI_BATCH_BUFFER_END;
 	uint32_t *bb;
+	uint16_t num_ccs_blocks = (ip_ver >= IP_VER(20, 0)) ?
+				(xe_get_default_alignment(fd) / CCS_RATIO(fd)) : CCS_RATIO(fd);
 
 	igt_assert_f(ahnd, "ctrl-surf-copy supports softpin only\n");
 	igt_assert_f(surf, "ctrl-surf-copy requires data to do ctrl-surf-copy blit\n");
@@ -1136,7 +1139,7 @@ uint64_t emit_blt_ctrl_surf_copy(int fd,
 		data.xe2.dw00.dst_access_type = surf->dst.access_type;
 
 		/* Ensure dst has size capable to keep src ccs aux */
-		data.xe2.dw00.size_of_ctrl_copy = __ccs_size(surf) / CCS_RATIO - 1;
+		data.xe2.dw00.size_of_ctrl_copy = __ccs_size(fd, surf) / num_ccs_blocks - 1;
 		data.xe2.dw00.length = 0x3;
 
 		data.xe2.dw01.src_address_lo = src_offset;
@@ -1155,7 +1158,7 @@ uint64_t emit_blt_ctrl_surf_copy(int fd,
 		data.gen12.dw00.dst_access_type = surf->dst.access_type;
 
 		/* Ensure dst has size capable to keep src ccs aux */
-		data.gen12.dw00.size_of_ctrl_copy = __ccs_size(surf) / CCS_RATIO - 1;
+		data.gen12.dw00.size_of_ctrl_copy = __ccs_size(fd, surf) / num_ccs_blocks - 1;
 		data.gen12.dw00.length = 0x3;
 
 		data.gen12.dw01.src_address_lo = src_offset;
