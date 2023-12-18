@@ -16,4 +16,6 @@ uint8_t intel_get_pat_idx_uc(int fd);
 uint8_t intel_get_pat_idx_wt(int fd);
 uint8_t intel_get_pat_idx_wb(int fd);
 
+uint8_t intel_get_pat_idx_uc_comp(int fd);
+
 #endif /* INTEL_PAT_H */

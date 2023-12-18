@@ -11,7 +11,7 @@ struct intel_pat_cache {
 	uint8_t uc; /* UC + COH_NONE */
 	uint8_t wt; /* WT + COH_NONE */
 	uint8_t wb; /* WB + COH_AT_LEAST_1WAY */
-
+	uint8_t uc_comp; /* UC + COH_NONE + COMPRESSION, XE2 and later*/
 	uint8_t max_index;
 };
 
@@ -23,6 +23,7 @@ static void intel_get_pat_idx(int fd, struct intel_pat_cache *pat)
 		pat->uc = 3;
 		pat->wt = 15; /* Compressed + WB-transient */
 		pat->wb = 2;
+		pat->uc_comp = 12; /* Compressed + UC, XE2 and later */
 		pat->max_index = 31;
 	} else if (IS_METEORLAKE(dev_id)) {
 		pat->uc = 2;
@@ -58,6 +59,17 @@ uint8_t intel_get_pat_idx_uc(int fd)
 
 	intel_get_pat_idx(fd, &pat);
 	return pat.uc;
+}
+
+uint8_t intel_get_pat_idx_uc_comp(int fd)
+{
+	struct intel_pat_cache pat = {};
+	uint16_t dev_id = intel_get_drm_devid(fd);
+
+	igt_assert(AT_LEAST_GEN(dev_id, 20));
+
+	intel_get_pat_idx(fd, &pat);
+	return pat.uc_comp;
 }
 
 uint8_t intel_get_pat_idx_wt(int fd)
