@@ -716,7 +716,7 @@ sysfs_read(enum i915_attr_id id)
 	if (is_xe_device(drm_fd)) {
 		switch (id) {
 		case RPS_RP0_FREQ_MHZ:
-			igt_assert(igt_sysfs_scanf(sysfs, "device/tile0/gt0/freq_rp0", "%lu", &value) == 1);
+			igt_assert(igt_sysfs_scanf(sysfs, "device/tile0/gt0/freq0/rp0_freq", "%lu", &value) == 1);
 			break;
 		case RC6_RESIDENCY_MS:
 			igt_assert(igt_sysfs_scanf(sysfs, "device/tile0/gt0/rc6_residency", "%lu", &value) == 1);
@@ -1954,7 +1954,7 @@ static void load_helper_init(void)
 	lh.bops = buf_ops_create(drm_fd);
 
 	if (is_xe_device(drm_fd)) {
-		lh.vm = xe_vm_create(drm_fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		lh.vm = xe_vm_create(drm_fd, 0, 0);
 		lh.context_id = xe_exec_queue_create(drm_fd, lh.vm, &xe_engine(drm_fd, 0)->instance, 0);
 	} else {
 		lh.context_id = gem_context_create(drm_fd);
@@ -3442,7 +3442,7 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e2,
 
 	bops = buf_ops_create(drm_fd);
 	if (is_xe_device(drm_fd)) {
-		vm = xe_vm_create(drm_fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		vm = xe_vm_create(drm_fd, 0, 0);
 		ctx_id = xe_exec_queue_create(drm_fd, vm, hwe, 0);
 	} else {
 		ctx_id = gem_context_create(drm_fd);
@@ -3591,7 +3591,7 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 	}
 
 	if (is_xe_device(drm_fd)) {
-		vm = xe_vm_create(drm_fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		vm = xe_vm_create(drm_fd, 0, 0);
 		context0_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
 		context1_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
 	} else {
@@ -3919,7 +3919,7 @@ static void gen12_single_ctx_helper_one_ctx(const struct intel_execution_engine2
 	}
 
 	if (is_xe_device(drm_fd)) {
-		vm = xe_vm_create(drm_fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		vm = xe_vm_create(drm_fd, 0, 0);
 		context0_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
 	} else {
 		context0_id = gem_context_create(drm_fd);
@@ -4770,7 +4770,7 @@ __test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 	scratch_buf_init(bops, &dst, width, height, 0x00ff00ff);
 
 	if (is_xe_device(drm_fd)) {
-		vm = xe_vm_create(drm_fd, DRM_XE_VM_CREATE_FLAG_ASYNC_DEFAULT, 0);
+		vm = xe_vm_create(drm_fd, 0, 0);
 		context = xe_exec_queue_create(drm_fd, vm, hwe, 0);
 	} else {
 		context = gem_context_create(drm_fd);

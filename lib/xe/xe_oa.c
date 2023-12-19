@@ -706,11 +706,11 @@ xe_perf_for_fd(int drm_fd, int gt)
 	}
 
 	if (IS_PONTEVECCHIO(xe_dev_id(drm_fd))) {
-		sprintf(path_min, "device/tile%d/gt%d/freq_min", gt, gt);
-		sprintf(path_max, "device/tile%d/gt%d/freq_max", gt, gt);
+		sprintf(path_min, "device/tile%d/gt%d/freq%d/min_freq", gt, gt, gt);
+		sprintf(path_max, "device/tile%d/gt%d/freq%d/max_freq", gt, gt, gt);
 	} else {
-		sprintf(path_min, "device/tile0/gt%d/freq_min", gt);
-		sprintf(path_max, "device/tile0/gt%d/freq_max", gt);
+		sprintf(path_min, "device/tile0/gt%d/freq%d/min_freq", gt, gt);
+		sprintf(path_max, "device/tile0/gt%d/freq%d/max_freq", gt, gt);
 	}
 
 	if (!read_sysfs(sysfs_dir_fd, path_min, &gt_min_freq) ||
