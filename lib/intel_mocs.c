@@ -6,17 +6,6 @@
 #include "igt.h"
 #include "intel_mocs.h"
 
-#define DG1_MOCS_UC_IDX				1
-#define DG1_MOCS_WB_IDX				5
-#define DG2_MOCS_UC_IDX				1
-#define DG2_MOCS_WB_IDX				3
-#define MTL_MOCS_UC_IDX				5
-#define MTL_MOCS_WB_IDX				10
-#define GEN12_MOCS_UC_IDX			3
-#define GEN12_MOCS_WB_IDX			2
-#define XE2_MOCS_UC_IDX				3
-#define XE2_MOCS_WB_IDX				4
-
 struct drm_intel_mocs_index {
 	uint8_t uc_index;
 	uint8_t wb_index;
@@ -34,20 +23,20 @@ static void get_mocs_index(int fd, struct drm_intel_mocs_index *mocs)
 	 * as WB MOCS index based on platform.
 	 */
 	if (intel_graphics_ver(devid) >= IP_VER(20, 0)) {
-		mocs->uc_index = XE2_MOCS_UC_IDX;
-		mocs->wb_index = XE2_MOCS_WB_IDX;
+		mocs->uc_index = 3;
+		mocs->wb_index = 4;
 	} else if (IS_METEORLAKE(devid)) {
-		mocs->uc_index = MTL_MOCS_UC_IDX;
-		mocs->wb_index = MTL_MOCS_WB_IDX;
+		mocs->uc_index = 5;
+		mocs->wb_index = 10;
 	} else if (IS_DG2(devid)) {
-		mocs->uc_index = DG2_MOCS_UC_IDX;
-		mocs->wb_index = DG2_MOCS_WB_IDX;
+		mocs->uc_index = 1;
+		mocs->wb_index = 3;
 	} else if (IS_DG1(devid)) {
-		mocs->uc_index = DG1_MOCS_UC_IDX;
-		mocs->wb_index = DG1_MOCS_WB_IDX;
+		mocs->uc_index = 1;
+		mocs->wb_index = 5;
 	} else if (IS_GEN12(devid)) {
-		mocs->uc_index = GEN12_MOCS_UC_IDX;
-		mocs->wb_index = GEN12_MOCS_WB_IDX;
+		mocs->uc_index = 3;
+		mocs->wb_index = 2;
 	} else {
 		mocs->uc_index = I915_MOCS_PTE;
 		mocs->wb_index = I915_MOCS_CACHED;
