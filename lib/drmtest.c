@@ -221,6 +221,26 @@ struct _opened_device_path {
 	struct igt_list_head link;
 };
 
+static void modulename_to_chipset(const char *name, unsigned int *chip)
+{
+	if (!name)
+		return;
+
+	for (int start = 0, end = ARRAY_SIZE(modules) - 1; start < end; ) {
+		int mid = start + (end - start) / 2;
+		int ret = strcmp(modules[mid].module, name);
+
+		if (ret < 0) {
+			start = mid + 1;
+		} else if (ret > 0) {
+			end = mid;
+		} else {
+			*chip = modules[mid].bit;
+			break;
+		}
+	}
+}
+
 /*
  * Logs path of opened device. Device path opened for the first time is logged at info level,
  * subsequent opens (if any) are logged at debug level.
@@ -263,7 +283,7 @@ int __drm_open_device(const char *name, unsigned int chipset)
 {
 	const char *forced;
 	char dev_name[16] = "";
-	int chip = DRIVER_ANY;
+	unsigned int chip = DRIVER_ANY;
 	int fd;
 
 	fd = open(name, O_RDWR);
@@ -280,18 +300,7 @@ int __drm_open_device(const char *name, unsigned int chipset)
 		goto err;
 	}
 
-	for (int start = 0, end = ARRAY_SIZE(modules) - 1; start < end; ){
-		int mid = start + (end - start) / 2;
-		int ret = strcmp(modules[mid].module, dev_name);
-		if (ret < 0) {
-			start = mid + 1;
-		} else if (ret > 0) {
-			end = mid;
-		} else {
-			chip = modules[mid].bit;
-			break;
-		}
-	}
+	modulename_to_chipset(dev_name, &chip);
 
 	if ((chipset & chip) == chip) {
 		log_opened_device_path(name);
@@ -375,16 +384,34 @@ static int __search_and_open(const char *base, int offset, unsigned int chipset,
 void drm_load_module(unsigned int chipset)
 {
 	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+	const char *forced = forced_driver();
+	unsigned int chip = 0;
+	bool want_any = chipset == DRIVER_ANY;
+
+	if (forced) {
+		if (chipset == DRIVER_VGEM)
+			chip = DRIVER_VGEM; /* ignore forced */
+		else
+			modulename_to_chipset(forced, &chip);
+
+		chipset &= chip; /* forced can be in known modules */
+	}
 
 	pthread_mutex_lock(&mutex);
-	for (const struct module *m = modules; m->module; m++) {
-		if (chipset & m->bit) {
-			if (m->modprobe)
-				m->modprobe(m->module);
-			else
-				modprobe(m->module);
+	if (forced && chipset == 0) {
+		if (want_any)
+			modprobe(forced);
+	} else {
+		for (const struct module *m = modules; m->module; m++) {
+			if (chipset & m->bit) {
+				if (m->modprobe)
+					m->modprobe(m->module);
+				else
+					modprobe(m->module);
+			}
 		}
 	}
+
 	pthread_mutex_unlock(&mutex);
 	igt_devices_scan(true);
 }
