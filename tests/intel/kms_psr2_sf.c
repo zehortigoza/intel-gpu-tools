@@ -112,10 +112,6 @@
  *
  * SUBTEST: primary-plane-update-sf-dmg-area-big-fb
  * Description: Test that selective fetch works on primary plane with big fb
- *
- * SUBTEST: fbc-primary-plane-update-sf-dmg-area-big-fb
- * Description: Test that fbc with selective fetch works on primary plane with big fb
- * Functionality: plane, psr2, selective_fetch, fbc
  */
 
 IGT_TEST_DESCRIPTION("Tests to verify PSR2 selective fetch by sending multiple"
@@ -1084,29 +1080,34 @@ igt_main
 		}
 
 		/* Verify primary plane selective fetch with big fb */
-		data.big_fb_test = 1;
-		igt_describe("Test that selective fetch works on primary plane with big fb");
-		igt_subtest_with_dynamic_f("%sprimary-%s-sf-dmg-area-big-fb", append_fbc_subtest[y],
-					   op_str(data.op)) {
-			for (i = 0; i < n_pipes; i++) {
-				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
-					continue;
-
-				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
-					if (j != FEATURE_NONE && !(coexist_features[i] & j))
+		if (data.op_fbc_mode == FBC_DISABLED) {
+			data.big_fb_test = 1;
+			igt_describe("Test that selective fetch works on primary plane with "
+				     "big fb");
+			igt_subtest_with_dynamic_f("%sprimary-%s-sf-dmg-area-big-fb",
+						   append_fbc_subtest[y], op_str(data.op)) {
+				for (i = 0; i < n_pipes; i++) {
+					if (!pipe_output_combo_valid(&data.display, pipes[i],
+								     outputs[i]))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
-						      igt_output_name(outputs[i]),
-						      coexist_feature_str(j)) {
-						data.pipe = pipes[i];
-						data.output = outputs[i];
-						data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
-						data.coexist_feature = j;
-						for (k = 1; k <= MAX_DAMAGE_AREAS; k++) {
-							data.damage_area_count = k;
-							prepare(&data);
-							run(&data);
-							cleanup(&data);
+
+					for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
+						if (j != FEATURE_NONE && !(coexist_features[i] & j))
+							continue;
+						igt_dynamic_f("pipe-%s-%s%s",
+							      kmstest_pipe_name(pipes[i]),
+							      igt_output_name(outputs[i]),
+							      coexist_feature_str(j)) {
+							data.pipe = pipes[i];
+							data.output = outputs[i];
+							data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
+							data.coexist_feature = j;
+							for (k = 1; k <= MAX_DAMAGE_AREAS; k++) {
+								data.damage_area_count = k;
+								prepare(&data);
+								run(&data);
+								cleanup(&data);
+							}
 						}
 					}
 				}
