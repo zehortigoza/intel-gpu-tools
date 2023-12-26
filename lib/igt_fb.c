@@ -4951,6 +4951,6 @@ const char *igt_fb_modifier_name(uint64_t modifier)
 	case I915_FORMAT_MOD_4_TILED_DG2_RC_CCS_CC:
 		return "4-rc-ccs-cc";
 	default:
-		return "?";
+		return "unknown";
 	}
 }
