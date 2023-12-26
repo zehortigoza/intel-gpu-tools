@@ -25,8 +25,8 @@
 /**
  * TEST: kms psr2 sf
  * Category: Display
- * Description: Tests to varify PSR2 selective fetch by sending multiple damaged
- *              areas
+ * Description: Tests to verify PSR2 selective fetch by sending multiple damaged
+ *              areas with and without fbc
  * Driver requirement: i915, xe
  * Functionality: plane, psr2, selective_fetch
  * Mega feature: PSR
@@ -51,6 +51,7 @@
  * SUBTEST: fbc-%s-plane-move-continuous-%s
  * Description: Test that fbc with selective fetch works on moving %arg[1] plane %arg[2]
  *              visible area (no update)
+ * Functionality: plane, psr2, selective_fetch, fbc
  *
  * arg[1]:
  *
@@ -68,20 +69,23 @@
  * SUBTEST: cursor-plane-update-sf
  * Description: Test that selective fetch works on cursor plane
  *
- * SUBTEST: fbc-cursor-plane-update-continuous-sf
+ * SUBTEST: fbc-cursor-plane-update-sf
  * Description: Test that fbc with selective fetch works on cursor plane
+ * Functionality: plane, psr2, selective_fetch, fbc
  *
  * SUBTEST: overlay-plane-update-continuous-sf
  * Description: Test that selective fetch works on overlay plane
  *
- * SUBTEST: fbc-overlay-plane-update-continuous-sf-dmg-area
+ * SUBTEST: fbc-overlay-plane-update-sf-dmg-area
  * Description: Test that fbc with selective fetch works on overlay plane
+ * Functionality: plane, psr2, selective_fetch, fbc
  *
  * SUBTEST: overlay-plane-update-sf-dmg-area
  * Description: Test that selective fetch works on overlay plane
  *
  * SUBTEST: fbc-overlay-plane-update-continuous-sf
  * Description: Test that fbc with selective fetch works on overlay plane
+ * Functionality: plane, psr2, selective_fetch, fbc
  *
  * SUBTEST: overlay-primary-update-sf-dmg-area
  * Description: Test that selective fetch works on primary plane with blended
@@ -90,28 +94,32 @@
  * SUBTEST: fbc-overlay-primary-update-sf-dmg-area
  * Description: Test that fbc with selective fetch works on primary plane with blended
  *              overlay plane
+ * Functionality: plane, psr2, selective_fetch, fbc
  *
  * SUBTEST: plane-move-sf-dmg-area
  * Description: Test that selective fetch works on moving overlay plane
  *
  * SUBTEST: fbc-plane-move-sf-dmg-area
  * Description: Test that fbc with selective fetch works on moving overlay plane
+ * Functionality: plane, psr2, selective_fetch, fbc
  *
  * SUBTEST: primary-plane-update-sf-dmg-area
  * Description: Test that selective fetch works on primary plane
  *
- * SUBTEST: fbc-primary-plane-update-continuous-sf-dmg-area
+ * SUBTEST: fbc-primary-plane-update-sf-dmg-area
  * Description: Test that fbc with selective fetch works on primary plane
+ * Functionality: plane, psr2, selective_fetch, fbc
  *
  * SUBTEST: primary-plane-update-sf-dmg-area-big-fb
  * Description: Test that selective fetch works on primary plane with big fb
  *
- * SUBTEST: fbc-primary-plane-update-continuous-sf-dmg-area-big-fb
+ * SUBTEST: fbc-primary-plane-update-sf-dmg-area-big-fb
  * Description: Test that fbc with selective fetch works on primary plane with big fb
+ * Functionality: plane, psr2, selective_fetch, fbc
  */
 
-IGT_TEST_DESCRIPTION("Tests to varify PSR2 selective fetch by sending multiple"
-		     " damaged areas");
+IGT_TEST_DESCRIPTION("Tests to verify PSR2 selective fetch by sending multiple"
+		     " damaged areas with and without fbc");
 
 #define SQUARE_SIZE 100
 
@@ -1014,10 +1022,7 @@ igt_main
 			      "Error enabling PSR2\n");
 
 		data.damage_area_count = MAX_DAMAGE_AREAS;
-		data.op = PLANE_UPDATE;
-		data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
 		data.primary_format = DRM_FORMAT_XRGB8888;
-		data.big_fb_test = 0;
 
 		res = drmModeGetResources(data.drm_fd);
 		data.big_fb_width = res->max_width;
@@ -1043,6 +1048,11 @@ igt_main
 	}
 
 	for (y = 0; y < ARRAY_SIZE(fbc_status); y++) {
+		data.op = PLANE_UPDATE;
+		data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
+		data.primary_format = DRM_FORMAT_XRGB8888;
+		data.big_fb_test = 0;
+
 		data.op_fbc_mode = fbc_status[y];
 		/* Verify primary plane selective fetch */
 		igt_describe("Test that selective fetch works on primary plane");
@@ -1387,7 +1397,6 @@ igt_main
 		 * plane and continuous updates.
 		 */
 		data.op = PLANE_UPDATE_CONTINUOUS;
-		data.primary_format = DRM_FORMAT_NV12;
 		igt_describe("Test that selective fetch works on overlay plane");
 		igt_subtest_with_dynamic_f("%soverlay-%s-sf", append_fbc_subtest[y],
 					   op_str(data.op)) {
@@ -1404,6 +1413,10 @@ igt_main
 						data.pipe = pipes[i];
 						data.output = outputs[i];
 						data.damage_area_count = 1;
+						if (data.op_fbc_mode == FBC_ENABLED)
+							data.primary_format = DRM_FORMAT_XRGB8888;
+						else
+							data.primary_format = DRM_FORMAT_NV12;
 						data.test_plane_id = DRM_PLANE_TYPE_OVERLAY;
 						data.coexist_feature = j;
 						prepare(&data);
