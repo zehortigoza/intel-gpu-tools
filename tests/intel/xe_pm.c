@@ -36,9 +36,31 @@ typedef struct {
 	struct pci_device *pci_xe;
 	struct pci_device *pci_root;
 	char pci_slot_name[NAME_MAX];
+	drmModeResPtr res;
 } device_t;
 
 uint64_t orig_threshold;
+
+static void dpms_on_off(device_t device, int mode)
+{
+	int i;
+
+	if (!device.res)
+		return;
+
+	for (i = 0; i < device.res->count_connectors; i++) {
+		drmModeConnector *connector = drmModeGetConnectorCurrent(device.fd_xe,
+									 device.res->connectors[i]);
+
+		if (!connector)
+			continue;
+
+		if (connector->connection == DRM_MODE_CONNECTED)
+			kmstest_set_connector_dpms(device.fd_xe, connector, mode);
+
+		drmModeFreeConnector(connector);
+	}
+}
 
 /* runtime_usage is only available if kernel build CONFIG_PM_ADVANCED_DEBUG */
 static bool runtime_usage_available(struct pci_device *pci)
@@ -94,6 +116,8 @@ static void vram_d3cold_threshold_restore(int sig)
 
 static bool setup_d3(device_t device, enum igt_acpi_d_state state)
 {
+	dpms_on_off(device, DRM_MODE_DPMS_OFF);
+
 	switch (state) {
 	case IGT_ACPI_D3Cold:
 		igt_require(igt_pm_acpi_d3cold_supported(device.pci_root));
@@ -108,6 +132,11 @@ static bool setup_d3(device_t device, enum igt_acpi_d_state state)
 	}
 
 	return false;
+}
+
+static void cleanup_d3(device_t device)
+{
+	dpms_on_off(device, DRM_MODE_DPMS_ON);
 }
 
 static bool in_d3(device_t device, enum igt_acpi_d_state state)
@@ -477,6 +506,7 @@ igt_main
 		igt_pm_get_d3cold_allowed(device.pci_slot_name, &d3cold_allowed);
 		igt_assert(igt_setup_runtime_pm(device.fd_xe));
 		sysfs_fd = igt_sysfs_open(device.fd_xe);
+		device.res = drmModeGetResources(device.fd_xe);
 	}
 
 	for (const struct s_state *s = s_states; s->name; s++) {
@@ -511,6 +541,7 @@ igt_main
 				xe_for_each_engine(device.fd_xe, hwe)
 					test_exec(device, hwe, 1, 2, s->state,
 						  NO_RPM);
+				cleanup_d3(device);
 			}
 		}
 	}
@@ -519,6 +550,7 @@ igt_main
 		igt_subtest_f("%s-basic", d->name) {
 			igt_assert(setup_d3(device, d->state));
 			igt_assert(in_d3(device, d->state));
+			cleanup_d3(device);
 		}
 
 		igt_subtest_f("%s-basic-exec", d->name) {
@@ -526,6 +558,7 @@ igt_main
 			xe_for_each_engine(device.fd_xe, hwe)
 				test_exec(device, hwe, 1, 1,
 					  NO_SUSPEND, d->state);
+			cleanup_d3(device);
 		}
 
 		igt_subtest_f("%s-multiple-execs", d->name) {
@@ -533,6 +566,7 @@ igt_main
 			xe_for_each_engine(device.fd_xe, hwe)
 				test_exec(device, hwe, 16, 32,
 					  NO_SUSPEND, d->state);
+			cleanup_d3(device);
 		}
 	}
 
@@ -547,6 +581,7 @@ igt_main
 		close(sysfs_fd);
 		igt_pm_set_d3cold_allowed(device.pci_slot_name, d3cold_allowed);
 		igt_restore_runtime_pm();
+		drmModeFreeResources(device.res);
 		drm_close_driver(device.fd_xe);
 	}
 }
