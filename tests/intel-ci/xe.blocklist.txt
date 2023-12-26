@@ -47,7 +47,7 @@ igt@tools_test
 # KMS: Pipe E to Pipe P are not available on Intel hardware,
 # hence can't use more than 4 displays.
 ##################################################################
-igt@.*@.*pipe-[e-pE-P].*
+igt@.*@.*pipe-[e-pE-P]($|-.*)
 igt@kms_bw@.*-([5-9]|1[0-6])-displays-.*
 ##################################################################
 # KMS: Tests specific to i915 driver
