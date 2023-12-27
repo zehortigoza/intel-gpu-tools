@@ -150,6 +150,11 @@ enum exec_queue_destroy {
 	LEAK
 };
 
+enum vm_count {
+	MULTI,
+	SHARED
+};
+
 #define MAXEXECQUEUES 2048
 #define MAXTIME 5
 
@@ -163,16 +168,22 @@ enum exec_queue_destroy {
  *
  * @noleak:				destroy exec_queues in the code
  * @leak:				destroy exec_queues in close() path
+ * @noleak-shared:			same as noleak, but with a shared vm
+ * @leak-shared:			same as leak, but with a shared vm
  */
-static void create_execqueues(int fd, enum exec_queue_destroy ed)
+static void create_execqueues(int fd, enum exec_queue_destroy ed,
+			      enum vm_count vc)
 {
 	struct timespec tv = { };
 	uint32_t num_engines, exec_queues_per_process, vm;
 	int nproc = sysconf(_SC_NPROCESSORS_ONLN), seconds;
+	int real_timeout = MAXTIME * (vc == SHARED ? 4 : 1);
 
-	fd = drm_reopen_driver(fd);
-	num_engines = xe_number_engines(fd);
-	vm = xe_vm_create(fd, 0, 0);
+	if (vc == SHARED) {
+		fd = drm_reopen_driver(fd);
+		num_engines = xe_number_engines(fd);
+		vm = xe_vm_create(fd, 0, 0);
+	}
 
 	exec_queues_per_process = max_t(uint32_t, 1, MAXEXECQUEUES / nproc);
 	igt_debug("nproc: %u, exec_queues per process: %u\n", nproc, exec_queues_per_process);
@@ -183,6 +194,12 @@ static void create_execqueues(int fd, enum exec_queue_destroy ed)
 		struct drm_xe_engine *engine;
 		uint32_t exec_queue, exec_queues[exec_queues_per_process];
 		int idx, err, i;
+
+		if (vc == MULTI) {
+			fd = drm_reopen_driver(fd);
+			num_engines = xe_number_engines(fd);
+			vm = xe_vm_create(fd, 0, 0);
+		}
 
 		srandom(n);
 
@@ -206,16 +223,23 @@ static void create_execqueues(int fd, enum exec_queue_destroy ed)
 				xe_exec_queue_destroy(fd, exec_queues[i]);
 			}
 		}
+
+		if (vc == MULTI) {
+			xe_vm_destroy(fd, vm);
+			drm_close_driver(fd);
+		}
 	}
 	igt_waitchildren();
 
-	xe_vm_destroy(fd, vm);
-	drm_close_driver(fd);
+	if (vc == SHARED) {
+		xe_vm_destroy(fd, vm);
+		drm_close_driver(fd);
+	}
 
 	seconds = igt_seconds_elapsed(&tv);
-	igt_assert_f(seconds < MAXTIME,
+	igt_assert_f(seconds < real_timeout,
 		     "Creating %d exec_queues tooks too long: %d [limit: %d]\n",
-		     MAXEXECQUEUES, seconds, MAXTIME);
+		     MAXEXECQUEUES, seconds, real_timeout);
 }
 
 /**
@@ -384,10 +408,16 @@ igt_main_args("Q:p:", NULL, help_str, opt_handler, NULL)
 	}
 
 	igt_subtest("create-execqueues-noleak")
-		create_execqueues(xe, NOLEAK);
+		create_execqueues(xe, NOLEAK, MULTI);
 
 	igt_subtest("create-execqueues-leak")
-		create_execqueues(xe, LEAK);
+		create_execqueues(xe, LEAK, MULTI);
+
+	igt_subtest("create-execqueues-noleak-shared")
+		create_execqueues(xe, NOLEAK, SHARED);
+
+	igt_subtest("create-execqueues-leak-shared")
+		create_execqueues(xe, LEAK, SHARED);
 
 	igt_subtest("create-massive-size") {
 		create_massive_size(xe);
