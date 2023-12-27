@@ -304,11 +304,11 @@ igt_main
 		kmstest_set_vt_graphics_mode();
 
 		igt_display_require(&data.display, data.drm_fd);
+		igt_display_require_output(&data.display);
+		igt_require(data.display.is_atomic);
 
 		data.bops = buf_ops_create(data.drm_fd);
 		data.rendercopy = igt_get_render_copyfunc(intel_get_drm_devid(data.drm_fd));
-
-		igt_display_reset(&data.display);
 	}
 
 	for (data.feature = FEATURE_DEFAULT; data.feature > 0;
