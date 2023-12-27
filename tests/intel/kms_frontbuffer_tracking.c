@@ -1877,8 +1877,6 @@ static void __debugfs_read_crtc(const char *param, char *buf, int len)
 }
 
 #define debugfs_read_crtc(p, arr) __debugfs_read_crtc(p, arr, sizeof(arr))
-#define debugfs_write_crtc(p, arr) __debugfs_write_crtc(p, arr, sizeof(arr))
-#define debugfs_read_connector(p, arr) __debugfs_read_connector(p, arr, sizeof(arr))
 
 static bool is_drrs_high(void)
 {
