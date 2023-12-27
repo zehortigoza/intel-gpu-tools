@@ -147,7 +147,7 @@ static void check_feature(data_t *data)
 	case FEATURE_FBC:
 		igt_assert_f(intel_fbc_wait_until_enabled(data->drm_fd,
 							  data->pipe),
-			     "FBC still disabled");
+			     "FBC still disabled\n");
 		break;
 	case FEATURE_PSR:
 		igt_assert_f(psr_wait_entry(data->debugfs_fd, PSR_MODE_1, NULL),

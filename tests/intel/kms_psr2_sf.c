@@ -879,7 +879,7 @@ static void run(data_t *data)
 	if (data->fbc_flag == true && data->op_fbc_mode == FBC_ENABLED)
 		igt_assert_f(intel_fbc_wait_until_enabled(data->drm_fd,
 							  data->pipe),
-							  "FBC still disabled");
+							  "FBC still disabled\n");
 
 	data->screen_changes = 0;
 
