@@ -153,12 +153,12 @@ intel_mmio_use_pci_bar(struct intel_mmio_data *mmio_data, struct pci_device *pci
 		mmio_bar = 0;
 
 	gen = intel_gen(devid);
-	if (gen < 3)
-		mmio_size = 512*1024;
-	else if (gen < 5)
-		mmio_size = 512*1024;
+	if (gen >= 12)
+		mmio_size = 8 * 1024 * 1024;
+	else if (gen >= 5)
+		mmio_size = 2 * 1024 * 1024;
 	else
-		mmio_size = 2*1024*1024;
+		mmio_size = 512 * 1024;
 
 	error = pci_device_map_range (pci_dev,
 				      pci_dev->regions[mmio_bar].base_addr,
