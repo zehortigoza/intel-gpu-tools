@@ -1386,7 +1386,7 @@ static const struct {
 	{
 		.ip_ver = IP_VER(12, 55),
 		.compute_exec = xehp_compute_exec,
-		.compat = COMPAT_DRIVER_I915,
+		.compat = COMPAT_DRIVER_I915 | COMPAT_DRIVER_XE,
 	},
 	{
 		.ip_ver = IP_VER(12, 60),
