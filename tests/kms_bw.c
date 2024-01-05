@@ -64,12 +64,12 @@ typedef struct data {
 } data_t;
 
 static drmModeModeInfo test_mode[] = {
-	{ 173000,
-	1920, 2048, 2248, 2576, 0,
-	1080, 1083, 1088, 1120, 0,
+	{ 147840,
+	1920, 1968, 2000, 2200, 0,
+	1080, 1083, 1089, 1120, 0,
 	60,
-	DRM_MODE_FLAG_NHSYNC,
-	0x40,
+	DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_PHSYNC,
+	0x48,
 	"1920x1080p\0",
 	}, /* test_mode_1 */
 
