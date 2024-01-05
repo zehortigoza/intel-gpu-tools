@@ -667,12 +667,6 @@ has_param_class_instance(void)
 	return true;
 }
 
-static bool
-has_param_poll_period(void)
-{
-	return true;
-}
-
 static uint64_t
 read_u64_file(const char *path)
 {
@@ -2313,9 +2307,6 @@ test_blocking(uint64_t requested_oa_period,
 	ADD_PROPS(props, idx, OA_FORMAT, __ff(test_set->perf_oa_format));
 	ADD_PROPS(props, idx, OA_EXPONENT, oa_exponent);
 
-	if (has_param_poll_period() && set_kernel_hrtimer)
-		ADD_PROPS(props, idx, POLL_OA_PERIOD_US, kernel_hrtimer / 1000);
-
 	if (has_param_class_instance()) {
 		ADD_PROPS(props, idx, OA_UNIT_ID, 0);
 		ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, e->instance);
@@ -2476,9 +2467,6 @@ test_polling(uint64_t requested_oa_period,
 	ADD_PROPS(props, idx, OA_METRIC_SET, test_set->perf_oa_metrics_set);
 	ADD_PROPS(props, idx, OA_FORMAT, __ff(test_set->perf_oa_format));
 	ADD_PROPS(props, idx, OA_EXPONENT, oa_exponent);
-
-	if (has_param_poll_period() && set_kernel_hrtimer)
-		ADD_PROPS(props, idx, POLL_OA_PERIOD_US, kernel_hrtimer / 1000);
 
 	if (has_param_class_instance()) {
 		ADD_PROPS(props, idx, OA_UNIT_ID, 0);
@@ -5711,23 +5699,6 @@ igt_main
 				      e);
 	}
 
-	igt_describe("Test blocking read with different hrtimer frequencies");
-	igt_subtest("blocking-parameterized") {
-		const struct intel_execution_engine2 _e = {
-		      .class = default_e2.class,
-		      .instance = default_e2.instance,
-		};
-
-		test_blocking(10 * 1000 * 1000 /* 10ms oa period */,
-			      true /* set_kernel_hrtimer */,
-			      40 * 1000 * 1000 /* default 40ms hrtimer */,
-			      &_e);
-		test_blocking(500 * 1000 /* 500us oa period */,
-			      true /* set_kernel_hrtimer */,
-			      2 * 1000 * 1000 /* default 2ms hrtimer */,
-			      &_e);
-	}
-
 	igt_describe("Test polled read with default hrtimer frequency");
 	igt_subtest_with_dynamic("polling") {
 		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
@@ -5735,23 +5706,6 @@ igt_main
 				     false /* set_kernel_hrtimer */,
 				     5 * 1000 * 1000 /* default 5ms/200Hz hrtimer */,
 				     e);
-	}
-
-	igt_describe("Test polled read with different hrtimer frequencies");
-	igt_subtest("polling-parameterized") {
-		const struct intel_execution_engine2 _e = {
-		      .class = default_e2.class,
-		      .instance = default_e2.instance,
-		};
-
-		test_polling(10 * 1000 * 1000 /* 10ms oa period */,
-			     true /* set_kernel_hrtimer */,
-			     40 * 1000 * 1000 /* default 40ms hrtimer */,
-			     &_e);
-		test_polling(500 * 1000 /* 500us oa period */,
-			     true /* set_kernel_hrtimer */,
-			     2 * 1000 * 1000 /* default 2ms hrtimer */,
-			     &_e);
 	}
 
 	igt_describe("Test polled read with buffer size smaller than available data");

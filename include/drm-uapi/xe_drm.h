@@ -1433,6 +1433,41 @@ enum drm_xe_oa_unit_type {
 };
 
 /**
+ * struct drm_xe_oa_unit - describe OA unit
+ */
+struct drm_xe_oa_unit {
+	/** @oa_unit_id: OA unit ID */
+	__u16 oa_unit_id;
+
+	/** @oa_unit_type: OA unit type of @drm_xe_oa_unit_type */
+	__u16 oa_unit_type;
+
+	/** @gt_id: GT ID for this OA unit */
+	__u16 gt_id;
+
+	/** @open_stream: True if a stream is open on the OA unit */
+	__u16 open_stream;
+
+	/** @capabilities: OA capabilities bit-mask */
+	__u64 capabilities;
+
+	/** @oa_timestamp_freq: OA timestamp freq */
+	__u64 oa_timestamp_freq;
+
+	/** @oa_buf_size: OA buffer size */
+	__u64 oa_buf_size;
+
+	/** @reserved: MBZ */
+	__u64 reserved[4];
+
+	/** @num_engines: number of engines in @eci array */
+	__u64 num_engines;
+
+	/** @eci: engines attached to this OA unit */
+	struct drm_xe_engine_class_instance eci[];
+};
+
+/**
  * struct drm_xe_query_oa_units - describe OA units
  *
  * If a query is made with a struct drm_xe_device_query where .query
@@ -1443,56 +1478,12 @@ enum drm_xe_oa_unit_type {
  * that @open_stream. Else default properties are returned.
  */
 struct drm_xe_query_oa_units {
-	/** @extensions: Pointer to the first extension struct, if any */
-	__u64 extensions;
-
 	/** @num_oa_units: number of OA units returned in oau[] */
 	__u32 num_oa_units;
-
 	/** @pad: MBZ */
 	__u32 pad;
-
-	/** @reserved: MBZ */
-	__u64 reserved[4];
-
 	/** @oa_units: OA units returned for this device */
-	struct drm_xe_oa_unit {
-		/** @oa_unit_id: OA unit ID */
-		__u16 oa_unit_id;
-
-		/** @oa_unit_type: OA unit type of @drm_xe_oa_unit_type */
-		__u16 oa_unit_type;
-
-		/** @gt_id: GT ID for this OA unit */
-		__u16 gt_id;
-
-		/** @open_stream: True if a stream is open on the OA unit */
-		__u16 open_stream;
-
-		/** @internal_events: True if internal events are available */
-		__u16 internal_events;
-
-		/** @pad: MBZ */
-		__u16 pad;
-
-		/** @capabilities: OA capabilities bit-mask */
-		__u64 capabilities;
-
-		/** @oa_timestamp_freq: OA timestamp freq */
-		__u64 oa_timestamp_freq;
-
-		/** @oa_buf_size: OA buffer size */
-		__u64 oa_buf_size;
-
-		/** @reserved: MBZ */
-		__u64 reserved[4];
-
-		/** @num_engines: number of engines in @eci array */
-		__u64 num_engines;
-
-		/** @eci: engines attached to this OA unit */
-		struct drm_xe_engine_class_instance eci[];
-	} oa_units[];
+	struct drm_xe_oa_unit oa_units[];
 };
 
 /** enum drm_xe_oa_format_type - OA format types */
@@ -1510,7 +1501,7 @@ enum drm_xe_oa_format_type {
  *
  * Stream params are specified as a chain of @drm_xe_ext_set_property
  * struct's, with @property values from enum @drm_xe_oa_property_id and
- * @xe_user_extension base.name set to @DRM_XE_OA_EXTENSION_SET_PROPERTY.
+ * @drm_xe_user_extension base.name set to @DRM_XE_OA_EXTENSION_SET_PROPERTY.
  * @param field in struct @drm_xe_perf_param points to the first
  * @drm_xe_ext_set_property struct.
  */
@@ -1552,16 +1543,6 @@ enum drm_xe_oa_property_id {
 	 * with sampling frequency proportional to 2^(period_exponent + 1)
 	 */
 	DRM_XE_OA_PROPERTY_OA_EXPONENT,
-
-	/**
-	 * @DRM_XE_OA_PROPERTY_POLL_OA_PERIOD_US: Timer interval in microseconds
-	 * to check OA buffer for available data. Minimum allowed value is 100
-	 * microseconds. A default value is used by the driver if this parameter
-	 * is skipped. Larger timer values will reduce cpu consumption during OA
-	 * perf captures, but excessively large values could result in data loss
-	 * due to OA buffer overwrites.
-	 */
-	DRM_XE_OA_PROPERTY_POLL_OA_PERIOD_US,
 
 	/**
 	 * @DRM_XE_OA_PROPERTY_OPEN_FLAGS: CLOEXEC and NONBLOCK flags are
