@@ -47,6 +47,7 @@
  * @1920x1080p:       1920x1080 resolution
  * @2560x1440p:       2560x1440 resolution
  * @3840x2160p:       3840x2160 resolution
+ * @2160x1440p:       2160x1440 resolution
  */
 
 /* Common test data. */
@@ -90,6 +91,15 @@ static drmModeModeInfo test_mode[] = {
 	0x40,
 	"3840x2160p\0",
 	}, /* test_mode_3 */
+
+	{ 207800,
+	2160, 2208, 2240, 2340, 0,
+	1440, 1443, 1449, 1480, 0,
+	60,
+	DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_PHSYNC,
+	0x48,
+	"2160x1440p\0",
+	}, /* test_mode_4 */
 
 };
 
