@@ -63,6 +63,7 @@ IGT_TEST_DESCRIPTION("Test to validate display stream compression");
 
 #define LEN		20
 #define DEFAULT_BPC	0
+#define MIN_DSC_BPC	8
 
 #define TEST_DSC_BASIC		(0<<0)
 #define TEST_DSC_BPC		(1<<0)
@@ -279,8 +280,9 @@ static void test_dsc(data_t *data, uint32_t test_type, int bpc,
 		data->output = output;
 		data->pipe = pipe;
 
-		if (!(is_dsc_supported_by_sink(data->drm_fd, data->output) &&
-		      check_gen11_dp_constraint(data->drm_fd, data->output, data->pipe)))
+		if (!is_dsc_supported_by_sink(data->drm_fd, data->output) ||
+		    !check_gen11_dp_constraint(data->drm_fd, data->output, data->pipe) ||
+		     igt_get_output_max_bpc(data->drm_fd, output->name) < MIN_DSC_BPC)
 			continue;
 
 		if ((test_type & TEST_DSC_OUTPUT_FORMAT) &&
