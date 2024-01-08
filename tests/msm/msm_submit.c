@@ -102,7 +102,7 @@ igt_main
 				.nr_bos  = ARRAY_SIZE(bos),
 				.bos     = VOID2U64(bos),
 		};
-		do_ioctl_err(dev->fd, DRM_IOCTL_MSM_GEM_SUBMIT, &req, EINVAL);
+		do_ioctl_err(dev->fd, DRM_IOCTL_MSM_GEM_SUBMIT, &req, EALREADY);
 	}
 
 	igt_describe("Check that submit with cmdstream referencing an invalid bo fails");
