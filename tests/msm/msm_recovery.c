@@ -148,6 +148,49 @@ do_hang_test(struct msm_pipe *pipe)
 	read_and_clear_devcore();
 }
 
+/**
+ * SUBTEST: gpu-fault-parallel
+ *
+ * Description: does a bunch of submits in parallel threads, a subset of
+ * which trigger GPU hangs.  For the submits which do not trigger hangs,
+ * validate that they executed properly by checking that they were able
+ * to write to the scratch buffer, so that we can see that the kernel
+ * properly re-plays the non-faulting submits.
+ */
+static void
+do_parallel_test(struct msm_pipe *pipe, int child)
+{
+	struct msm_cmd *cmd = igt_msm_cmd_new(pipe, 0x1000);
+	bool hang = child == 5;
+	int fence_fd;
+
+	msm_cmd_pkt7(cmd, CP_NOP, 0);
+
+	if (hang) {
+		msm_cmd_emit(cmd, 0xdeaddead);
+	} else {
+		/* Each forked thread writes/reads offset of child idx dwords: */
+		msm_cmd_pkt7(cmd, CP_MEM_WRITE, 3);
+		msm_cmd_bo  (cmd, scratch_bo, child * 4); /* ADDR_LO/HI */
+		msm_cmd_emit(cmd, child + 1);             /* VAL */
+	}
+
+	igt_until_timeout(15) {
+		scratch[child] = 0;
+		fence_fd = igt_msm_cmd_submit(cmd);
+		igt_wait_and_close(fence_fd);
+
+		if (hang) {
+			read_and_clear_devcore();
+		} else {
+			/* verify that non-crashing submits succeeded: */
+			igt_assert_eq(scratch[child], child + 1);
+		}
+	}
+
+	igt_msm_cmd_free(cmd);
+}
+
 /*
  * Tests for drm/msm hangcheck, recovery, and fault handling
  */
@@ -181,6 +224,16 @@ igt_main
 		igt_require(dev->gen >= 6);
 
 		do_hang_test(pipe);
+	}
+
+	igt_describe("Parallel fault handling");
+	igt_subtest("gpu-fault-parallel") {
+		igt_require(dev->gen >= 6);
+
+		igt_fork(child, 20) {
+			do_parallel_test(pipe, child);
+		}
+		igt_waitchildren();
 	}
 
 	igt_describe("Test iova fault handling");
