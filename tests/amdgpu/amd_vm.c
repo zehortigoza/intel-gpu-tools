@@ -127,7 +127,8 @@ amdgpu_vm_unaligned_map(amdgpu_device_handle device_handle)
 	request.preferred_heap = AMDGPU_GEM_DOMAIN_VRAM;
 	request.flags = AMDGPU_GEM_CREATE_NO_CPU_ACCESS;
 
-	if (-ENOMEM == amdgpu_bo_alloc(device_handle, &request, &buf_handle)) {
+	r = amdgpu_bo_alloc(device_handle, &request, &buf_handle);
+	if (r == -ENOMEM) {
 		/* Try allocate on the device of small memory */
 		request.alloc_size = 8ULL << 20;
 		map_size = (8ULL << 20) - (2 << 12);
