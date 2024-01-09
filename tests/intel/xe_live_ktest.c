@@ -24,6 +24,11 @@
  *	Kernel dynamic selftests to check if page table migrations
  *	are working properly.
  * Functionality: migrate
+ *
+ * SUBTEST: mocs
+ * Description:
+ *	Kernel dynamic selftests to check mocs configuration.
+ * Functionality: mocs
  */
 
 struct kunit_tests {
@@ -35,6 +40,7 @@ static const struct kunit_tests live_tests[] = {
 	{ "xe_bo_test",		"bo" },
 	{ "xe_dma_buf_test",	"dmabuf" },
 	{ "xe_migrate_test",	"migrate" },
+	{ "xe_mocs_test",	"mocs" },
 };
 
 igt_main
