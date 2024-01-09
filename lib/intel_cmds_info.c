@@ -182,6 +182,8 @@ const struct intel_cmds_info xe2_cmds_info  = {
 	.blt_cmds = {
 		[XY_FAST_COPY] = &dg2_xy_fast_copy,
 		[XY_BLOCK_COPY] = &xe2_xy_block_copy,
+		[MEM_COPY] = &pvc_mem_copy,
+		[MEM_SET] = &pvc_mem_set,
 	}
 };
 
