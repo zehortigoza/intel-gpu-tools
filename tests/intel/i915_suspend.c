@@ -300,7 +300,9 @@ test_suspend_without_i915(int state)
 		igt_pm_get_d3cold_allowed(card.pci_slot_name, &d3cold_allowed);
 		igt_pm_set_d3cold_allowed(card.pci_slot_name, 0);
 	}
-	drm_close_driver(fd);
+
+	if (fd >= 0)
+		drm_close_driver(fd);
 
 	igt_kmsg(KMSG_INFO "Unloading i915\n");
 	igt_assert_eq(igt_i915_driver_unload(),0);
