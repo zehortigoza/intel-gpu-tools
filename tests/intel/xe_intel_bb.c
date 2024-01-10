@@ -1052,7 +1052,7 @@ igt_main_args("dpib", NULL, help_str, opt_handler, NULL)
 	} tests[] = {
 		{ I915_TILING_NONE, "none" },
 		{ I915_TILING_X, "x" },
-		{ I915_TILING_Y, "y" },
+		{ I915_TILING_4, "4" },
 	};
 
 	igt_fixture {
