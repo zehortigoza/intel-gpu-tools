@@ -91,7 +91,8 @@ typedef struct data {
 } data_t;
 
 /* Common test setup. */
-static void test_init(data_t *data, enum pipe pipe_id, igt_output_t *output)
+static void test_init(data_t *data, enum pipe pipe_id, igt_output_t *output,
+		      unsigned int flags)
 {
 	data->pipe_id = pipe_id;
 	data->pipe = &data->display.pipes[data->pipe_id];
@@ -100,7 +101,8 @@ static void test_init(data_t *data, enum pipe pipe_id, igt_output_t *output)
 	data->mode = igt_output_get_mode(data->output);
 
 	data->primary = igt_pipe_get_plane_type(data->pipe, DRM_PLANE_TYPE_PRIMARY);
-	data->overlay = igt_pipe_get_plane_type(data->pipe, DRM_PLANE_TYPE_OVERLAY);
+	if (flags & TEST_OVERLAY)
+		data->overlay = igt_pipe_get_plane_type(data->pipe, DRM_PLANE_TYPE_OVERLAY);
 	data->cursor = igt_pipe_get_plane_type(data->pipe, DRM_PLANE_TYPE_CURSOR);
 
 	igt_info("Using (pipe %s + %s) to run the subtest.\n",
@@ -123,7 +125,8 @@ static void test_fini(data_t *data)
 	igt_pipe_crc_free(data->pipe_crc);
 	igt_display_reset(&data->display);
 	igt_plane_set_fb(data->primary, NULL);
-	igt_plane_set_fb(data->overlay, NULL);
+	if (data->overlay)
+		igt_plane_set_fb(data->overlay, NULL);
 	igt_plane_set_fb(data->cursor, NULL);
 	igt_display_commit2(&data->display, COMMIT_ATOMIC);
 }
@@ -167,7 +170,8 @@ static void test_cursor_pos(data_t *data, int x, int y, unsigned int flags)
 	igt_paint_color(cr, x, y, cw, ch, 1.0, 0.0, 1.0);
 	igt_put_cairo_ctx(cr);
 
-	igt_plane_set_fb(data->overlay, NULL);
+	if (flags & TEST_OVERLAY)
+		igt_plane_set_fb(data->overlay, NULL);
 	igt_plane_set_fb(data->cursor, NULL);
 	igt_display_commit_atomic(&data->display, 0, NULL);
 
@@ -333,7 +337,7 @@ igt_main
 				if (!intel_pipe_output_combo_valid(display))
 					continue;
 
-				test_init(&data, pipe, output);
+				test_init(&data, pipe, output, tests[i].flags);
 
 				for (j = 0; j < ARRAY_SIZE(cursor_sizes); j++) {
 					int size = cursor_sizes[j];
