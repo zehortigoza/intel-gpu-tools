@@ -22,6 +22,7 @@
 #include "intel_mocs.h"
 #include "rendercopy.h"
 #include "gen9_render.h"
+#include "xe2_render.h"
 #include "intel_reg.h"
 #include "igt_aux.h"
 #include "intel_chipset.h"
@@ -134,6 +135,15 @@ static const uint32_t gen12p71_render_copy[][4] = {
 	{ 0x00040061, 0x75050aa0, 0x00461005, 0x00000000 },
 	{ 0x00040061, 0x77050aa0, 0x00461205, 0x00000000 },
 	{ 0x80041131, 0x00000004, 0x50007144, 0x00c40000 },
+};
+
+static const uint32_t xe2_render_copy[][4] = {
+	{ 0x8010005b, 0x200002a0, 0x020a0634, 0x06040105 },
+	{ 0x8010005b, 0x710402a8, 0x020a2001, 0x06140105 },
+	{ 0x8010005b, 0x200002a0, 0x020a0674, 0x06440105 },
+	{ 0x8010005b, 0x720402a8, 0x020a2001, 0x06540205 },
+	{ 0x80122031, 0x0c240000, 0x20027114, 0x00800000 },
+	{ 0x8010c031, 0x00000004, 0x58000c24, 0x00c40000 },
 };
 
 /* Mostly copy+paste from gen6, except height, width, pitch moved */
@@ -545,7 +555,10 @@ gen9_emit_state_base_address(struct intel_bb *ibb) {
 	/* WaBindlessSurfaceStateModifyEnable:skl,bxt */
 	/* The length has to be one less if we dont modify
 	   bindless state */
-	intel_bb_out(ibb, GEN4_STATE_BASE_ADDRESS | (19 - 1 - 2));
+	if (AT_LEAST_GEN(intel_get_drm_devid(ibb->fd), 20))
+		intel_bb_out(ibb, GEN4_STATE_BASE_ADDRESS | 20);
+	else
+		intel_bb_out(ibb, GEN4_STATE_BASE_ADDRESS | (19 - 1 - 2));
 
 	/* general */
 	intel_bb_out(ibb, 0 | BASE_ADDRESS_MODIFY);
@@ -586,6 +599,13 @@ gen9_emit_state_base_address(struct intel_bb *ibb) {
 	intel_bb_out(ibb, 0);
 	intel_bb_out(ibb, 0);
 	intel_bb_out(ibb, 0);
+
+	if (AT_LEAST_GEN(intel_get_drm_devid(ibb->fd), 20)) {
+		/* Bindless sampler */
+		intel_bb_out(ibb, 0);
+		intel_bb_out(ibb, 0);
+		intel_bb_out(ibb, 0);
+	}
 }
 
 static void
@@ -753,7 +773,12 @@ gen9_emit_ds(struct intel_bb *ibb) {
 
 static void
 gen8_emit_wm_hz_op(struct intel_bb *ibb) {
-	intel_bb_out(ibb, GEN8_3DSTATE_WM_HZ_OP | (5-2));
+	if (AT_LEAST_GEN(intel_get_drm_devid(ibb->fd), 20)) {
+		intel_bb_out(ibb, GEN8_3DSTATE_WM_HZ_OP | (6-2));
+		intel_bb_out(ibb, 0);
+	} else {
+		intel_bb_out(ibb, GEN8_3DSTATE_WM_HZ_OP | (5-2));
+	}
 	intel_bb_out(ibb, 0);
 	intel_bb_out(ibb, 0);
 	intel_bb_out(ibb, 0);
@@ -852,7 +877,11 @@ gen8_emit_ps(struct intel_bb *ibb, uint32_t kernel, bool fast_clear) {
 	intel_bb_out(ibb, (max_threads - 1) << GEN8_3DSTATE_PS_MAX_THREADS_SHIFT |
 	             GEN6_3DSTATE_WM_16_DISPATCH_ENABLE |
 	             (fast_clear ? GEN8_3DSTATE_FAST_CLEAR_ENABLE : 0));
-	intel_bb_out(ibb, 6 << GEN6_3DSTATE_WM_DISPATCH_START_GRF_0_SHIFT);
+	if (AT_LEAST_GEN(intel_get_drm_devid(ibb->fd), 20))
+		intel_bb_out(ibb, 6 << GEN6_3DSTATE_WM_DISPATCH_START_GRF_0_SHIFT |
+			     GENXE_KERNEL0_POLY_PACK16_FIXED << GENXE_KERNEL0_PACKING_POLICY);
+	else
+		intel_bb_out(ibb, 6 << GEN6_3DSTATE_WM_DISPATCH_START_GRF_0_SHIFT);
 	intel_bb_out(ibb, 0); // kernel 1
 	intel_bb_out(ibb, 0); /* kernel 1 hi */
 	intel_bb_out(ibb, 0); // kernel 2
@@ -903,6 +932,9 @@ gen9_emit_depth(struct intel_bb *ibb)
 
 static void
 gen7_emit_clear(struct intel_bb *ibb) {
+	if (AT_LEAST_GEN(intel_get_drm_devid(ibb->fd), 20))
+		return;
+
 	intel_bb_out(ibb, GEN7_3DSTATE_CLEAR_PARAMS | (3-2));
 	intel_bb_out(ibb, 0);
 	intel_bb_out(ibb, 1); // clear valid
@@ -911,7 +943,10 @@ gen7_emit_clear(struct intel_bb *ibb) {
 static void
 gen6_emit_drawing_rectangle(struct intel_bb *ibb, const struct intel_buf *dst)
 {
-	intel_bb_out(ibb, GEN4_3DSTATE_DRAWING_RECTANGLE | (4 - 2));
+	if (AT_LEAST_GEN(intel_get_drm_devid(ibb->fd), 20))
+		intel_bb_out(ibb, GENXE2_3DSTATE_DRAWING_RECTANGLE_FAST | (4 - 2));
+	else
+		intel_bb_out(ibb, GEN4_3DSTATE_DRAWING_RECTANGLE | (4 - 2));
 	intel_bb_out(ibb, 0);
 	intel_bb_out(ibb, (intel_buf_height(dst) - 1) << 16 | (intel_buf_width(dst) - 1));
 	intel_bb_out(ibb, 0);
@@ -1218,6 +1253,19 @@ void gen12p71_render_copyfunc(struct intel_bb *ibb,
 			NULL,
 			gen12p71_render_copy,
 			sizeof(gen12p71_render_copy));
+}
+
+void xe2_render_copyfunc(struct intel_bb *ibb,
+			 struct intel_buf *src, uint32_t src_x, uint32_t src_y,
+			 uint32_t width, uint32_t height,
+			 struct intel_buf *dst, uint32_t dst_x, uint32_t dst_y)
+{
+	_gen9_render_op(ibb, src, src_x, src_y,
+			  width, height, dst, dst_x, dst_y,
+			  NULL,
+			  NULL,
+			  xe2_render_copy,
+			  sizeof(xe2_render_copy));
 }
 
 void mtl_render_copyfunc(struct intel_bb *ibb,

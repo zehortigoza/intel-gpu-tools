@@ -43,6 +43,10 @@ void gen12p71_render_copyfunc(struct intel_bb *ibb,
 			      struct intel_buf *src, uint32_t src_x, uint32_t src_y,
 			      uint32_t width, uint32_t height,
 			      struct intel_buf *dst, uint32_t dst_x, uint32_t dst_y);
+void xe2_render_copyfunc(struct intel_bb *ibb,
+			 struct intel_buf *src, uint32_t src_x, uint32_t src_y,
+			 uint32_t width, uint32_t height,
+			 struct intel_buf *dst, uint32_t dst_x, uint32_t dst_y);
 void gen12_render_copyfunc(struct intel_bb *ibb,
 			   struct intel_buf *src, uint32_t src_x, uint32_t src_y,
 			   uint32_t width, uint32_t height,
