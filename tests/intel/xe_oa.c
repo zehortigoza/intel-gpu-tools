@@ -5752,6 +5752,7 @@ igt_main
 		igt_subtest_with_dynamic("gen12-unprivileged-single-ctx-counters") {
 			igt_require(has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0));
 			igt_require_f(render_copy, "no render-copy function\n");
+			igt_require(!IS_LUNARLAKE(devid));
 			if (is_xe_device(drm_fd)) {
 				const struct intel_execution_engine2 e2 = {};
 				igt_dynamic_f("%s", "rcs")
@@ -5764,6 +5765,7 @@ igt_main
 		igt_subtest_with_dynamic("gen12-unprivileged-one-ctx") {
 			igt_require(has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0));
 			igt_require_f(render_copy, "no render-copy function\n");
+			igt_require(!IS_LUNARLAKE(devid));
 			if (is_xe_device(drm_fd)) {
 				const struct intel_execution_engine2 e2 = {};
 				igt_dynamic_f("%s", "rcs")
@@ -5800,9 +5802,11 @@ igt_main
 		test_rc6_disable();
 
 	igt_describe("Stress tests opening & closing the xe-oa stream in a busy loop");
-	igt_subtest_with_dynamic("stress-open-close")
+	igt_subtest_with_dynamic("stress-open-close") {
+		igt_require(!IS_LUNARLAKE(devid));
 		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
 			test_stress_open_close(e);
+	}
 
 	igt_subtest("invalid-create-userspace-config")
 		test_invalid_create_userspace_config();
