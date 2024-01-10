@@ -38,6 +38,7 @@
 #include <i915_drm.h>
 
 #include "i915_pciids.h"
+#include "i915_pciids_local.h"
 
 #include "intel_chipset.h"
 #include "perf.h"
