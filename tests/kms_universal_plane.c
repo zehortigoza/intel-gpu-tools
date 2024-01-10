@@ -402,7 +402,7 @@ sanity_test_pipe(data_t *data, enum pipe pipe, igt_output_t *output)
 	sanity_test_t test = { .data = data };
 	igt_plane_t *primary;
 	drmModeModeInfo *mode;
-	int i;
+	int i, ret;
 	int expect = 0;
 
 	igt_output_set_pipe(output, pipe);
@@ -432,29 +432,43 @@ sanity_test_pipe(data_t *data, enum pipe pipe, igt_output_t *output)
 
 	igt_plane_set_position(primary, 0, 0);
 
-	/* Try to use universal plane API to scale down (should fail on pre-gen9) */
+	/* Try to use universal plane API to scale down */
 	if (is_intel_device(data->drm_fd))
 		expect = (data->display_ver < 9) ? -ERANGE : 0;
-	igt_assert(drmModeSetPlane(data->drm_fd, primary->drm_plane->plane_id,
-				   output->config.crtc->crtc_id,
-				   test.oversized_fb.fb_id, 0,
-				   0, 0,
-				   mode->hdisplay + 100,
-				   mode->vdisplay + 100,
-				   IGT_FIXED(0,0), IGT_FIXED(0,0),
-				   IGT_FIXED(mode->hdisplay,0),
-				   IGT_FIXED(mode->vdisplay,0)) == expect);
+	ret = drmModeSetPlane(data->drm_fd, primary->drm_plane->plane_id,
+			      output->config.crtc->crtc_id,
+			      test.oversized_fb.fb_id, 0,
+			      0, 0,
+			      mode->hdisplay + 100,
+			      mode->vdisplay + 100,
+			      IGT_FIXED(0,0), IGT_FIXED(0,0),
+			      IGT_FIXED(mode->hdisplay,0),
+			      IGT_FIXED(mode->vdisplay,0));
+	if (is_intel_device(data->drm_fd)) {
+		/* should fail on pre-gen9 */
+		igt_assert_eq(ret, (data->display_ver < 9) ? -ERANGE : 0);
+	} else {
+		/* Could succeed or fail with -ERANGE depending on hw limits: */
+		igt_assert((ret == 0) || (ret == -ERANGE));
+	}
 
-	/* Try to use universal plane API to scale up (should fail on pre-gen9) */
-	igt_assert(drmModeSetPlane(data->drm_fd, primary->drm_plane->plane_id,
-				   output->config.crtc->crtc_id,
-				   test.oversized_fb.fb_id, 0,
-				   0, 0,
-				   mode->hdisplay,
-				   mode->vdisplay,
-				   IGT_FIXED(0,0), IGT_FIXED(0,0),
-				   IGT_FIXED(mode->hdisplay - 100,0),
-				   IGT_FIXED(mode->vdisplay - 100,0)) == expect);
+	/* Try to use universal plane API to scale up */
+	ret = drmModeSetPlane(data->drm_fd, primary->drm_plane->plane_id,
+			      output->config.crtc->crtc_id,
+			      test.oversized_fb.fb_id, 0,
+			      0, 0,
+			      mode->hdisplay,
+			      mode->vdisplay,
+			      IGT_FIXED(0,0), IGT_FIXED(0,0),
+			      IGT_FIXED(mode->hdisplay - 100,0),
+			      IGT_FIXED(mode->vdisplay - 100,0));
+	if (is_intel_device(data->drm_fd)) {
+		/* should fail on pre-gen9 */
+		igt_assert_eq(ret, (data->display_ver < 9) ? -ERANGE : 0);
+	} else {
+		/* Could succeed or fail with -ERANGE depending on hw limits: */
+		igt_assert((ret == 0) || (ret == -ERANGE));
+	}
 
 	/* Find other crtcs and try to program our primary plane on them */
 	for (i = 0; i < test.moderes->count_crtcs; i++)
