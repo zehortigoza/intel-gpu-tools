@@ -656,28 +656,30 @@ igt_render_copyfunc_t igt_get_render_copyfunc(int devid)
 {
 	igt_render_copyfunc_t copy = NULL;
 
-	if (IS_GEN2(devid))
-		copy = gen2_render_copyfunc;
-	else if (IS_GEN3(devid))
-		copy = gen3_render_copyfunc;
-	else if (IS_GEN4(devid) || IS_GEN5(devid))
-		copy = gen4_render_copyfunc;
-	else if (IS_GEN6(devid))
-		copy = gen6_render_copyfunc;
-	else if (IS_GEN7(devid))
-		copy = gen7_render_copyfunc;
-	else if (IS_GEN8(devid))
-		copy = gen8_render_copyfunc;
-	else if (IS_GEN9(devid) || IS_GEN10(devid))
-		copy = gen9_render_copyfunc;
-	else if (IS_GEN11(devid))
-		copy = gen11_render_copyfunc;
-	else if (HAS_FLATCCS(devid))
-		copy = gen12p71_render_copyfunc;
-	else if (IS_METEORLAKE(devid))
+	if (IS_METEORLAKE(devid))
 		copy = mtl_render_copyfunc;
+	else if (IS_DG2(devid))
+		copy = gen12p71_render_copyfunc;
+	else if (IS_GEN(devid, 20))
+		copy = xe2_render_copyfunc;
 	else if (IS_GEN12(devid))
 		copy = gen12_render_copyfunc;
+	else if (IS_GEN11(devid))
+		copy = gen11_render_copyfunc;
+	else if (IS_GEN9(devid) || IS_GEN10(devid))
+		copy = gen9_render_copyfunc;
+	else if (IS_GEN8(devid))
+		copy = gen8_render_copyfunc;
+	else if (IS_GEN7(devid))
+		copy = gen7_render_copyfunc;
+	else if (IS_GEN6(devid))
+		copy = gen6_render_copyfunc;
+	else if (IS_GEN4(devid) || IS_GEN5(devid))
+		copy = gen4_render_copyfunc;
+	else if (IS_GEN3(devid))
+		copy = gen3_render_copyfunc;
+	else if (IS_GEN2(devid))
+		copy = gen2_render_copyfunc;
 
 	return copy;
 }
