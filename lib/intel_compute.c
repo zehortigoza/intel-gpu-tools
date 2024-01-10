@@ -1430,7 +1430,7 @@ static bool __run_intel_compute_kernel(int fd,
 		kernels++;
 	}
 	if (!kernels->kernel)
-		return 1;
+		return false;
 
 	intel_compute_batches[batch].compute_exec(fd, kernels->kernel,
 						  kernels->size, eci);
