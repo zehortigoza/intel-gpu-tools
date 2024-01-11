@@ -217,7 +217,7 @@ static void store_cachelines(int fd, struct drm_xe_engine_class_instance *eci,
 		dst_offset[i] = intel_allocator_alloc_with_strategy(ahnd, bo[i],
 								    bo_size, 0,
 								    ALLOC_STRATEGY_LOW_TO_HIGH);
-		xe_vm_bind_async(fd, vm, eci->gt_id, bo[i], 0, dst_offset[i], bo_size, sync, 1);
+		xe_vm_bind_async(fd, vm, 0, bo[i], 0, dst_offset[i], bo_size, sync, 1);
 	}
 
 	batch_map = xe_bo_map(fd, bo[i-1], bo_size);
@@ -303,7 +303,7 @@ static void persistent(int fd)
 			      vram_if_possible(fd, engine->instance.gt_id),
 			      DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
 
-	xe_vm_bind_async(fd, vm, engine->instance.gt_id, sd_batch, 0, addr, batch_size, &sync, 1);
+	xe_vm_bind_async(fd, vm, 0, sd_batch, 0, addr, batch_size, &sync, 1);
 	sd_data = xe_bo_map(fd, sd_batch, batch_size);
 	prt_data = xe_bo_map(fd, prt_batch, batch_size);
 
