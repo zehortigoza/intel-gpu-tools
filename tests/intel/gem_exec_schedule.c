@@ -443,6 +443,23 @@
 
 IGT_TEST_DESCRIPTION("Check that we can control the order of execution");
 
+/*
+ * The RCS/CCS workaround on MTL means that if spinners are sent to both RCS
+ * and CCS engines concurrently then the system is effectively dead and will
+ * require a reset of both engines to recover. Even pre-emptible spinners
+ * cannot be pre-empted due to the nature of the w/a. The requests must run
+ * to completion or be reset. And in the case of certain IGT tests, there is
+ * no completion until after the pre-emption. The result being that the tests
+ * get killed by the heartbeat and fail.
+ *
+ * So, avoid that situation when running those tests on MTL by skipping the
+ * compute engines.
+ */
+static bool skip_bad_engine(int fd, const struct intel_execution_engine2 *e)
+{
+	return IS_METEORLAKE(intel_get_drm_devid(fd)) && (e->class == I915_ENGINE_CLASS_COMPUTE);
+}
+
 static unsigned int offset_in_page(void *addr)
 {
 	return (uintptr_t)addr & 4095;
@@ -2006,6 +2023,9 @@ static igt_spin_t *__noise(int fd, uint64_t ahnd, const intel_ctx_t *ctx,
 	gem_context_set_priority(fd, ctx->id, prio);
 
 	for_each_ctx_engine(fd, ctx, e) {
+		if (skip_bad_engine(fd, e))
+			continue;
+
 		if (spin == NULL) {
 			spin = __igt_spin_new(fd,
 					      .ahnd = ahnd,
@@ -2313,6 +2333,9 @@ static void preempt_self(int fd, const intel_ctx_cfg_t *cfg,
 	n = 0;
 	gem_context_set_priority(fd, ctx[HI]->id, MIN_PRIO);
 	for_each_ctx_cfg_engine(fd, cfg, e) {
+		if (skip_bad_engine(fd, e))
+			continue;
+
 		spin[n] = __igt_spin_new(fd,
 					 .ahnd = ahnd[NOISE],
 					 .ctx = ctx[NOISE],
