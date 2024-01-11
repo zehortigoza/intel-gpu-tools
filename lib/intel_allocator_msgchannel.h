@@ -6,9 +6,10 @@
 #ifndef __INTEL_ALLOCATOR_MSGCHANNEL_H__
 #define __INTEL_ALLOCATOR_MSGCHANNEL_H__
 
-#include <sys/types.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 enum reqtype {
 	REQ_STOP,

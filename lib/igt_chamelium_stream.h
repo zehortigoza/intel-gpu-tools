@@ -27,6 +27,9 @@
 #define IGT_CHAMELIUM_STREAM_H
 
 #include "config.h"
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 enum chamelium_stream_realtime_mode {
 	CHAMELIUM_STREAM_REALTIME_NONE = 0,

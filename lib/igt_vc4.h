@@ -24,6 +24,11 @@
 #ifndef IGT_VC4_H
 #define IGT_VC4_H
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include "igt_fb.h"
 #include "vc4_drm.h"
 
 #define PAGE_SIZE 4096

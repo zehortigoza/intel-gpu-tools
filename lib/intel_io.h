@@ -28,9 +28,10 @@
 #ifndef INTEL_GPU_TOOLS_H
 #define INTEL_GPU_TOOLS_H
 
-#include <stdint.h>
 #include <pciaccess.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 extern void *igt_global_mmio;
 

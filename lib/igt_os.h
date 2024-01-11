@@ -25,6 +25,8 @@
 #ifndef IGT_OS_H
 #define IGT_OS_H
 
+#include <stddef.h>
+#include <stdint.h>
 
 /* These are separate to allow easier testing when porting, see the comment at
  * the bottom of intel_os.c. */

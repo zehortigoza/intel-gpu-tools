@@ -24,6 +24,9 @@
 #ifndef IGT_V3D_H
 #define IGT_V3D_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "v3d_drm.h"
 
 #define PAGE_SIZE 4096

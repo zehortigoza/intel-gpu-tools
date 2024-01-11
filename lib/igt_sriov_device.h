@@ -6,6 +6,9 @@
 #ifndef __IGT_SRIOV_DEVICE_H__
 #define __IGT_SRIOV_DEVICE_H__
 
+#include <stdbool.h>
+#include <stddef.h>
+
 /* Library for managing SR-IOV (Single Root I/O Virtualization)
  * devices.
  *

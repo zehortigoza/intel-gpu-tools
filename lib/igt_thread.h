@@ -21,8 +21,15 @@
  * IN THE SOFTWARE.
  */
 
+#ifndef __IGT_THREAD_H__
+#define __IGT_THREAD_H__
+
+#include <stdbool.h>
+
 void igt_thread_clear_fail_state(void);
 void igt_thread_fail(void);
 void igt_thread_assert_no_failures(void);
 
 bool igt_thread_is_main(void);
+
+#endif  /* __IGT_THREAD_H__ */

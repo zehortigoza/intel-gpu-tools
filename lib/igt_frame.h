@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include <cairo.h>
 #include <stdbool.h>
 
 bool igt_frame_dump_is_enabled(void);

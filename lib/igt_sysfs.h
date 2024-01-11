@@ -25,8 +25,9 @@
 #ifndef __IGT_SYSFS_H__
 #define __IGT_SYSFS_H__
 
-#include <stdbool.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #define for_each_sysfs_gt_path(i915__, path__, pathlen__) \
 	for (int gt__ = 0; \

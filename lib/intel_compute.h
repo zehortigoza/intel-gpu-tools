@@ -9,6 +9,8 @@
 #ifndef INTEL_COMPUTE_H
 #define INTEL_COMPUTE_H
 
+#include <stdbool.h>
+
 #include "xe_drm.h"
 
 /*

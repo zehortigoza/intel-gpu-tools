@@ -24,6 +24,11 @@
 #ifndef IGT_PM_H
 #define IGT_PM_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "igt_kms.h"
+
 void igt_pm_enable_audio_runtime_pm(void);
 void igt_pm_enable_sata_link_power_management(void);
 void igt_pm_restore_sata_link_power_management(void);

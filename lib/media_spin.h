@@ -27,6 +27,8 @@
 #ifndef MEDIA_SPIN_H
 #define MEDIA_SPIN_H
 
+#include <stdint.h>
+
 struct intel_buf;
 
 void gen8_media_spinfunc(int i915, struct intel_buf *buf, uint32_t spins);

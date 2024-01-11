@@ -40,6 +40,8 @@
 #ifndef _INTEL_AUB_H
 #define _INTEL_AUB_H
 
+#include <stdint.h>
+
 #define AUB_MI_NOOP			(0)
 #define AUB_MI_BATCH_BUFFER_START 	(0x31 << 23)
 #define AUB_PIPE_CONTROL		(0x7a000002)
