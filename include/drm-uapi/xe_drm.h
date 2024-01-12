@@ -1522,7 +1522,7 @@ enum drm_xe_oa_property_id {
 
 	/**
 	 * @DRM_XE_OA_PROPERTY_OA_METRIC_SET: OA metrics defining contents of OA
-	 * reportst, previously added via @@DRM_XE_PERF_OP_ADD_CONFIG.
+	 * reports, previously added via @DRM_XE_PERF_OP_ADD_CONFIG.
 	 */
 	DRM_XE_OA_PROPERTY_OA_METRIC_SET,
 
@@ -1545,14 +1545,10 @@ enum drm_xe_oa_property_id {
 	DRM_XE_OA_PROPERTY_OA_EXPONENT,
 
 	/**
-	 * @DRM_XE_OA_PROPERTY_OPEN_FLAGS: CLOEXEC and NONBLOCK flags are
-	 * directly applied to returned OA fd. DISABLED opens the OA stream in a
-	 * DISABLED state (see @DRM_XE_PERF_IOCTL_ENABLE).
+	 * @DRM_XE_OA_PROPERTY_OA_DISABLED: A value of 1 will open the OA
+	 * stream in a DISABLED state (see @DRM_XE_PERF_IOCTL_ENABLE).
 	 */
-	DRM_XE_OA_PROPERTY_OPEN_FLAGS,
-#define DRM_XE_OA_FLAG_FD_CLOEXEC	(1 << 0)
-#define DRM_XE_OA_FLAG_FD_NONBLOCK	(1 << 1)
-#define DRM_XE_OA_FLAG_DISABLED		(1 << 2)
+	DRM_XE_OA_PROPERTY_OA_DISABLED,
 
 	/**
 	 * @DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID: Open the stream for a specific
