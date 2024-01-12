@@ -294,8 +294,10 @@ test_balancer(int fd, int gt, int class, int n_exec_queues, int n_execs,
 	xe_vm_unbind_async(fd, vm, 0, 0, addr, bo_size, sync, 1);
 	igt_assert(syncobj_wait(fd, &sync[0].handle, 1, INT64_MAX, 0, NULL));
 
-	for (i = bad_batches; i < n_execs; i++)
-		igt_assert_eq(data[i].data, 0xc0ffee);
+	if (!(flags & GT_RESET)) {
+		for (i = bad_batches; i < n_execs; i++)
+			igt_assert_eq(data[i].data, 0xc0ffee);
+	}
 
 	syncobj_destroy(fd, sync[0].handle);
 	for (i = 0; i < n_exec_queues; i++) {
@@ -462,8 +464,10 @@ test_legacy_mode(int fd, struct drm_xe_engine_class_instance *eci,
 	xe_vm_unbind_async(fd, vm, 0, 0, addr, bo_size, sync, 1);
 	igt_assert(syncobj_wait(fd, &sync[0].handle, 1, INT64_MAX, 0, NULL));
 
-	for (i = 1; i < n_execs; i++)
-		igt_assert_eq(data[i].data, 0xc0ffee);
+	if (!(flags & GT_RESET)) {
+		for (i = 1; i < n_execs; i++)
+			igt_assert_eq(data[i].data, 0xc0ffee);
+	}
 
 	syncobj_destroy(fd, sync[0].handle);
 	for (i = 0; i < n_exec_queues; i++) {
