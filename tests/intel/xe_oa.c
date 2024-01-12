@@ -559,6 +559,14 @@ static void (*sanity_check_reports)(const uint32_t *oa_report0,
 static struct intel_perf_metric_set *metric_set(const struct intel_execution_engine2 *e2);
 #define default_test_set metric_set(&default_e2)
 
+static void set_fd_flags(int fd, int flags)
+{
+	int old = fcntl(fd, F_GETFL, 0);
+
+	igt_assert_lte(0, old);
+	igt_assert_eq(0, fcntl(fd, F_SETFL, old | flags));
+}
+
 static void
 dump_report(const uint32_t *report, uint32_t size, const char *message) {
 	uint32_t i;
@@ -1306,8 +1314,6 @@ test_system_wide_paranoid(void)
 			DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 		};
 		struct drm_xe_oa_open_prop param = {
-			.flags = DRM_XE_OA_FLAG_FD_CLOEXEC |
-				DRM_XE_OA_FLAG_FD_NONBLOCK,
 			.num_properties = ARRAY_SIZE(properties) / 2,
 			.properties_ptr = to_user_pointer(properties),
 		};
@@ -1335,8 +1341,6 @@ test_system_wide_paranoid(void)
 			DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 		};
 		struct drm_xe_oa_open_prop param = {
-			.flags = DRM_XE_OA_FLAG_FD_CLOEXEC |
-				DRM_XE_OA_FLAG_FD_NONBLOCK,
 			.num_properties = ARRAY_SIZE(properties) / 2,
 			.properties_ptr = to_user_pointer(properties),
 		};
@@ -1355,30 +1359,6 @@ test_system_wide_paranoid(void)
 }
 
 static void
-test_invalid_open_flags(void)
-{
-	uint64_t properties[] = {
-		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
-
-		/* Include OA reports in samples */
-		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
-
-		/* OA unit configuration */
-		DRM_XE_OA_PROPERTY_OA_METRIC_SET, default_test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(default_test_set->perf_oa_format),
-		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
-	};
-	struct drm_xe_oa_open_prop param = {
-		.flags = ~0, /* Undefined flag bits set! */
-		.num_properties = ARRAY_SIZE(properties) / 2,
-		.properties_ptr = to_user_pointer(properties),
-	};
-
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
-			  &param, EINVAL);
-}
-
-static void
 test_invalid_oa_metric_set_id(void)
 {
 	uint64_t properties[] = {
@@ -1393,8 +1373,6 @@ test_invalid_oa_metric_set_id(void)
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, UINT64_MAX,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC |
-			DRM_XE_OA_FLAG_FD_NONBLOCK,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -1429,8 +1407,6 @@ test_invalid_oa_format_id(void)
 		DRM_XE_OA_PROPERTY_OA_FORMAT, UINT64_MAX, /* No __ff() here */
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC |
-			DRM_XE_OA_FLAG_FD_NONBLOCK,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -1465,7 +1441,6 @@ test_missing_sample_flags(void)
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -1610,7 +1585,6 @@ open_and_read_2_oa_reports(int format_id,
 
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
 				  (ARRAY_SIZE(properties) / 2) - 2,
@@ -1618,6 +1592,7 @@ open_and_read_2_oa_reports(int format_id,
 	};
 
 	stream_fd = __perf_open(drm_fd, &param, false);
+	set_fd_flags(stream_fd, O_CLOEXEC);
 
 	read_2_oa_reports(format_id, exponent,
 			  oa_report0, oa_report1, timer_only);
@@ -2021,7 +1996,6 @@ test_oa_exponents(const struct intel_execution_engine2 *e)
 			DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
 		};
 		struct drm_xe_oa_open_prop param = {
-			.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 			.num_properties = has_param_class_instance() ?
 					  ARRAY_SIZE(properties) / 2 :
 					  (ARRAY_SIZE(properties) / 2) - 2,
@@ -2151,7 +2125,6 @@ test_invalid_oa_exponent(void)
 						       to be accepted */
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -2187,7 +2160,6 @@ test_low_oa_exponent_permissions(void)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, bad_exponent,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -2306,18 +2278,18 @@ test_blocking(uint64_t requested_oa_period,
 	ADD_PROPS(props, idx, OA_METRIC_SET, test_set->perf_oa_metrics_set);
 	ADD_PROPS(props, idx, OA_FORMAT, __ff(test_set->perf_oa_format));
 	ADD_PROPS(props, idx, OA_EXPONENT, oa_exponent);
+	ADD_PROPS(props, idx, OA_DISABLED, true);
 
 	if (has_param_class_instance()) {
 		ADD_PROPS(props, idx, OA_UNIT_ID, 0);
 		ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, e->instance);
 	}
 
-	param.flags = DRM_XE_OA_FLAG_FD_CLOEXEC |
-		      DRM_XE_OA_FLAG_DISABLED;
 	param.num_properties = (idx - props) / 2;
 	param.properties_ptr = to_user_pointer(props);
 
 	perf_fd = __perf_open(drm_fd, &param, true /* prevent_pm */);
+        set_fd_flags(perf_fd, O_CLOEXEC);
 
 	times(&start_times);
 
@@ -2467,19 +2439,18 @@ test_polling(uint64_t requested_oa_period,
 	ADD_PROPS(props, idx, OA_METRIC_SET, test_set->perf_oa_metrics_set);
 	ADD_PROPS(props, idx, OA_FORMAT, __ff(test_set->perf_oa_format));
 	ADD_PROPS(props, idx, OA_EXPONENT, oa_exponent);
+	ADD_PROPS(props, idx, OA_DISABLED, true);
 
 	if (has_param_class_instance()) {
 		ADD_PROPS(props, idx, OA_UNIT_ID, 0);
 		ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, e->instance);
 	}
 
-	param.flags = DRM_XE_OA_FLAG_FD_CLOEXEC |
-		      DRM_XE_OA_FLAG_DISABLED |
-		      DRM_XE_OA_FLAG_FD_NONBLOCK;
 	param.num_properties = (idx - props) / 2;
 	param.properties_ptr = to_user_pointer(props);
 
 	stream_fd = __perf_open(drm_fd, &param, true /* prevent_pm */);
+	set_fd_flags(stream_fd, O_CLOEXEC | O_NONBLOCK);
 
 	times(&start_times);
 
@@ -2639,11 +2610,9 @@ static void test_polling_small_buf(void)
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, default_test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
+		DRM_XE_OA_PROPERTY_OA_DISABLED, true,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC |
-			DRM_XE_OA_FLAG_DISABLED |
-			DRM_XE_OA_FLAG_FD_NONBLOCK,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -2657,6 +2626,7 @@ static void test_polling_small_buf(void)
 	uint32_t n_polls = 0;
 
 	stream_fd = __perf_open(drm_fd, &param, true /* prevent_pm */);
+	set_fd_flags(stream_fd, O_CLOEXEC | O_NONBLOCK);
 	do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 
 	while (igt_nsec_elapsed(&ts) < test_duration) {
@@ -2742,11 +2712,10 @@ gen12_test_oa_tlb_invalidate(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(test_set->perf_oa_format),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
+		DRM_XE_OA_PROPERTY_OA_DISABLED, true,
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC |
-			DRM_XE_OA_FLAG_DISABLED,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
 				  (ARRAY_SIZE(properties) / 2) - 2,
@@ -2797,7 +2766,6 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
 				  (ARRAY_SIZE(properties) / 2) - 2,
@@ -2816,6 +2784,7 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 	igt_assert(fill_duration < 1000000000);
 
 	stream_fd = __perf_open(drm_fd, &param, true /* prevent_pm */);
+        set_fd_flags(stream_fd, O_CLOEXEC);
 
 	for (int i = 0; i < 5; i++) {
 		bool overflow_seen;
@@ -2954,7 +2923,6 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
 				  (ARRAY_SIZE(properties) / 2) - 2,
@@ -2975,6 +2943,7 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 	load_helper_run(HIGH);
 
 	stream_fd = __perf_open(drm_fd, &param, true /* prevent_pm */);
+        set_fd_flags(stream_fd, O_CLOEXEC);
 
 	while (total_len < (buf_size - sizeof(struct drm_xe_oa_record_header)) &&
 	       ((len = read(stream_fd, &buf[total_len], buf_size - total_len)) > 0 ||
@@ -3041,11 +3010,10 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
+		DRM_XE_OA_PROPERTY_OA_DISABLED, true,
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC |
-			 DRM_XE_OA_FLAG_DISABLED, /* Verify we start disabled */
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
 				  (ARRAY_SIZE(properties) / 2) - 2,
@@ -3063,6 +3031,7 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 	load_helper_run(HIGH);
 
 	stream_fd = __perf_open(drm_fd, &param, true /* prevent_pm */);
+        set_fd_flags(stream_fd, O_CLOEXEC);
 
 	for (int i = 0; i < 5; i++) {
 		int len;
@@ -3198,7 +3167,6 @@ test_short_reads(void)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -3292,7 +3260,6 @@ test_non_sampling_read_error(void)
 		/* XXX: no sampling exponent */
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -3300,6 +3267,7 @@ test_non_sampling_read_error(void)
 	uint8_t buf[1024];
 
 	stream_fd = __perf_open(drm_fd, &param, false);
+        set_fd_flags(stream_fd, O_CLOEXEC);
 
 	ret = read(stream_fd, buf, sizeof(buf));
 	igt_assert_eq(ret, -1);
@@ -3327,10 +3295,9 @@ test_disabled_read_error(void)
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, default_test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
+		DRM_XE_OA_PROPERTY_OA_DISABLED, true,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC |
-			 DRM_XE_OA_FLAG_DISABLED, /* XXX: open disabled */
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -3347,9 +3314,9 @@ test_disabled_read_error(void)
 
 	__perf_close(stream_fd);
 
-
-	param.flags &= ~DRM_XE_OA_FLAG_DISABLED;
+	properties[ARRAY_SIZE(properties) - 1] = false; /* Set DISABLED to false */
 	stream_fd = __perf_open(drm_fd, &param, false);
+        set_fd_flags(stream_fd, O_CLOEXEC);
 
 	read_2_oa_reports(default_test_set->perf_oa_format,
 			  oa_exponent,
@@ -3409,7 +3376,6 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e2,
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
 				  (ARRAY_SIZE(properties) / 2) - 2,
@@ -3447,6 +3413,7 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e2,
 	intel_buf_unmap(buf);
 
 	stream_fd = __perf_open(drm_fd, &param, false);
+        set_fd_flags(stream_fd, O_CLOEXEC);
 
 #define REPORT_ID 0xdeadbeef
 #define REPORT_OFFSET 0
@@ -3546,7 +3513,6 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
 				  (ARRAY_SIZE(properties) / 2) - 2,
@@ -3620,6 +3586,7 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 
 	igt_debug("opening i915-perf stream\n");
 	stream_fd = __perf_open(drm_fd, &param, false);
+        set_fd_flags(stream_fd, O_CLOEXEC);
 
 	dst_buf = intel_buf_create(bops, 4096, 1, 8, 64,
 				   I915_TILING_NONE,
@@ -3874,7 +3841,6 @@ static void gen12_single_ctx_helper_one_ctx(const struct intel_execution_engine2
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
 				  (ARRAY_SIZE(properties) / 2) - 2,
@@ -4155,7 +4121,6 @@ test_rc6_disable(void)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -4212,11 +4177,10 @@ test_stress_open_close(const struct intel_execution_engine2 *e)
 			DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
 			DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(test_set->perf_oa_format),
 			DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
+			DRM_XE_OA_PROPERTY_OA_DISABLED, true,
 			DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
 		};
 		struct drm_xe_oa_open_prop param = {
-			.flags = DRM_XE_OA_FLAG_FD_CLOEXEC |
-			         DRM_XE_OA_FLAG_DISABLED, /* XXX: open disabled */
 			.num_properties = has_param_class_instance() ?
 					  ARRAY_SIZE(properties) / 2 :
 					  (ARRAY_SIZE(properties) / 2) - 2,
@@ -4378,12 +4342,10 @@ test_create_destroy_userspace_config(void)
 		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
+		DRM_XE_OA_PROPERTY_OA_DISABLED, true,
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC |
-		DRM_XE_OA_FLAG_FD_NONBLOCK |
-		DRM_XE_OA_FLAG_DISABLED,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -4679,7 +4641,6 @@ static void test_oa_regs_whitelist(const struct intel_execution_engine2 *e,
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = sizeof(properties) / 16,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -4729,7 +4690,6 @@ __test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = sizeof(properties) / 16,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -4767,6 +4727,7 @@ __test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 	ibb = intel_bb_create_with_context(drm_fd, context, vm, NULL, BATCH_SZ);
 
 	stream_fd = __perf_open(drm_fd, &param, false);
+        set_fd_flags(stream_fd, O_CLOEXEC);
 
 	buf = mmap(0, OA_BUFFER_SIZE, PROT_READ, MAP_PRIVATE, stream_fd, 0);
 	igt_assert(buf != NULL);
@@ -4917,7 +4878,6 @@ test_xe_ref_count(void)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, 0, /* update below */
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -4960,6 +4920,7 @@ test_xe_ref_count(void)
 	igt_assert(ref_count0 > baseline);
 
 	stream_fd = __perf_open(drm_fd, &param, false);
+        set_fd_flags(stream_fd, O_CLOEXEC);
 	ref_count1 = read_i915_module_ref(is_xe);
 	igt_debug("ref count after opening i915 perf stream = %u\n", ref_count1);
 	igt_assert(ref_count1 > ref_count0);
@@ -5278,7 +5239,6 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		/* for gem_context use case, we do no pass exponent */
 		.num_properties = exponent ?
 				  ARRAY_SIZE(properties) / 2 :
@@ -5533,7 +5493,6 @@ static void closed_fd_and_unmapped_access(const struct intel_execution_engine2 *
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = has_param_class_instance() ?
 				  ARRAY_SIZE(properties) / 2 :
 				  (ARRAY_SIZE(properties) / 2) - 2,
@@ -5569,7 +5528,6 @@ static void test_mapped_oa_buffer(map_oa_buffer_test_t test_with_fd_open,
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.flags = DRM_XE_OA_FLAG_FD_CLOEXEC,
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -5644,9 +5602,6 @@ igt_main
 
 	igt_subtest("non-system-wide-paranoid")
 		test_system_wide_paranoid();
-
-	igt_subtest("invalid-open-flags")
-		test_invalid_open_flags();
 
 	igt_subtest("invalid-oa-metric-set-id")
 		test_invalid_oa_metric_set_id();

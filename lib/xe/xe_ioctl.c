@@ -556,14 +556,6 @@ static void xe_oa_prop_to_ext(struct drm_xe_oa_open_prop *properties,
 		ext++;
 	}
 
-	if (properties->flags) {
-		ext->base.name = DRM_XE_OA_EXTENSION_SET_PROPERTY;
-		ext->property = DRM_XE_OA_PROPERTY_OPEN_FLAGS;
-		ext->value = properties->flags;
-		ext++;
-		i++;
-	}
-
 	igt_assert_lte(1, i);
 	ext = extn;
 	for (j = 0; j < i - 1; j++)

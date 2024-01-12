@@ -97,7 +97,6 @@ struct drm_xe_oa_open_prop {
 	__u64 extensions;
 	__u32 config_syncobj;
 	__u32 reserved;
-	__u32 flags;
 	__u32 num_properties;
 	__u64 properties_ptr;
 };
