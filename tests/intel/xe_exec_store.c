@@ -148,7 +148,6 @@ static void basic_inst(int fd, int inst_type, struct drm_xe_engine_class_instanc
 	else
 		igt_assert_f(inst_type < 2, "Entered wrong inst_type.\n");
 
-	exec_queue = xe_exec_queue_create(fd, vm, eci, 0);
 	exec.exec_queue_id = exec_queue;
 	exec.address = data->addr;
 	sync.flags &= DRM_XE_SYNC_FLAG_SIGNAL;
