@@ -378,8 +378,13 @@ static void block_copy(int xe,
 	blt_set_object_ext(&ext.src, mid_compression_format, width, height, SURFACE_TYPE_2D);
 	blt_set_object_ext(&ext.dst, 0, width, height, SURFACE_TYPE_2D);
 	if (config->inplace) {
+		uint8_t pat_index = DEFAULT_PAT_INDEX;
+
+		if (AT_LEAST_GEN(intel_get_drm_devid(xe), 20) && config->compression)
+			pat_index = intel_get_pat_idx_uc_comp(xe);
+
 		blt_set_object(&blt.dst, mid->handle, dst->size, mid->region, 0,
-			       DEFAULT_PAT_INDEX, T_LINEAR, COMPRESSION_DISABLED,
+			       pat_index, T_LINEAR, COMPRESSION_DISABLED,
 			       comp_type);
 		blt.dst.ptr = mid->ptr;
 	}
@@ -461,8 +466,13 @@ static void block_multicopy(int xe,
 	blt_set_copy_object(&blt3.final, final);
 
 	if (config->inplace) {
+		uint8_t pat_index = DEFAULT_PAT_INDEX;
+
+		if (AT_LEAST_GEN(intel_get_drm_devid(xe), 20) && config->compression)
+			pat_index = intel_get_pat_idx_uc_comp(xe);
+
 		blt_set_object(&blt3.dst, mid->handle, dst->size, mid->region,
-			       mid->mocs_index, DEFAULT_PAT_INDEX, mid_tiling,
+			       mid->mocs_index, pat_index, mid_tiling,
 			       COMPRESSION_DISABLED, comp_type);
 		blt3.dst.ptr = mid->ptr;
 	}
