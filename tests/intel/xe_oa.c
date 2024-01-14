@@ -4950,10 +4950,8 @@ static void
 test_sysctl_defaults(void)
 {
 	int paranoid = read_u64_file("/proc/sys/dev/xe/perf_stream_paranoid");
-	int max_freq = read_u64_file("/proc/sys/dev/xe/oa_max_sample_rate");
 
 	igt_assert_eq(paranoid, 1);
-	igt_assert_eq(max_freq, 100000);
 }
 
 static struct intel_execution_engine2 *
@@ -5558,8 +5556,6 @@ igt_main
 
 		igt_require(stat("/proc/sys/dev/xe/perf_stream_paranoid", &sb)
 			    == 0);
-		igt_require(stat("/proc/sys/dev/xe/oa_max_sample_rate", &sb)
-			    == 0);
 	}
 
 	igt_subtest("xe-ref-count")
@@ -5589,7 +5585,6 @@ igt_main
 		}
 
 		write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
-		write_u64_file("/proc/sys/dev/xe/oa_max_sample_rate", 100000);
 
 		if (!xe_relax_checks(drm_fd))
 			gt_max_freq_mhz = sysfs_read(RPS_RP0_FREQ_MHZ);
@@ -5618,8 +5613,10 @@ igt_main
 
 	igt_subtest("invalid-oa-exponent")
 		test_invalid_oa_exponent();
-	igt_subtest("low-oa-exponent-permissions")
+	igt_subtest("low-oa-exponent-permissions") {
+		igt_require(!is_xe_device(drm_fd));
 		test_low_oa_exponent_permissions();
+	}
 	igt_subtest_with_dynamic("oa-exponents")
 		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
 			test_oa_exponents(e);
@@ -5864,7 +5861,6 @@ igt_main
 
 	igt_fixture {
 		/* leave sysctl options in their default state... */
-		write_u64_file("/proc/sys/dev/xe/oa_max_sample_rate", 100000);
 		write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
 		if (intel_perf)

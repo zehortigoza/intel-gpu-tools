@@ -23,6 +23,7 @@
 #include "drmtest.h"
 #include "igt_aux.h"
 #include "i915_pciids.h"
+#include "i915_pciids_local.h"
 #include "intel_chipset.h"
 #include "ioctl_wrappers.h"
 #include "linux_scaffold.h"
