@@ -25,6 +25,10 @@ struct intel_compute_kernels {
 	int ip_ver;
 	unsigned int size;
 	const unsigned char *kernel;
+	unsigned int sip_kernel_size;
+	const unsigned char *sip_kernel;
+	unsigned int long_kernel_size;
+	const unsigned char *long_kernel;
 };
 
 extern const struct intel_compute_kernels intel_compute_square_kernels[];
