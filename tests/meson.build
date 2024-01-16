@@ -278,6 +278,7 @@ intel_xe_progs = [
 	'xe_ccs',
 	'xe_create',
 	'xe_compute',
+	'xe_compute_preempt',
 	'xe_copy_basic',
 	'xe_dma_buf_sync',
 	'xe_debugfs',
