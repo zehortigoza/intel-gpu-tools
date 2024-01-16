@@ -441,6 +441,8 @@
 #define GSC_FW_LOAD GSC_INSTR(1, 0, 2)
 #define   HECI1_FW_LIMIT_VALID (1 << 31)
 
+#define XE2_STATE_SIP \
+	((0x3 << 29) | (0x0 << 27) | (0x1 << 24) | (0x1 << 17))
 /*
  * Used to convert any address to canonical form.
  * Starting from gen8, some commands (e.g. STATE_BASE_ADDRESS,
