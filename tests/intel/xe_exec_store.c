@@ -201,7 +201,7 @@ static void store_cachelines(int fd, struct drm_xe_engine_class_instance *eci,
 	uint32_t *batch_map;
 	size_t bo_size = 4096;
 
-	bo_size = ALIGN(bo_size, xe_get_default_alignment(fd));
+	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd), xe_get_default_alignment(fd));
 	vm = xe_vm_create(fd, 0, 0);
 	ahnd = intel_allocator_open(fd, 0, INTEL_ALLOCATOR_SIMPLE);
 	exec_queues = xe_exec_queue_create(fd, vm, eci, 0);
