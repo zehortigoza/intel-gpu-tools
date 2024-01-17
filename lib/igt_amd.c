@@ -1153,6 +1153,55 @@ void igt_amd_allow_edp_hotplug_detect(int drm_fd, char *connector_name, bool ena
 	close(hpd_fd);
 }
 
+/**
+ * igt_amd_disallow_edp_enter_psr: notify kernel skip edp psr setup and enable
+ * @drm_fd: DRM file descriptor
+ * @connector_name: The connector's name
+ * @enable: skip kernel eDP psr setup and enable -- disallow edp enter psr
+ * example usage: disallow psr
+ * echo 0x1 >
+ * /sys/kernel/debug/dri/0/eDP-1/disallow_edp_enter_psr
+ *
+ * expected IGT sequence is as below:
+ * 1. disable eDP PHY and notify eDP rx with dpcd 0x600 = 2.
+ *    for example, kmstest_set_connector_dpms off will do this.
+ * 2. echo 0x1 /sys/kernel/debug/dri/0/eDP-X/disallow_edp_enter_psr
+ * 3. enable eDP PHY and notify eDP rx with dpcd 0x600 = 1 but
+ *    without dpcd 0x170 = 5.
+ *    for example, kmstest_set_connector_dpms on will do this.
+ * 4. read crc from rx dpcd 0x270, 0x246, etc.
+ *    igt_pipe_crc_collect_crc will do this.
+ * 5. echo 0x0 /sys/kernel/debug/dri/0/eDP-X/disallow_edp_enter_psr.
+ *    this will let eDP back to normal with psr setup dpcd 0x170 = 5.
+ */
+void igt_amd_disallow_edp_enter_psr(int drm_fd, char *connector_name, bool enable)
+{
+	int fd, ret, wr_len;
+	const char *allow_edp_psr = "1";
+	const char *dis_allow_edp_psr = "0";
+
+	/* if current psr is not enabled, skip this debugfs */
+	if (!igt_amd_psr_support_drv(drm_fd, connector_name, PSR_MODE_1) &&
+		!igt_amd_psr_support_drv(drm_fd, connector_name, PSR_MODE_2))
+		return;
+
+	fd = igt_debugfs_connector_dir(drm_fd, connector_name, O_RDONLY);
+	igt_assert(fd >= 0);
+	ret = openat(fd, DEBUGFS_DISALLOW_EDP_ENTER_PSR, O_WRONLY);
+	close(fd);
+	igt_assert(ret >= 0);
+
+	if (enable) {
+		wr_len = write(ret, allow_edp_psr, strlen(allow_edp_psr));
+		igt_assert_eq(wr_len, strlen(allow_edp_psr));
+	} else {
+		wr_len = write(ret, dis_allow_edp_psr, strlen(dis_allow_edp_psr));
+		igt_assert_eq(wr_len, strlen(dis_allow_edp_psr));
+	}
+
+	close(ret);
+}
+
 static bool get_dm_capabilities(int drm_fd, char *buf, size_t size)
 {
 	int ret, fd;
