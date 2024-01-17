@@ -6100,7 +6100,7 @@ int igt_get_max_dotclock(int fd)
 	drmModeFreeResources(resources);
 
 	dir = igt_debugfs_dir(fd);
-	igt_require(dir);
+	igt_require(dir != -1);
 
 	/*
 	 * Display specific clock frequency info is moved to i915_cdclk_info,
