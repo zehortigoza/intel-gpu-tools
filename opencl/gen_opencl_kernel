@@ -84,7 +84,7 @@ INCLUDES
 
 cat $out_files >>$output_fname
 
-echo "const struct xe_compute_kernels ${kernel_name}_kernels[] = {" >>$output_fname
+echo "const struct intel_compute_kernels ${kernel_name}_kernels[] = {" >>$output_fname
 
 for i in "${args[@]}"; do
         out="$dest_dir/${i}_${kernel_name}.h"
