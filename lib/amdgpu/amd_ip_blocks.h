@@ -31,22 +31,31 @@ struct amdgpu_ring_context {
 	int res_cnt; /* num of bo in amdgpu_bo_handle resources[2] */
 
 	uint32_t write_length;  /* length of data */
+	uint32_t write_length2; /* length of data for second packet */
 	uint32_t *pm4;		/* data of the packet */
 	uint32_t pm4_size;	/* max allocated packet size */
 	bool secure;		/* secure or not */
 
-	uint64_t bo_mc;		/* result from amdgpu_bo_alloc_and_map */
-	uint64_t bo_mc2;	/* result from amdgpu_bo_alloc_and_map */
+	uint64_t bo_mc;		/* GPU address of first buffer */
+	uint64_t bo_mc2;	/* GPU address for p4 packet */
+	uint64_t bo_mc3;	/* GPU address of second buffer */
+	uint64_t bo_mc4;	/* GPU address of second p4 packet */
 
 	uint32_t pm4_dw;	/* actual size of pm4 */
+	uint32_t pm4_dw2;	/* actual size of second pm4 */
 
-	volatile uint32_t *bo_cpu;
-	volatile uint32_t *bo2_cpu;
+	volatile uint32_t *bo_cpu;	/* cpu adddress of mapped GPU buf */
+	volatile uint32_t *bo2_cpu;	/* cpu adddress of mapped pm4 */
+	volatile uint32_t *bo3_cpu;	/* cpu adddress of mapped GPU second buf */
+	volatile uint32_t *bo4_cpu;	/* cpu adddress of mapped second pm4 */
 
 	uint32_t bo_cpu_origin;
 
 	amdgpu_bo_handle bo;
 	amdgpu_bo_handle bo2;
+	amdgpu_bo_handle bo3;
+	amdgpu_bo_handle bo4;
+
 	amdgpu_bo_handle boa_vram[2];
 	amdgpu_bo_handle boa_gtt[2];
 
@@ -56,6 +65,8 @@ struct amdgpu_ring_context {
 	amdgpu_bo_handle resources[4]; /* amdgpu_bo_alloc_and_map */
 	amdgpu_va_handle va_handle;    /* amdgpu_bo_alloc_and_map */
 	amdgpu_va_handle va_handle2;   /* amdgpu_bo_alloc_and_map */
+	amdgpu_va_handle va_handle3;   /* amdgpu_bo_alloc_and_map */
+	amdgpu_va_handle va_handle4;   /* amdgpu_bo_alloc_and_map */
 
 	struct amdgpu_cs_ib_info ib_info;     /* amdgpu_bo_list_create */
 	struct amdgpu_cs_request ibs_request; /* amdgpu_cs_query_fence_status */
@@ -76,6 +87,7 @@ struct amdgpu_ip_funcs {
 	int (*compare)(const struct amdgpu_ip_funcs *func, const struct amdgpu_ring_context *context, int div);
 	int (*compare_pattern)(const struct amdgpu_ip_funcs *func, const struct amdgpu_ring_context *context, int div);
 	int (*get_reg_offset)(enum general_reg reg);
+	int (*wait_reg_mem)(const struct amdgpu_ip_funcs *func, const struct amdgpu_ring_context *context, uint32_t *pm4_dw);
 
 };
 

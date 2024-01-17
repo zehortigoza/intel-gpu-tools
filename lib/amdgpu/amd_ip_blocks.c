@@ -288,6 +288,39 @@ gfx_ring_copy_linear(const struct amdgpu_ip_funcs *func,
 	return 0;
 }
 
+static int
+gfx_ring_wait_reg_mem(const struct amdgpu_ip_funcs *func,
+			const struct amdgpu_ring_context *ring_context,
+			uint32_t *pm4_dw)
+{
+	uint32_t i;
+
+	i = *pm4_dw;
+	ring_context->pm4[i++] = PACKET3(PACKET3_WAIT_REG_MEM, 5);
+	ring_context->pm4[i++] = (WAIT_REG_MEM_MEM_SPACE(1) | /* memory */
+							WAIT_REG_MEM_FUNCTION(3) | /* == */
+							WAIT_REG_MEM_ENGINE(0));  /* me */
+	ring_context->pm4[i++] = lower_32_bits(ring_context->bo_mc);
+	ring_context->pm4[i++] = upper_32_bits(ring_context->bo_mc);
+	ring_context->pm4[i++] = func->deadbeaf; /* reference value */
+	ring_context->pm4[i++] = 0xffffffff; /* and mask */
+	ring_context->pm4[i++] = 0x00000004; /* poll interval */
+	*pm4_dw = i;
+
+	return 0;
+}
+
+static int
+sdma_ring_wait_reg_mem(const struct amdgpu_ip_funcs *func,
+			const struct amdgpu_ring_context *ring_context,
+			uint32_t *pm4_dw)
+{
+	int r;
+
+	r = gfx_ring_wait_reg_mem(func, ring_context, pm4_dw);
+	return r;
+}
+
 /* we may cobine these two functions later */
 static int
 x_compare(const struct amdgpu_ip_funcs *func,
@@ -336,6 +369,7 @@ static struct amdgpu_ip_funcs gfx_v8_x_ip_funcs = {
 	.compare = x_compare,
 	.compare_pattern = x_compare_pattern,
 	.get_reg_offset = gfx_v8_0_get_reg_offset,
+	.wait_reg_mem = gfx_ring_wait_reg_mem,
 };
 
 static struct amdgpu_ip_funcs sdma_v3_x_ip_funcs = {
@@ -351,6 +385,7 @@ static struct amdgpu_ip_funcs sdma_v3_x_ip_funcs = {
 	.compare = x_compare,
 	.compare_pattern = x_compare_pattern,
 	.get_reg_offset = gfx_v8_0_get_reg_offset,
+	.wait_reg_mem = sdma_ring_wait_reg_mem,
 };
 
 struct amdgpu_ip_block_version gfx_v8_x_ip_block = {
