@@ -44,7 +44,7 @@
 /**
  * SUBTEST: planar-pixel-format-settings
  * Description: verify planar settings for pixel format are handled correctly
- * Functionality: pixel_format, plane
+ * Functionality: pixel_formats, plane
  *
  * SUBTEST: plane-position-%s
  * Description: Verify plane position using two planes to create a %arg[1]
@@ -80,7 +80,7 @@
 /**
  * SUBTEST: pixel-%s
  * Description: verify the pixel formats for given plane and pipe
- * Functionality: pixel_format, plane
+ * Functionality: pixel_formats, plane
  *
  * arg[1]:
  *

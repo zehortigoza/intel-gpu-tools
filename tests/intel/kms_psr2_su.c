@@ -47,7 +47,7 @@
  *
  * SUBTEST: page_flip-%s
  * Description: Test the selective update with %arg[1] when screen changes
- * Functionality: pixel-format, psr2, selective_update
+ * Functionality: pixel_formats, psr2, selective_update
  *
  * arg[1]:
  *

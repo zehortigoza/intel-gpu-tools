@@ -68,7 +68,7 @@
 /**
  * SUBTEST: compare-crc-sanitycheck-%s
  * Description: Basic sanity check for CRC mismatches with %arg[1]
- * Functionality: crc, pixel_format
+ * Functionality: crc, pixel_formats
  *
  * arg[1]:
  *
