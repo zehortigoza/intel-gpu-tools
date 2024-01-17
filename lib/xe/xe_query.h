@@ -58,8 +58,8 @@ struct xe_device {
 };
 
 #define xe_for_each_engine(__fd, __hwe) \
-	for (int __i = 0; __i < xe_number_engines(__fd) && \
-	     (__hwe = &xe_engine(__fd, __i)->instance); ++__i)
+	for (int igt_unique(__i) = 0; igt_unique(__i) < xe_number_engines(__fd) && \
+	     (__hwe = &xe_engine(__fd, igt_unique(__i))->instance); ++igt_unique(__i))
 #define xe_for_each_engine_class(__class) \
 	for (__class = 0; __class < DRM_XE_ENGINE_CLASS_COMPUTE + 1; \
 	     ++__class)
@@ -67,8 +67,8 @@ struct xe_device {
 	for (__gt = 0; __gt < xe_number_gt(__fd); ++__gt)
 
 #define xe_for_each_mem_region(__fd, __memreg, __r) \
-	for (uint64_t __i = 0; __i < igt_fls(__memreg); __i++) \
-		for_if(__r = (__memreg & (1ull << __i)))
+	for (uint64_t igt_unique(__i) = 0; igt_unique(__i) < igt_fls(__memreg); igt_unique(__i)++) \
+		for_if(__r = (__memreg & (1ull << igt_unique(__i))))
 
 #define XE_IS_CLASS_SYSMEM(__region) ((__region)->mem_class == DRM_XE_MEM_REGION_CLASS_SYSMEM)
 #define XE_IS_CLASS_VRAM(__region) ((__region)->mem_class == DRM_XE_MEM_REGION_CLASS_VRAM)
