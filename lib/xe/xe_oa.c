@@ -952,6 +952,7 @@ intel_perf_load_perf_configs(struct intel_perf *perf, int drm_fd)
 	}
 }
 
+#if 0
 static void
 accumulate_uint32(const uint32_t *report0,
                   const uint32_t *report1,
@@ -1213,3 +1214,4 @@ const char *intel_perf_read_report_reason(const struct intel_perf *perf,
 
 	return "unknown";
 }
+#endif

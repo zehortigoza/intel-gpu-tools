@@ -241,6 +241,11 @@ IGT_TEST_DESCRIPTION("Test the xe perf metrics streaming interface");
 
 #define xe_relax_checks(drm_fd) (IS_LUNARLAKE(xe_dev_id(drm_fd)))
 
+#define  OASTATUS_MMIO_TRG_Q_FULL	REG_BIT(6)
+#define  OASTATUS_COUNTER_OVERFLOW	REG_BIT(2)
+#define  OASTATUS_BUFFER_OVERFLOW	REG_BIT(1)
+#define  OASTATUS_REPORT_LOST		REG_BIT(0)
+
 #define GEN6_MI_REPORT_PERF_COUNT ((0x28 << 23) | (3 - 2))
 #define GEN8_MI_REPORT_PERF_COUNT ((0x28 << 23) | (4 - 2))
 
@@ -1456,9 +1461,6 @@ read_2_oa_reports(int format_id,
 		  bool timer_only)
 {
 	size_t format_size = get_oa_format(format_id).size;
-	size_t sample_size = (sizeof(struct drm_xe_oa_record_header) +
-			      format_size);
-	const struct drm_xe_oa_record_header *header;
 	uint32_t exponent_mask = (1 << (exponent + 1)) - 1;
 
 	/* Note: we allocate a large buffer so that each read() iteration
@@ -1478,32 +1480,36 @@ read_2_oa_reports(int format_id,
 	 * are being lost.
 	 */
 	int max_reports = MAX_OA_BUF_SIZE / format_size;
-	int buf_size = sample_size * max_reports * 1.5;
+	int buf_size = format_size * max_reports * 1.5;
 	uint8_t *buf = malloc(buf_size);
 	int n = 0;
 
 	for (int i = 0; i < 1000; i++) {
 		ssize_t len;
+		u32 oa_status;
 
 		while ((len = read(stream_fd, buf, buf_size)) < 0 &&
 		       errno == EINTR)
 			;
 
+		oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+		igt_debug("oa_status %#x\n", oa_status);
+
 		igt_assert(len > 0);
 		igt_debug("read %d bytes\n", (int)len);
 
-		for (size_t offset = 0; offset < len; offset += header->size) {
-			const uint32_t *report;
+		/* Need at least 2 reports */
+		if (len < 2 * format_size)
+			continue;
 
-			header = (void *)(buf + offset);
-
-			igt_assert_eq(header->pad, 0); /* Reserved */
+		for (size_t offset = 0; offset < len; offset += format_size) {
+			const uint32_t *report = (void *)(buf + offset);
 
 			/* Currently the only test that should ever expect to
 			 * see a _BUFFER_LOST error is the buffer_fill test,
 			 * otherwise something bad has probably happened...
 			 */
-			igt_assert_neq(header->type, DRM_XE_OA_RECORD_OA_BUFFER_LOST);
+			igt_assert(!(oa_status & OASTATUS_BUFFER_OVERFLOW));
 
 			/* At high sampling frequencies the OA HW might not be
 			 * able to cope with all write requests and will notify
@@ -1511,7 +1517,7 @@ read_2_oa_reports(int format_id,
 			 * two sequential reports due to the timeline blip this
 			 * implies
 			 */
-			if (header->type == DRM_XE_OA_RECORD_OA_REPORT_LOST) {
+			if (oa_status & OASTATUS_REPORT_LOST) {
 				igt_debug("read restart: OA trigger collision / report lost\n");
 				n = 0;
 
@@ -1522,16 +1528,6 @@ read_2_oa_reports(int format_id,
 				break;
 			}
 
-			/* Currently the only other record type expected is a
-			 * _SAMPLE. Notably this test will need updating if
-			 * i915-perf is extended in the future with additional
-			 * record types.
-			 */
-			igt_assert_eq(header->type, DRM_XE_OA_RECORD_SAMPLE);
-
-			igt_assert_eq(header->size, sample_size);
-
-			report = (const void *)(header + 1);
 			dump_report(report, format_size / 4, "oa-formats");
 
 			igt_debug("read report: reason = %x, timestamp = %"PRIx64", exponent mask=%x\n",
@@ -2003,10 +1999,8 @@ test_oa_exponents(const struct intel_execution_engine2 *e)
 		};
 		uint64_t expected_timestamp_delta = 2ULL << exponent;
 		size_t format_size = get_oa_format(fmt).size;
-		size_t sample_size = (sizeof(struct drm_xe_oa_record_header) +
-				      format_size);
 		int max_reports = MAX_OA_BUF_SIZE / format_size;
-		int buf_size = sample_size * max_reports * 1.5;
+		int buf_size = format_size * max_reports * 1.5;
 		uint8_t *buf = calloc(1, buf_size);
 		int ret, n_timer_reports = 0;
 		uint32_t matches = 0;
@@ -2024,36 +2018,31 @@ test_oa_exponents(const struct intel_execution_engine2 *e)
 		stream_fd = __perf_open(drm_fd, &param, true /* prevent_pm */);
 
 		while (n_timer_reports < NUM_TIMER_REPORTS) {
-			struct drm_xe_oa_record_header *header;
+			u32 oa_status;
 
 			while ((ret = read(stream_fd, buf, buf_size)) < 0 &&
 			       errno == EINTR)
 				;
 
 			/* igt_debug(" > read %i bytes\n", ret); */
+			oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+			igt_debug("oa_status %#x\n", oa_status);
 
 			/* We should never have no data. */
 			igt_assert(ret > 0);
 
 			for (int offset = 0;
 			     offset < ret && n_timer_reports < NUM_TIMER_REPORTS;
-			     offset += header->size) {
-				uint32_t *report;
+			     offset += format_size) {
+				uint32_t *report = (void *)(buf + offset);
 
-				header = (void *)(buf + offset);
-
-				if (header->type == DRM_XE_OA_RECORD_OA_BUFFER_LOST) {
+				if (oa_status & OASTATUS_BUFFER_OVERFLOW) {
 					igt_assert(!"reached");
 					break;
 				}
 
-				if (header->type == DRM_XE_OA_RECORD_OA_REPORT_LOST)
+				if (oa_status & OASTATUS_REPORT_LOST)
 					igt_debug("report loss\n");
-
-				if (header->type != DRM_XE_OA_RECORD_SAMPLE)
-					continue;
-
-				report = (void *)(header + 1);
 
 				if (!oa_report_is_periodic(exponent, report))
 					continue;
@@ -2254,7 +2243,6 @@ test_blocking(uint64_t requested_oa_period,
 	int64_t user_ns, kernel_ns;
 	int64_t tick_ns = 1000000000 / sysconf(_SC_CLK_TCK);
 	int64_t test_duration_ns = tick_ns * 100;
-
 	int max_iterations = (test_duration_ns / oa_period) + 2;
 	int n_extra_iterations = 0;
 	int perf_fd;
@@ -2269,10 +2257,10 @@ test_blocking(uint64_t requested_oa_period,
 	 * to check for data and giving some time to read().
 	 */
 	int min_iterations = (test_duration_ns / (oa_period + kernel_hrtimer + kernel_hrtimer / 5));
-
 	int64_t start, end;
 	int n = 0;
 	struct intel_perf_metric_set *test_set = metric_set(e);
+	size_t format_size = get_oa_format(test_set->perf_oa_format).size;
 
 	ADD_PROPS(props, idx, SAMPLE_OA, true);
 	ADD_PROPS(props, idx, OA_METRIC_SET, test_set->perf_oa_metrics_set);
@@ -2323,7 +2311,6 @@ test_blocking(uint64_t requested_oa_period,
 	start = get_time();
 	do_ioctl(perf_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < test_duration_ns; /* nop */) {
-		struct drm_xe_oa_record_header *header;
 		bool timer_report_read = false;
 		bool non_timer_report_read = false;
 		int ret;
@@ -2334,27 +2321,14 @@ test_blocking(uint64_t requested_oa_period,
 
 		igt_assert(ret > 0);
 
-		/* For Haswell reports don't contain a well defined reason
-		 * field we so assume all reports to be 'periodic'. For gen8+
-		 * we want to to consider that the HW automatically writes some
-		 * non periodic reports (e.g. on context switch) which might
-		 * lead to more successful read()s than expected due to
-		 * periodic sampling and we don't want these extra reads to
-		 * cause the test to fail...
-		 */
 		if (intel_gen(devid) >= 8) {
-			for (int offset = 0; offset < ret; offset += header->size) {
-				header = (void *)(buf + offset);
+			for (int offset = 0; offset < ret; offset += format_size) {
+				uint32_t *report = (void *)(buf + offset);
 
-				if (header->type == DRM_XE_OA_RECORD_SAMPLE) {
-					uint32_t *report = (void *)(header + 1);
-
-					if (oa_report_is_periodic(oa_exponent,
-								  report))
-						timer_report_read = true;
-					else
-						non_timer_report_read = true;
-				}
+				if (oa_report_is_periodic(oa_exponent, report))
+					timer_report_read = true;
+				else
+					non_timer_report_read = true;
 			}
 		}
 
@@ -2434,6 +2408,7 @@ test_polling(uint64_t requested_oa_period,
 	int64_t start, end;
 	int n = 0;
 	struct intel_perf_metric_set *test_set = metric_set(e);
+	size_t format_size = get_oa_format(test_set->perf_oa_format).size;
 
 	ADD_PROPS(props, idx, SAMPLE_OA, true);
 	ADD_PROPS(props, idx, OA_METRIC_SET, test_set->perf_oa_metrics_set);
@@ -2484,7 +2459,6 @@ test_polling(uint64_t requested_oa_period,
 	do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < test_duration_ns; /* nop */) {
 		struct pollfd pollfd = { .fd = stream_fd, .events = POLLIN };
-		struct drm_xe_oa_record_header *header;
 		bool timer_report_read = false;
 		bool non_timer_report_read = false;
 		int ret;
@@ -2524,17 +2498,13 @@ test_polling(uint64_t requested_oa_period,
 		 * cause the test to fail...
 		 */
 		if (intel_gen(devid) >= 8) {
-			for (int offset = 0; offset < ret; offset += header->size) {
-				header = (void *)(buf + offset);
+			for (int offset = 0; offset < ret; offset += format_size) {
+				uint32_t *report = (void *)(buf + offset);
 
-				if (header->type == DRM_XE_OA_RECORD_SAMPLE) {
-					uint32_t *report = (void *)(header + 1);
-
-					if (oa_report_is_periodic(oa_exponent, report))
-						timer_report_read = true;
-					else
-						non_timer_report_read = true;
-				}
+				if (oa_report_is_periodic(oa_exponent, report))
+					timer_report_read = true;
+				else
+					non_timer_report_read = true;
 			}
 		}
 
@@ -2617,8 +2587,7 @@ static void test_polling_small_buf(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 	uint32_t test_duration = 80 * 1000 * 1000;
-	int sample_size = (sizeof(struct drm_xe_oa_record_header) +
-			   get_oa_format(default_test_set->perf_oa_format).size);
+	int sample_size = get_oa_format(default_test_set->perf_oa_format).size;
 	int n_expected_reports = test_duration / oa_exponent_to_ns(oa_exponent);
 	int n_expect_read_bytes = n_expected_reports * sample_size;
 	struct timespec ts = {};
@@ -2658,11 +2627,12 @@ static void test_polling_small_buf(void)
 
 static int
 num_valid_reports_captured(struct drm_xe_oa_open_prop *param,
-			   int64_t *duration_ns)
+			   int64_t *duration_ns, int fmt)
 {
 	uint8_t buf[1024 * 1024];
 	int64_t start, end;
 	int num_reports = 0;
+	size_t format_size = get_oa_format(fmt).size;
 
 	igt_debug("Expected duration = %"PRId64"\n", *duration_ns);
 
@@ -2671,7 +2641,6 @@ num_valid_reports_captured(struct drm_xe_oa_open_prop *param,
 	start = get_time();
 	do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < *duration_ns; /* nop */) {
-		struct drm_xe_oa_record_header *header;
 		int ret;
 
 		while ((ret = read(stream_fd, buf, sizeof(buf))) < 0 &&
@@ -2680,15 +2649,11 @@ num_valid_reports_captured(struct drm_xe_oa_open_prop *param,
 
 		igt_assert(ret > 0);
 
-		for (int offset = 0; offset < ret; offset += header->size) {
-			header = (void *)(buf + offset);
+		for (int offset = 0; offset < ret; offset += format_size) {
+			uint32_t *report = (void *)(buf + offset);
 
-			if (header->type == DRM_XE_OA_RECORD_SAMPLE) {
-				uint32_t *report = (void *)(header + 1);
-
-				if (gen8_report_reason(report) & OAREPORT_REASON_TIMER)
-					num_reports++;
-			}
+			if (gen8_report_reason(report) & OAREPORT_REASON_TIMER)
+				num_reports++;
 		}
 	}
 	__perf_close(stream_fd);
@@ -2730,14 +2695,14 @@ gen12_test_oa_tlb_invalidate(const struct intel_execution_engine2 *e)
 	 * will have invalid entries.
 	 */
 	duration = 5LL * NSEC_PER_SEC;
-	num_reports1 = num_valid_reports_captured(&param, &duration);
+	num_reports1 = num_valid_reports_captured(&param, &duration, test_set->perf_oa_format);
 	num_expected_reports = duration / oa_exponent_to_ns(oa_exponent);
 	igt_debug("expected num reports = %d\n", num_expected_reports);
 	igt_debug("actual num reports = %d\n", num_reports1);
 	igt_assert(num_reports1 > 0.95 * num_expected_reports);
 
 	duration = 5LL * NSEC_PER_SEC;
-	num_reports2 = num_valid_reports_captured(&param, &duration);
+	num_reports2 = num_valid_reports_captured(&param, &duration, test_set->perf_oa_format);
 	num_expected_reports = duration / oa_exponent_to_ns(oa_exponent);
 	igt_debug("expected num reports = %d\n", num_expected_reports);
 	igt_debug("actual num reports = %d\n", num_reports2);
@@ -2771,15 +2736,15 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 				  (ARRAY_SIZE(properties) / 2) - 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
-	struct drm_xe_oa_record_header *header;
 	size_t report_size = get_oa_format(fmt).size;
-	int buf_size = 65536 * (report_size + sizeof(struct drm_xe_oa_record_header));
+	int buf_size = 65536 * report_size;
 	uint8_t *buf = malloc(buf_size);
 	int len;
 	size_t oa_buf_size = MAX_OA_BUF_SIZE;
 	int n_full_oa_reports = oa_buf_size / report_size;
 	uint64_t fill_duration = n_full_oa_reports * oa_period;
 	uint32_t *last_periodic_report = malloc(report_size);
+	u32 oa_status;
 
 	igt_assert(fill_duration < 1000000000);
 
@@ -2799,16 +2764,11 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 
 		while ((len = read(stream_fd, buf, buf_size)) == -1 && errno == EINTR)
 			;
-
 		igt_assert_neq(len, -1);
 
-		overflow_seen = false;
-		for (int offset = 0; offset < len; offset += header->size) {
-			header = (void *)(buf + offset);
-
-			if (header->type == DRM_XE_OA_RECORD_OA_BUFFER_LOST)
-				overflow_seen = true;
-		}
+		oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+		igt_debug("oa_status %#x\n", oa_status);
+		overflow_seen = (oa_status & OASTATUS_BUFFER_OVERFLOW) ? true : false;
 
 		/* Overrun mode is disabled in the kernel for Xe2+ */
 		if (!xe_relax_checks(drm_fd))
@@ -2840,43 +2800,30 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 
 			while ((len = read(stream_fd, buf, buf_size)) == -1 && errno == EINTR)
 				;
-
 			igt_assert_neq(len, -1);
 
-			for (int offset = 0; offset < len; offset += header->size) {
-				uint32_t *report;
+			oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+			igt_debug("oa_status %#x\n", oa_status);
+			igt_assert(!(oa_status & OASTATUS_BUFFER_OVERFLOW));
 
-				header = (void *) (buf + offset);
-				report = (void *) (header + 1);
+			for (int offset = 0; offset < len; offset += report_size) {
+				uint32_t *report = (void *) (buf + offset);
 
-				switch (header->type) {
-				case DRM_XE_OA_RECORD_OA_REPORT_LOST:
-					igt_debug("report loss, trying again\n");
-					break;
-				case DRM_XE_OA_RECORD_SAMPLE:
-					igt_debug(" > report ts=%"PRIu64""
-						  " ts_delta_last_periodic=%"PRIu64" is_timer=%i ctx_id=%8x nb_periodic=%u\n",
-						  oa_timestamp(report, fmt),
-						  n_periodic_reports > 0 ?  oa_timestamp_delta(report, last_periodic_report, fmt) : 0,
-						  oa_report_is_periodic(oa_exponent, report),
-						  oa_report_get_ctx_id(report),
-						  n_periodic_reports);
+				igt_debug(" > report ts=%"PRIu64""
+					  " ts_delta_last_periodic=%"PRIu64" is_timer=%i ctx_id=%8x nb_periodic=%u\n",
+					  oa_timestamp(report, fmt),
+					  n_periodic_reports > 0 ?  oa_timestamp_delta(report, last_periodic_report, fmt) : 0,
+					  oa_report_is_periodic(oa_exponent, report),
+					  oa_report_get_ctx_id(report),
+					  n_periodic_reports);
 
-					if (first_timestamp == 0)
-						first_timestamp = oa_timestamp(report, fmt);
-					last_timestamp = oa_timestamp(report, fmt);
+				if (first_timestamp == 0)
+					first_timestamp = oa_timestamp(report, fmt);
+				last_timestamp = oa_timestamp(report, fmt);
 
-					if (((last_timestamp - first_timestamp) * oa_period) < (fill_duration / 2))
-						break;
-
-					if (oa_report_is_periodic(oa_exponent, report)) {
-						memcpy(last_periodic_report, report, report_size);
-						n_periodic_reports++;
-					}
-					break;
-				case DRM_XE_OA_RECORD_OA_BUFFER_LOST:
-					igt_assert(!"unexpected overflow");
-					break;
+				if (oa_report_is_periodic(oa_exponent, report)) {
+					memcpy(last_periodic_report, report, report_size);
+					n_periodic_reports++;
 				}
 			}
 		}
@@ -2928,12 +2875,12 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 				  (ARRAY_SIZE(properties) / 2) - 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
-	struct drm_xe_oa_record_header *header;
-	uint32_t buf_size = 3 * 65536 * (report_size + sizeof(struct drm_xe_oa_record_header));
+	uint32_t buf_size = 3 * 65536 * report_size;
 	uint8_t *buf = malloc(buf_size);
-	uint32_t total_len = 0, reports_lost;
+	uint32_t total_len = 0;
 	const uint32_t *last_report;
 	int len;
+	u32 oa_status;
 
 	igt_assert(buf);
 
@@ -2945,12 +2892,16 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 	stream_fd = __perf_open(drm_fd, &param, true /* prevent_pm */);
         set_fd_flags(stream_fd, O_CLOEXEC);
 
-	while (total_len < (buf_size - sizeof(struct drm_xe_oa_record_header)) &&
+	while (total_len < buf_size &&
 	       ((len = read(stream_fd, &buf[total_len], buf_size - total_len)) > 0 ||
 		(len == -1 && errno == EINTR))) {
 		if (len > 0)
 			total_len += len;
 	}
+
+	oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+	igt_debug("oa_status %#x\n", oa_status);
+	igt_assert(!(oa_status & OASTATUS_BUFFER_OVERFLOW));
 
 	__perf_close(stream_fd);
 
@@ -2960,34 +2911,17 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 	igt_debug("Got %u bytes\n", total_len);
 
 	last_report = NULL;
-	reports_lost = 0;
-	for (uint32_t offset = 0; offset < total_len; offset += header->size) {
-		header = (void *) (buf + offset);
+	for (uint32_t offset = 0; offset < total_len; offset += report_size) {
+		const uint32_t *report = (void *) (buf + offset);
+		uint32_t reason = (report[0] >> OAREPORT_REASON_SHIFT) & OAREPORT_REASON_MASK;
 
-		switch (header->type) {
-		case DRM_XE_OA_RECORD_OA_REPORT_LOST:
-			reports_lost++;
-			break;
-		case DRM_XE_OA_RECORD_SAMPLE: {
-			const uint32_t *report = (void *) (header + 1);
-			uint32_t reason = (report[0] >> OAREPORT_REASON_SHIFT) &
-				OAREPORT_REASON_MASK;
+		igt_assert_neq(reason, 0);
 
-			igt_assert_neq(reason, 0);
+		if (last_report)
+			sanity_check_reports(last_report, report, fmt);
 
-			if (last_report)
-				sanity_check_reports(last_report, report, fmt);
-
-			last_report = report;
-			break;
-		}
-		case DRM_XE_OA_RECORD_OA_BUFFER_LOST:
-			igt_assert(!"unexpected overflow");
-			break;
-		}
+		last_report = report;
 	}
-
-	igt_debug("Got %u report lost events\n", reports_lost);
 
 	free(buf);
 }
@@ -3020,7 +2954,7 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 		.properties_ptr = to_user_pointer(properties),
 	};
 	size_t report_size = get_oa_format(fmt).size;
-	int buf_size = 65536 * (report_size + sizeof(struct drm_xe_oa_record_header));
+	int buf_size = 65536 * report_size;
 	uint8_t *buf = malloc(buf_size);
 	size_t oa_buf_size = MAX_OA_BUF_SIZE;
 	int n_full_oa_reports = oa_buf_size / report_size;
@@ -3036,8 +2970,8 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 	for (int i = 0; i < 5; i++) {
 		int len;
 		uint32_t n_periodic_reports;
-		struct drm_xe_oa_record_header *header;
 		uint64_t first_timestamp = 0, last_timestamp = 0;
+		u32 oa_status;
 
 		/* Giving enough time for an overflow might help catch whether
 		 * the OA unit has been enabled even if the driver might at
@@ -3069,53 +3003,38 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 
 			while ((len = read(stream_fd, buf, buf_size)) == -1 && errno == EINTR)
 				;
-
 			igt_assert_neq(len, -1);
 
-			for (int offset = 0; offset < len; offset += header->size) {
-				uint32_t *report;
+			oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+			igt_debug("oa_status %#x\n", oa_status);
+			igt_assert(!(oa_status & OASTATUS_BUFFER_OVERFLOW));
 
-				header = (void *) (buf + offset);
-				report = (void *) (header + 1);
+			for (int offset = 0; offset < len; offset += report_size) {
+				uint32_t *report = (void *) (buf + offset);
 
-				switch (header->type) {
-				case DRM_XE_OA_RECORD_OA_REPORT_LOST:
-					break;
-				case DRM_XE_OA_RECORD_SAMPLE:
-					if (first_timestamp == 0)
-						first_timestamp = oa_timestamp(report, fmt);
-					last_timestamp = oa_timestamp(report, fmt);
+				if (first_timestamp == 0)
+					first_timestamp = oa_timestamp(report, fmt);
+				last_timestamp = oa_timestamp(report, fmt);
 
-					igt_debug(" > report ts=%"PRIx64""
-						  " ts_delta_last_periodic=%s%"PRIu64""
-						  " is_timer=%i ctx_id=0x%8x\n",
-						  oa_timestamp(report, fmt),
-						  oa_report_is_periodic(oa_exponent, report) ? " " : "*",
-						  n_periodic_reports > 0 ?  oa_timestamp_delta(report, last_periodic_report, fmt) : 0,
-						  oa_report_is_periodic(oa_exponent, report),
-						  oa_report_get_ctx_id(report));
+				igt_debug(" > report ts=%"PRIx64""
+					  " ts_delta_last_periodic=%s%"PRIu64""
+					  " is_timer=%i ctx_id=0x%8x\n",
+					  oa_timestamp(report, fmt),
+					  oa_report_is_periodic(oa_exponent, report) ? " " : "*",
+					  n_periodic_reports > 0 ?  oa_timestamp_delta(report, last_periodic_report, fmt) : 0,
+					  oa_report_is_periodic(oa_exponent, report),
+					  oa_report_get_ctx_id(report));
 
-					if (((last_timestamp - first_timestamp) * oa_period) < (fill_duration / 2))
-						break;
+				if (oa_report_is_periodic(oa_exponent, report)) {
+					memcpy(last_periodic_report, report, report_size);
 
-					if (oa_report_is_periodic(oa_exponent, report)) {
-						memcpy(last_periodic_report, report, report_size);
-
-						/* We want to measure only the
-						 * periodic reports, ctx-switch
-						 * might inflate the content of
-						 * the buffer and skew or
-						 * measurement.
-						 */
-						n_periodic_reports++;
-					}
-					break;
-				case DRM_XE_OA_RECORD_OA_BUFFER_LOST:
-					igt_assert(!"unexpected overflow");
-					break;
+					/* We want to measure only the periodic reports,
+					 * ctx-switch might inflate the content of the
+					 * buffer and skew or measurement.
+					 */
+					n_periodic_reports++;
 				}
 			}
-
 		}
 
 		do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_DISABLE, 0);
@@ -3170,13 +3089,14 @@ test_short_reads(void)
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
-	size_t record_size = 256 + sizeof(struct drm_xe_oa_record_header);
+	size_t record_size = 256;
 	size_t page_size = sysconf(_SC_PAGE_SIZE);
 	int zero_fd = open("/dev/zero", O_RDWR|O_CLOEXEC);
 	uint8_t *pages = mmap(NULL, page_size * 2,
 			      PROT_READ|PROT_WRITE, MAP_PRIVATE, zero_fd, 0);
-	struct drm_xe_oa_record_header *header;
+	u8 *header;
 	int ret;
+	u32 oa_status;
 
 	igt_assert_neq(zero_fd, -1);
 	close(zero_fd);
@@ -3202,11 +3122,11 @@ test_short_reads(void)
 	 */
 	do {
 		header = (void *)(pages + page_size - record_size);
-		ret = read(stream_fd,
-			   header,
-			   page_size);
+		ret = read(stream_fd, header, page_size);
 		igt_assert(ret > 0);
-	} while (header->type == DRM_XE_OA_RECORD_OA_REPORT_LOST);
+		oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+
+	} while (oa_status & OASTATUS_REPORT_LOST);
 
 	igt_assert_eq(ret, record_size);
 
@@ -3218,7 +3138,8 @@ test_short_reads(void)
 	header = (void *)(pages + page_size - 16);
 	do {
 		ret = read(stream_fd, header, page_size);
-	} while (ret > 0 && header->type == DRM_XE_OA_RECORD_OA_REPORT_LOST);
+		oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+	} while (ret > 0 && oa_status & OASTATUS_REPORT_LOST);
 	igt_assert_eq(ret, -1);
 	igt_assert_eq(errno, EFAULT);
 
@@ -3229,10 +3150,8 @@ test_short_reads(void)
 	 */
 	do {
 		header = (void *)(pages + page_size - record_size / 2);
-		ret = read(stream_fd,
-			   header,
-			   record_size / 2);
-	} while (ret > 0 && header->type == DRM_XE_OA_RECORD_OA_REPORT_LOST);
+		ret = read(stream_fd, header, record_size / 2);
+	} while (ret > 0 && oa_status & OASTATUS_REPORT_LOST);
 
 	igt_assert_eq(ret, -1);
 	igt_assert_eq(errno, ENOSPC);
