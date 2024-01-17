@@ -285,6 +285,7 @@ intel_xe_progs = [
 	'xe_drm_fdinfo',
 	'xe_evict',
 	'xe_evict_ccs',
+	'xe_exec_atomic',
 	'xe_exec_balancer',
 	'xe_exec_basic',
 	'xe_exec_compute_mode',

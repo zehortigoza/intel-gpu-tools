@@ -2647,6 +2647,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /* Atomics */
 #define   MI_ATOMIC_INC                 (0x5 << 8)
+#define   MI_ATOMIC_DEC                 (0x6 << 8)
 #define   MI_ATOMIC_ADD                 (0x7 << 8)
 
 /* Batch */
