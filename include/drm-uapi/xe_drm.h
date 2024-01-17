@@ -1424,6 +1424,9 @@ enum drm_xe_perf_ioctls {
 
 	/** @DRM_XE_PERF_IOCTL_CONFIG: Change stream configuration */
 	DRM_XE_PERF_IOCTL_CONFIG = _IO('i', 0x2),
+
+	/** @DRM_XE_PERF_IOCTL_STATUS: Stream status */
+	DRM_XE_PERF_IOCTL_STATUS = _IO('i', 0x3),
 };
 
 /** enum drm_xe_oa_unit_type - OA unit types */
@@ -1563,36 +1566,6 @@ enum drm_xe_oa_property_id {
 	DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE,
 
 	DRM_XE_OA_PROPERTY_MAX /* non-ABI */
-};
-
-/** enum drm_xe_oa_record_type - Type of OA packet read from OA fd */
-enum drm_xe_oa_record_type {
-	/** @DRM_XE_OA_RECORD_SAMPLE: Regular OA data sample */
-	DRM_XE_OA_RECORD_SAMPLE = 1,
-
-	/** @DRM_XE_OA_RECORD_OA_REPORT_LOST: Status indicating lost OA reports */
-	DRM_XE_OA_RECORD_OA_REPORT_LOST,
-
-	/**
-	 * @DRM_XE_OA_RECORD_OA_BUFFER_LOST: Status indicating lost OA
-	 * reports and OA buffer reset in the process
-	 */
-	DRM_XE_OA_RECORD_OA_BUFFER_LOST,
-
-	/** @DRM_XE_OA_RECORD_OA_MMIO_TRG_Q_FULL: Status indicating MMIO trigger queue full */
-	DRM_XE_OA_RECORD_OA_MMIO_TRG_Q_FULL,
-
-	DRM_XE_OA_RECORD_MAX /* non-ABI */
-};
-
-/** struct drm_xe_oa_record_header - Header for OA packets read from OA fd */
-struct drm_xe_oa_record_header {
-	/** @type: Of enum @drm_xe_oa_record_type */
-	__u16 type;
-	/** @pad: MBZ */
-	__u16 pad;
-	/** @size: size in bytes */
-	__u32 size;
 };
 
 /**
