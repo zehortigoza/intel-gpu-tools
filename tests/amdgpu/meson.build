@@ -14,6 +14,7 @@ if libdrm_amdgpu.found()
 			  'amd_dp_dsc',
 			  'amd_freesync_video_mode',
 			  'amd_hotplug',
+			  'amd_gang_cs' ,
 			  'amd_ilr',
 			  'amd_info',
 			  'amd_jpeg_dec',
@@ -54,7 +55,6 @@ if libdrm_amdgpu.found()
 	else
 		warning('libdrm <= 2.4.109 found, amd_pstate test not applicable')
 	endif
-
 	amdgpu_deps += libdrm_amdgpu
 endif
 
