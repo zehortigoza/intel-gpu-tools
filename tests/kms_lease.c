@@ -48,6 +48,8 @@
 
 #include <drm.h>
 #include "igt_device.h"
+#include "xe_drm.h"
+#include "xe/xe_query.h"
 
 /**
  * SUBTEST: atomic-implicit-crtc
@@ -267,12 +269,20 @@ static int make_lease(data_t *data)
 	if (ret)
 		return ret;
 
+	/* Cache xe_device struct */
+	if (is_xe_device(data->lease.fd))
+		xe_device_get(data->lease.fd);
+
 	data->lease.lessee_id = mcl.lessee_id;
 	return 0;
 }
 
 static void terminate_lease(int lease_fd)
 {
+	/* Remove xe_device from cache. */
+	if (is_xe_device(lease_fd))
+		xe_device_put(lease_fd);
+
 	close(lease_fd);
 }
 
