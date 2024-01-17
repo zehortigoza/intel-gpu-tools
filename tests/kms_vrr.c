@@ -339,10 +339,23 @@ static uint32_t
 flip_and_measure(data_t *data, igt_output_t *output, enum pipe pipe,
 		 uint64_t rate_ns, uint64_t duration_ns)
 {
-	uint64_t start_ns, last_event_ns, target_ns;
+	uint64_t start_ns, last_event_ns, target_ns, exp_rate_ns;
 	uint32_t total_flip = 0, total_pass = 0;
 	bool front = false;
 	vtest_ns_t vtest_ns = get_test_rate_ns(data->range);
+	uint64_t threshold_hi, threshold_lo;
+
+	if ((rate_ns <= vtest_ns.min) && (rate_ns >= vtest_ns.max))
+		exp_rate_ns = rate_ns;
+	else
+		exp_rate_ns = vtest_ns.max;
+
+	/* Allow ~1 Hz deviation for different reasons causing delay. */
+	threshold_hi = NSECS_PER_SEC / (((float)NSECS_PER_SEC / exp_rate_ns) + 1);
+	threshold_lo = NSECS_PER_SEC / (((float)NSECS_PER_SEC / exp_rate_ns) - 1);
+
+	igt_info("Requested rate: %"PRIu64" ns, Expected rate between: %"PRIu64" ns to %"PRIu64" ns\n",
+			rate_ns, threshold_hi, threshold_lo);
 
 	/* Align with the flip completion event to speed up convergence. */
 	do_flip(data, &data->fb0);
@@ -369,18 +382,10 @@ flip_and_measure(data_t *data, igt_output_t *output, enum pipe pipe,
 		/*
 		 * Check if the difference between the two flip timestamps
 		 * was within the required threshold from the expected rate.
-		 *
-		 * A ~50us threshold is arbitrary, but it's roughly the
-		 * difference between 144Hz and 143Hz which should give this
-		 * enough accuracy for most use cases.
 		 */
-		if ((rate_ns <= vtest_ns.min) && (rate_ns >= vtest_ns.max))
-			diff_ns = rate_ns;
-		else
-			diff_ns = vtest_ns.max;
-		diff_ns -= event_ns - last_event_ns;
+		diff_ns = event_ns - last_event_ns;
 
-		if (llabs(diff_ns) < 50000ll)
+		if (llabs(diff_ns) < threshold_lo && llabs(diff_ns) > threshold_hi)
 			total_pass += 1;
 
 		last_event_ns = event_ns;
