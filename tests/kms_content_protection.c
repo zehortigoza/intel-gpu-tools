@@ -43,8 +43,13 @@
 #include "igt_kmod.h"
 
 /**
- * SUBTEST: lic
- * Description: Test for the integrity of link.
+ * SUBTEST: lic-type-0
+ * Description: Test for the integrity of link for type-0 content.
+ * Functionality: hdcp1.4, hdcp2.2
+ *
+ * SUBTEST: lic-type-1
+ * Description: Test for the integrity of link for type-1 content.
+ * Functionality: hdcp2.2
  *
  * SUBTEST: content-type-change
  * Description: Test the content type change when the content protection already
@@ -783,10 +788,15 @@ static const struct {
 	  .cp_tests = CP_DPMS,
 	  .content_type = HDCP_CONTENT_TYPE_0
 	},
-	{ .desc = "Test for the integrity of link.",
-	  .name = "lic",
+	{ .desc = "Test for the integrity of link with type 0 content.",
+	  .name = "lic-type-0",
 	  .cp_tests = CP_LIC,
 	  .content_type = HDCP_CONTENT_TYPE_0,
+	},
+	{ .desc = "Test for the integrity of link with type 1 content",
+	  .name = "lic-type-1",
+	  .cp_tests = CP_LIC,
+	  .content_type = HDCP_CONTENT_TYPE_1,
 	},
 	{ .desc = "Test content protection with content type 1 "
 		  "that can be handled only through HDCP2.2.",
