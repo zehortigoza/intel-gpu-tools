@@ -1015,9 +1015,8 @@ print_percentage_bar(double percent, double max, int max_len, bool numeric)
 		printf("%s", bars[i]);
 
 	len -= (bar_len + (w - 1)) / w;
-	if (len < 1)
-		return;
-	n_spaces(len);
+	if (len >= 1)
+		n_spaces(len);
 
 	putchar('|');
 
