@@ -137,14 +137,14 @@ igt_main
 
 			xe_for_each_mem_region(fd, memreg, region) {
 
+				igt_skip_on(!has_atomics(fd, region));
+
 				igt_dynamic_f("Engine-%s-Instance-%d-Tile-%d-%s-memory",
 					      xe_engine_class_string(hwe->engine_class),
 					      hwe->engine_instance,
-					      hwe->gt_id, xe_region_name(region)) {
+					      hwe->gt_id, xe_region_name(region))
 
-					igt_skip_on(!has_atomics(fd, region));
 					basic_inst(fd, MI_ATOMIC_DEC, hwe, region);
-				}
 			}
 		}
 	}
@@ -155,14 +155,14 @@ igt_main
 
 			xe_for_each_mem_region(fd, memreg, region) {
 
+				igt_skip_on(!has_atomics(fd, region));
+
 				igt_dynamic_f("Engine-%s-Instance-%d-Tile-%d-%s-memory",
 					      xe_engine_class_string(hwe->engine_class),
 					      hwe->engine_instance,
-					      hwe->gt_id, xe_region_name(region)) {
+					      hwe->gt_id, xe_region_name(region))
 
-					igt_skip_on(!has_atomics(fd, region));
 					basic_inst(fd, MI_ATOMIC_INC, hwe, region);
-				}
 			}
 		}
 	}
