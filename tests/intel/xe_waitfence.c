@@ -221,16 +221,8 @@ exec_queue_reset_wait(int fd)
 		uint32_t data;
 	} *data;
 
-#define USER_FENCE_VALUE        0xdeadbeefdeadbeefull
-	struct drm_xe_sync sync[1] = {
-		{ .flags = DRM_XE_SYNC_TYPE_USER_FENCE | DRM_XE_SYNC_FLAG_SIGNAL,
-			.timeline_value = USER_FENCE_VALUE },
-	};
-
 	struct drm_xe_exec exec = {
 		.num_batch_buffer = 1,
-		.num_syncs = 1,
-		.syncs = to_user_pointer(sync),
 	};
 
 	uint32_t vm = xe_vm_create(fd, 0, 0);
