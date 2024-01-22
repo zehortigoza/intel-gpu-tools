@@ -589,8 +589,12 @@ static void block_copy_test(int xe,
 			    struct igt_collection *set,
 			    enum copy_func copy_function)
 {
+	uint16_t dev_id = intel_get_drm_devid(xe);
 	struct igt_collection *regions;
 	int tiling;
+
+	if (AT_LEAST_GEN(dev_id, 20) && config->compression)
+		igt_require(HAS_FLATCCS(dev_id));
 
 	if (config->compression && !blt_block_copy_supports_compression(xe))
 		return;
