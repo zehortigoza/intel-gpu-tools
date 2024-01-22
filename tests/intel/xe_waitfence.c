@@ -36,7 +36,7 @@ static void do_bind(int fd, uint32_t vm, uint32_t bo, uint64_t offset,
 	xe_vm_bind_async(fd, vm, 0, bo, offset, addr, size, sync, 1);
 }
 
-static int64_t wait_with_eci_abstime(int fd, uint64_t *addr, uint64_t value,
+static int64_t wait_ufence_abstime(int fd, uint64_t *addr, uint64_t value,
 				     uint32_t exec_queue, int64_t timeout,
 				     uint16_t flag)
 {
@@ -117,7 +117,7 @@ waitfence(int fd, enum waittype wt)
 		clock_gettime(CLOCK_MONOTONIC, &ts);
 		current = ts.tv_sec * 1e9 + ts.tv_nsec;
 		timeout = current + MS_TO_NS(10);
-		signalled = wait_with_eci_abstime(fd, &wait_fence, 7,
+		signalled = wait_ufence_abstime(fd, &wait_fence, 7,
 						  exec_queue, timeout,
 						  DRM_XE_UFENCE_WAIT_FLAG_ABSTIME);
 		igt_debug("wait type: ENGINE ABSTIME - timeout: %" PRId64
@@ -128,7 +128,7 @@ waitfence(int fd, enum waittype wt)
 		clock_gettime(CLOCK_MONOTONIC, &ts);
 		current = ts.tv_sec * 1e9 + ts.tv_nsec;
 		timeout = current + MS_TO_NS(10);
-		signalled = xe_wait_ufence_abstime(fd, &wait_fence, 7, 0,
+		signalled = wait_ufence_abstime(fd, &wait_fence, 7, 0,
 						   timeout, 0);
 		igt_debug("wait type: ABSTIME - timeout: %" PRId64
 			  ", signalled: %" PRId64
