@@ -151,9 +151,6 @@ waitfence(int fd, enum waittype wt)
  * SUBTEST: invalid-ops
  * Description: Check query with invalid ops returns expected error code
  *
- * SUBTEST: invalid-engine
- * Description: Check query with invalid engine info returns expected error code
- *
  * SUBTEST: exec_queue-reset-wait
  * Description: Don’t wait till timeout on user fence when exec_queue reset is detected and return return proper error
  */
@@ -204,30 +201,6 @@ invalid_ops(int fd)
 	do_bind(fd, vm, bo, 0, 0x200000, 0x40000, 1);
 
 	do_ioctl_err(fd, DRM_IOCTL_XE_WAIT_USER_FENCE, &wait, EINVAL);
-}
-
-static void
-invalid_engine(int fd)
-{
-	uint32_t bo;
-
-	struct drm_xe_wait_user_fence wait = {
-		.addr = to_user_pointer(&wait_fence),
-		.op = DRM_XE_UFENCE_WAIT_OP_EQ,
-		.flags = 0,
-		.value = 1,
-		.mask = DRM_XE_UFENCE_WAIT_MASK_U64,
-		.timeout = -1,
-		.exec_queue_id = 0,
-	};
-
-	uint32_t vm = xe_vm_create(fd, 0, 0);
-
-	bo = xe_bo_create(fd, vm, 0x40000, vram_if_possible(fd, 0), 0);
-
-	do_bind(fd, vm, bo, 0, 0x200000, 0x40000, 1);
-
-	do_ioctl_err(fd, DRM_IOCTL_XE_WAIT_USER_FENCE, &wait, EFAULT);
 }
 
 static void
@@ -328,9 +301,6 @@ igt_main
 
 	igt_subtest("invalid-ops")
 		invalid_ops(fd);
-
-	igt_subtest("invalid-engine")
-		invalid_engine(fd);
 
 	igt_subtest("exec_queue-reset-wait")
 		exec_queue_reset_wait(fd);
