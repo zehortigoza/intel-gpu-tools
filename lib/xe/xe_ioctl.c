@@ -48,7 +48,7 @@
 
 uint32_t xe_cs_prefetch_size(int fd)
 {
-	return 2048;
+	return 4096;
 }
 
 uint32_t xe_vm_create(int fd, uint32_t flags, uint64_t ext)
