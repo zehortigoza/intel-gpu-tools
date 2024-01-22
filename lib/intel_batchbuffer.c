@@ -959,7 +959,7 @@ __intel_bb_create(int fd, uint32_t ctx, uint32_t vm, const intel_ctx_cfg_t *cfg,
 			alignment = xe_get_default_alignment(fd);
 
 		ibb->alignment = alignment;
-		size = ALIGN(size, ibb->alignment);
+		size = ALIGN(size + xe_cs_prefetch_size(fd), ibb->alignment);
 		ibb->handle = xe_bo_create(fd, 0, size, vram_if_possible(fd, 0),
 					   DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
 
