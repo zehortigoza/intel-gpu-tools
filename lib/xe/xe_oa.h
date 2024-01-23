@@ -23,15 +23,6 @@ extern "C" {
 
 struct intel_perf_devinfo {
 	char devname[20];
-	char prettyname[100];
-
-	/*
-	 * Always false for gputop, we don't have the additional
-	 * snapshots of register values, only the OA reports.
-	 */
-	bool query_mode;
-
-	bool has_dynamic_configs;
 
 	/* The following fields are prepared for equations from the XML files.
 	 * Their values are build up from the topology fields.
@@ -273,7 +264,6 @@ struct intel_perf {
 	struct intel_perf_devinfo devinfo;
 };
 
-struct drm_xe_oa_record_header;
 struct drm_i915_query_topology_info;
 
 static inline bool
@@ -319,23 +309,6 @@ void intel_perf_add_metric_set(struct intel_perf *perf,
 			       struct intel_perf_metric_set *metric_set);
 
 void intel_perf_load_perf_configs(struct intel_perf *perf, int drm_fd);
-
-void intel_perf_accumulate_reports(struct intel_perf_accumulator *acc,
-				   const struct intel_perf *perf,
-				   const struct intel_perf_metric_set *metric_set,
-				   const struct drm_xe_oa_record_header *record0,
-				   const struct drm_xe_oa_record_header *record1);
-
-uint64_t intel_perf_read_record_timestamp(const struct intel_perf *perf,
-					  const struct intel_perf_metric_set *metric_set,
-					  const struct drm_xe_oa_record_header *record);
-
-uint64_t intel_perf_read_record_timestamp_raw(const struct intel_perf *perf,
-					      const struct intel_perf_metric_set *metric_set,
-					      const struct drm_xe_oa_record_header *record);
-
-const char *intel_perf_read_report_reason(const struct intel_perf *perf,
-					  const struct drm_xe_oa_record_header *record);
 
 #ifdef __cplusplus
 };
