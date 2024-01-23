@@ -13,7 +13,7 @@ an md5 hash of the hardware register configuration and skip a metric set with a
 warning if no GUID could be found.
 
 All new metric sets need to be allocated a GUID here before
-mdapi-xml-convert.py or i915-perf-kernelgen.py will output anything for that
+mdapi-xml-convert.py will output anything for that
 metric set. This ensures we don't automatically import new metric sets without
 some explicit review that that's appropriate.
 
@@ -89,10 +89,10 @@ review the registry changes. *Note: many lines will have a warning like `"Not
 found in MDAPI XML file[s]..."` if `update-guids.xml` wasn't given all known
 MDAPI XML files but in this case they can be ignored for all non-BDW configs.*
 
-*Note: for any config that is already supported upstream in the i915 perf driver
+*Note: for any config that is already supported upstream in the xe_oa driver
 we need to be careful if the hash for a metric set changes in case the semantics
 for any raw counters were changed. The semantics of raw counters associated with
-a given GUID form part of the drm i915 perf uapi contract and must remain
+a given GUID form part of the drm xe_oa uapi contract and must remain
 backwards compatible.*
 
 If the diff shows any `mdapi_config_hash` changes for pre-existing (especially
