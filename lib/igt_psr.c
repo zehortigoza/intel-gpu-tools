@@ -394,3 +394,23 @@ enum psr_mode psr_get_mode(int debugfs_fd)
 
 	return PSR_DISABLED;
 }
+
+/**
+ * is_psr_enable_possible
+ * Check if given psr mode can be enabled by reading enable_psr
+ * modparam
+ *
+ * Returns:
+ * True if given psr mode can be enabled, false otherwise.
+ */
+bool is_psr_enable_possible(int drm_fd, enum psr_mode mode)
+{
+	char *param_value;
+	int enable_psr;
+
+	param_value = __igt_params_get(drm_fd, "enable_psr");
+	igt_assert_f(param_value, "Could not read enable_psr modparam\n");
+	enable_psr = atoi(param_value);
+	free(param_value);
+	return enable_psr > mode;
+}

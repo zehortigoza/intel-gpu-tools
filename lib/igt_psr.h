@@ -61,5 +61,6 @@ bool i915_psr2_selective_fetch_check(int drm_fd);
 
 bool i915_psr2_sel_fetch_to_psr1(int drm_fd);
 void i915_psr2_sel_fetch_restore(int drm_fd);
+bool is_psr_enable_possible(int drm_fd, enum psr_mode mode);
 
 #endif
