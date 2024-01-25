@@ -186,7 +186,7 @@ void xe_spin_end(struct xe_spin *spin)
 igt_spin_t *
 xe_spin_create(int fd, const struct igt_spin_factory *opt)
 {
-	size_t bo_size = xe_get_default_alignment(fd);
+	size_t bo_size = xe_bb_size(fd, SZ_4K);
 	uint64_t ahnd = opt->ahnd, addr;
 	struct igt_spin *spin;
 	struct xe_spin *xe_spin;
@@ -285,7 +285,7 @@ void xe_cork_init(int fd, struct drm_xe_engine_class_instance *hwe,
 		  struct xe_cork *cork)
 {
 	uint64_t addr = xe_get_default_alignment(fd);
-	size_t bo_size = xe_get_default_alignment(fd);
+	size_t bo_size = xe_bb_size(fd, SZ_4K);
 	uint32_t vm, bo, exec_queue, syncobj;
 	struct xe_spin *spin;
 	struct drm_xe_sync sync = {
