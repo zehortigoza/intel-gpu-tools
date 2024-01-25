@@ -82,6 +82,8 @@ int igt_pm_get_pcie_acpihp_slot(struct pci_device *pci_dev);
 bool igt_pm_acpi_d3cold_supported(struct pci_device *pci_dev);
 enum igt_acpi_d_state
 igt_pm_get_acpi_real_d_state(struct pci_device *pci_dev);
+int igt_pm_get_autosuspend_delay(struct pci_device *pci_dev);
+void igt_pm_set_autosuspend_delay(struct pci_device *pci_dev, int delay_ms);
 void igt_pm_enable_pci_card_runtime_pm(struct pci_device *root,
 				       struct pci_device *i915);
 void igt_pm_get_d3cold_allowed(const char *pci_slot_name, uint32_t *value);

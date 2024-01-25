@@ -1068,18 +1068,6 @@ static void igt_pm_write_power_attr(int fd, const char *val, int len)
 	igt_assert(strncmp(buf, val, len) == 0);
 }
 
-static int igt_pm_get_autosuspend_delay(struct pci_device *pci_dev)
-{
-	char delay_str[64];
-	int delay, delay_fd;
-
-	delay_fd = igt_pm_get_power_attr_fd(pci_dev, "autosuspend_delay_ms");
-	if (igt_pm_read_power_attr(delay_fd, delay_str, 64, true))
-		igt_assert(sscanf(delay_str, "%d", &delay) > 0);
-
-	return delay;
-}
-
 static void
 igt_pm_setup_pci_dev_power_attrs(struct pci_device *pci_dev,
 				 struct igt_pm_pci_dev_pwrattr *pwrattr, int delay_ms)
@@ -1163,6 +1151,52 @@ igt_pm_setup_pci_card_power_attrs(struct pci_device *pci_dev, bool save_attrs, i
 	}
 
 	pci_iterator_destroy(iter);
+}
+
+/**
+ * igt_pm_get_autosuspend_delay:
+ * @pci_dev: pci_dev.
+ *
+ * Get pci_dev autosuspend delay value from pci sysfs.
+ *
+ * Returns:
+ * autosuspend_delay_ms.
+ */
+int igt_pm_get_autosuspend_delay(struct pci_device *pci_dev)
+{
+	char delay_str[64];
+	int delay, delay_fd;
+
+	delay_fd = igt_pm_get_power_attr_fd(pci_dev, "autosuspend_delay_ms");
+	if (igt_pm_read_power_attr(delay_fd, delay_str, 64, true))
+		igt_assert(sscanf(delay_str, "%d", &delay) > 0);
+
+	close(delay_fd);
+	return delay;
+}
+
+/**
+ * igt_pm_set_autosuspend_delay:
+ * @pci_dev: pci_dev.
+ * @delay_ms: autosuspend delay in ms.
+ *
+ * Set pci_dev autosuspend delay value through pci sysfs.
+ */
+void igt_pm_set_autosuspend_delay(struct pci_device *pci_dev, int delay_ms)
+{
+	char delay_str[64];
+	int delay_fd;
+
+	delay_fd = igt_pm_get_power_attr_fd(pci_dev, "autosuspend_delay_ms");
+
+	if (delay_ms >= 0) {
+		int wc;
+
+		wc = snprintf(delay_str, 64, "%d\n", delay_ms);
+		igt_pm_write_power_attr(delay_fd, delay_str, wc);
+	}
+
+	close(delay_fd);
 }
 
 /**
