@@ -78,8 +78,7 @@ static void basic_inst(int fd, int inst_type, struct drm_xe_engine_class_instanc
 
 	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(*data);
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
-			xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, bo_size);
 
 	bo = xe_bo_create(fd, vm, bo_size, placement,
 			  I915_GEM_CREATE_EXT_FLAG_NEEDS_CPU_ACCESS);

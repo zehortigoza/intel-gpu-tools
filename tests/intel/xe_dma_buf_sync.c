@@ -116,8 +116,7 @@ test_export_dma_buf(struct drm_xe_engine_class_instance *hwe0,
 	}
 
 	bo_size = sizeof(*data[0]) * N_FD;
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd[0]),
-			xe_get_default_alignment(fd[0]));
+	bo_size = xe_bb_size(fd[0], bo_size);
 	for (i = 0; i < n_bo; ++i) {
 		bo[i] = xe_bo_create(fd[0], 0, bo_size,
 				     vram_if_possible(fd[0], hwe0->gt_id),

@@ -126,8 +126,7 @@ static void basic_inst(int fd, int inst_type, struct drm_xe_engine_class_instanc
 
 	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(*data);
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
-			xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, bo_size);
 
 	bo = xe_bo_create(fd, vm, bo_size,
 			  vram_if_possible(fd, eci->gt_id),
@@ -201,7 +200,7 @@ static void store_cachelines(int fd, struct drm_xe_engine_class_instance *eci,
 	uint32_t *batch_map;
 	size_t bo_size = 4096;
 
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd), xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, bo_size);
 	vm = xe_vm_create(fd, 0, 0);
 	ahnd = intel_allocator_open(fd, 0, INTEL_ALLOCATOR_SIMPLE);
 	exec_queues = xe_exec_queue_create(fd, vm, eci, 0);
@@ -291,8 +290,7 @@ static void persistent(int fd)
 	sync.handle = syncobj;
 
 	vm = xe_vm_create(fd, 0, 0);
-	batch_size = ALIGN(batch_size + xe_cs_prefetch_size(fd),
-					xe_get_default_alignment(fd));
+	batch_size = xe_bb_size(fd, batch_size);
 
 	engine = xe_engine(fd, 1);
 	sd_batch = xe_bo_create(fd, vm, batch_size,

@@ -111,8 +111,7 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 	for (i = 0; i < n_vm; ++i)
 		vm[i] = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(*data) * n_execs;
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
-			xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, bo_size);
 
 	addr[0] = 0x1a0000;
 	sparse_addr[0] = 0x301a0000;

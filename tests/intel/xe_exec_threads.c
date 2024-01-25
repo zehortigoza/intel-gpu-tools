@@ -90,8 +90,7 @@ test_balancer(int fd, int gt, uint32_t vm, uint64_t addr, uint64_t userptr,
 	igt_assert(num_placements > 1);
 
 	bo_size = sizeof(*data) * n_execs;
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
-			xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, bo_size);
 
 	if (flags & USERPTR) {
 		if (flags & INVALIDATE) {
@@ -291,8 +290,7 @@ test_compute_mode(int fd, uint32_t vm, uint64_t addr, uint64_t userptr,
 	}
 
 	bo_size = sizeof(*data) * n_execs;
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
-			xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, bo_size);
 
 	if (flags & USERPTR) {
 		if (flags & INVALIDATE) {
@@ -496,8 +494,7 @@ test_legacy_mode(int fd, uint32_t vm, uint64_t addr, uint64_t userptr,
 	}
 
 	bo_size = sizeof(*data) * n_execs;
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
-			xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, bo_size);
 
 	if (flags & USERPTR) {
 		if (flags & INVALIDATE) {

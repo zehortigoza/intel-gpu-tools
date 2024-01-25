@@ -73,8 +73,7 @@ static void test_active(int fd, struct drm_xe_engine *engine)
 
 	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(*data) * N_EXEC_QUEUES;
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
-			xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, bo_size);
 
 	xe_for_each_mem_region(fd, memreg, region) {
 		uint64_t pre_size;

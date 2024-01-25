@@ -294,8 +294,7 @@ test_exec(device_t device, struct drm_xe_engine_class_instance *eci,
 		igt_assert(out_of_d3(device, d_state));
 
 	bo_size = sizeof(*data) * n_execs;
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(device.fd_xe),
-			xe_get_default_alignment(device.fd_xe));
+	bo_size = xe_bb_size(device.fd_xe, bo_size);
 
 	if (check_rpm && runtime_usage_available(device.pci_xe))
 		rpm_usage = igt_pm_get_runtime_usage(device.pci_xe);

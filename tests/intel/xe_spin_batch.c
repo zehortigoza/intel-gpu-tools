@@ -192,8 +192,7 @@ static void preempter(int fd, struct drm_xe_engine_class_instance *hwe)
 
 	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(*data);
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
-			xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, bo_size);
 
 	bo = xe_bo_create(fd, vm, bo_size,
 			  vram_if_possible(fd, hwe->gt_id),
@@ -278,7 +277,7 @@ static void xe_spin_fixed_duration(int fd, int gt, int class, int flags)
 	vm = xe_vm_create(fd, 0, 0);
 	exec_queue = xe_exec_queue_create(fd, vm, hwe, ext);
 	ahnd = intel_allocator_open(fd, 0, INTEL_ALLOCATOR_RELOC);
-	bo_size = ALIGN(sizeof(*spin) + xe_cs_prefetch_size(fd), xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, sizeof(*spin));
 	bo = xe_bo_create(fd, vm, bo_size, vram_if_possible(fd, 0), 0);
 	spin = xe_bo_map(fd, bo, bo_size);
 	spin_addr = intel_allocator_alloc_with_strategy(ahnd, bo, bo_size, 0,

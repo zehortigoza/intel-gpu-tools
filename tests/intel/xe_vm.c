@@ -50,8 +50,7 @@ write_dwords(int fd, uint32_t vm, int n_dwords, uint64_t *addrs)
 	int i, b = 0;
 
 	batch_size = (n_dwords * 4 + 1) * sizeof(uint32_t);
-	batch_size = ALIGN(batch_size + xe_cs_prefetch_size(fd),
-			   xe_get_default_alignment(fd));
+	batch_size = xe_bb_size(fd, batch_size);
 	batch_bo = xe_bo_create(fd, vm, batch_size,
 				vram_if_possible(fd, 0),
 				DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
@@ -418,8 +417,7 @@ shared_pte_page(int fd, struct drm_xe_engine_class_instance *eci, int n_bo,
 
 	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(struct shared_pte_page_data);
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
-			xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, bo_size);
 
 	if (addr_stride <= bo_size)
 		addr_stride = addr_stride + bo_size;
@@ -603,8 +601,7 @@ test_bind_execqueues_independent(int fd, struct drm_xe_engine_class_instance *ec
 
 	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(*data) * N_EXEC_QUEUES;
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
-			xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, bo_size);
 	bo = xe_bo_create(fd, vm, bo_size,
 			  vram_if_possible(fd, eci->gt_id),
 			  DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
@@ -784,8 +781,7 @@ test_bind_array(int fd, struct drm_xe_engine_class_instance *eci, int n_execs,
 
 	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(*data) * n_execs;
-	bo_size = ALIGN(bo_size + xe_cs_prefetch_size(fd),
-			xe_get_default_alignment(fd));
+	bo_size = xe_bb_size(fd, bo_size);
 
 	bo = xe_bo_create(fd, vm, bo_size,
 			  vram_if_possible(fd, eci->gt_id),
