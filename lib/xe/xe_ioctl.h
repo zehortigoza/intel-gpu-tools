@@ -18,6 +18,7 @@
 #define DRM_XE_UFENCE_WAIT_MASK_U64    0xffffffffffffffffu
 
 uint32_t xe_cs_prefetch_size(int fd);
+uint64_t xe_bb_size(int fd, uint64_t reqsize);
 uint32_t xe_vm_create(int fd, uint32_t flags, uint64_t ext);
 int  __xe_vm_bind(int fd, uint32_t vm, uint32_t exec_queue, uint32_t bo,
 		  uint64_t offset, uint64_t addr, uint64_t size, uint32_t op,

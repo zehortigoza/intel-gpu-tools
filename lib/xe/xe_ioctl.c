@@ -51,6 +51,12 @@ uint32_t xe_cs_prefetch_size(int fd)
 	return 4096;
 }
 
+uint64_t xe_bb_size(int fd, uint64_t reqsize)
+{
+	return ALIGN(reqsize + xe_cs_prefetch_size(fd),
+	             xe_get_default_alignment(fd));
+}
+
 uint32_t xe_vm_create(int fd, uint32_t flags, uint64_t ext)
 {
 	struct drm_xe_vm_create create = {
