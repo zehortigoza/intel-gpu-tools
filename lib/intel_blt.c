@@ -1613,7 +1613,7 @@ static void emit_blt_mem_copy(int fd, uint64_t ahnd, const struct blt_mem_data *
 	optype = mem->src.type == M_MATRIX ? 1 << 17 : 0;
 
 	i = 0;
-	batch[i++] = MEM_COPY_CMD | (1 << 19) | optype;
+	batch[i++] = MEM_COPY_CMD | optype;
 	batch[i++] = mem->src.width - 1;
 	batch[i++] = mem->src.height - 1;
 	batch[i++] = mem->src.pitch - 1;
