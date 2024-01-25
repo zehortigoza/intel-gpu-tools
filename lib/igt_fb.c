@@ -2906,8 +2906,7 @@ static void blitcopy(const struct igt_fb *dst_fb,
 						 INTEL_ALLOCATOR_SIMPLE,
 						 ALLOC_STRATEGY_LOW_TO_HIGH, 0);
 
-		bb_size = ALIGN(bb_size + xe_cs_prefetch_size(dst_fb->fd),
-				xe_get_default_alignment(dst_fb->fd));
+		bb_size = xe_bb_size(dst_fb->fd, bb_size);
 		xe_bb = xe_bo_create(dst_fb->fd, 0, bb_size, mem_region, 0);
 	}
 
