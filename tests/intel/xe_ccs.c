@@ -119,7 +119,7 @@ static void surf_copy(int xe,
 				 uc_mocs, comp_pat_index, BLT_INDIRECT_ACCESS);
 	blt_set_ctrl_surf_object(&surf.dst, ccs, sysmem, ccssize, uc_mocs,
 				 DEFAULT_PAT_INDEX, DIRECT_ACCESS);
-	bb_size = xe_get_default_alignment(xe);
+	bb_size = xe_bb_size(xe, SZ_4K);
 	bb1 = xe_bo_create(xe, 0, bb_size, sysmem, 0);
 	blt_set_batch(&surf.bb, bb1, bb_size, sysmem);
 	blt_ctrl_surf_copy(xe, ctx, NULL, ahnd, &surf);
@@ -295,7 +295,7 @@ static void block_copy(int xe,
 	struct blt_block_copy_data_ext ext = {}, *pext = &ext;
 	struct blt_copy_object *src, *mid, *dst;
 	const uint32_t bpp = 32;
-	uint64_t bb_size = xe_get_default_alignment(xe);
+	uint64_t bb_size = xe_bb_size(xe, SZ_4K);
 	uint64_t ahnd = intel_allocator_open(xe, ctx->vm, INTEL_ALLOCATOR_RELOC);
 	uint32_t run_id = mid_tiling;
 	uint32_t mid_region = (AT_LEAST_GEN(intel_get_drm_devid(xe), 20) &
@@ -423,7 +423,7 @@ static void block_multicopy(int xe,
 	struct blt_block_copy3_data_ext ext3 = {}, *pext3 = &ext3;
 	struct blt_copy_object *src, *mid, *dst, *final;
 	const uint32_t bpp = 32;
-	uint64_t bb_size = xe_get_default_alignment(xe);
+	uint64_t bb_size = xe_bb_size(xe, SZ_4K);
 	uint64_t ahnd = intel_allocator_open(xe, ctx->vm, INTEL_ALLOCATOR_RELOC);
 	uint32_t run_id = mid_tiling;
 	uint32_t mid_region = (AT_LEAST_GEN(intel_get_drm_devid(xe), 20) &

@@ -118,7 +118,7 @@ static void fast_copy_emit(int xe, const intel_ctx_t *ctx,
 	struct blt_fast_copy_data blt = {};
 	struct blt_copy_object *src, *mid, *dst;
 	const uint32_t bpp = 32;
-	uint64_t bb_size = xe_get_default_alignment(xe);
+	uint64_t bb_size = xe_bb_size(xe, SZ_4K);
 	uint64_t ahnd = intel_allocator_open_full(xe, ctx->vm, 0, 0,
 						  INTEL_ALLOCATOR_SIMPLE,
 						  ALLOC_STRATEGY_LOW_TO_HIGH, 0);
@@ -176,7 +176,7 @@ static void fast_copy(int xe, const intel_ctx_t *ctx,
 	struct blt_copy_data blt = {};
 	struct blt_copy_object *src, *mid, *dst;
 	const uint32_t bpp = 32;
-	uint64_t bb_size = xe_get_default_alignment(xe);
+	uint64_t bb_size = xe_bb_size(xe, SZ_4K);
 	uint64_t ahnd = intel_allocator_open_full(xe, ctx->vm, 0, 0,
 						  INTEL_ALLOCATOR_SIMPLE,
 						  ALLOC_STRATEGY_LOW_TO_HIGH, 0);

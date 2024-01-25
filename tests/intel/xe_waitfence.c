@@ -212,6 +212,7 @@ exec_queue_reset_wait(int fd)
 	uint64_t sdi_offset;
 	uint64_t sdi_addr;
 	uint64_t addr = 0x1a0000;
+	uint64_t bb_size;
 
 	struct {
 		uint32_t batch[16];
@@ -236,8 +237,9 @@ exec_queue_reset_wait(int fd)
 		.exec_queue_id = exec_queue,
 	};
 
-	bo = xe_bo_create(fd, vm, 0x40000, vram_if_possible(fd, 0), 0);
-	data = xe_bo_map(fd, bo, 0x40000);
+	bb_size = xe_bb_size(fd, 0x40000);
+	bo = xe_bo_create(fd, vm, bb_size, vram_if_possible(fd, 0), 0);
+	data = xe_bo_map(fd, bo, bb_size);
 
 	batch_offset = (char *)&data[0].batch - (char *)data;
 	batch_addr = addr + batch_offset;
@@ -267,7 +269,7 @@ exec_queue_reset_wait(int fd)
 	xe_exec_queue_destroy(fd, exec_queue);
 
 	if (bo) {
-		munmap(data, 0x40000);
+		munmap(data, bb_size);
 		gem_close(fd, bo);
 	}
 }

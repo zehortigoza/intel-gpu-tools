@@ -262,7 +262,7 @@ static void pat_index_blt(struct xe_pat_param *p)
 					 ALLOC_STRATEGY_LOW_TO_HIGH,
 					 p->size->alignment);
 
-	bb_size = xe_get_default_alignment(fd);
+	bb_size = xe_bb_size(fd, SZ_4K);
 	bb = xe_bo_create(fd, 0, bb_size, system_memory(fd), 0);
 
 	size = width * height * bpp / 8;

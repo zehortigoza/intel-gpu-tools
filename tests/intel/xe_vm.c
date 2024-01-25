@@ -979,6 +979,8 @@ test_large_binds(int fd, struct drm_xe_engine_class_instance *eci,
 	igt_assert(n_exec_queues <= MAX_N_EXEC_QUEUES);
 	vm = xe_vm_create(fd, 0, 0);
 
+	bo_size = xe_bb_size(fd, bo_size);
+
 	if (flags & LARGE_BIND_FLAG_USERPTR) {
 		map = aligned_alloc(xe_get_default_alignment(fd), bo_size);
 		igt_assert(map);
@@ -1273,7 +1275,7 @@ test_munmap_style_unbind(int fd, struct drm_xe_engine_class_instance *eci,
 	}
 
 	vm = xe_vm_create(fd, 0, 0);
-	bo_size = page_size * bo_n_pages;
+	bo_size = xe_bb_size(fd, page_size * bo_n_pages);
 
 	if (flags & MAP_FLAG_USERPTR) {
 		map = mmap(from_user_pointer(addr), bo_size, PROT_READ |
@@ -1573,7 +1575,7 @@ test_mmap_style_bind(int fd, struct drm_xe_engine_class_instance *eci,
 	}
 
 	vm = xe_vm_create(fd, 0, 0);
-	bo_size = page_size * bo_n_pages;
+	bo_size = xe_bb_size(fd, page_size * bo_n_pages);
 
 	if (flags & MAP_FLAG_USERPTR) {
 		map0 = mmap(from_user_pointer(addr), bo_size, PROT_READ |

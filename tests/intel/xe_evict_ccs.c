@@ -75,7 +75,7 @@ static void copy_obj(struct blt_copy_data *blt,
 {
 	struct blt_block_copy_data_ext ext = {};
 	int fd = blt->fd;
-	uint64_t bb_size = xe_get_default_alignment(fd);
+	uint64_t bb_size = xe_bb_size(fd, SZ_4K);
 	uint32_t bb;
 	uint32_t w, h;
 

@@ -675,7 +675,7 @@ static void submit_jobs(struct gt_thread_data *t)
 	int fd = t->fd;
 	uint32_t vm = xe_vm_create(fd, 0, 0);
 	uint64_t addr = 0x1a0000;
-	size_t bo_size = xe_get_default_alignment(fd);
+	size_t bo_size = xe_bb_size(fd, SZ_4K);
 	uint32_t bo;
 	uint32_t *data;
 

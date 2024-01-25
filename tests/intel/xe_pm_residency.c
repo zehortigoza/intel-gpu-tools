@@ -98,7 +98,7 @@ static void exec_load(int fd, struct drm_xe_engine_class_instance *hwe, unsigned
 
 	vm = xe_vm_create(fd, 0, 0);
 	exec_queue = xe_exec_queue_create(fd, vm, hwe, 0);
-	bo_size = xe_get_default_alignment(fd);
+	bo_size = xe_bb_size(fd, SZ_4K);
 
 	bo = xe_bo_create(fd, vm, bo_size,
 			  vram_if_possible(fd, hwe->gt_id),

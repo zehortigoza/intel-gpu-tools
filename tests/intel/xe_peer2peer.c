@@ -105,7 +105,7 @@ static void test_read(struct gpu_info *ex_gpu, struct gpu_info *im_gpu,
 	struct blt_copy_object *im_src;
 	struct blt_copy_object *src;
 	const uint32_t bpp = 32;
-	uint64_t im_bb_size = xe_get_default_alignment(im_gpu->fd);
+	uint64_t im_bb_size = xe_bb_size(im_gpu->fd, SZ_4K);
 	uint64_t ahnd;
 	uint32_t bb;
 	uint32_t width = 1024, height = 1024;
@@ -187,7 +187,7 @@ static void test_write(struct gpu_info *ex_gpu, struct gpu_info *im_gpu,
 	struct blt_copy_object *im_dst;
 	struct blt_copy_object *src;
 	const uint32_t bpp = 32;
-	uint64_t im_bb_size = xe_get_default_alignment(im_gpu->fd);
+	uint64_t im_bb_size = xe_bb_size(im_gpu->fd, SZ_4K);
 	uint64_t ahnd;
 	uint32_t bb;
 	uint32_t width = 1024, height = 1024;

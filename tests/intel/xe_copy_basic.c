@@ -44,7 +44,7 @@ mem_copy(int fd, uint32_t src_handle, uint32_t dst_handle, const intel_ctx_t *ct
 	 uint32_t size, uint32_t width, uint32_t height, uint32_t region)
 {
 	struct blt_mem_data mem = {};
-	uint64_t bb_size = xe_get_default_alignment(fd);
+	uint64_t bb_size = xe_bb_size(fd, SZ_4K);
 	uint64_t ahnd = intel_allocator_open_full(fd, ctx->vm, 0, 0,
 						  INTEL_ALLOCATOR_SIMPLE,
 						  ALLOC_STRATEGY_LOW_TO_HIGH, 0);
@@ -97,7 +97,7 @@ mem_set(int fd, uint32_t dst_handle, const intel_ctx_t *ctx, uint32_t size,
 	uint32_t width, uint32_t height, uint8_t fill_data, uint32_t region)
 {
 	struct blt_mem_data mem = {};
-	uint64_t bb_size = xe_get_default_alignment(fd);
+	uint64_t bb_size = xe_bb_size(fd, SZ_4K);
 	uint64_t ahnd = intel_allocator_open_full(fd, ctx->vm, 0, 0,
 						  INTEL_ALLOCATOR_SIMPLE,
 						  ALLOC_STRATEGY_LOW_TO_HIGH, 0);

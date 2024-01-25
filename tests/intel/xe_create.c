@@ -325,7 +325,7 @@ static void create_big_vram(int fd, int gt)
 static void create_contexts(int fd)
 {
 	unsigned int i, n = params.quantity ? params.quantity : 4096;
-	uint64_t bo_size = xe_get_default_alignment(fd), bo_addr = 0x1a0000;
+	uint64_t bo_size = xe_bb_size(fd, SZ_4K), bo_addr = 0x1a0000;
 	uint32_t vm, bo, *batch, exec_queues[n];
 	struct drm_xe_sync sync = {
 		.type = DRM_XE_SYNC_TYPE_SYNCOBJ,
