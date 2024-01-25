@@ -20,7 +20,9 @@ enum amd_ip_block_type {
 	AMD_IP_UVD_ENC,
 	AMD_IP_VCN_DEC,
 	AMD_IP_VCN_ENC,
+	AMD_IP_VCN_UNIFIED = AMD_IP_VCN_ENC,
 	AMD_IP_VCN_JPEG,
+	AMD_IP_VPE,
 	AMD_IP_MAX,
 };
 

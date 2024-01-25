@@ -144,6 +144,7 @@ if libdrm_amdgpu.found()
 		'amdgpu/amd_memory.c',
 		'amdgpu/amd_command_submission.c',
 		'amdgpu/amd_compute.c',
+		'amdgpu/amd_cs_radv.c',
 		'amdgpu/amd_gfx.c',
 		'amdgpu/amd_ip_blocks.c',
 		'amdgpu/amd_shaders.c',
