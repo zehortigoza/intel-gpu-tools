@@ -522,6 +522,14 @@ test_seamless_rr_basic(data_t *data, enum pipe pipe, igt_output_t *output, uint3
 
 	if (vrr)
 		set_vrr_on_pipe(data, pipe, false, true);
+	else {
+		/*
+		 * Sink with DRRS and VRR can be in downclock mode.
+		 * so switch to High clock mode as test preparation
+		 */
+		igt_output_override_mode(output, &data->switch_modes[HIGH_RR_MODE]);
+		igt_assert(igt_display_try_commit_atomic(&data->display, DRM_MODE_PAGE_FLIP_EVENT, NULL) == 0);
+	}
 
 	rate = vtest_ns.max;
 	result = flip_and_measure(data, output, pipe, rate, TEST_DURATION_NS);
