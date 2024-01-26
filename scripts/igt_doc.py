@@ -198,6 +198,8 @@ class IntelciTestlist:
         if not os.path.exists(directory):
             os.makedirs(directory)
 
+        files_written = False
+
         for driver, gpus in self.testlists.items():
             driver_path = os.path.join(directory, driver)
             try:
@@ -225,14 +227,18 @@ class IntelciTestlist:
                         testlist = re.sub(r"_+", "_", testlist)
 
                     if not subtests:
-                        print(f"Warning: empty testlist: {testlist}")
+                        sys.stderr.write(f"Warning: empty testlist: {testlist}\n")
                         continue
 
                     fname = os.path.join(dname, testlist) + ".testlist"
                     with open(fname, 'w', encoding='utf8') as handler:
                         for sub in sorted(subtests):
                             handler.write (f"{sub}\n")
-                        print(f"{fname} created.")
+
+                    files_written = True
+
+        if not files_written:
+            sys.stderr.write("Warning: No Intel CI test files created!")
 
 def main():
     """
