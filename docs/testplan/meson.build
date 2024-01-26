@@ -1,5 +1,7 @@
 testplan_title = 'IGT test plans'
 
+intel_testlist_dir = 'intel-ci-tests'
+
 sphinx = find_program('sphinx-build', required: build_sphinx)
 rst2html = find_program('rst2html-3', 'rst2html', required : false)
 rst2pdf = find_program('rst2pdf', required: false)
@@ -44,6 +46,8 @@ else
 	    }
 endif
 
+testplans = []
+
 foreach testplan, fields: test_dict
 	rst = custom_target(testplan + '.rst',
 			    build_by_default : true,
@@ -52,6 +56,8 @@ foreach testplan, fields: test_dict
 			    input : fields['input'],
 			    output : testplan + '.rst'
 			   )
+
+	testplans += fields['input']
 
 	if rst2html.found()
 		custom_target(testplan + '.html',
@@ -62,6 +68,17 @@ foreach testplan, fields: test_dict
 			     )
 	endif
 endforeach
+
+custom_target(intel_testlist_dir,
+	      build_by_default : true,
+	      build_always_stale : true,
+	      command : [ igt_doc_script, '--config', '@INPUT@', '--intelci-testlist', '@OUTPUT@' ],
+	      depends : doc_dependencies,
+	      input : testplans,
+	      output : intel_testlist_dir,
+	      install : true,
+	      install_dir : libexecdir
+	     )
 
 if sphinx.found()
 	if gen_rst_index.found()
