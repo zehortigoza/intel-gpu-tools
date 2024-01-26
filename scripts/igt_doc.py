@@ -170,15 +170,35 @@ class IgtTestList(TestList):
 
         return (testlists, gpu_set)
 
-    def write_intelci_testlist(self, directory):
+class IntelciTestlist:
+    def __init__(self):
+        self.testlists = {}
+        self.gpu_set = set()
+
+    def add(self, testlist, gpu_set):
+        self.gpu_set.update(gpu_set)
+
+        for driver, gpus in testlist.items():
+            if driver not in self.testlists:
+                self.testlists[driver] = {}
+
+            for gpu in gpus:
+                if gpu not in self.testlists[driver]:
+                    self.testlists[driver][gpu] = {}
+
+                for run_type in testlist[driver][gpu]:
+                    if run_type not in self.testlists[driver][gpu]:
+                        self.testlists[driver][gpu][run_type] = set()
+
+                    self.testlists[driver][gpu][run_type].update(testlist[driver][gpu][run_type])
+
+    def write(self, directory):
         '''Create testlist directory (if needed) and files'''
 
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        testlists = self.gen_intelci_testlist()
-
-        for driver, gpus in testlists[0].items():
+        for driver, gpus in self.testlists.items():
             driver_path = os.path.join(directory, driver)
             try:
                 os.makedirs(driver_path)
@@ -224,7 +244,7 @@ def main():
     parser = argparse.ArgumentParser(description = "Print formatted kernel documentation to stdout.",
                                     formatter_class = argparse.ArgumentDefaultsHelpFormatter,
                                     epilog = 'If no action specified, assume --rest.')
-    parser.add_argument("--config", required = True,
+    parser.add_argument("--config", required = True, nargs='+',
                         help="JSON file describing the test plan template")
     parser.add_argument("--rest",
                         help="Output documentation from the source files in REST file.")
@@ -254,43 +274,71 @@ def main():
 
     parse_args = parser.parse_args()
 
-    tests = IgtTestList(config_fname = parse_args.config,
-                        include_plan = parse_args.include_plan,
-                        file_list = parse_args.files,
-                        igt_build_path = parse_args.igt_build_path)
+    test_array = []
 
-    if parse_args.filter_field:
-        for filter_expr in parse_args.filter_field:
-            tests.add_filter(filter_expr)
+    # Except for intelci_testlist, all options are handled per config
+    # file, as the typical usage is to pass just one config file.
 
-    run = False
-    if parse_args.show_subtests:
-        run = True
-        tests.show_subtests(parse_args.sort_field)
+    for config in parse_args.config:
+        tests = IgtTestList(config_fname = config,
+                            include_plan = parse_args.include_plan,
+                            file_list = parse_args.files,
+                            igt_build_path = parse_args.igt_build_path)
 
-    if parse_args.check_testlist:
-        run = True
-        tests.check_tests()
+        if parse_args.filter_field:
+            for filter_expr in parse_args.filter_field:
+                tests.add_filter(filter_expr)
 
-    if parse_args.gen_testlist:
-        run = True
-        if not parse_args.sort_field:
-            sys.exit("Need a field to split the testlists")
-        tests.gen_testlist(parse_args.gen_testlist, parse_args.sort_field)
+        run = False
+        if parse_args.show_subtests:
+            run = True
+            tests.show_subtests(parse_args.sort_field)
 
+        if parse_args.check_testlist:
+            run = True
+            tests.check_tests()
+
+        if parse_args.gen_testlist:
+            run = True
+            if not parse_args.sort_field:
+                sys.exit("Need a field to split the testlists")
+            if len(config) > 1:
+                sys.exit("Only one config file is supported with --json option")
+            tests.gen_testlist(parse_args.gen_testlist, parse_args.sort_field)
+
+        if parse_args.intelci_testlist:
+            run = True
+            test_array.append(tests)
+
+        if parse_args.to_json:
+            run = True
+            if len(parse_args.config) > 1:
+                sys.exit(f"Only one config file is supported with --json option, but {len(parse_args.config)} specified")
+
+            tests.print_json(parse_args.to_json)
+
+        if not run or parse_args.rest:
+            if len(parse_args.config) > 1:
+                if parse_args.rest:
+                    sys.exit(f"Only one config file is supported with --rest option, but {len(parse_args.config)} specified")
+
+            if parse_args.per_test:
+                tests.print_rest_flat(parse_args.rest)
+            else:
+                tests.print_nested_rest(parse_args.rest)
+
+    if not run and len(parse_args.config) > 1:
+        print("Warning: output was shown per-config file")
+
+    # Group testlists altogether when generating intel-ci output
     if parse_args.intelci_testlist:
-        run = True
-        tests.write_intelci_testlist(parse_args.intelci_testlist)
+        intel_testlists = IntelciTestlist()
 
-    if parse_args.to_json:
-        run = True
-        tests.print_json(parse_args.to_json)
+        for tests in test_array:
+            (testlist, gpu_set) = tests.gen_intelci_testlist()
+            intel_testlists.add(testlist, gpu_set)
 
-    if not run or parse_args.rest:
-        if parse_args.per_test:
-            tests.print_rest_flat(parse_args.rest)
-        else:
-            tests.print_nested_rest(parse_args.rest)
+        intel_testlists.write(parse_args.intelci_testlist)
 
 if __name__ == '__main__':
     main()
