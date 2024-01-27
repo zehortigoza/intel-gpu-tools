@@ -412,6 +412,7 @@ static struct oa_format dg2_oa_formats[XE_OA_FORMAT_MAX] = {
 		.a64_off = 160, .n_a64 = 8,
 		.b_off = 224, .n_b = 8,
 		.c_off = 256, .n_c = 8, .oa_type = DRM_XE_OA_FMT_TYPE_OAC,
+		.report_hdr_64bit = true,
 		.counter_select = 1, },
 };
 
@@ -464,6 +465,7 @@ static struct oa_format mtl_oa_formats[XE_OA_FORMAT_MAX] = {
 		.a64_off = 160, .n_a64 = 8,
 		.b_off = 224, .n_b = 8,
 		.c_off = 256, .n_c = 8, .oa_type = DRM_XE_OA_FMT_TYPE_OAC,
+		.report_hdr_64bit = true,
 		.counter_select = 1, },
 };
 
@@ -541,9 +543,8 @@ static int sysfs = -1;
 static int pm_fd = -1;
 static int stream_fd = -1;
 static uint32_t devid;
-static struct intel_execution_engine2 default_e2;
-static struct perf_engine_group *perf_oa_groups;
-static uint32_t num_perf_oa_groups;
+
+struct drm_xe_engine_class_instance default_hwe;
 
 static uint64_t gt_max_freq_mhz = 0;
 static struct intel_perf *intel_perf = NULL;
@@ -559,8 +560,8 @@ static void (*sanity_check_reports)(const uint32_t *oa_report0,
 				    enum xe_oa_format_name format);
 
 
-static struct intel_perf_metric_set *metric_set(const struct intel_execution_engine2 *e2);
-#define default_test_set metric_set(&default_e2)
+static struct intel_perf_metric_set *metric_set(const struct drm_xe_engine_class_instance *hwe);
+#define default_test_set metric_set(&default_hwe)
 
 static void set_fd_flags(int fd, int flags)
 {
@@ -613,6 +614,44 @@ static u64 oa_format_fields(u64 name)
 		FIELD_PREP_ULL(DRM_XE_OA_FORMAT_MASK_BC_REPORT, (u64)f.bc_report);
 }
 #define __ff oa_format_fields
+
+static struct drm_xe_engine_class_instance *oa_unit_engine(int fd, int n)
+{
+	struct drm_xe_query_oa_units *qoa = xe_oa_units(fd);
+	struct drm_xe_engine_class_instance *hwe = NULL;
+	struct drm_xe_oa_unit *oau;
+	u8 *poau;
+
+	poau = (u8 *)&qoa->oa_units[0];
+	for (int i = 0; i < qoa->num_oa_units; i++) {
+		oau = (struct drm_xe_oa_unit *)poau;
+
+		if (i == n) {
+			hwe = &oau->eci[random() % oau->num_engines];
+			break;
+		}
+		poau += sizeof(*oau) + oau->num_engines * sizeof(oau->eci[0]);
+	}
+
+	return hwe;
+}
+
+static struct drm_xe_oa_unit *nth_oa_unit(int fd, int n)
+{
+	struct drm_xe_query_oa_units *qoa = xe_oa_units(fd);
+	struct drm_xe_oa_unit *oau;
+	u8 *poau;
+
+	poau = (u8 *)&qoa->oa_units[0];
+	for (int i = 0; i < qoa->num_oa_units; i++) {
+		oau = (struct drm_xe_oa_unit *)poau;
+		if (i == n)
+			return oau;
+		poau += sizeof(*oau) + oau->num_engines * sizeof(oau->eci[0]);
+	}
+
+	return NULL;
+}
 
 static char *
 pretty_print_oa_period(uint64_t oa_period_ns)
@@ -1562,9 +1601,9 @@ open_and_read_2_oa_reports(int format_id,
 			   uint32_t *oa_report0,
 			   uint32_t *oa_report1,
 			   bool timer_only,
-			   const struct intel_execution_engine2 *e)
+			   const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
 
@@ -1575,7 +1614,7 @@ open_and_read_2_oa_reports(int format_id,
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(format_id),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, exponent,
-		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
+		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 
 	};
 	struct drm_xe_oa_open_prop param = {
@@ -1767,21 +1806,21 @@ print_report(uint32_t *report, int fmt)
 #endif
 
 static bool
-oa_unit_supports_engine(int oa_type, const struct intel_execution_engine2 *e)
+hwe_supports_oa_type(int oa_type, const struct drm_xe_engine_class_instance *hwe)
 {
 	switch (oa_type) {
 	case DRM_XE_OA_FMT_TYPE_OAM:
 	case DRM_XE_OA_FMT_TYPE_OAM_MPEC:
-		return e->class == DRM_XE_ENGINE_CLASS_VIDEO_DECODE ||
-		       e->class == DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE;
+		return hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_DECODE ||
+		       hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE;
 	case DRM_XE_OA_FMT_TYPE_OAG:
 	case DRM_XE_OA_FMT_TYPE_OAR:
-		return e->class == DRM_XE_ENGINE_CLASS_RENDER;
+		return hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER;
 	case DRM_XE_OA_FMT_TYPE_OAC:
-		return e->class == DRM_XE_ENGINE_CLASS_COMPUTE;
+		return hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE;
 	case DRM_XE_OA_FMT_TYPE_PEC:
-		return e->class == DRM_XE_ENGINE_CLASS_RENDER ||
-		       e->class == DRM_XE_ENGINE_CLASS_COMPUTE;
+		return hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER ||
+		       hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE;
 	default:
 		return false;
 	}
@@ -1789,7 +1828,7 @@ oa_unit_supports_engine(int oa_type, const struct intel_execution_engine2 *e)
 }
 
 static void
-test_oa_formats(const struct intel_execution_engine2 *e)
+test_oa_formats(const struct drm_xe_engine_class_instance *hwe)
 {
 	for (int i = 0; i < XE_OA_FORMAT_MAX; i++) {
 		struct oa_format format = get_oa_format(i);
@@ -1799,8 +1838,7 @@ test_oa_formats(const struct intel_execution_engine2 *e)
 		if (!format.name) /* sparse, indexed by ID */
 			continue;
 
-		/* FIXME: change oa_unit_supports_engine to handle all format.oa_type */
-		if (!IS_LUNARLAKE(devid) && !oa_unit_supports_engine(format.oa_type, e))
+		if (!hwe_supports_oa_type(format.oa_type, hwe))
 			continue;
 
 		igt_debug("Checking OA format %s\n", format.name);
@@ -1810,7 +1848,7 @@ test_oa_formats(const struct intel_execution_engine2 *e)
 					   oa_report0,
 					   oa_report1,
 					   false, /* timer reports only */
-					   e);
+					   hwe);
 
 		print_reports(oa_report0, oa_report1, i);
 		sanity_check_reports(oa_report0, oa_report1, i);
@@ -1915,13 +1953,8 @@ static void load_helper_init(void)
 	igt_assert(intel_gen(lh.devid) >= 6);
 
 	lh.bops = buf_ops_create(drm_fd);
-
-	if (is_xe_device(drm_fd)) {
-		lh.vm = xe_vm_create(drm_fd, 0, 0);
-		lh.context_id = xe_exec_queue_create(drm_fd, lh.vm, &xe_engine(drm_fd, 0)->instance, 0);
-	} else {
-		lh.context_id = gem_context_create(drm_fd);
-	}
+	lh.vm = xe_vm_create(drm_fd, 0, 0);
+	lh.context_id = xe_exec_queue_create(drm_fd, lh.vm, &xe_engine(drm_fd, 0)->instance, 0);
 	igt_assert_neq(lh.context_id, 0xffffffff);
 
 	lh.ibb = intel_bb_create_with_context(drm_fd, lh.context_id, lh.vm, NULL, BATCH_SZ);
@@ -1941,12 +1974,8 @@ static void load_helper_fini(void)
 	intel_buf_close(lh.bops, &lh.src);
 	intel_buf_close(lh.bops, &lh.dst);
 	intel_bb_destroy(lh.ibb);
-	if (is_xe_device(drm_fd)) {
-		xe_exec_queue_destroy(drm_fd, lh.context_id);
-		xe_vm_destroy(drm_fd, lh.vm);
-	} else {
-		gem_context_destroy(drm_fd, lh.context_id);
-	}
+	xe_exec_queue_destroy(drm_fd, lh.context_id);
+	xe_vm_destroy(drm_fd, lh.vm);
 	buf_ops_destroy(lh.bops);
 }
 
@@ -1964,9 +1993,9 @@ static bool expected_report_timing_delta(uint32_t delta, uint32_t expected_delta
 }
 
 static void
-test_oa_exponents(const struct intel_execution_engine2 *e)
+test_oa_exponents(const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = test_set->perf_oa_format;
 
 	load_helper_init();
@@ -1987,7 +2016,7 @@ test_oa_exponents(const struct intel_execution_engine2 *e)
 			DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
 			DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(fmt),
 			DRM_XE_OA_PROPERTY_OA_EXPONENT, exponent,
-			DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
+			DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 		};
 		struct drm_xe_oa_open_prop param = {
 			.num_properties = has_param_class_instance() ?
@@ -2228,7 +2257,7 @@ static void
 test_blocking(uint64_t requested_oa_period,
 	      bool set_kernel_hrtimer,
 	      uint64_t kernel_hrtimer,
-	      const struct intel_execution_engine2 *e)
+	      const struct drm_xe_engine_class_instance *hwe)
 {
 	int oa_exponent = max_oa_exponent_for_period_lte(requested_oa_period);
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
@@ -2257,7 +2286,7 @@ test_blocking(uint64_t requested_oa_period,
 	int min_iterations = (test_duration_ns / (oa_period + kernel_hrtimer + kernel_hrtimer / 5));
 	int64_t start, end;
 	int n = 0;
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	size_t format_size = get_oa_format(test_set->perf_oa_format).size;
 
 	ADD_PROPS(props, idx, SAMPLE_OA, true);
@@ -2268,7 +2297,7 @@ test_blocking(uint64_t requested_oa_period,
 
 	if (has_param_class_instance()) {
 		ADD_PROPS(props, idx, OA_UNIT_ID, 0);
-		ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, e->instance);
+		ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, hwe->engine_instance);
 	}
 
 	param.num_properties = (idx - props) / 2;
@@ -2375,7 +2404,7 @@ static void
 test_polling(uint64_t requested_oa_period,
 	     bool set_kernel_hrtimer,
 	     uint64_t kernel_hrtimer,
-	     const struct intel_execution_engine2 *e)
+	     const struct drm_xe_engine_class_instance *hwe)
 {
 	int oa_exponent = max_oa_exponent_for_period_lte(requested_oa_period);
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
@@ -2405,7 +2434,7 @@ test_polling(uint64_t requested_oa_period,
 	int min_iterations = (test_duration_ns / (oa_period + (kernel_hrtimer + kernel_hrtimer / 5)));
 	int64_t start, end;
 	int n = 0;
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	size_t format_size = get_oa_format(test_set->perf_oa_format).size;
 
 	ADD_PROPS(props, idx, SAMPLE_OA, true);
@@ -2416,7 +2445,7 @@ test_polling(uint64_t requested_oa_period,
 
 	if (has_param_class_instance()) {
 		ADD_PROPS(props, idx, OA_UNIT_ID, 0);
-		ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, e->instance);
+		ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, hwe->engine_instance);
 	}
 
 	param.num_properties = (idx - props) / 2;
@@ -2664,10 +2693,10 @@ num_valid_reports_captured(struct drm_xe_oa_open_prop *param,
 }
 
 static void
-gen12_test_oa_tlb_invalidate(const struct intel_execution_engine2 *e)
+gen12_test_oa_tlb_invalidate(const struct drm_xe_engine_class_instance *hwe)
 {
 	int oa_exponent = max_oa_exponent_for_period_lte(30000000);
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
 		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
@@ -2676,7 +2705,7 @@ gen12_test_oa_tlb_invalidate(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(test_set->perf_oa_format),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
 		DRM_XE_OA_PROPERTY_OA_DISABLED, true,
-		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
+		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
 		.num_properties = has_param_class_instance() ?
@@ -2709,12 +2738,12 @@ gen12_test_oa_tlb_invalidate(const struct intel_execution_engine2 *e)
 
 
 static void
-test_buffer_fill(const struct intel_execution_engine2 *e)
+test_buffer_fill(const struct drm_xe_engine_class_instance *hwe)
 {
 	/* ~5 micro second period */
 	int oa_exponent = max_oa_exponent_for_period_lte(5000);
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = test_set->perf_oa_format;
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
@@ -2726,7 +2755,7 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
-		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
+		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
 		.num_properties = has_param_class_instance() ?
@@ -2848,11 +2877,11 @@ test_buffer_fill(const struct intel_execution_engine2 *e)
 }
 
 static void
-test_non_zero_reason(const struct intel_execution_engine2 *e)
+test_non_zero_reason(const struct drm_xe_engine_class_instance *hwe)
 {
 	/* ~20 micro second period */
 	int oa_exponent = max_oa_exponent_for_period_lte(20000);
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = test_set->perf_oa_format;
 	size_t report_size = get_oa_format(fmt).size;
 	uint64_t properties[] = {
@@ -2865,7 +2894,7 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
-		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
+		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
 		.num_properties = has_param_class_instance() ?
@@ -2925,12 +2954,12 @@ test_non_zero_reason(const struct intel_execution_engine2 *e)
 }
 
 static void
-test_enable_disable(const struct intel_execution_engine2 *e)
+test_enable_disable(const struct drm_xe_engine_class_instance *hwe)
 {
 	/* ~5 micro second period */
 	int oa_exponent = max_oa_exponent_for_period_lte(5000);
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = test_set->perf_oa_format;
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
@@ -2943,7 +2972,7 @@ test_enable_disable(const struct intel_execution_engine2 *e)
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
 		DRM_XE_OA_PROPERTY_OA_DISABLED, true,
-		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
+		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
 		.num_properties = has_param_class_instance() ?
@@ -3259,14 +3288,13 @@ test_disabled_read_error(void)
 }
 
 static void
-gen12_test_mi_rpc(const struct intel_execution_engine2 *e2,
-		  struct drm_xe_engine_class_instance *hwe)
+gen12_test_mi_rpc(struct drm_xe_engine_class_instance *hwe)
 
 {
 	uint64_t fmt = ((IS_DG2(devid) || IS_METEORLAKE(devid)) &&
 			hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE) ?
 		XE_OAC_FORMAT_A24u64_B8_C8 : oar_unit_default_format();
-	struct intel_perf_metric_set *test_set = metric_set(e2);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
 
@@ -3312,12 +3340,8 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e2,
 	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
 	bops = buf_ops_create(drm_fd);
-	if (is_xe_device(drm_fd)) {
-		vm = xe_vm_create(drm_fd, 0, 0);
-		ctx_id = xe_exec_queue_create(drm_fd, vm, hwe, 0);
-	} else {
-		ctx_id = gem_context_create(drm_fd);
-	}
+	vm = xe_vm_create(drm_fd, 0, 0);
+	ctx_id = xe_exec_queue_create(drm_fd, vm, hwe, 0);
 	igt_assert_neq(ctx_id, INVALID_CTX_ID);
 	properties[3] = ctx_id;
 
@@ -3367,12 +3391,8 @@ gen12_test_mi_rpc(const struct intel_execution_engine2 *e2,
 	intel_buf_unmap(buf);
 	intel_buf_destroy(buf);
 	intel_bb_destroy(ibb);
-	if (is_xe_device(drm_fd)) {
-		xe_exec_queue_destroy(drm_fd, ctx_id);
-		xe_vm_destroy(drm_fd, vm);
-	} else {
-		gem_context_destroy(drm_fd, ctx_id);
-	}
+	xe_exec_queue_destroy(drm_fd, ctx_id);
+	xe_vm_destroy(drm_fd, vm);
 	buf_ops_destroy(bops);
 	__perf_close(stream_fd);
 }
@@ -3405,9 +3425,9 @@ emit_stall_timestamp_and_rpc(struct intel_bb *ibb,
 	emit_report_perf_count(ibb, dst, report_dst_offset, report_id);
 }
 
-static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
+static void gen12_single_ctx_helper(const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = oar_unit_default_format();
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
@@ -3427,7 +3447,7 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 		 */
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(fmt),
-		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
+		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
 		.num_properties = has_param_class_instance() ?
@@ -3461,14 +3481,9 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 		scratch_buf_init(bops, &dst[i], width, height, 0x00ff00ff);
 	}
 
-	if (is_xe_device(drm_fd)) {
-		vm = xe_vm_create(drm_fd, 0, 0);
-		context0_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
-		context1_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
-	} else {
-		context0_id = gem_context_create(drm_fd);
-		context1_id = gem_context_create(drm_fd);
-	}
+	vm = xe_vm_create(drm_fd, 0, 0);
+	context0_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
+	context1_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
 	ibb0 = intel_bb_create_with_context(drm_fd, context0_id, vm, NULL, BATCH_SZ);
 	ibb1 = intel_bb_create_with_context(drm_fd, context1_id, vm, NULL, BATCH_SZ);
 
@@ -3721,20 +3736,15 @@ static void gen12_single_ctx_helper(const struct intel_execution_engine2 *e)
 	intel_buf_destroy(dst_buf);
 	intel_bb_destroy(ibb0);
 	intel_bb_destroy(ibb1);
-	if (is_xe_device(drm_fd)) {
-		xe_exec_queue_destroy(drm_fd, context0_id);
-		xe_exec_queue_destroy(drm_fd, context1_id);
-		xe_vm_destroy(drm_fd, vm);
-	} else {
-		gem_context_destroy(drm_fd, context0_id);
-		gem_context_destroy(drm_fd, context1_id);
-	}
+	xe_exec_queue_destroy(drm_fd, context0_id);
+	xe_exec_queue_destroy(drm_fd, context1_id);
+	xe_vm_destroy(drm_fd, vm);
 	buf_ops_destroy(bops);
 	__perf_close(stream_fd);
 }
 
 static void
-gen12_test_single_ctx_render_target_writes_a_counter(const struct intel_execution_engine2 *e)
+gen12_test_single_ctx_render_target_writes_a_counter(const struct drm_xe_engine_class_instance *hwe)
 {
 	int child_ret;
 	struct igt_helper_process child = {};
@@ -3749,7 +3759,7 @@ gen12_test_single_ctx_render_target_writes_a_counter(const struct intel_executio
 
 			igt_drop_root();
 
-			gen12_single_ctx_helper(e);
+			gen12_single_ctx_helper(hwe);
 
 			drm_close_driver(drm_fd);
 		}
@@ -3814,9 +3824,9 @@ test_rc6_disable(void)
 }
 
 static void
-test_stress_open_close(const struct intel_execution_engine2 *e)
+test_stress_open_close(const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 
 	load_helper_init();
 	load_helper_run(HIGH);
@@ -3836,7 +3846,7 @@ test_stress_open_close(const struct intel_execution_engine2 *e)
 			DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(test_set->perf_oa_format),
 			DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
 			DRM_XE_OA_PROPERTY_OA_DISABLED, true,
-			DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
+			DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 		};
 		struct drm_xe_oa_open_prop param = {
 			.num_properties = has_param_class_instance() ?
@@ -4259,7 +4269,7 @@ static void oa_regs_in_whitelist(uint32_t mmio_base, bool are_present)
 	}
 }
 
-static u32 oa_get_mmio_base(struct drm_xe_engine_class_instance *hwe)
+static u32 oa_get_mmio_base(const struct drm_xe_engine_class_instance *hwe)
 {
 	u32 mmio_base = 0x2000;
 
@@ -4287,10 +4297,9 @@ static u32 oa_get_mmio_base(struct drm_xe_engine_class_instance *hwe)
 	return mmio_base;
 }
 
-static void test_oa_regs_whitelist(const struct intel_execution_engine2 *e,
-				   struct drm_xe_engine_class_instance *hwe)
+static void test_oa_regs_whitelist(const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
 		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
@@ -4375,12 +4384,8 @@ __test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 	scratch_buf_init(bops, &src, width, height, 0xff0000ff);
 	scratch_buf_init(bops, &dst, width, height, 0x00ff00ff);
 
-	if (is_xe_device(drm_fd)) {
-		vm = xe_vm_create(drm_fd, 0, 0);
-		context = xe_exec_queue_create(drm_fd, vm, hwe, 0);
-	} else {
-		context = gem_context_create(drm_fd);
-	}
+	vm = xe_vm_create(drm_fd, 0, 0);
+	context = xe_exec_queue_create(drm_fd, vm, hwe, 0);
 	igt_assert(context);
 	ibb = intel_bb_create_with_context(drm_fd, context, vm, NULL, BATCH_SZ);
 
@@ -4442,12 +4447,8 @@ __test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 	intel_buf_unmap(dst_buf);
 	intel_buf_destroy(dst_buf);
 	intel_bb_destroy(ibb);
-	if (is_xe_device(drm_fd)) {
-		xe_exec_queue_destroy(drm_fd, context);
-		xe_vm_destroy(drm_fd, vm);
-	} else {
-		gem_context_destroy(drm_fd, context);
-	}
+	xe_exec_queue_destroy(drm_fd, context);
+	xe_vm_destroy(drm_fd, vm);
 	buf_ops_destroy(bops);
 	__perf_close(stream_fd);
 }
@@ -4607,80 +4608,17 @@ test_sysctl_defaults(void)
 	igt_assert_eq(paranoid, 1);
 }
 
-static struct intel_execution_engine2 *
-__ci_to_e2(const intel_ctx_t *ctx, struct i915_engine_class_instance *ci)
-{
-	static struct intel_execution_engine2 e2;
-	struct intel_execution_engine2 *e;
-
-	if (is_xe_device(drm_fd)) {
-		strncpy(e2.name, "rcs", sizeof(e2.name));
-		goto exit;
-	}
-
-	for_each_ctx_engine(drm_fd, ctx, e) {
-		if (e->class == ci->engine_class && e->instance == ci->engine_instance) {
-			e2 = *e;
-			break;
-		}
-	}
-exit:
-	return &e2;
-}
-
-#define __for_random_engine_in_each_group(groups_, ctx_, e_) \
-	for (int i_ = 0; \
-	     i_ < num_perf_oa_groups && !!(e_ = __ci_to_e2(ctx_, random_engine(&groups_[i_]))); \
-	     i_++) \
-		igt_dynamic_f("%d-%s", i_, e_->name)
-
-#define __for_each_render_engine(fd__, e__) \
-	for_each_physical_engine(fd__, e__) \
-		if (e__->class == DRM_XE_ENGINE_CLASS_RENDER) \
-			igt_dynamic_f("%s", e__->name)
-
-struct perf_engine_group {
-	/* exclusive perf fd per engine group */
-	int perf_fd;
-
-	/* gem context id passed to perf */
-	uint32_t ctx_id;
-	uint32_t oa_unit_id;
-
-	/* perf engines in a group */
-	int num_engines;
-	struct i915_engine_class_instance *ci;
-
-	int gt;
-	struct intel_perf_metric_set *test_set;
-};
-
-static struct drm_i915_query_engine_info *query_engine_info(int i915)
-{
-	struct drm_i915_query_engine_info *qinfo;
-
-#define QUERY_SIZE (0x4000)
-	qinfo = malloc(QUERY_SIZE);
-	igt_assert(qinfo);
-	memset(qinfo, 0, QUERY_SIZE);
-	igt_assert(!__gem_query_engines(i915, qinfo, QUERY_SIZE));
-#undef QUERY_SIZE
-
-	return qinfo;
-}
-
-static struct intel_perf_metric_set *metric_set(const struct intel_execution_engine2 *e2)
+static struct intel_perf_metric_set *metric_set(const struct drm_xe_engine_class_instance *hwe)
 {
 	const char *test_set_name = NULL;
 	struct intel_perf_metric_set *metric_set_iter;
 	struct intel_perf_metric_set *test_set = NULL;
 
-	if (IS_HASWELL(devid))
-		test_set_name = "RenderBasic";
-	else if (e2->class == DRM_XE_ENGINE_CLASS_RENDER)
+	if (hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER ||
+	    hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE)
 		test_set_name = "TestOa";
-	else if ((e2->class == DRM_XE_ENGINE_CLASS_VIDEO_DECODE ||
-		  e2->class == DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE) &&
+	else if ((hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_DECODE ||
+		  hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE) &&
 		 HAS_OAM(devid))
 		test_set_name = "MediaSet1";
 	else
@@ -4704,157 +4642,12 @@ static struct intel_perf_metric_set *metric_set(const struct intel_execution_eng
 	igt_assert_neq_u64(test_set->perf_oa_metrics_set, 0);
 
 	igt_debug("engine %d:%d - %s metric set UUID = %s\n",
-		  e2->class,
-		  e2->instance,
+		  hwe->engine_class,
+		  hwe->engine_instance,
 		  test_set->symbol_name,
 		  test_set->hw_config_guid);
 
 	return test_set;
-}
-
-static int compare_engine_oa_unit_id(const void *e1, const void *e2)
-{
-	const struct drm_i915_engine_info *_e1 = e1;
-	const struct drm_i915_engine_info *_e2 = e2;
-
-	return (int)_e1->rsvd0 - (int)_e2->rsvd0;
-}
-
-static struct perf_engine_group *default_engine_group(uint32_t *num_groups)
-{
-	struct perf_engine_group *groups = malloc(sizeof(*groups));
-
-	igt_debug("using default engine group\n");
-
-	groups->perf_fd = -1,
-	groups->ctx_id = 0xffffffff,
-	groups->oa_unit_id = 0,
-	groups->num_engines = 1,
-
-	groups->ci = malloc(sizeof(*groups->ci));
-	groups->ci->engine_class = default_e2.class;
-	groups->ci->engine_instance = default_e2.instance;
-
-	*num_groups = 1;
-
-	return groups;
-}
-
-/* Until oa_unit_id is exposed from uapi, work around it */
-static void populate_mtl_oa_unit_ids(struct drm_i915_query_engine_info *qinfo)
-{
-	struct i915_engine_class_instance ci;
-	int i;
-
-	for (i = 0; i < qinfo->num_engines; i++) {
-		ci = qinfo->engines[i].engine;
-
-		switch (ci.engine_class) {
-		case DRM_XE_ENGINE_CLASS_RENDER:
-			qinfo->engines[i].rsvd0 = 0;
-			break;
-
-		case DRM_XE_ENGINE_CLASS_VIDEO_DECODE:
-		case DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE:
-			qinfo->engines[i].rsvd0 = 1;
-			break;
-
-		default:
-			qinfo->engines[i].rsvd0 = UINT32_MAX;
-			break;
-		}
-
-		igt_debug("class:instance = %d:%d, id = %d\n",
-			  ci.engine_class, ci.engine_instance,
-			  qinfo->engines[i].rsvd0);
-	}
-}
-
-static struct perf_engine_group *get_engine_groups(int i915, uint32_t *num_groups)
-{
-	struct drm_i915_query_engine_info *qinfo;
-	struct perf_engine_group *groups = NULL;
-	uint32_t id = UINT32_MAX, num_grps = 0, i = 0, j;
-
-	if (is_xe_device(drm_fd))
-		return default_engine_group(num_groups);
-
-	qinfo = query_engine_info(i915);
-	if (!qinfo)
-		return default_engine_group(num_groups);
-	igt_assert(qinfo->num_engines);
-
-	/* Currently only meteorlake is supported with engine groups */
-	if (IS_METEORLAKE(devid)) {
-		populate_mtl_oa_unit_ids(qinfo);
-	} else {
-		free(qinfo);
-		return default_engine_group(num_groups);
-	}
-
-	/* sort so that engines with same oa id are together */
-	qsort(qinfo->engines, qinfo->num_engines, sizeof(qinfo->engines[0]),
-	      compare_engine_oa_unit_id);
-
-	/* create groups */
-	for (i = 0; i < qinfo->num_engines; i++) {
-		struct i915_engine_class_instance ci = qinfo->engines[i].engine;
-
-		igt_debug("class:instance = %d:%d, id = %d\n",
-			  ci.engine_class, ci.engine_instance,
-			  qinfo->engines[i].rsvd0);
-
-		if (qinfo->engines[i].rsvd0 == UINT32_MAX)
-			continue;
-
-		if (qinfo->engines[i].rsvd0 != id) {
-			id = qinfo->engines[i].rsvd0;
-			groups = realloc(groups, ++num_grps * sizeof(*groups));
-			j = num_grps - 1;
-			groups[j].perf_fd = -1;
-			groups[j].ctx_id = 0xffffffff;
-			groups[j].oa_unit_id = id;
-			groups[j].num_engines = 0;
-			/* alloc max engines, trim later */
-			groups[j].ci = malloc(qinfo->num_engines * sizeof(ci));
-		}
-		groups[j].ci[groups[j].num_engines++] = ci;
-	}
-
-	igt_assert(num_grps);
-
-	/* trim engines */
-	for (i = 0; i < num_grps; i++) {
-		struct i915_engine_class_instance *ci = groups[i].ci;
-
-		ci = realloc(ci, groups[i].num_engines * sizeof(*ci));
-		groups[i].ci = ci;
-	}
-
-	*num_groups = num_grps;
-
-	free(qinfo);
-
-	return groups;
-}
-
-static void put_engine_groups(struct perf_engine_group *groups,
-			      unsigned int num_groups)
-{
-	int i;
-
-	for (i = 0; i < num_groups; i++)
-		free(groups[i].ci);
-
-	free(groups);
-}
-
-static struct i915_engine_class_instance *
-random_engine(struct perf_engine_group *group)
-{
-	srandom(time(NULL));
-
-	return &group->ci[random() % group->num_engines];
 }
 
 static bool has_class_instance(int i915, uint16_t class, uint16_t instance)
@@ -4864,23 +4657,17 @@ static bool has_class_instance(int i915, uint16_t class, uint16_t instance)
 	return false;
 }
 
-static void set_default_engine(const intel_ctx_t *ctx)
-{
-	const struct intel_execution_engine2 *e;
-
-	for_each_ctx_engine(drm_fd, ctx, e)
-		if (e->class == DRM_XE_ENGINE_CLASS_RENDER && e->instance == 0)
-			default_e2 = *e;
-}
-
 /*
- * Test if OA buffer streams can be independently opened on each group. Once a user
+ * Test if OA buffer streams can be independently opened on OA unit. Once a user
  * opens a stream, that group is exclusive to the user, other users get -EBUSY on
  * trying to open a stream.
  */
 static void
-test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
+test_group_exclusive_stream(bool exponent)
 {
+	struct drm_xe_query_oa_units *qoa = xe_oa_units(drm_fd);
+	struct drm_xe_oa_unit *oau;
+	u8 *poau = (u8 *)&qoa->oa_units[0];
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
 		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
@@ -4890,96 +4677,105 @@ test_group_exclusive_stream(const intel_ctx_t *ctx, bool exponent)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 	};
 	struct drm_xe_oa_open_prop param = {
-		/* for gem_context use case, we do no pass exponent */
-		.num_properties = exponent ?
-				  ARRAY_SIZE(properties) / 2 :
-				  ARRAY_SIZE(properties) / 2 - 1,
+		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
-	uint32_t i, j;
+	uint32_t *exec_q = calloc(qoa->num_oa_units, sizeof(u32));
+	uint32_t *perf_fd = calloc(qoa->num_oa_units, sizeof(u32));
+	u32 vm = xe_vm_create(drm_fd, 0, 0);
+	struct intel_perf_metric_set *test_set;
+	uint32_t i;
 
 	/* for each group, open one random perf stream with sample OA */
-	for (i = 0; i < num_perf_oa_groups; i++) {
-		struct perf_engine_group *grp = &perf_oa_groups[i];
-		struct i915_engine_class_instance *ci = random_engine(grp);
-		struct intel_execution_engine2 *e2 = __ci_to_e2(ctx, ci);
-		struct intel_perf_metric_set *test_set = metric_set(e2);
+	for (i = 0; i < qoa->num_oa_units; i++) {
+		struct drm_xe_engine_class_instance *hwe = oa_unit_engine(drm_fd, i);
 
+		oau = (struct drm_xe_oa_unit *)poau;
+		if (oau->oa_unit_type != DRM_XE_OA_UNIT_TYPE_OAG)
+			continue;
+		test_set = metric_set(hwe);
+
+		igt_debug("opening OA buffer with c:i %d:%d\n",
+			  hwe->engine_class, hwe->engine_instance);
+		exec_q[i] = xe_exec_queue_create(drm_fd, vm, hwe, 0);
 		if (!exponent) {
-			properties[0] = DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID;
-			properties[1] = ctx->id;
+			properties[10] = DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID;
+			properties[11] = exec_q[i];
 		}
 
+		properties[1] = oau->oa_unit_id;
 		properties[5] = test_set->perf_oa_metrics_set;
 		properties[7] = __ff(test_set->perf_oa_format);
-		properties[9] = ci->engine_instance;
-		grp->perf_fd = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF,
-					     DRM_XE_PERF_OP_STREAM_OPEN, &param);
-		igt_assert(grp->perf_fd >= 0);
-		igt_debug("opened OA buffer with c:i %d:%d\n",
-			  ci->engine_class, ci->engine_instance);
+		properties[9] = hwe->engine_instance;
+		perf_fd[i] = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF,
+					   DRM_XE_PERF_OP_STREAM_OPEN, &param);
+		igt_assert(perf_fd[i] >= 0);
+		poau += sizeof(*oau) + oau->num_engines * sizeof(oau->eci[0]);
 	}
 
-	/* for each group make sure no other streams can be opened */
-	for (i = 0; i < num_perf_oa_groups; i++) {
-		struct perf_engine_group *grp = &perf_oa_groups[i];
+	/* Xe KMD holds reference to the exec_q's so they shouldn't be really destroyed */
+	for (i = 0; i < qoa->num_oa_units; i++)
+		if (exec_q[i])
+			xe_exec_queue_destroy(drm_fd, exec_q[i]);
+
+	/* for each oa unit make sure no other streams can be opened */
+	poau = (u8 *)&qoa->oa_units[0];
+	for (i = 0; i < qoa->num_oa_units; i++) {
+		struct drm_xe_engine_class_instance *hwe = oa_unit_engine(drm_fd, i);
 		int err;
 
-		for (j = 0; j < grp->num_engines; j++) {
-			struct i915_engine_class_instance *ci = grp->ci + j;
-			struct intel_execution_engine2 *e2 = __ci_to_e2(ctx, ci);
-			struct intel_perf_metric_set *test_set = metric_set(e2);
+		oau = (struct drm_xe_oa_unit *)poau;
+		if (oau->oa_unit_type != DRM_XE_OA_UNIT_TYPE_OAG)
+			continue;
+		test_set = metric_set(hwe);
 
-			/*
-			 * case 1:
-			 * concurrent access to OAG should fail
-			 */
-			properties[0] = DRM_XE_OA_PROPERTY_SAMPLE_OA;
-			properties[1] = true;
-			properties[3] = test_set->perf_oa_metrics_set;
-			properties[5] = __ff(test_set->perf_oa_format);
-			properties[7] = ci->engine_class;
-			properties[9] = ci->engine_instance;
-			/* for SAMPLE OA use case, we must pass exponent */
-			param.num_properties = ARRAY_SIZE(properties) / 2;
-			xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
-					  &param, EBUSY);
-			igt_debug("try OA buffer with c:i %d:%d\n",
-				  ci->engine_class, ci->engine_instance);
+		igt_debug("try with exp with c:i %d:%d\n",
+			  hwe->engine_class, hwe->engine_instance);
+		/* case 1: concurrent access to OAG should fail */
+		properties[1] = oau->oa_unit_id;
+		properties[5] = test_set->perf_oa_metrics_set;
+		properties[7] = __ff(test_set->perf_oa_format);
+		properties[9] = hwe->engine_instance;
+		properties[10] = DRM_XE_OA_PROPERTY_OA_EXPONENT;
+		properties[11] = oa_exp_1_millisec;
+		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
+				  &param, EBUSY);
 
-			/*
-			 * case 2:
-			 * concurrent access to non-OAG unit should fail
-			 */
-			properties[0] = DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID;
-			properties[1] = gem_context_create(drm_fd);
-			/* for gem_context use case, we do no pass exponent */
-			param.num_properties = ARRAY_SIZE(properties) / 2 - 1;
-			errno = 0;
-			err = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF,
-					    DRM_XE_PERF_OP_STREAM_OPEN, &param);
-			igt_assert(err < 0);
-			igt_assert(errno == EBUSY || errno == ENODEV);
-			igt_debug("try OA ci unit with c:i %d:%d\n",
-				  ci->engine_class, ci->engine_instance);
-			gem_context_destroy(drm_fd, properties[1]);
-		}
+		/* case 2: concurrent access to non-OAG unit should fail */
+		igt_debug("try with exec_q with c:i %d:%d\n",
+			  hwe->engine_class, hwe->engine_instance);
+		exec_q[i] = xe_exec_queue_create(drm_fd, vm, hwe, 0);
+		properties[10] = DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID;
+		properties[11] = exec_q[i];
+		errno = 0;
+		err = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF,
+				    DRM_XE_PERF_OP_STREAM_OPEN, &param);
+		igt_assert(err < 0);
+		igt_assert(errno == EBUSY || errno == ENODEV);
+		poau += sizeof(*oau) + oau->num_engines * sizeof(oau->eci[0]);
+	}
 
-		if (grp->perf_fd >= 0)
-			close(grp->perf_fd);
+	for (i = 0; i < qoa->num_oa_units; i++) {
+		if (perf_fd[i])
+			close(perf_fd[i]);
+		if (exec_q[i])
+			xe_exec_queue_destroy(drm_fd, exec_q[i]);
 	}
 }
 
 static void
 test_group_concurrent_oa_buffer_read(void)
 {
-	igt_fork(child, num_perf_oa_groups) {
-		struct intel_execution_engine2 e;
+	struct drm_xe_query_oa_units *qoa = xe_oa_units(drm_fd);
 
-		e.class = perf_oa_groups[child].ci->engine_class;
-		e.instance = perf_oa_groups[child].ci->engine_instance;
+	igt_fork(child, qoa->num_oa_units) {
+		struct drm_xe_engine_class_instance *hwe = oa_unit_engine(drm_fd, child);
 
-		test_blocking(40 * 1000 * 1000, false, 5 * 1000 * 1000, &e);
+		/* No OAM support yet */
+		if (nth_oa_unit(drm_fd, child)->oa_unit_type != DRM_XE_OA_UNIT_TYPE_OAG)
+			exit(0);
+
+		test_blocking(40 * 1000 * 1000, false, 5 * 1000 * 1000, hwe);
 	}
 	igt_waitchildren();
 }
@@ -4993,7 +4789,7 @@ static void *map_oa_buffer(u32 *size)
 	return vaddr;
 }
 
-static void invalid_param_map_oa_buffer(const struct intel_execution_engine2 *e)
+static void invalid_param_map_oa_buffer(const struct drm_xe_engine_class_instance *hwe)
 {
 	void *oa_vaddr = NULL;
 
@@ -5029,7 +4825,7 @@ static void unprivileged_try_to_map_oa_buffer(void)
 	igt_assert_eq(errno, EACCES);
 }
 
-static void unprivileged_map_oa_buffer(const struct intel_execution_engine2 *e)
+static void unprivileged_map_oa_buffer(const struct drm_xe_engine_class_instance *hwe)
 {
 	igt_fork(child, 1) {
 		igt_drop_root();
@@ -5063,7 +4859,7 @@ static void try_invalid_access(void *vaddr)
 	signal(SIGSEGV, old_sigsegv);
 }
 
-static void map_oa_buffer_unprivilege_access(const struct intel_execution_engine2 *e)
+static void map_oa_buffer_unprivilege_access(const struct drm_xe_engine_class_instance *hwe)
 {
 	void *vaddr;
 	uint32_t size;
@@ -5079,7 +4875,7 @@ static void map_oa_buffer_unprivilege_access(const struct intel_execution_engine
 	munmap(vaddr, size);
 }
 
-static void map_oa_buffer_forked_access(const struct intel_execution_engine2 *e)
+static void map_oa_buffer_forked_access(const struct drm_xe_engine_class_instance *hwe)
 {
 	void *vaddr;
 	uint32_t size;
@@ -5095,9 +4891,9 @@ static void map_oa_buffer_forked_access(const struct intel_execution_engine2 *e)
 }
 
 static void check_reports(void *oa_vaddr, uint32_t oa_size,
-			  const struct intel_execution_engine2 *e)
+			  const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = test_set->perf_oa_format;
 	struct oa_format format = get_oa_format(fmt);
 	size_t report_words = format.size >> 2;
@@ -5119,7 +4915,7 @@ static void check_reports(void *oa_vaddr, uint32_t oa_size,
 	igt_assert(timer_reports >= 3);
 }
 
-static void check_reports_from_mapped_buffer(const struct intel_execution_engine2 *e)
+static void check_reports_from_mapped_buffer(const struct drm_xe_engine_class_instance *hwe)
 {
 	void *vaddr;
 	uint32_t size;
@@ -5129,12 +4925,12 @@ static void check_reports_from_mapped_buffer(const struct intel_execution_engine
 
 	/* wait for approx 100 reports */
 	usleep(100 * period_us);
-	check_reports(vaddr, size, e);
+	check_reports(vaddr, size, hwe);
 
 	munmap(vaddr, size);
 }
 
-static void closed_fd_and_unmapped_access(const struct intel_execution_engine2 *e)
+static void closed_fd_and_unmapped_access(const struct drm_xe_engine_class_instance *hwe)
 {
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
@@ -5157,7 +4953,7 @@ static void closed_fd_and_unmapped_access(const struct intel_execution_engine2 *
 	vaddr = map_oa_buffer(&size);
 
 	usleep(100 * period_us);
-	check_reports(vaddr, size, e);
+	check_reports(vaddr, size, hwe);
 
 	munmap(vaddr, size);
 	__perf_close(stream_fd);
@@ -5165,18 +4961,18 @@ static void closed_fd_and_unmapped_access(const struct intel_execution_engine2 *
 	try_invalid_access(vaddr);
 }
 
-typedef void (*map_oa_buffer_test_t)(const struct intel_execution_engine2 *e);
+typedef void (*map_oa_buffer_test_t)(const struct drm_xe_engine_class_instance *hwe);
 static void test_mapped_oa_buffer(map_oa_buffer_test_t test_with_fd_open,
-				  const struct intel_execution_engine2 *e)
+				  const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(e);
+	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
 		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(test_set->perf_oa_format),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
-		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, e->instance,
+		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
@@ -5186,16 +4982,60 @@ static void test_mapped_oa_buffer(map_oa_buffer_test_t test_with_fd_open,
 	stream_fd = __perf_open(drm_fd, &param, false);
 
 	igt_assert(test_with_fd_open);
-	test_with_fd_open(e);
+	test_with_fd_open(hwe);
 
 	__perf_close(stream_fd);
 }
 
+static const char *xe_engine_class_name(uint32_t engine_class)
+{
+	switch (engine_class) {
+		case DRM_XE_ENGINE_CLASS_RENDER:
+			return "rcs";
+		case DRM_XE_ENGINE_CLASS_COPY:
+			return "bcs";
+		case DRM_XE_ENGINE_CLASS_VIDEO_DECODE:
+			return "vcs";
+		case DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE:
+			return "vecs";
+		case DRM_XE_ENGINE_CLASS_COMPUTE:
+			return "ccs";
+		default:
+			igt_warn("Engine class 0x%x unknown\n", engine_class);
+			return "unknown";
+	}
+}
+
+#define __for_one_hwe_in_each_oa_unit(hwe) \
+	for (int m = 0; !m || hwe; m++) \
+		for_each_if(hwe = oa_unit_engine(drm_fd, m)) \
+			igt_dynamic_f("%s-%d", xe_engine_class_name(hwe->engine_class), \
+				      hwe->engine_instance)
+
+/* Only OAG (not OAM) is currently supported */
+#define __for_one_hwe_in_oag(hwe) \
+	if ((hwe = oa_unit_engine(drm_fd, 0))) \
+		igt_dynamic_f("%s-%d", xe_engine_class_name(hwe->engine_class), \
+			      hwe->engine_instance)
+
+#define __for_one_render_engine_0(hwe) \
+	xe_for_each_engine(drm_fd, hwe) \
+		if (hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER) \
+			break; \
+	for_each_if(hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER) \
+		igt_dynamic_f("rcs-%d", hwe->engine_instance)
+
+#define __for_one_render_engine(hwe)	      \
+	for (int m = 0, done = 0; !done; m++) \
+		for_each_if(m < xe_number_engines(drm_fd) && \
+			    (hwe = &xe_engine(drm_fd, m)->instance) && \
+			    hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER && \
+			    (done = 1)) \
+			igt_dynamic_f("rcs-%d", hwe->engine_instance)
+
 igt_main
 {
-	const intel_ctx_t *ctx = NULL;
-	const struct intel_execution_engine2 *e;
-	struct drm_xe_engine_class_instance *hwe;
+	struct drm_xe_engine_class_instance *hwe = NULL;
 
 	igt_fixture {
 		struct stat sb;
@@ -5206,7 +5046,7 @@ igt_main
 		 * stat the files.
 		 */
 		drm_load_module(DRIVER_XE);
-
+		srandom(time(NULL));
 		igt_require(!stat("/proc/sys/dev/xe/perf_stream_paranoid", &sb));
 	}
 
@@ -5230,17 +5070,10 @@ igt_main
 
 		igt_require(init_sys_info());
 
-		if (!is_xe_device(drm_fd)) {
-			ctx = intel_ctx_create_all_physical(drm_fd);
-			set_default_engine(ctx);
-		}
-
 		write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
 		if (!xe_relax_checks(drm_fd))
 			gt_max_freq_mhz = sysfs_read(RPS_RP0_FREQ_MHZ);
-		perf_oa_groups = get_engine_groups(drm_fd, &num_perf_oa_groups);
-		igt_assert(perf_oa_groups && num_perf_oa_groups);
 
 		if (has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0))
 			render_copy = igt_get_render_copyfunc(devid);
@@ -5259,8 +5092,8 @@ igt_main
 		test_missing_sample_flags();
 
 	igt_subtest_with_dynamic("oa-formats")
-		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-			test_oa_formats(e);
+		__for_one_render_engine(hwe)
+			test_oa_formats(hwe);
 
 	igt_subtest("invalid-oa-exponent")
 		test_invalid_oa_exponent();
@@ -5269,19 +5102,19 @@ igt_main
 		test_low_oa_exponent_permissions();
 	}
 	igt_subtest_with_dynamic("oa-exponents")
-		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-			test_oa_exponents(e);
+		__for_one_hwe_in_oag(hwe)
+			test_oa_exponents(hwe);
 
 	igt_subtest_with_dynamic("buffer-fill")
-		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-			test_buffer_fill(e);
+		__for_one_hwe_in_oag(hwe)
+			test_buffer_fill(hwe);
 
 	igt_describe("Test that reason field in OA reports is never 0 on Gen8+");
 	igt_subtest_with_dynamic("non-zero-reason") {
 		/* Reason field is only available on Gen8+ */
 		igt_require(intel_gen(devid) >= 8);
-		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-			test_non_zero_reason(e);
+		__for_one_hwe_in_oag(hwe)
+			test_non_zero_reason(hwe);
 	}
 
 	igt_subtest("disabled-read-error")
@@ -5290,25 +5123,25 @@ igt_main
 		test_non_sampling_read_error();
 
 	igt_subtest_with_dynamic("enable-disable")
-		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-			test_enable_disable(e);
+		__for_one_hwe_in_oag(hwe)
+			test_enable_disable(hwe);
 
 	igt_describe("Test blocking read with default hrtimer frequency");
 	igt_subtest_with_dynamic("blocking") {
-		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
+		__for_one_hwe_in_oag(hwe)
 			test_blocking(40 * 1000 * 1000 /* 40ms oa period */,
 				      false /* set_kernel_hrtimer */,
 				      5 * 1000 * 1000 /* default 5ms/200Hz hrtimer */,
-				      e);
+				      hwe);
 	}
 
 	igt_describe("Test polled read with default hrtimer frequency");
 	igt_subtest_with_dynamic("polling") {
-		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
+		__for_one_hwe_in_oag(hwe)
 			test_polling(40 * 1000 * 1000 /* 40ms oa period */,
 				     false /* set_kernel_hrtimer */,
 				     5 * 1000 * 1000 /* default 5ms/200Hz hrtimer */,
-				     e);
+				     hwe);
 	}
 
 	igt_describe("Test polled read with buffer size smaller than available data");
@@ -5324,67 +5157,32 @@ igt_main
 		igt_fixture igt_require(intel_gen(devid) >= 12);
 
 		igt_describe("Test MI REPORT PERF COUNT for Gen 12");
-		igt_subtest_with_dynamic("gen12-mi-rpc") {
-			const struct intel_execution_engine2 e2 = {};
-
-			xe_for_each_engine(drm_fd, hwe) {
-				if (hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER)
-					break;
-			}
-			igt_dynamic_f("%s", "rcs") {
-				igt_require(hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER);
-				gen12_test_mi_rpc(&e2, hwe);
-			}
-
-			xe_for_each_engine(drm_fd, hwe) {
-				if (hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE)
-					break;
-			}
-			igt_dynamic_f("%s", "ccs") {
-				igt_require(hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE);
-				gen12_test_mi_rpc(&e2, hwe);
-			}
-		}
+		igt_subtest_with_dynamic("gen12-mi-rpc")
+			__for_one_hwe_in_oag(hwe)
+				gen12_test_mi_rpc(hwe);
 
 		igt_describe("Test OA TLB invalidate");
 		igt_subtest_with_dynamic("gen12-oa-tlb-invalidate")
-			__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-				gen12_test_oa_tlb_invalidate(e);
+			__for_one_hwe_in_oag(hwe)
+				gen12_test_oa_tlb_invalidate(hwe);
 
 		igt_describe("Measure performance for a specific context using OAR in Gen 12");
 		igt_subtest_with_dynamic("gen12-unprivileged-single-ctx-counters") {
 			igt_require(has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0));
 			igt_require_f(render_copy, "no render-copy function\n");
 			igt_require(!IS_LUNARLAKE(devid));
-			if (is_xe_device(drm_fd)) {
-				const struct intel_execution_engine2 e2 = {};
-				igt_dynamic_f("%s", "rcs")
-					gen12_test_single_ctx_render_target_writes_a_counter(&e2);
-			} else {
-				__for_each_render_engine(drm_fd, e)
-					gen12_test_single_ctx_render_target_writes_a_counter(e);
-			}
+			__for_one_render_engine(hwe)
+				gen12_test_single_ctx_render_target_writes_a_counter(hwe);
 		}
 	}
-
 	igt_subtest_group {
-		/*
-		 * OAR and OAG use cases can be separately opened only on gen12
-		 * and later, so group-exclusive-stream tests require >= 12.
-		 */
-		igt_describe("Verify exclusivity of perf streams with sample oa option");
-		igt_subtest("gen12-group-exclusive-stream-sample-oa") {
-			igt_require(!is_xe_device(drm_fd));
-			igt_require(intel_gen(devid) >= 12);
-			test_group_exclusive_stream(ctx, true);
-		}
+		igt_describe("Verify exclusivity of oa streams with sample oa option");
+		igt_subtest("gen12-group-exclusive-stream-sample-oa")
+			test_group_exclusive_stream(true);
 
-		igt_describe("Verify exclusivity of perf streams with ctx handle");
-		igt_subtest("gen12-group-exclusive-stream-ctx-handle") {
-			igt_require(!is_xe_device(drm_fd));
-			igt_require(intel_gen(devid) >= 12);
-			test_group_exclusive_stream(ctx, false);
-		}
+		igt_describe("Verify exclusivity of oa streams with exec queue");
+		igt_subtest("gen12-group-exclusive-stream-exec-q")
+			test_group_exclusive_stream(false);
 
 		igt_describe("Verify concurrent reads from OA buffers in different groups");
 		igt_subtest("gen12-group-concurrent-oa-buffer-read")
@@ -5397,8 +5195,8 @@ igt_main
 	igt_describe("Stress tests opening & closing the xe-oa stream in a busy loop");
 	igt_subtest_with_dynamic("stress-open-close") {
 		igt_require(!IS_LUNARLAKE(devid));
-		__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-			test_stress_open_close(e);
+		__for_one_hwe_in_oag(hwe)
+			test_stress_open_close(hwe);
 	}
 
 	igt_subtest("invalid-create-userspace-config")
@@ -5416,33 +5214,33 @@ igt_main
 	igt_subtest_group {
 		igt_describe("Verify mapping of oa buffer");
 		igt_subtest_with_dynamic("map-oa-buffer")
-			__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-				test_mapped_oa_buffer(check_reports_from_mapped_buffer, e);
+			__for_one_hwe_in_oag(hwe)
+				test_mapped_oa_buffer(check_reports_from_mapped_buffer, hwe);
 
 		igt_describe("Verify invalid mappings of oa buffer");
 		igt_subtest_with_dynamic("invalid-map-oa-buffer")
-			__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-				test_mapped_oa_buffer(invalid_param_map_oa_buffer, e);
+			__for_one_hwe_in_oag(hwe)
+				test_mapped_oa_buffer(invalid_param_map_oa_buffer, hwe);
 
 		igt_describe("Verify if non-privileged user can map oa buffer");
 		igt_subtest_with_dynamic("non-privileged-map-oa-buffer")
-			__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-				test_mapped_oa_buffer(unprivileged_map_oa_buffer, e);
+			__for_one_hwe_in_oag(hwe)
+				test_mapped_oa_buffer(unprivileged_map_oa_buffer, hwe);
 
 		igt_describe("Verify if non-privileged user can map oa buffer");
 		igt_subtest_with_dynamic("non-privileged-access-vaddr")
-			__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-				test_mapped_oa_buffer(map_oa_buffer_unprivilege_access, e);
+			__for_one_hwe_in_oag(hwe)
+				test_mapped_oa_buffer(map_oa_buffer_unprivilege_access, hwe);
 
 		igt_describe("Verify that forked access to mapped buffer fails");
 		igt_subtest_with_dynamic("privileged-forked-access-vaddr")
-			__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-				test_mapped_oa_buffer(map_oa_buffer_forked_access, e);
+			__for_one_hwe_in_oag(hwe)
+				test_mapped_oa_buffer(map_oa_buffer_forked_access, hwe);
 
 		igt_describe("Unmap buffer, close fd and try to access");
 		igt_subtest_with_dynamic("closed-fd-and-unmapped-access")
-			__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
-				closed_fd_and_unmapped_access(e);
+			__for_one_hwe_in_oag(hwe)
+				closed_fd_and_unmapped_access(hwe);
 	}
 
 	igt_subtest_group {
@@ -5451,52 +5249,15 @@ igt_main
 		}
 
 		igt_describe("Verify that OA registers are whitelisted");
-		igt_subtest_with_dynamic("oa-regs-whitelisted") {
-			const struct intel_execution_engine2 e2 = {};
-
-			xe_for_each_engine(drm_fd, hwe) {
-				if (hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER)
-					break;
-			}
-			igt_dynamic_f("%s", "rcs") {
-				igt_require(hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER);
-				test_oa_regs_whitelist(&e2, hwe);
-			}
-
-			xe_for_each_engine(drm_fd, hwe) {
-				if (hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE)
-					break;
-			}
-			igt_dynamic_f("%s", "ccs") {
-				igt_require(hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE);
-				test_oa_regs_whitelist(&e2, hwe);
-			}
-		}
+		igt_subtest_with_dynamic("oa-regs-whitelisted")
+			__for_one_hwe_in_oag(hwe)
+				test_oa_regs_whitelist(hwe);
 
 		igt_describe("Verify mmio triggered reports");
 		igt_subtest_with_dynamic("mmio-triggered-reports") {
 			igt_require(HAS_OA_MMIO_TRIGGER(devid));
-
-			/* Seeing engine memory cat error with this on LNL */
-			if (!IS_LUNARLAKE(devid)) {
-				xe_for_each_engine(drm_fd, hwe) {
-					if (hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER)
-						break;
-				}
-				igt_dynamic_f("%s", "rcs") {
-					igt_require(hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER);
-					test_mmio_triggered_reports(hwe);
-				}
-			}
-
-			xe_for_each_engine(drm_fd, hwe) {
-				if (hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE)
-					break;
-			}
-			igt_dynamic_f("%s", "ccs") {
-				igt_require(hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE);
+			__for_one_hwe_in_oag(hwe)
 				test_mmio_triggered_reports(hwe);
-			}
 		}
 	}
 
@@ -5507,10 +5268,6 @@ igt_main
 		if (intel_perf)
 			intel_perf_free(intel_perf);
 
-		if (perf_oa_groups)
-			put_engine_groups(perf_oa_groups, num_perf_oa_groups);
-
-		intel_ctx_destroy(drm_fd, ctx);
 		drm_close_driver(drm_fd);
 	}
 }
