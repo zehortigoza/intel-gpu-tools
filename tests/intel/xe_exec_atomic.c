@@ -124,10 +124,8 @@ igt_main
 	struct drm_xe_engine_class_instance *hwe;
 	int fd;
 
-	igt_fixture {
+	igt_fixture
 		fd = drm_open_driver(DRIVER_XE);
-		xe_device_get(fd);
-	}
 
 	igt_subtest_with_dynamic("basic-dec-all") {
 		xe_for_each_engine(fd, hwe) {
@@ -152,8 +150,8 @@ igt_main
 			uint64_t memreg = all_memory_regions(fd), region;
 
 			xe_for_each_mem_region(fd, memreg, region) {
-
-				igt_skip_on(!has_atomics(fd, region));
+				if (!has_atomics(fd, region))
+					continue;
 
 				igt_dynamic_f("Engine-%s-Instance-%d-Tile-%d-%s-memory",
 					      xe_engine_class_string(hwe->engine_class),
@@ -165,8 +163,6 @@ igt_main
 		}
 	}
 
-	igt_fixture {
-		xe_device_put(fd);
-		close(fd);
-	}
+	igt_fixture
+		drm_close_driver(fd);
 }
