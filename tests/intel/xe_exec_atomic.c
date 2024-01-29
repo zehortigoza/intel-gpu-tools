@@ -112,9 +112,8 @@ static void basic_inst(int fd, int inst_type, struct drm_xe_engine_class_instanc
 
 static bool has_atomics(int fd, uint32_t region)
 {
-	/* System memory atomics on PVC doesn't work */
-	if (region == system_memory(fd) &&
-	    IS_PONTEVECCHIO(intel_get_drm_devid(fd)))
+	/* System memory atomics on dGPU is not functional as of now */
+	if (region == system_memory(fd) && xe_has_vram(fd))
 		return false;
 
 	return true;
@@ -135,8 +134,8 @@ igt_main
 			uint64_t memreg = all_memory_regions(fd), region;
 
 			xe_for_each_mem_region(fd, memreg, region) {
-
-				igt_skip_on(!has_atomics(fd, region));
+				if (!has_atomics(fd, region))
+					continue;
 
 				igt_dynamic_f("Engine-%s-Instance-%d-Tile-%d-%s-memory",
 					      xe_engine_class_string(hwe->engine_class),
