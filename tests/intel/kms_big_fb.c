@@ -189,18 +189,17 @@ static struct intel_buf *init_buf(data_t *data,
 {
 	struct intel_buf *buf;
 	enum intel_driver driver = buf_ops_get_driver(data->bops);
-	uint32_t name, handle, tiling, stride, width, height, bpp, size;
+	uint32_t name, handle, tiling, width, height, bpp, size;
 	uint64_t region = driver == INTEL_DRIVER_XE ?
 				vram_if_possible(data->drm_fd, 0) : -1;
 
 	igt_assert_eq(fb->offsets[0], 0);
 
 	tiling = igt_fb_mod_to_tiling(fb->modifier);
-	stride = fb->strides[0];
 	bpp = fb->plane_bpp[0];
 	size = fb->size;
-	width = stride / (bpp / 8);
-	height = size / stride;
+	width = fb->width;
+	height = fb->height;
 
 	name = gem_flink(data->drm_fd, fb->gem_handle);
 	handle = gem_open(data->drm_fd, name);

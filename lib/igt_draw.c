@@ -75,6 +75,8 @@ struct buf_data {
 	uint32_t handle;
 	uint32_t size;
 	uint32_t stride;
+	int width;
+	int height;
 	int bpp;
 	uint8_t pat_index;
 };
@@ -648,8 +650,8 @@ static struct intel_buf *create_buf(int fd, struct buf_ops *bops,
 	uint64_t region = driver == INTEL_DRIVER_XE ? vram_if_possible(fd, 0) : -1;
 	uint64_t size = from->size;
 
-	width = from->stride / (from->bpp / 8);
-	height = from->size / from->stride;
+	width = from->width;
+	height = from->height;
 	if (driver == INTEL_DRIVER_XE)
 		size = ALIGN(size, xe_get_default_alignment(fd));
 
@@ -686,7 +688,7 @@ static void draw_rect_blt(int fd, struct cmd_data *cmd_data,
 	intel_bb_add_intel_buf(ibb, dst, true);
 
 	if (HAS_4TILE(intel_get_drm_devid(fd))) {
-		int buf_height = buf->size / buf->stride;
+		int buf_height = buf->height;
 
 		switch (buf->bpp) {
 		case 8:
@@ -807,6 +809,8 @@ static void draw_rect_render(int fd, struct cmd_data *cmd_data,
 
 	tmp.stride = rect->w * pixel_size;
 	tmp.bpp = buf->bpp;
+	tmp.width = rect->w;
+	tmp.height = rect->h;
 	if (is_i915_device(fd))
 		draw_rect_mmap_cpu(fd, &tmp, &(struct rect){0, 0, rect->w, rect->h},
 				   I915_TILING_NONE, I915_BIT_6_SWIZZLE_NONE, color);
@@ -834,6 +838,8 @@ static void draw_rect_render(int fd, struct cmd_data *cmd_data,
  * @buf_handle: the handle of the buffer where you're going to draw to
  * @buf_size: the size of the buffer
  * @buf_stride: the stride of the buffer
+ * @buf_width: the width of the buffer
+ * @buf_height: the height of the buffer
  * @tiling: the tiling of the buffer
  * @method: method you're going to use to write to the buffer
  * @rect_x: horizontal position on the buffer where your rectangle starts
@@ -848,6 +854,7 @@ static void draw_rect_render(int fd, struct cmd_data *cmd_data,
  */
 void igt_draw_rect(int fd, struct buf_ops *bops, uint32_t ctx,
 		   uint32_t buf_handle, uint32_t buf_size, uint32_t buf_stride,
+		   int buf_width, int buf_height,
 		   uint32_t tiling, enum igt_draw_method method,
 		   int rect_x, int rect_y, int rect_w, int rect_h,
 		   uint32_t color, int bpp)
@@ -862,6 +869,8 @@ void igt_draw_rect(int fd, struct buf_ops *bops, uint32_t ctx,
 		.handle = buf_handle,
 		.size = buf_size,
 		.stride = buf_stride,
+		.width = buf_width,
+		.height = buf_height,
 		.bpp = bpp,
 		.pat_index = intel_get_pat_idx_uc(fd),
 	};
@@ -925,6 +934,7 @@ void igt_draw_rect_fb(int fd, struct buf_ops *bops,
 		      int rect_w, int rect_h, uint32_t color)
 {
 	igt_draw_rect(fd, bops, ctx, fb->gem_handle, fb->size, fb->strides[0],
+		      fb->width, fb->height,
 		      igt_fb_mod_to_tiling(fb->modifier), method,
 		      rect_x, rect_y, rect_w, rect_h, color,
 		      igt_drm_format_to_bpp(fb->drm_format));

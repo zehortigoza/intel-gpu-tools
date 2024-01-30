@@ -2242,6 +2242,7 @@ static void *busy_thread_func(void *data)
 	while (!busy_thread.stop)
 		igt_draw_rect(drm.fd, drm.bops, 0, busy_thread.handle,
 			      busy_thread.size, busy_thread.stride,
+			      busy_thread.width, busy_thread.height,
 			      busy_thread.tiling, IGT_DRAW_BLT, 0, 0,
 			      busy_thread.width, busy_thread.height,
 			      busy_thread.color, busy_thread.bpp);
