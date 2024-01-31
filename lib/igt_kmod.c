@@ -1121,6 +1121,7 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 	 * perfectly -- seems to be more safe than extracting a test case list
 	 * of unknown length from /dev/kmsg.
 	 */
+	igt_ignore_warn(igt_kmod_unload("kunit", KMOD_REMOVE_FORCE));
 	if (igt_debug_on(igt_kmod_load("kunit",
 				       "filter=module=none filter_action=skip")))
 		return false;
@@ -1158,7 +1159,6 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 	}
 
 	igt_skip_on(kmod_module_remove_module(tst->kmod, KMOD_REMOVE_FORCE));
-	igt_skip_on(igt_kmod_unload("kunit", KMOD_REMOVE_FORCE));
 
 	igt_skip_on_f(err,
 		      "KTAP parser failed while getting a list of test cases\n");
@@ -1192,6 +1192,17 @@ static void __igt_kunit(struct igt_ktest *tst,
 			      t->case_name) {
 
 			if (!modprobe.thread) {
+				/*
+				 * Since we have successfully loaded the kunit
+				 * base module with non-default parameters in
+				 * order to get a list of test cases, now we
+				 * have to unload it so it is then automatically
+				 * reloaded with default parameter values when
+				 * we load the test module again for execution.
+				 */
+				igt_skip_on(igt_kmod_unload("kunit",
+							    KMOD_REMOVE_FORCE));
+
 				igt_assert_eq(pthread_mutexattr_init(&attr), 0);
 				igt_assert_eq(pthread_mutexattr_setrobust(&attr,
 							  PTHREAD_MUTEX_ROBUST),
@@ -1356,15 +1367,6 @@ void igt_kunit(const char *module_name, const char *name, const char *opts)
 		igt_skip_on(igt_ktest_init(&tst, module_name));
 		igt_skip_on(igt_ktest_begin(&tst));
 
-		/*
-		 * Since we need to load kunit base module with specific
-		 * options in order to get a list of test cases, make
-		 * sure that the module is not loaded.  However, since
-		 * unload may fail if kunit base module is not loaded,
-		 * ignore any failures, we'll fail later if still loaded.
-		 */
-		igt_ignore_warn(igt_kmod_unload("kunit", KMOD_REMOVE_FORCE));
-
 		igt_assert(igt_list_empty(&tests));
 	}
 
@@ -1395,7 +1397,6 @@ void igt_kunit(const char *module_name, const char *name, const char *opts)
 		kunit_results_free(&tests, &suite_name, &case_name);
 
 		igt_ktest_end(&tst);
-		igt_debug_on(igt_kmod_unload("kunit", KMOD_REMOVE_FORCE));
 	}
 
 	igt_ktest_fini(&tst);
