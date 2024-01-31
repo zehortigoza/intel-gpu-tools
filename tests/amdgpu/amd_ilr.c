@@ -205,10 +205,21 @@ static void test_flow(data_t *data, enum sub_test option)
 			continue;
 		}
 
+		/* igt_amd_output_has_ilr_setting only checks if debugfs
+		 * exist. ilr settings could be all 0s -- not supported.
+		 * IGT needs to check if ilr settings values are supported.
+		 */
+		igt_amd_read_ilr_setting(data->drm_fd, output->name, data->supported_ilr);
+		if (data->supported_ilr[0] == 0)
+			continue;
+
 		igt_info("Testing on output: %s\n", output->name);
 
 		/* Init only if display supports ilr link settings */
 		test_init(data, output);
+
+		/* Disable eDP PSR to avoid timeout when reading CRC */
+		igt_amd_disallow_edp_enter_psr(data->drm_fd, output->name, true);
 
 		mode = igt_output_get_mode(output);
 		igt_assert(mode);
@@ -243,6 +254,9 @@ static void test_flow(data_t *data, enum sub_test option)
 		igt_remove_fb(data->drm_fd, &data->fb);
 
 		test_fini(data);
+
+		/* Enable eDP PSR */
+		igt_amd_disallow_edp_enter_psr(data->drm_fd, output->name, false);
 	}
 
 }
