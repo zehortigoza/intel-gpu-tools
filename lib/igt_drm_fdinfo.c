@@ -239,8 +239,15 @@ __igt_parse_drm_fdinfo(int dir, const char *fd, struct drm_client_fdinfo *info,
 					 strlen("drm-client-id")))) {
 			info->id = atol(v);
 			good++;
-		} else if (!strncmp(l, "drm-engine-", 11) &&
-			   strncmp(l, "drm-engine-capacity-", 20)) {
+		} else if (!strncmp(l, "drm-engine-capacity-", 20)) {
+			idx = parse_engine(l, info,
+					   strlen("drm-engine-capacity-"),
+					   name_map, map_entries, &val);
+			if (idx >= 0) {
+				info->capacity[idx] = val;
+				num_capacity++;
+			}
+		} else if (!strncmp(l, "drm-engine-", 11)) {
 			idx = parse_engine(l, info, strlen("drm-engine-"),
 					   name_map, map_entries, &val);
 			if (idx >= 0) {
@@ -250,14 +257,6 @@ __igt_parse_drm_fdinfo(int dir, const char *fd, struct drm_client_fdinfo *info,
 				info->num_engines++;
 				if (idx > info->last_engine_index)
 					info->last_engine_index = idx;
-			}
-		} else if (!strncmp(l, "drm-engine-capacity-", 20)) {
-			idx = parse_engine(l, info,
-					   strlen("drm-engine-capacity-"),
-					   name_map, map_entries, &val);
-			if (idx >= 0) {
-				info->capacity[idx] = val;
-				num_capacity++;
 			}
 		} else if (!strncmp(l, "drm-total-", 10)) {
 			idx = parse_region(l, info, strlen("drm-total-"),
