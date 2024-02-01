@@ -954,6 +954,7 @@ test_large_binds(int fd, struct drm_xe_engine_class_instance *eci,
 		.num_syncs = 2,
 		.syncs = to_user_pointer(sync),
 	};
+	size_t bo_size_prefetch, padding;
 	uint64_t addr = 0x1ull << 30, base_addr = 0x1ull << 30;
 	uint32_t vm;
 	uint32_t exec_queues[MAX_N_EXEC_QUEUES];
@@ -975,20 +976,21 @@ test_large_binds(int fd, struct drm_xe_engine_class_instance *eci,
 	igt_assert(n_exec_queues <= MAX_N_EXEC_QUEUES);
 	vm = xe_vm_create(fd, 0, 0);
 
-	bo_size = xe_bb_size(fd, bo_size);
-
 	if (flags & LARGE_BIND_FLAG_USERPTR) {
-		map = aligned_alloc(xe_get_default_alignment(fd), bo_size);
+		bo_size_prefetch = xe_bb_size(fd, bo_size);
+		map = aligned_alloc(xe_get_default_alignment(fd), bo_size_prefetch);
 		igt_assert(map);
 	} else {
 		igt_skip_on(xe_visible_vram_size(fd, 0) && bo_size >
 			    xe_visible_vram_size(fd, 0));
 
-		bo = xe_bo_create(fd, vm, bo_size,
+		bo_size_prefetch = xe_bb_size(fd, bo_size);
+		bo = xe_bo_create(fd, vm, bo_size_prefetch,
 				  vram_if_possible(fd, eci->gt_id),
 				  DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
 		map = xe_bo_map(fd, bo, bo_size);
 	}
+	padding = bo_size_prefetch - bo_size;
 
 	for (i = 0; i < n_exec_queues; i++) {
 		exec_queues[i] = xe_exec_queue_create(fd, vm, eci, 0);
@@ -1001,19 +1003,19 @@ test_large_binds(int fd, struct drm_xe_engine_class_instance *eci,
 			xe_vm_bind_userptr_async(fd, vm, 0, to_user_pointer(map),
 						 addr, bo_size / 2, NULL, 0);
 			xe_vm_bind_userptr_async(fd, vm, 0, to_user_pointer(map) + bo_size / 2,
-						 addr + bo_size / 2, bo_size / 2,
+						 addr + bo_size / 2, bo_size / 2 + padding,
 						 sync, 1);
 		} else {
 			xe_vm_bind_userptr_async(fd, vm, 0, to_user_pointer(map),
-						 addr, bo_size, sync, 1);
+						 addr, bo_size + padding, sync, 1);
 		}
 	} else {
 		if (flags & LARGE_BIND_FLAG_SPLIT) {
 			xe_vm_bind_async(fd, vm, 0, bo, 0, addr, bo_size / 2, NULL, 0);
 			xe_vm_bind_async(fd, vm, 0, bo, bo_size / 2, addr + bo_size / 2,
-					 bo_size / 2, sync, 1);
+					 bo_size / 2 + padding, sync, 1);
 		} else {
-			xe_vm_bind_async(fd, vm, 0, bo, 0, addr, bo_size, sync, 1);
+			xe_vm_bind_async(fd, vm, 0, bo, 0, addr, bo_size + padding, sync, 1);
 		}
 	}
 
@@ -1061,9 +1063,9 @@ test_large_binds(int fd, struct drm_xe_engine_class_instance *eci,
 		xe_vm_unbind_async(fd, vm, 0, 0, base_addr,
 				   bo_size / 2, NULL, 0);
 		xe_vm_unbind_async(fd, vm, 0, 0, base_addr + bo_size / 2,
-				   bo_size / 2, sync, 1);
+				   bo_size / 2 + padding, sync, 1);
 	} else {
-		xe_vm_unbind_async(fd, vm, 0, 0, base_addr, bo_size,
+		xe_vm_unbind_async(fd, vm, 0, 0, base_addr, bo_size + padding,
 				   sync, 1);
 	}
 	igt_assert(syncobj_wait(fd, &sync[0].handle, 1, INT64_MAX, 0, NULL));
