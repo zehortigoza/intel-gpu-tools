@@ -212,6 +212,10 @@ bool blt_block_copy_supports_compression(int fd);
 bool blt_uses_extended_block_copy(int fd);
 
 const char *blt_tiling_name(enum blt_tiling_type tiling);
+uint32_t blt_get_min_stride(uint32_t width, uint32_t bpp,
+			    enum blt_tiling_type tiling);
+uint32_t blt_get_aligned_height(uint32_t height, uint32_t bpp,
+				enum blt_tiling_type tiling);
 
 void blt_copy_init(int fd, struct blt_copy_data *blt);
 
