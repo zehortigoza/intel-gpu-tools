@@ -233,12 +233,13 @@ __igt_parse_drm_fdinfo(int dir, const char *fd, struct drm_client_fdinfo *info,
 		if ((v = find_kv(l, "drm-driver", strlen("drm-driver")))) {
 			strncpy(info->driver, v, sizeof(info->driver) - 1);
 			good++;
-		} else if ((v = find_kv(l, "drm-pdev", strlen("drm-pdev")))) {
-			strncpy(info->pdev, v, sizeof(info->pdev) - 1);
 		}  else if ((v = find_kv(l, "drm-client-id",
 					 strlen("drm-client-id")))) {
 			info->id = atol(v);
 			good++;
+		} else if ((v = find_kv(l, "drm-pdev", strlen("drm-pdev")))) {
+			/* optional */
+			strncpy(info->pdev, v, sizeof(info->pdev) - 1);
 		} else if (!strncmp(l, "drm-engine-capacity-", 20)) {
 			idx = parse_engine(l, info,
 					   strlen("drm-engine-capacity-"),
