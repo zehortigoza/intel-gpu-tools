@@ -343,7 +343,7 @@ int igt_sysfs_get_num_gt(int device)
 
 /**
  * igt_sysfs_write:
- * @dir: directory for the device from igt_sysfs_open()
+ * @dir: sysfs directory
  * @attr: name of the sysfs node to open
  * @data: the block to write from
  * @len: the length to write
@@ -369,7 +369,7 @@ int igt_sysfs_write(int dir, const char *attr, const void *data, int len)
 
 /**
  * igt_sysfs_read:
- * @dir: directory for the device from igt_sysfs_open()
+ * @dir: sysfs directory
  * @attr: name of the sysfs node to open
  * @data: the block to read into
  * @len: the maximum length to read
@@ -395,7 +395,7 @@ int igt_sysfs_read(int dir, const char *attr, void *data, int len)
 
 /**
  * igt_sysfs_set:
- * @dir: directory for the device from igt_sysfs_open()
+ * @dir: sysfs directory
  * @attr: name of the sysfs node to open
  * @value: the string to write
  *
@@ -412,7 +412,7 @@ bool igt_sysfs_set(int dir, const char *attr, const char *value)
 
 /**
  * igt_sysfs_get:
- * @dir: directory for the device from igt_sysfs_open()
+ * @dir: sysfs directory
  * @attr: name of the sysfs node to open
  *
  * This reads the value from the sysfs file.
