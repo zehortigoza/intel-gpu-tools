@@ -863,7 +863,10 @@ gen8_emit_ps(struct intel_bb *ibb, uint32_t kernel, bool fast_clear) {
 	intel_bb_out(ibb, 0);
 
 	intel_bb_out(ibb, GEN7_3DSTATE_PS | (12-2));
-	intel_bb_out(ibb, kernel);
+	if (AT_LEAST_GEN(intel_get_drm_devid(ibb->fd), 20))
+		intel_bb_out(ibb, kernel | 1);
+	else
+		intel_bb_out(ibb, kernel);
 	intel_bb_out(ibb, 0); /* kernel hi */
 
 	if (fast_clear)
