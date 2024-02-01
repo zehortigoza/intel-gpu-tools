@@ -28,8 +28,14 @@
  * SUBTEST: block-copy-compressed
  * Description: Check block-copy flatccs compressed blit
  *
+ * SUBTEST: block-copy-compressed-inc-dimension
+ * Description: Check block-copy compressed blit for different sizes
+ *
  * SUBTEST: block-copy-uncompressed
  * Description: Check block-copy uncompressed blit
+ *
+ * SUBTEST: block-copy-uncompressed-inc-dimension
+ * Description: Check block-copy uncompressed blit for different sizes
  *
  * SUBTEST: block-multicopy-compressed
  * Description: Check block-multicopy flatccs compressed blit
@@ -73,6 +79,8 @@ struct test_config {
 	bool surfcopy;
 	bool new_ctx;
 	bool suspend_resume;
+	int width_increment;
+	int width_steps;
 };
 
 #define PRINT_SURFACE_INFO(name, obj) do { \
@@ -286,9 +294,17 @@ static int blt_block_copy3(int xe,
 	return ret;
 }
 
+#define CHECK_MIN_WIDTH 2
+#define CHECK_MIN_HEIGHT 2
+#define MIN_EXP_WH(w, h) ((w) >= CHECK_MIN_WIDTH && (h) >= CHECK_MIN_HEIGHT)
+#define CHECK_FROM_WIDTH 256
+#define CHECK_FROM_HEIGHT 256
+#define FROM_EXP_WH(w, h) ((w) >= CHECK_FROM_WIDTH && (h) >= CHECK_FROM_HEIGHT)
+
 static void block_copy(int xe,
 		       intel_ctx_t *ctx,
 		       uint32_t region1, uint32_t region2,
+		       uint32_t width, uint32_t height,
 		       enum blt_tiling_type mid_tiling,
 		       const struct test_config *config)
 {
@@ -301,7 +317,7 @@ static void block_copy(int xe,
 	uint32_t run_id = mid_tiling;
 	uint32_t mid_region = (AT_LEAST_GEN(intel_get_drm_devid(xe), 20) &
 							!xe_has_vram(xe)) ? region1 : region2;
-	uint32_t width = param.width, height = param.height, bb;
+	uint32_t bb;
 	enum blt_compression mid_compression = config->compression;
 	int mid_compression_format = param.compression_format;
 	enum blt_compression_type comp_type = COMPRESSION_TYPE_3D;
@@ -339,9 +355,16 @@ static void block_copy(int xe,
 	blt_block_copy(xe, ctx, NULL, ahnd, &blt, pext);
 	intel_ctx_xe_sync(ctx, true);
 
-	/* We expect mid != src if there's compression */
-	if (mid->compression)
-		igt_assert(memcmp(src->ptr, mid->ptr, src->size) != 0);
+	/*
+	 * We expect mid != src if there's compression. Ignore this for small
+	 * width x height for linear as compression for gradient occurs in the
+	 * middle for bigger sizes. We also ignore 1x1 as this looks same for
+	 * xmajor.
+	 */
+	if (mid->compression && MIN_EXP_WH(width, height)) {
+		if (mid_tiling != T_LINEAR || FROM_EXP_WH(width, height))
+			igt_assert(memcmp(src->ptr, mid->ptr, src->size) != 0);
+	}
 
 	WRITE_PNG(xe, run_id, "mid", &blt.dst, width, height, bpp);
 
@@ -416,6 +439,7 @@ static void block_copy(int xe,
 static void block_multicopy(int xe,
 			    intel_ctx_t *ctx,
 			    uint32_t region1, uint32_t region2,
+			    uint32_t width, uint32_t height,
 			    enum blt_tiling_type mid_tiling,
 			    const struct test_config *config)
 {
@@ -429,7 +453,7 @@ static void block_multicopy(int xe,
 	uint32_t run_id = mid_tiling;
 	uint32_t mid_region = (AT_LEAST_GEN(intel_get_drm_devid(xe), 20) &
 							!xe_has_vram(xe)) ? region1 : region2;
-	uint32_t width = param.width, height = param.height, bb;
+	uint32_t bb;
 	enum blt_compression mid_compression = config->compression;
 	int mid_compression_format = param.compression_format;
 	enum blt_compression_type comp_type = COMPRESSION_TYPE_3D;
@@ -521,6 +545,7 @@ static const struct {
 	void (*copyfn)(int fd,
 		       intel_ctx_t *ctx,
 		       uint32_t region1, uint32_t region2,
+		       uint32_t width, uint32_t height,
 		       enum blt_tiling_type btype,
 		       const struct test_config *config);
 } copyfns[] = {
@@ -528,17 +553,43 @@ static const struct {
 	[BLOCK_MULTICOPY] = { "-multicopy", block_multicopy },
 };
 
+static void single_copy(int xe, const struct test_config *config,
+			int32_t region1, uint32_t region2,
+			uint32_t width, uint32_t height,
+			int tiling, enum copy_func copy_function)
+{
+	struct drm_xe_engine_class_instance inst = {
+		.engine_class = DRM_XE_ENGINE_CLASS_COPY,
+	};
+	uint32_t vm, exec_queue;
+	uint32_t sync_bind, sync_out;
+	intel_ctx_t *ctx;
+
+	vm = xe_vm_create(xe, 0, 0);
+	exec_queue = xe_exec_queue_create(xe, vm, &inst, 0);
+	sync_bind = syncobj_create(xe, 0);
+	sync_out = syncobj_create(xe, 0);
+	ctx = intel_ctx_xe(xe, vm, exec_queue,
+			   0, sync_bind, sync_out);
+
+	copyfns[copy_function].copyfn(xe, ctx,
+				      region1, region2,
+				      width, height,
+				      tiling, config);
+
+	xe_exec_queue_destroy(xe, exec_queue);
+	xe_vm_destroy(xe, vm);
+	syncobj_destroy(xe, sync_bind);
+	syncobj_destroy(xe, sync_out);
+	free(ctx);
+}
+
 static void block_copy_test(int xe,
 			    const struct test_config *config,
 			    struct igt_collection *set,
 			    enum copy_func copy_function)
 {
-	struct drm_xe_engine_class_instance inst = {
-		.engine_class = DRM_XE_ENGINE_CLASS_COPY,
-	};
-	intel_ctx_t *ctx;
 	struct igt_collection *regions;
-	uint32_t vm, exec_queue;
 	int tiling;
 
 	if (config->compression && !blt_block_copy_supports_compression(xe))
@@ -555,6 +606,7 @@ static void block_copy_test(int xe,
 		for_each_variation_r(regions, 2, set) {
 			uint32_t region1, region2;
 			char *regtxt;
+			char testname[256];
 
 			region1 = igt_collection_get_value(regions, 0);
 			region2 = igt_collection_get_value(regions, 1);
@@ -566,30 +618,36 @@ static void block_copy_test(int xe,
 
 			regtxt = xe_memregion_dynamic_subtest_name(xe, regions);
 
-			igt_dynamic_f("%s-%s-compfmt%d-%s%s",
-				      blt_tiling_name(tiling),
-				      config->compression ?
-					      "compressed" : "uncompressed",
-				      param.compression_format, regtxt,
-				      copyfns[copy_function].suffix) {
-				uint32_t sync_bind, sync_out;
+			snprintf(testname, sizeof(testname),
+				 "%s-%s-compfmt%d-%s%s",
+				 blt_tiling_name(tiling),
+				 config->compression ?
+					 "compressed" : "uncompressed",
+				 param.compression_format, regtxt,
+				 copyfns[copy_function].suffix);
 
-				vm = xe_vm_create(xe, 0, 0);
-				exec_queue = xe_exec_queue_create(xe, vm, &inst, 0);
-				sync_bind = syncobj_create(xe, 0);
-				sync_out = syncobj_create(xe, 0);
-				ctx = intel_ctx_xe(xe, vm, exec_queue,
-						   0, sync_bind, sync_out);
+			if (!config->width_increment) {
+				igt_dynamic(testname)
+					single_copy(xe, config, region1, region2,
+						    param.width, param.height,
+						    tiling, copy_function);
+			} else {
+				for (int w = param.width;
+				     w < param.width + config->width_steps;
+				     w += config->width_increment) {
+					snprintf(testname, sizeof(testname),
+						 "%s-%s-compfmt%d-%s%s-%dx%d",
+						 blt_tiling_name(tiling),
+						 config->compression ?
+							 "compressed" : "uncompressed",
+						 param.compression_format, regtxt,
+						 copyfns[copy_function].suffix,
+						 w, w);
+					igt_dynamic(testname)
+						single_copy(xe, config, region1, region2,
+							    w, w, tiling, copy_function);
+				}
 
-				copyfns[copy_function].copyfn(xe, ctx,
-							      region1, region2,
-							      tiling, config);
-
-				xe_exec_queue_destroy(xe, exec_queue);
-				xe_vm_destroy(xe, vm);
-				syncobj_destroy(xe, sync_bind);
-				syncobj_destroy(xe, sync_out);
-				free(ctx);
 			}
 
 			free(regtxt);
@@ -669,9 +727,30 @@ igt_main_args("bf:pst:W:H:", NULL, help_str, opt_handler, NULL)
 		block_copy_test(xe, &config, set, BLOCK_COPY);
 	}
 
+	igt_describe("Check block-copy uncompressed blit with increment width/height");
+	igt_subtest_with_dynamic("block-copy-uncompressed-inc-dimension") {
+		struct test_config config = { .width_increment = 15,
+					      .width_steps = 512 };
+		param.width = 1;
+		param.height = 1;
+
+		block_copy_test(xe, &config, set, BLOCK_COPY);
+	}
+
 	igt_describe("Check block-copy flatccs compressed blit");
 	igt_subtest_with_dynamic("block-copy-compressed") {
 		struct test_config config = { .compression = true };
+
+		block_copy_test(xe, &config, set, BLOCK_COPY);
+	}
+
+	igt_describe("Check block-copy compressed blit with increment width/height");
+	igt_subtest_with_dynamic("block-copy-compressed-inc-dimension") {
+		struct test_config config = { .compression = true,
+					      .width_increment = 15,
+					      .width_steps = 512 };
+		param.width = 1;
+		param.height = 1;
 
 		block_copy_test(xe, &config, set, BLOCK_COPY);
 	}
