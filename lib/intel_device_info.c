@@ -509,6 +509,7 @@ static const struct intel_device_info intel_lunarlake_info = {
 	.graphics_rel = 4,
 	.display_ver = 20,
 	.has_4tile = true,
+	.has_flatccs = true,
 	.is_lunarlake = true,
 	.codename = "lunarlake",
 	.cmds_info = &xe2_cmds_info,
