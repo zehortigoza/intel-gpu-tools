@@ -50,9 +50,9 @@ static struct param {
 	if (param.print_surface_info) \
 		blt_surface_info((name), (obj)); } while (0)
 
-#define WRITE_PNG(fd, id, name, obj, w, h) do { \
+#define WRITE_PNG(fd, id, name, obj, w, h, bpp) do { \
 	if (param.write_png) \
-		blt_surface_to_png((fd), (id), (name), (obj), (w), (h)); } while (0)
+		blt_surface_to_png((fd), (id), (name), (obj), (w), (h), (bpp)); } while (0)
 
 struct blt_fast_copy_data {
 	int i915;
@@ -167,7 +167,7 @@ static void fast_copy_emit(int i915, const intel_ctx_t *ctx,
 	PRINT_SURFACE_INFO("dst", dst);
 
 	blt_surface_fill_rect(i915, src, width, height);
-	WRITE_PNG(i915, mid_tiling, "src", src, width, height);
+	WRITE_PNG(i915, mid_tiling, "src", src, width, height, bpp);
 
 	memset(&blt, 0, sizeof(blt));
 	blt.color_depth = CD_32bit;
@@ -180,8 +180,8 @@ static void fast_copy_emit(int i915, const intel_ctx_t *ctx,
 	fast_copy_one_bb(i915, ctx, e, ahnd, &blt);
 	gem_sync(i915, blt.dst.handle);
 
-	WRITE_PNG(i915, mid_tiling, "mid", &blt.mid, width, height);
-	WRITE_PNG(i915, mid_tiling, "dst", &blt.dst, width, height);
+	WRITE_PNG(i915, mid_tiling, "mid", &blt.mid, width, height, bpp);
+	WRITE_PNG(i915, mid_tiling, "dst", &blt.dst, width, height, bpp);
 
 	result = memcmp(src->ptr, blt.dst.ptr, src->size);
 
@@ -234,8 +234,8 @@ static void fast_copy(int i915, const intel_ctx_t *ctx,
 	blt_fast_copy(i915, ctx, e, ahnd, &blt);
 	gem_sync(i915, mid->handle);
 
-	WRITE_PNG(i915, mid_tiling, "src", &blt.src, width, height);
-	WRITE_PNG(i915, mid_tiling, "mid", &blt.dst, width, height);
+	WRITE_PNG(i915, mid_tiling, "src", &blt.src, width, height, bpp);
+	WRITE_PNG(i915, mid_tiling, "mid", &blt.dst, width, height, bpp);
 
 	blt_copy_init(i915, &blt);
 	blt.color_depth = CD_32bit;
@@ -247,7 +247,7 @@ static void fast_copy(int i915, const intel_ctx_t *ctx,
 	blt_fast_copy(i915, ctx, e, ahnd, &blt);
 	gem_sync(i915, blt.dst.handle);
 
-	WRITE_PNG(i915, mid_tiling, "dst", &blt.dst, width, height);
+	WRITE_PNG(i915, mid_tiling, "dst", &blt.dst, width, height, bpp);
 
 	result = memcmp(src->ptr, blt.dst.ptr, src->size);
 

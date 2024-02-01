@@ -82,9 +82,9 @@ struct test_config {
 	if (param.print_surface_info) \
 		blt_surface_info((name), (obj)); } while (0)
 
-#define WRITE_PNG(fd, id, name, obj, w, h) do { \
+#define WRITE_PNG(fd, id, name, obj, w, h, bpp) do { \
 	if (param.write_png) \
-		blt_surface_to_png((fd), (id), (name), (obj), (w), (h)); } while (0)
+		blt_surface_to_png((fd), (id), (name), (obj), (w), (h), (bpp)); } while (0)
 
 static void surf_copy(int i915,
 		      const intel_ctx_t *ctx,
@@ -98,6 +98,7 @@ static void surf_copy(int i915,
 	struct blt_copy_data blt = {};
 	struct blt_block_copy_data_ext ext = {};
 	struct blt_ctrl_surf_copy_data surf = {};
+	const uint32_t bpp = 32;
 	uint32_t bb1, bb2, ccs, ccs2, *ccsmap, *ccsmap2;
 	uint64_t bb_size, ccssize = mid->size / CCS_RATIO(i915);
 	uint32_t *ccscopy;
@@ -172,7 +173,7 @@ static void surf_copy(int i915,
 	blt_set_batch(&blt.bb, bb2, bb_size, REGION_SMEM);
 	blt_block_copy(i915, ctx, e, ahnd, &blt, &ext);
 	gem_sync(i915, blt.dst.handle);
-	WRITE_PNG(i915, run_id, "corrupted", &blt.dst, dst->x2, dst->y2);
+	WRITE_PNG(i915, run_id, "corrupted", &blt.dst, dst->x2, dst->y2, bpp);
 	result = memcmp(src->ptr, dst->ptr, src->size);
 	igt_assert(result != 0);
 
@@ -182,7 +183,7 @@ static void surf_copy(int i915,
 
 	blt_block_copy(i915, ctx, e, ahnd, &blt, &ext);
 	gem_sync(i915, blt.dst.handle);
-	WRITE_PNG(i915, run_id, "corrected", &blt.dst, dst->x2, dst->y2);
+	WRITE_PNG(i915, run_id, "corrected", &blt.dst, dst->x2, dst->y2, bpp);
 	result = memcmp(src->ptr, dst->ptr, src->size);
 	if (result)
 		blt_dump_corruption_info_32b(src, dst);
@@ -346,7 +347,7 @@ static void block_copy(int i915,
 	PRINT_SURFACE_INFO("dst", dst);
 
 	blt_surface_fill_rect(i915, src, width, height);
-	WRITE_PNG(i915, run_id, "src", src, width, height);
+	WRITE_PNG(i915, run_id, "src", src, width, height, bpp);
 
 	blt.color_depth = CD_32bit;
 	blt.print_bb = param.print_bb;
@@ -363,7 +364,7 @@ static void block_copy(int i915,
 	if (mid->compression)
 		igt_assert(memcmp(src->ptr, mid->ptr, src->size) != 0);
 
-	WRITE_PNG(i915, run_id, "mid", &blt.dst, width, height);
+	WRITE_PNG(i915, run_id, "mid", &blt.dst, width, height, bpp);
 
 	if (config->surfcopy && pext) {
 		const intel_ctx_t *surf_ctx = ctx;
@@ -408,7 +409,7 @@ static void block_copy(int i915,
 	blt_set_batch(&blt.bb, bb, bb_size, region1);
 	blt_block_copy(i915, ctx, e, ahnd, &blt, pext);
 	gem_sync(i915, blt.dst.handle);
-	WRITE_PNG(i915, run_id, "dst", &blt.dst, width, height);
+	WRITE_PNG(i915, run_id, "dst", &blt.dst, width, height, bpp);
 
 	result = memcmp(src->ptr, blt.dst.ptr, src->size);
 
@@ -491,11 +492,11 @@ static void block_multicopy(int i915,
 	blt_block_copy3(i915, ctx, e, ahnd, &blt3, pext3);
 	gem_sync(i915, blt3.final.handle);
 
-	WRITE_PNG(i915, run_id, "src", &blt3.src, width, height);
+	WRITE_PNG(i915, run_id, "src", &blt3.src, width, height, bpp);
 	if (!config->inplace)
-		WRITE_PNG(i915, run_id, "mid", &blt3.mid, width, height);
-	WRITE_PNG(i915, run_id, "dst", &blt3.dst, width, height);
-	WRITE_PNG(i915, run_id, "final", &blt3.final, width, height);
+		WRITE_PNG(i915, run_id, "mid", &blt3.mid, width, height, bpp);
+	WRITE_PNG(i915, run_id, "dst", &blt3.dst, width, height, bpp);
+	WRITE_PNG(i915, run_id, "final", &blt3.final, width, height, bpp);
 
 	result = memcmp(src->ptr, blt3.final.ptr, src->size);
 

@@ -79,9 +79,9 @@ struct test_config {
 	if (param.print_surface_info) \
 		blt_surface_info((name), (obj)); } while (0)
 
-#define WRITE_PNG(fd, id, name, obj, w, h) do { \
+#define WRITE_PNG(fd, id, name, obj, w, h, bpp) do { \
 	if (param.write_png) \
-		blt_surface_to_png((fd), (id), (name), (obj), (w), (h)); } while (0)
+		blt_surface_to_png((fd), (id), (name), (obj), (w), (h), (bpp)); } while (0)
 
 static void surf_copy(int xe,
 		      intel_ctx_t *ctx,
@@ -94,6 +94,7 @@ static void surf_copy(int xe,
 	struct blt_copy_data blt = {};
 	struct blt_block_copy_data_ext ext = {};
 	struct blt_ctrl_surf_copy_data surf = {};
+	const uint32_t bpp = 32;
 	uint32_t bb1, bb2, ccs, ccs2, *ccsmap, *ccsmap2;
 	uint64_t bb_size, ccssize = mid->size / CCS_RATIO(xe);
 	uint64_t ccs_bo_size = xe_get_default_alignment(xe);
@@ -179,7 +180,7 @@ static void surf_copy(int xe,
 	blt_set_batch(&blt.bb, bb2, bb_size, sysmem);
 	blt_block_copy(xe, ctx, NULL, ahnd, &blt, &ext);
 	intel_ctx_xe_sync(ctx, true);
-	WRITE_PNG(xe, run_id, "corrupted", &blt.dst, dst->x2, dst->y2);
+	WRITE_PNG(xe, run_id, "corrupted", &blt.dst, dst->x2, dst->y2, bpp);
 	result = memcmp(src->ptr, dst->ptr, src->size);
 	igt_assert(result != 0);
 
@@ -189,7 +190,7 @@ static void surf_copy(int xe,
 
 	blt_block_copy(xe, ctx, NULL, ahnd, &blt, &ext);
 	intel_ctx_xe_sync(ctx, true);
-	WRITE_PNG(xe, run_id, "corrected", &blt.dst, dst->x2, dst->y2);
+	WRITE_PNG(xe, run_id, "corrected", &blt.dst, dst->x2, dst->y2, bpp);
 	result = memcmp(src->ptr, dst->ptr, src->size);
 	if (result)
 		blt_dump_corruption_info_32b(src, dst);
@@ -326,7 +327,7 @@ static void block_copy(int xe,
 	PRINT_SURFACE_INFO("dst", dst);
 
 	blt_surface_fill_rect(xe, src, width, height);
-	WRITE_PNG(xe, run_id, "src", src, width, height);
+	WRITE_PNG(xe, run_id, "src", src, width, height, bpp);
 
 	blt.color_depth = CD_32bit;
 	blt.print_bb = param.print_bb;
@@ -342,7 +343,7 @@ static void block_copy(int xe,
 	if (mid->compression)
 		igt_assert(memcmp(src->ptr, mid->ptr, src->size) != 0);
 
-	WRITE_PNG(xe, run_id, "mid", &blt.dst, width, height);
+	WRITE_PNG(xe, run_id, "mid", &blt.dst, width, height, bpp);
 
 	if (config->surfcopy && pext) {
 		struct drm_xe_engine_class_instance inst = {
@@ -393,7 +394,7 @@ static void block_copy(int xe,
 	blt_block_copy(xe, ctx, NULL, ahnd, &blt, pext);
 	intel_ctx_xe_sync(ctx, true);
 
-	WRITE_PNG(xe, run_id, "dst", &blt.dst, width, height);
+	WRITE_PNG(xe, run_id, "dst", &blt.dst, width, height, bpp);
 
 	result = memcmp(src->ptr, blt.dst.ptr, src->size);
 
@@ -486,11 +487,11 @@ static void block_multicopy(int xe,
 	blt_block_copy3(xe, ctx, ahnd, &blt3, pext3);
 	intel_ctx_xe_sync(ctx, true);
 
-	WRITE_PNG(xe, run_id, "src", &blt3.src, width, height);
+	WRITE_PNG(xe, run_id, "src", &blt3.src, width, height, bpp);
 	if (!config->inplace)
-		WRITE_PNG(xe, run_id, "mid", &blt3.mid, width, height);
-	WRITE_PNG(xe, run_id, "dst", &blt3.dst, width, height);
-	WRITE_PNG(xe, run_id, "final", &blt3.final, width, height);
+		WRITE_PNG(xe, run_id, "mid", &blt3.mid, width, height, bpp);
+	WRITE_PNG(xe, run_id, "dst", &blt3.dst, width, height, bpp);
+	WRITE_PNG(xe, run_id, "final", &blt3.final, width, height, bpp);
 
 	result = memcmp(src->ptr, blt3.final.ptr, src->size);
 

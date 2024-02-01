@@ -2077,20 +2077,27 @@ void blt_surface_info(const char *info, const struct blt_copy_object *obj)
  * @obj: blitter copy object (@blt_copy_object) to save to png
  * @width: width
  * @height: height
+ * @bpp: bits per pixel
  *
  * Function save surface to png file. Assumes ARGB format where A == 0xff.
  */
 void blt_surface_to_png(int fd, uint32_t run_id, const char *fileid,
 			const struct blt_copy_object *obj,
-			uint32_t width, uint32_t height)
+			uint32_t width, uint32_t height, uint32_t bpp)
 {
 	cairo_surface_t *surface;
 	cairo_status_t ret;
+	uint32_t dump_width = width, dump_height = height;
 	uint8_t *map = (uint8_t *) obj->ptr;
 	int format;
 	int stride = obj->tiling ? obj->pitch * 4 : obj->pitch;
 	char filename[FILENAME_MAX];
 	bool is_xe = is_xe_device(fd);
+
+	if (obj->tiling) {
+		dump_width = obj->pitch;
+		dump_height = blt_get_aligned_height(height, bpp, obj->tiling);
+	}
 
 	snprintf(filename, FILENAME_MAX-1, "%d-%s-%s-%ux%u-%s.png",
 		 run_id, fileid, blt_tiling_name(obj->tiling), width, height,
@@ -2104,8 +2111,8 @@ void blt_surface_to_png(int fd, uint32_t run_id, const char *fileid,
 							obj->size, PROT_READ);
 	}
 	format = CAIRO_FORMAT_RGB24;
-	surface = cairo_image_surface_create_for_data(map,
-						      format, width, height,
+	surface = cairo_image_surface_create_for_data(map, format,
+						      dump_width, dump_height,
 						      stride);
 	ret = cairo_surface_write_to_png(surface, filename);
 	if (ret)

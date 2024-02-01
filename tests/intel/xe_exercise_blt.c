@@ -53,9 +53,9 @@ static struct param {
 	if (param.print_surface_info) \
 		blt_surface_info((name), (obj)); } while (0)
 
-#define WRITE_PNG(fd, id, name, obj, w, h) do { \
+#define WRITE_PNG(fd, id, name, obj, w, h, bpp) do { \
 	if (param.write_png) \
-		blt_surface_to_png((fd), (id), (name), (obj), (w), (h)); } while (0)
+		blt_surface_to_png((fd), (id), (name), (obj), (w), (h), (bpp)); } while (0)
 
 struct blt_fast_copy_data {
 	int xe;
@@ -141,7 +141,7 @@ static void fast_copy_emit(int xe, const intel_ctx_t *ctx,
 	PRINT_SURFACE_INFO("dst", dst);
 
 	blt_surface_fill_rect(xe, src, width, height);
-	WRITE_PNG(xe, mid_tiling, "src", src, width, height);
+	WRITE_PNG(xe, mid_tiling, "src", src, width, height, bpp);
 
 	memset(&blt, 0, sizeof(blt));
 	blt.color_depth = CD_32bit;
@@ -153,8 +153,8 @@ static void fast_copy_emit(int xe, const intel_ctx_t *ctx,
 
 	fast_copy_one_bb(xe, ctx, ahnd, &blt);
 
-	WRITE_PNG(xe, mid_tiling, "mid", &blt.mid, width, height);
-	WRITE_PNG(xe, mid_tiling, "dst", &blt.dst, width, height);
+	WRITE_PNG(xe, mid_tiling, "mid", &blt.mid, width, height, bpp);
+	WRITE_PNG(xe, mid_tiling, "dst", &blt.dst, width, height, bpp);
 
 	result = memcmp(src->ptr, blt.dst.ptr, src->size);
 
@@ -205,8 +205,8 @@ static void fast_copy(int xe, const intel_ctx_t *ctx,
 
 	blt_fast_copy(xe, ctx, NULL, ahnd, &blt);
 
-	WRITE_PNG(xe, mid_tiling, "src", &blt.src, width, height);
-	WRITE_PNG(xe, mid_tiling, "mid", &blt.dst, width, height);
+	WRITE_PNG(xe, mid_tiling, "src", &blt.src, width, height, bpp);
+	WRITE_PNG(xe, mid_tiling, "mid", &blt.dst, width, height, bpp);
 
 	blt_copy_init(xe, &blt);
 	blt.color_depth = CD_32bit;
@@ -217,7 +217,7 @@ static void fast_copy(int xe, const intel_ctx_t *ctx,
 
 	blt_fast_copy(xe, ctx, NULL, ahnd, &blt);
 
-	WRITE_PNG(xe, mid_tiling, "dst", &blt.dst, width, height);
+	WRITE_PNG(xe, mid_tiling, "dst", &blt.dst, width, height, bpp);
 
 	result = memcmp(src->ptr, blt.dst.ptr, src->size);
 
