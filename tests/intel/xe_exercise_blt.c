@@ -25,6 +25,10 @@
  *   Check fast-copy blit
  *   blitter
  *
+ * SUBTEST: fast-copy-inc-dimension
+ * Description:
+ *   Check fast-copy blit with sizes from small to large
+ *
  * SUBTEST: fast-copy-emit
  * Description:
  *   Check multiple fast-copy in one batch
@@ -40,6 +44,8 @@ static struct param {
 	bool print_surface_info;
 	int width;
 	int height;
+	int width_increment;
+	int width_steps;
 } param = {
 	.tiling = -1,
 	.write_png = false,
@@ -111,6 +117,7 @@ static int fast_copy_one_bb(int xe,
 }
 
 static void fast_copy_emit(int xe, const intel_ctx_t *ctx,
+			   uint32_t width, uint32_t height,
 			   uint32_t region1, uint32_t region2,
 			   enum blt_tiling_type mid_tiling)
 {
@@ -122,7 +129,7 @@ static void fast_copy_emit(int xe, const intel_ctx_t *ctx,
 	uint64_t ahnd = intel_allocator_open_full(xe, ctx->vm, 0, 0,
 						  INTEL_ALLOCATOR_SIMPLE,
 						  ALLOC_STRATEGY_LOW_TO_HIGH, 0);
-	uint32_t bb, width = param.width, height = param.height;
+	uint32_t bb;
 	int result;
 
 	bb = xe_bo_create(xe, 0, bb_size, region1, 0);
@@ -170,6 +177,7 @@ static void fast_copy_emit(int xe, const intel_ctx_t *ctx,
 }
 
 static void fast_copy(int xe, const intel_ctx_t *ctx,
+		      uint32_t width, uint32_t height,
 		      uint32_t region1, uint32_t region2,
 		      enum blt_tiling_type mid_tiling)
 {
@@ -181,7 +189,6 @@ static void fast_copy(int xe, const intel_ctx_t *ctx,
 						  INTEL_ALLOCATOR_SIMPLE,
 						  ALLOC_STRATEGY_LOW_TO_HIGH, 0);
 	uint32_t bb;
-	uint32_t width = param.width, height = param.height;
 	int result;
 
 	bb = xe_bo_create(xe, 0, bb_size, region1, 0);
@@ -241,14 +248,20 @@ enum fast_copy_func {
 };
 
 static char
-	*full_subtest_str(char *regtxt, enum blt_tiling_type tiling,
+	*full_subtest_str(char *regtxt, uint32_t width, uint32_t height,
+			  enum blt_tiling_type tiling,
 			  enum fast_copy_func func)
 {
 	char *name;
 	uint32_t len;
 
-	len = asprintf(&name, "%s-%s%s", blt_tiling_name(tiling), regtxt,
-		       func == FAST_COPY_EMIT ? "-emit" : "");
+	if (!width || !height)
+		len = asprintf(&name, "%s-%s%s", blt_tiling_name(tiling), regtxt,
+			       func == FAST_COPY_EMIT ? "-emit" : "");
+	else
+		len = asprintf(&name, "%s-%s%s-%ux%u", blt_tiling_name(tiling), regtxt,
+			       func == FAST_COPY_EMIT ? "-emit" : "",
+			       width, height);
 
 	igt_assert_f(len >= 0, "asprintf failed!\n");
 
@@ -264,6 +277,7 @@ static void fast_copy_test(int xe,
 	};
 	struct igt_collection *regions;
 	void (*copy_func)(int xe, const intel_ctx_t *ctx,
+			  uint32_t width, uint32_t height,
 			  uint32_t r1, uint32_t r2, enum blt_tiling_type tiling);
 	intel_ctx_t *ctx;
 	int tiling;
@@ -286,16 +300,32 @@ static void fast_copy_test(int xe,
 
 			copy_func = (func == FAST_COPY) ? fast_copy : fast_copy_emit;
 			regtxt = xe_memregion_dynamic_subtest_name(xe, regions);
-			test_name = full_subtest_str(regtxt, tiling, func);
 
-			igt_dynamic_f("%s", test_name) {
-				copy_func(xe, ctx,
-					  region1, region2,
-					  tiling);
+			if (!param.width_increment) {
+				test_name = full_subtest_str(regtxt, 0, 0, tiling, func);
+				igt_dynamic_f("%s", test_name) {
+					copy_func(xe, ctx,
+						  param.width, param.height,
+						  region1, region2,
+						  tiling);
+				}
+				free(test_name);
+			} else {
+				for (int w = param.width;
+				     w < param.width + param.width_steps;
+				     w += param.width_increment) {
+					test_name = full_subtest_str(regtxt, w, w, tiling, func);
+					igt_dynamic_f("%s", test_name) {
+						copy_func(xe, ctx,
+							  w, w,
+							  region1, region2,
+							  tiling);
+					}
+					free(test_name);
+				}
 			}
 
 			free(regtxt);
-			free(test_name);
 			xe_exec_queue_destroy(xe, exec_queue);
 			xe_vm_destroy(xe, vm);
 			free(ctx);
@@ -364,6 +394,16 @@ igt_main_args("b:pst:W:H:", NULL, help_str, opt_handler, NULL)
 
 	igt_describe("Check fast-copy blit");
 	igt_subtest_with_dynamic("fast-copy") {
+		fast_copy_test(xe, set, FAST_COPY);
+	}
+
+	igt_describe("Check fast-copy with increment width/height");
+	igt_subtest_with_dynamic("fast-copy-inc-dimension") {
+		param.width = 1;
+		param.height = 1;
+		param.width_increment = 15;
+		param.width_steps = 512;
+
 		fast_copy_test(xe, set, FAST_COPY);
 	}
 
