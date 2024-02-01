@@ -1049,6 +1049,7 @@ igt_main_args("V", NULL, help_str, opt_handler, NULL)
 
 	igt_subtest_with_dynamic("pat-index-xe2") {
 		igt_require(intel_get_device_info(dev_id)->graphics_ver >= 20);
+		igt_assert(HAS_FLATCCS(dev_id));
 		subtest_pat_index_modes_with_regions(fd, xe2_pat_index_modes,
 						     ARRAY_SIZE(xe2_pat_index_modes));
 	}
