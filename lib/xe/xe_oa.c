@@ -714,7 +714,7 @@ load_metric_set_config(struct intel_perf_metric_set *metric_set, int drm_fd)
 	memcpy(regs, metric_set->flex_regs, 2 * metric_set->n_flex_regs * sizeof(u32));
 	regs += 2 * metric_set->n_flex_regs * sizeof(u32);
 
-	ret = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_ADD_CONFIG, &config);
+	ret = xe_perf_ioctl(drm_fd, DRM_XE_PERF_OP_ADD_CONFIG, &config);
 	if (ret >= 0)
 		metric_set->perf_oa_metrics_set = ret;
 

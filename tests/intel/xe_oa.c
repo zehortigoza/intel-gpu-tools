@@ -22,7 +22,6 @@
 #include "drm.h"
 #include "igt.h"
 #include "igt_device.h"
-#include "igt_perf.h"
 #include "igt_sysfs.h"
 #include "xe/xe_ioctl.h"
 #include "xe/xe_query.h"
@@ -61,42 +60,30 @@
  * SUBTEST: enable-disable
  * Feature: oa
  *
- * SUBTEST: gen12-group-concurrent-oa-buffer-read
- * Description: Verify concurrent reads from OA buffers in different groups
+ * SUBTEST: oa-unit-concurrent-oa-buffer-read
+ * Description: Verify concurrent reads from OA buffers in different oa units
  * Feature: oa
  *
- * SUBTEST: gen12-group-exclusive-stream-ctx-handle
+ * SUBTEST: oa-unit-exclusive-stream-ctx-handle
  * Description: Verify exclusivity of perf streams with ctx handle
  * Feature: oa
  *
- * SUBTEST: gen12-group-exclusive-stream-sample-oa
+ * SUBTEST: oa-unit-exclusive-stream-sample-oa
  * Description: Verify exclusivity of perf streams with sample oa option
  * Feature: oa
  *
- * SUBTEST: gen12-invalid-class-instance
- * Description: Verify invalid class instance
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: gen12-mi-rpc
- * Description: Test MI REPORT PERF COUNT for Gen 12
+ * SUBTEST: mi-rpc
+ * Description: Test MI REPORT PERF COUNT
  * Feature: oa
  *
- * SUBTEST: gen12-oa-tlb-invalidate
+ * SUBTEST: oa-tlb-invalidate
  * Description: Test OA TLB invalidate
  * Feature: xe streaming interface, oa
  * Test category: Perf
  *
- * SUBTEST: gen12-unprivileged-single-ctx-counters
- * Description: Measure performance for a specific context using OAR in Gen 12
+ * SUBTEST: unprivileged-single-ctx-counters
+ * Description: Measure performance for a specific context using OAR
  * Feature: oa
- *
- * SUBTEST: gen12-unprivileged-one-ctx
- * Description: Measure performance for a specific context using OAR in Gen 12
- * Feature: oa
- *
- * SUBTEST: gen8-unprivileged-single-ctx-counters
- * Feature: oa, obsolete
  *
  * SUBTEST: xe-ref-count
  * Description: Test the xe perf metrics streaming interface
@@ -155,7 +142,7 @@
  * Feature: oa
  *
  * SUBTEST: non-zero-reason
- * Description: Test that reason field in OA reports is never 0 on Gen8+
+ * Description: Test that reason field in OA reports is never 0
  * Feature: xe streaming interface, oa
  * Test category: Perf
  *
@@ -235,17 +222,14 @@
  * Feature: oa
  */
 
-IGT_TEST_DESCRIPTION("Test the xe perf metrics streaming interface");
+IGT_TEST_DESCRIPTION("Test the xe oa metrics streaming interface");
 
-#define xe_relax_checks(drm_fd) (IS_LUNARLAKE(xe_dev_id(drm_fd)))
+#define OASTATUS_MMIO_TRG_Q_FULL	REG_BIT(6)
+#define OASTATUS_COUNTER_OVERFLOW	REG_BIT(2)
+#define OASTATUS_BUFFER_OVERFLOW	REG_BIT(1)
+#define OASTATUS_REPORT_LOST		REG_BIT(0)
 
-#define  OASTATUS_MMIO_TRG_Q_FULL	REG_BIT(6)
-#define  OASTATUS_COUNTER_OVERFLOW	REG_BIT(2)
-#define  OASTATUS_BUFFER_OVERFLOW	REG_BIT(1)
-#define  OASTATUS_REPORT_LOST		REG_BIT(0)
-
-#define GEN6_MI_REPORT_PERF_COUNT ((0x28 << 23) | (3 - 2))
-#define GEN8_MI_REPORT_PERF_COUNT ((0x28 << 23) | (4 - 2))
+#define OA_MI_REPORT_PERF_COUNT		((0x28 << 23) | (4 - 2))
 
 #define OAREPORT_REASON_MASK           0x3f
 #define OAREPORT_REASON_SHIFT          19
@@ -280,11 +264,11 @@ IGT_TEST_DESCRIPTION("Test the xe perf metrics streaming interface");
  */
 #define MMIO_BASE_OFFSET 0x1
 
-#define GEN12_OAG_OASTATUS (0xdafc)
-#define GEN12_OAG_PERF_COUNTER_B(idx) (0xDA94 + 4 * (idx))
-#define GEN12_OAG_OATAILPTR (0xdb04)
-#define  GEN12_OAG_OATAILPTR_MASK 0xffffffc0
-#define GEN12_OAG_OABUFFER (0xdb08)
+#define OAG_OASTATUS (0xdafc)
+#define OAG_PERF_COUNTER_B(idx) (0xDA94 + 4 * (idx))
+#define OAG_OATAILPTR (0xdb04)
+#define OAG_OATAILPTR_MASK 0xffffffc0
+#define OAG_OABUFFER (0xdb08)
 
 #define ADD_PROPS(_head, _tail, _key, _value) \
 	do { \
@@ -536,7 +520,7 @@ static struct oa_format lnl_oa_formats[XE_OA_FORMAT_MAX] = {
 };
 
 /* No A counters currently reserved/undefined for gen8+ so far */
-static bool gen8_undefined_a_counters[45];
+static bool undefined_a_counters[45];
 
 static int drm_fd = -1;
 static int sysfs = -1;
@@ -546,19 +530,10 @@ static uint32_t devid;
 
 struct drm_xe_engine_class_instance default_hwe;
 
-static uint64_t gt_max_freq_mhz = 0;
-static struct intel_perf *intel_perf = NULL;
-static bool *undefined_a_counters;
+static struct intel_perf *intel_perf;
 static uint64_t oa_exp_1_millisec;
 struct intel_mmio_data mmio_data;
-
-static igt_render_copyfunc_t render_copy = NULL;
-static uint64_t (*read_report_ticks)(const uint32_t *report,
-				     enum xe_oa_format_name format);
-static void (*sanity_check_reports)(const uint32_t *oa_report0,
-				    const uint32_t *oa_report1,
-				    enum xe_oa_format_name format);
-
+static igt_render_copyfunc_t render_copy;
 
 static struct intel_perf_metric_set *metric_set(const struct drm_xe_engine_class_instance *hwe);
 #define default_test_set metric_set(&default_hwe)
@@ -696,7 +671,7 @@ __perf_open(int fd, struct drm_xe_oa_open_prop *param, bool prevent_pm)
 		pm_fd = -1;
 	}
 
-	ret = xe_perf_ioctl(fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, param);
+	ret = xe_perf_ioctl(fd, DRM_XE_PERF_OP_STREAM_OPEN, param);
 
 	igt_assert(ret >= 0);
 	errno = 0;
@@ -752,31 +727,16 @@ try_sysfs_read_u64(const char *path, uint64_t *val)
 	return igt_sysfs_scanf(sysfs, path, "%"PRIu64, val) == 1;
 }
 
-static unsigned long
-sysfs_read(enum i915_attr_id id)
+static unsigned long rc6_residency_ms(void)
 {
 	unsigned long value;
 
-	if (is_xe_device(drm_fd)) {
-		switch (id) {
-		case RPS_RP0_FREQ_MHZ:
-			igt_assert(igt_sysfs_scanf(sysfs, "device/tile0/gt0/freq0/rp0_freq", "%lu", &value) == 1);
-			break;
-		case RC6_RESIDENCY_MS:
-			igt_assert(igt_sysfs_scanf(sysfs, "device/tile0/gt0/rc6_residency", "%lu", &value) == 1);
-			break;
-		default:
-			igt_assert(0);
-		}
-	} else {
-		igt_assert(igt_sysfs_rps_scanf(sysfs, id, "%lu", &value) == 1);
-	}
-
+	igt_assert(igt_sysfs_scanf(sysfs, "device/tile0/gt0/gtidle/idle_residency_ms", "%lu", &value) == 1);
 	return value;
 }
 
 static uint64_t
-gen8_read_report_ticks(const uint32_t *report, enum xe_oa_format_name format)
+read_report_ticks(const uint32_t *report, enum xe_oa_format_name format)
 {
 
 	struct oa_format fmt = get_oa_format(format);
@@ -813,7 +773,7 @@ oa_tick_delta(const uint32_t *report1,
 }
 
 static void
-gen8_read_report_clock_ratios(const uint32_t *report,
+read_report_clock_ratios(const uint32_t *report,
 			      uint32_t *slice_freq_mhz,
 			      uint32_t *unslice_freq_mhz)
 {
@@ -827,16 +787,16 @@ gen8_read_report_clock_ratios(const uint32_t *report,
 }
 
 static uint32_t
-gen8_report_reason(const uint32_t *report)
+report_reason(const uint32_t *report)
 {
 	return ((report[0] >> OAREPORT_REASON_SHIFT) &
 		OAREPORT_REASON_MASK);
 }
 
 static const char *
-gen8_read_report_reason(const uint32_t *report)
+read_report_reason(const uint32_t *report)
 {
-	uint32_t reason = gen8_report_reason(report);
+	uint32_t reason = report_reason(report);
 
 	if (reason & (1<<0))
 		return "timer";
@@ -934,7 +894,7 @@ oa_exponent_to_ns(int exponent)
 static bool
 oa_report_is_periodic(uint32_t oa_exponent, const uint32_t *report)
 {
-	if (gen8_report_reason(report) & OAREPORT_REASON_TIMER)
+	if (report_reason(report) & OAREPORT_REASON_TIMER)
 		return true;
 
 	return false;
@@ -1013,7 +973,7 @@ emit_report_perf_count(struct intel_bb *ibb,
 {
 	intel_bb_add_intel_buf(ibb, dst, true);
 
-	intel_bb_out(ibb, GEN8_MI_REPORT_PERF_COUNT);
+	intel_bb_out(ibb, OA_MI_REPORT_PERF_COUNT);
 	intel_bb_emit_reloc(ibb, dst->handle,
 			    I915_GEM_DOMAIN_INSTRUCTION, I915_GEM_DOMAIN_INSTRUCTION,
 			    dst_offset, dst->addr.offset);
@@ -1021,7 +981,7 @@ emit_report_perf_count(struct intel_bb *ibb,
 }
 
 static uint64_t
-gen8_read_40bit_a_counter(const uint32_t *report,
+read_40bit_a_counter(const uint32_t *report,
 			  enum xe_oa_format_name fmt, int a_id)
 {
 	struct oa_format format = get_oa_format(fmt);
@@ -1043,7 +1003,7 @@ xehpsdv_read_64bit_a_counter(const uint32_t *report, enum xe_oa_format_name fmt,
 }
 
 static uint64_t
-gen8_40bit_a_delta(uint64_t value0, uint64_t value1)
+get_40bit_a_delta(uint64_t value0, uint64_t value1)
 {
 	if (value0 > value1)
 		return (1ULL << 40) + value1 - value0;
@@ -1070,10 +1030,10 @@ accumulate_uint40(int a_index,
 		  enum xe_oa_format_name format,
                   uint64_t *delta)
 {
-	uint64_t value0 = gen8_read_40bit_a_counter(report0, format, a_index),
-		 value1 = gen8_read_40bit_a_counter(report1, format, a_index);
+	uint64_t value0 = read_40bit_a_counter(report0, format, a_index),
+		 value1 = read_40bit_a_counter(report1, format, a_index);
 
-	*delta += gen8_40bit_a_delta(value0, value1);
+	*delta += get_40bit_a_delta(value0, value1);
 }
 
 static void
@@ -1172,9 +1132,8 @@ accumulator_print(struct accumulator *accumulator, const char *title)
 
 /* The TestOa metric set is designed so */
 static void
-gen8_sanity_check_test_oa_reports(const uint32_t *oa_report0,
-				  const uint32_t *oa_report1,
-				  enum xe_oa_format_name fmt)
+sanity_check_reports(const uint32_t *oa_report0, const uint32_t *oa_report1,
+		     enum xe_oa_format_name fmt)
 {
 	struct oa_format format = get_oa_format(fmt);
 	uint64_t time_delta = timebase_scale(oa_timestamp_delta(oa_report1,
@@ -1191,8 +1150,8 @@ gen8_sanity_check_test_oa_reports(const uint32_t *oa_report0,
 	uint32_t ref;
 
 	igt_debug("report type: %s->%s\n",
-		  gen8_read_report_reason(oa_report0),
-		  gen8_read_report_reason(oa_report1));
+		  read_report_reason(oa_report0),
+		  read_report_reason(oa_report1));
 
 	freq = time_delta ? (clock_delta * 1000) / time_delta : 0;
 	igt_debug("freq = %"PRIu64"\n", freq);
@@ -1203,9 +1162,9 @@ gen8_sanity_check_test_oa_reports(const uint32_t *oa_report0,
 
 	/* Gen8+ has some 40bit A counters... */
 	for (int j = format.first_a40; j < format.n_a40 + format.first_a40; j++) {
-		uint64_t value0 = gen8_read_40bit_a_counter(oa_report0, fmt, j);
-		uint64_t value1 = gen8_read_40bit_a_counter(oa_report1, fmt, j);
-		uint64_t delta = gen8_40bit_a_delta(value0, value1);
+		uint64_t value0 = read_40bit_a_counter(oa_report0, fmt, j);
+		uint64_t value1 = read_40bit_a_counter(oa_report1, fmt, j);
+		uint64_t delta = get_40bit_a_delta(value0, value1);
 
 		if (undefined_a_counters[j])
 			continue;
@@ -1327,10 +1286,6 @@ init_sys_info(void)
 		  intel_perf->devinfo.timestamp_frequency);
 	igt_assert_neq(intel_perf->devinfo.timestamp_frequency, 0);
 
-	read_report_ticks = gen8_read_report_ticks;
-	sanity_check_reports = gen8_sanity_check_test_oa_reports;
-	undefined_a_counters = gen8_undefined_a_counters;
-
 	intel_perf_load_perf_configs(intel_perf, drm_fd);
 
 	oa_exp_1_millisec = max_oa_exponent_for_period_lte(1000000);
@@ -1339,7 +1294,7 @@ init_sys_info(void)
 }
 
 /* CAP_SYS_ADMIN is required to open system wide metrics, unless the system
- * control parameter dev.i915.perf_stream_paranoid == 0 */
+ * control parameter dev.xe.perf_stream_paranoid == 0 */
 static void
 test_system_wide_paranoid(void)
 {
@@ -1364,8 +1319,7 @@ test_system_wide_paranoid(void)
 
 		igt_drop_root();
 
-		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
-				  &param, EACCES);
+		xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EACCES);
 	}
 
 	igt_waitchildren();
@@ -1419,10 +1373,10 @@ test_invalid_oa_metric_set_id(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 
 	properties[ARRAY_SIZE(properties) - 1] = 0; /* ID 0 is also be reserved as invalid */
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 
 	/* Check that we aren't just seeing false positives... */
 	properties[ARRAY_SIZE(properties) - 1] = default_test_set->perf_oa_metrics_set;
@@ -1431,7 +1385,7 @@ test_invalid_oa_metric_set_id(void)
 
 	/* There's no valid default OA metric set ID... */
 	param.num_properties--;
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 }
 
 static void
@@ -1453,10 +1407,10 @@ test_invalid_oa_format_id(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 
 	properties[ARRAY_SIZE(properties) - 1] = __ff(0); /* ID 0 is also be reserved as invalid */
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 
 	/* Check that we aren't just seeing false positives... */
 	properties[ARRAY_SIZE(properties) - 1] = __ff(default_test_set->perf_oa_format);
@@ -1465,7 +1419,7 @@ test_invalid_oa_format_id(void)
 #if 0 /* Can't do this if we have struct not propoerty key/value pairs */
 	/* There's no valid default OA format... */
 	param.num_properties--;
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, XE_PERF_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, XE_PERF_STREAM_OPEN, &param, EINVAL);
 #endif
 }
 
@@ -1487,7 +1441,7 @@ test_missing_sample_flags(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 }
 
 static void
@@ -1655,15 +1609,15 @@ print_reports(uint32_t *oa_report0, uint32_t *oa_report1, int fmt)
 
 	if (intel_gen(devid) >= 8) {
 		uint32_t slice_freq0, slice_freq1, unslice_freq0, unslice_freq1;
-		const char *reason0 = gen8_read_report_reason(oa_report0);
-		const char *reason1 = gen8_read_report_reason(oa_report1);
+		const char *reason0 = read_report_reason(oa_report0);
+		const char *reason1 = read_report_reason(oa_report1);
 
 		igt_debug("CTX ID: 1st = %"PRIu32", 2nd = %"PRIu32"\n",
 			  oa_report0[2], oa_report1[2]);
 
-		gen8_read_report_clock_ratios(oa_report0,
+		read_report_clock_ratios(oa_report0,
 					      &slice_freq0, &unslice_freq0);
-		gen8_read_report_clock_ratios(oa_report1,
+		read_report_clock_ratios(oa_report1,
 					      &slice_freq1, &unslice_freq1);
 
 		igt_debug("SLICE CLK: 1st = %umhz, 2nd = %umhz, delta = %d\n",
@@ -1678,9 +1632,9 @@ print_reports(uint32_t *oa_report0, uint32_t *oa_report1, int fmt)
 
 	/* Gen8+ has some 40bit A counters... */
 	for (int j = 0; j < format.n_a40; j++) {
-		uint64_t value0 = gen8_read_40bit_a_counter(oa_report0, fmt, j);
-		uint64_t value1 = gen8_read_40bit_a_counter(oa_report1, fmt, j);
-		uint64_t delta = gen8_40bit_a_delta(value0, value1);
+		uint64_t value0 = read_40bit_a_counter(oa_report0, fmt, j);
+		uint64_t value1 = read_40bit_a_counter(oa_report1, fmt, j);
+		uint64_t delta = get_40bit_a_delta(value0, value1);
 
 		if (undefined_a_counters[j])
 			continue;
@@ -1758,9 +1712,9 @@ print_report(uint32_t *report, int fmt)
 
 	if (intel_gen(devid) >= 8) {
 		uint32_t slice_freq, unslice_freq;
-		const char *reason = gen8_read_report_reason(report);
+		const char *reason = read_report_reason(report);
 
-		gen8_read_report_clock_ratios(report, &slice_freq, &unslice_freq);
+		read_report_clock_ratios(report, &slice_freq, &unslice_freq);
 
 		igt_debug("SLICE CLK: %umhz\n", slice_freq);
 		igt_debug("UNSLICE CLK: %umhz\n", unslice_freq);
@@ -1770,7 +1724,7 @@ print_report(uint32_t *report, int fmt)
 
 	/* Gen8+ has some 40bit A counters... */
 	for (int j = 0; j < format.n_a40; j++) {
-		uint64_t value = gen8_read_40bit_a_counter(report, fmt, j);
+		uint64_t value = read_40bit_a_counter(report, fmt, j);
 
 		if (undefined_a_counters[j])
 			continue;
@@ -2120,7 +2074,7 @@ test_oa_exponents(const struct drm_xe_engine_class_instance *hwe)
 /* The OA exponent selects a timestamp counter bit to trigger reports on.
  *
  * With a 64bit timestamp and least significant bit approx == 80ns then the MSB
- * equates to > 40 thousand years and isn't exposed via the i915 perf interface.
+ * equates to > 40 thousand years and isn't exposed via the xe oa interface.
  *
  * The max exponent exposed is expected to be 31, which is still a fairly
  * ridiculous period (>5min) but is the maximum exponent where it's still
@@ -2151,8 +2105,7 @@ test_invalid_oa_exponent(void)
 
 	for (int i = 32; i < 65; i++) {
 		properties[7] = i;
-		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
-				  &param, EINVAL);
+		xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 	}
 }
 
@@ -2189,8 +2142,7 @@ test_low_oa_exponent_permissions(void)
 	igt_fork(child, 1) {
 		igt_drop_root();
 
-		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
-				  &param, EACCES);
+		xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EACCES);
 	}
 
 	igt_waitchildren();
@@ -2213,8 +2165,7 @@ test_low_oa_exponent_permissions(void)
 	igt_fork(child, 1) {
 		igt_drop_root();
 
-		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
-				  &param, EACCES);
+		xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EACCES);
 	}
 
 	igt_waitchildren();
@@ -2679,7 +2630,7 @@ num_valid_reports_captured(struct drm_xe_oa_open_prop *param,
 		for (int offset = 0; offset < ret; offset += format_size) {
 			uint32_t *report = (void *)(buf + offset);
 
-			if (gen8_report_reason(report) & OAREPORT_REASON_TIMER)
+			if (report_reason(report) & OAREPORT_REASON_TIMER)
 				num_reports++;
 		}
 	}
@@ -2693,7 +2644,7 @@ num_valid_reports_captured(struct drm_xe_oa_open_prop *param,
 }
 
 static void
-gen12_test_oa_tlb_invalidate(const struct drm_xe_engine_class_instance *hwe)
+test_oa_tlb_invalidate(const struct drm_xe_engine_class_instance *hwe)
 {
 	int oa_exponent = max_oa_exponent_for_period_lte(30000000);
 	struct intel_perf_metric_set *test_set = metric_set(hwe);
@@ -2798,7 +2749,7 @@ test_buffer_fill(const struct drm_xe_engine_class_instance *hwe)
 		overflow_seen = (oa_status & OASTATUS_BUFFER_OVERFLOW) ? true : false;
 
 		/* Overrun mode is disabled in the kernel for Xe2+ */
-		if (!xe_relax_checks(drm_fd))
+		if (!IS_LUNARLAKE(xe_dev_id(drm_fd)))
 			igt_assert_eq(overflow_seen, true);
 
 		do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_DISABLE, 0);
@@ -3288,7 +3239,7 @@ test_disabled_read_error(void)
 }
 
 static void
-gen12_test_mi_rpc(struct drm_xe_engine_class_instance *hwe)
+test_mi_rpc(struct drm_xe_engine_class_instance *hwe)
 
 {
 	uint64_t fmt = ((IS_DG2(devid) || IS_METEORLAKE(devid)) &&
@@ -3425,7 +3376,7 @@ emit_stall_timestamp_and_rpc(struct intel_bb *ibb,
 	emit_report_perf_count(ibb, dst, report_dst_offset, report_id);
 }
 
-static void gen12_single_ctx_helper(const struct drm_xe_engine_class_instance *hwe)
+static void single_ctx_helper(const struct drm_xe_engine_class_instance *hwe)
 {
 	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = oar_unit_default_format();
@@ -3489,26 +3440,7 @@ static void gen12_single_ctx_helper(const struct drm_xe_engine_class_instance *h
 
 	igt_debug("submitting warm up render_copy\n");
 
-	/* Submit some early, unmeasured, work to the context we want
-	 * to measure to try and catch issues with i915-perf
-	 * initializing the HW context ID for filtering.
-	 *
-	 * We do this because i915-perf single context filtering had
-	 * previously only relied on a hook into context pinning to
-	 * initialize the HW context ID, instead of also trying to
-	 * determine the HW ID while opening the stream, in case it
-	 * has already been pinned.
-	 *
-	 * This wasn't noticed by the previous unit test because we
-	 * were opening the stream while the context hadn't been
-	 * touched or pinned yet and so it worked out correctly to wait
-	 * for the pinning hook.
-	 *
-	 * Now a buggy version of i915-perf will fail to measure
-	 * anything for context0 once this initial render_copy() ends
-	 * up pinning the context since there won't ever be a pinning
-	 * hook callback.
-	 */
+	/* Submit some early, unmeasured, work to the context we want */
 	render_copy(ibb0,
 		    &src[0], 0, 0, width, height,
 		    &dst[0], 0, 0);
@@ -3516,7 +3448,7 @@ static void gen12_single_ctx_helper(const struct drm_xe_engine_class_instance *h
 	/* Initialize the context parameter to the perf open ioctl here */
 	properties[3] = context0_id;
 
-	igt_debug("opening i915-perf stream\n");
+	igt_debug("opening xe oa stream\n");
 	stream_fd = __perf_open(drm_fd, &param, false);
         set_fd_flags(stream_fd, O_CLOEXEC);
 
@@ -3744,7 +3676,7 @@ static void gen12_single_ctx_helper(const struct drm_xe_engine_class_instance *h
 }
 
 static void
-gen12_test_single_ctx_render_target_writes_a_counter(const struct drm_xe_engine_class_instance *hwe)
+test_single_ctx_render_target_writes_a_counter(const struct drm_xe_engine_class_instance *hwe)
 {
 	int child_ret;
 	struct igt_helper_process child = {};
@@ -3759,7 +3691,7 @@ gen12_test_single_ctx_render_target_writes_a_counter(const struct drm_xe_engine_
 
 			igt_drop_root();
 
-			gen12_single_ctx_helper(hwe);
+			single_ctx_helper(hwe);
 
 			drm_close_driver(drm_fd);
 		}
@@ -3767,11 +3699,6 @@ gen12_test_single_ctx_render_target_writes_a_counter(const struct drm_xe_engine_
 		igt_assert(WEXITSTATUS(child_ret) == EAGAIN ||
 			   WEXITSTATUS(child_ret) == 0);
 	} while (WEXITSTATUS(child_ret) == EAGAIN);
-}
-
-static unsigned long rc6_residency_ms(void)
-{
-	return sysfs_read(RC6_RESIDENCY_MS);
 }
 
 static void
@@ -3792,14 +3719,9 @@ test_rc6_disable(void)
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
-	unsigned long rc6_start, rc6_end, rc6_enabled;
-
-	rc6_enabled = 0;
-	igt_sysfs_rps_scanf(sysfs, RC6_ENABLE, "%lu", &rc6_enabled);
-	igt_require(rc6_enabled);
+	unsigned long rc6_start, rc6_end;
 
 	/* Verify rc6 is functional by measuring residency while idle */
-	// gem_quiescent_gpu(drm_fd);
 	rc6_start = rc6_residency_ms();
 	usleep(50000);
 	rc6_end = rc6_residency_ms();
@@ -3814,7 +3736,6 @@ test_rc6_disable(void)
 	igt_assert_eq(rc6_end - rc6_start, 0);
 
 	__perf_close(stream_fd);
-	// gem_quiescent_gpu(drm_fd);
 
 	/* But once OA is closed, we expect the device to sleep again */
 	rc6_start = rc6_residency_ms();
@@ -3863,17 +3784,17 @@ test_stress_open_close(const struct drm_xe_engine_class_instance *hwe)
 	load_helper_fini();
 }
 
-static int __i915_perf_add_config(int fd, struct drm_xe_oa_config *config)
+static int __xe_oa_add_config(int fd, struct drm_xe_oa_config *config)
 {
-	int ret = xe_perf_ioctl(fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_ADD_CONFIG, config);
+	int ret = xe_perf_ioctl(fd, DRM_XE_PERF_OP_ADD_CONFIG, config);
 	if (ret < 0)
 		ret = -errno;
 	return ret;
 }
 
-static int i915_perf_add_config(int fd, struct drm_xe_oa_config *config)
+static int xe_oa_add_config(int fd, struct drm_xe_oa_config *config)
 {
-	int config_id = __i915_perf_add_config(fd, config);
+	int config_id = __xe_oa_add_config(fd, config);
 
 	igt_debug("config_id=%i\n", config_id);
 	igt_assert(config_id > 0);
@@ -3881,16 +3802,15 @@ static int i915_perf_add_config(int fd, struct drm_xe_oa_config *config)
 	return config_id;
 }
 
-static void i915_perf_remove_config(int fd, uint64_t config_id)
+static void xe_oa_remove_config(int fd, uint64_t config_id)
 {
-	igt_assert_eq(xe_perf_ioctl(fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_REMOVE_CONFIG,
-				    &config_id), 0);
+	igt_assert_eq(xe_perf_ioctl(fd, DRM_XE_PERF_OP_REMOVE_CONFIG, &config_id), 0);
 }
 
-static bool has_i915_perf_userspace_config(int fd)
+static bool has_xe_oa_userspace_config(int fd)
 {
 	uint64_t config = 0;
-	int ret = xe_perf_ioctl(fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_REMOVE_CONFIG, &config);
+	int ret = xe_perf_ioctl(fd, DRM_XE_PERF_OP_REMOVE_CONFIG, &config);
 	igt_assert_eq(ret, -1);
 
 	igt_debug("errno=%i\n", errno);
@@ -3910,7 +3830,7 @@ test_invalid_create_userspace_config(void)
 	uint32_t mux_regs[] = { SAMPLE_MUX_REG, 0x0 };
 	uint32_t invalid_mux_regs[] = { 0x12345678 /* invalid register */, 0x0 };
 
-	igt_require(has_i915_perf_userspace_config(drm_fd));
+	igt_require(has_xe_oa_userspace_config(drm_fd));
 
 	memset(&config, 0, sizeof(config));
 
@@ -3919,35 +3839,35 @@ test_invalid_create_userspace_config(void)
 	config.n_regs = 1;
 	config.regs_ptr = to_user_pointer(mux_regs);
 
-	igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EINVAL);
+	igt_assert_eq(__xe_oa_add_config(drm_fd, &config), -EINVAL);
 
 	/* invalid mux_regs */
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
 	config.n_regs = 1;
 	config.regs_ptr = to_user_pointer(invalid_mux_regs);
 
-	igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EINVAL);
+	igt_assert_eq(__xe_oa_add_config(drm_fd, &config), -EINVAL);
 
 	/* empty config */
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
 	config.n_regs = 0;
 	config.regs_ptr = to_user_pointer(mux_regs);
 
-	igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EINVAL);
+	igt_assert_eq(__xe_oa_add_config(drm_fd, &config), -EINVAL);
 
 	/* empty config with null pointer */
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
 	config.n_regs = 1;
 	config.regs_ptr = to_user_pointer(NULL);
 
-	igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EINVAL);
+	igt_assert_eq(__xe_oa_add_config(drm_fd, &config), -EINVAL);
 
 	/* invalid pointer */
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
 	config.n_regs = 42;
 	config.regs_ptr = to_user_pointer((void *) 0xDEADBEEF);
 
-	igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EFAULT);
+	igt_assert_eq(__xe_oa_add_config(drm_fd, &config), -EFAULT);
 }
 
 static void
@@ -3959,13 +3879,13 @@ test_invalid_remove_userspace_config(void)
 	uint64_t config_id, wrong_config_id = 999999999;
 	char path[512];
 
-	igt_require(has_i915_perf_userspace_config(drm_fd));
+	igt_require(has_xe_oa_userspace_config(drm_fd));
 
 	snprintf(path, sizeof(path), "metrics/%s/id", uuid);
 
 	/* Destroy previous configuration if present */
 	if (try_sysfs_read_u64(path, &config_id))
-		i915_perf_remove_config(drm_fd, config_id);
+		xe_oa_remove_config(drm_fd, config_id);
 
 	memset(&config, 0, sizeof(config));
 
@@ -3974,22 +3894,20 @@ test_invalid_remove_userspace_config(void)
 	config.n_regs = 1;
 	config.regs_ptr = to_user_pointer(mux_regs);
 
-	config_id = i915_perf_add_config(drm_fd, &config);
+	config_id = xe_oa_add_config(drm_fd, &config);
 
 	/* Removing configs without permissions should fail. */
 	igt_fork(child, 1) {
 		igt_drop_root();
 
-		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_REMOVE_CONFIG,
-				  &config_id, EACCES);
+		xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_REMOVE_CONFIG, &config_id, EACCES);
 	}
 	igt_waitchildren();
 
 	/* Removing invalid config ID should fail. */
-	xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_REMOVE_CONFIG,
-			  &wrong_config_id, ENOENT);
+	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_REMOVE_CONFIG, &wrong_config_id, ENOENT);
 
-	i915_perf_remove_config(drm_fd, config_id);
+	xe_oa_remove_config(drm_fd, config_id);
 }
 
 static void
@@ -4019,13 +3937,13 @@ test_create_destroy_userspace_config(void)
 	};
 	char path[512];
 
-	igt_require(has_i915_perf_userspace_config(drm_fd));
+	igt_require(has_xe_oa_userspace_config(drm_fd));
 
 	snprintf(path, sizeof(path), "metrics/%s/id", uuid);
 
 	/* Destroy previous configuration if present */
 	if (try_sysfs_read_u64(path, &config_id))
-		i915_perf_remove_config(drm_fd, config_id);
+		xe_oa_remove_config(drm_fd, config_id);
 
 	memset(&config, 0, sizeof(config));
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
@@ -4044,29 +3962,29 @@ test_create_destroy_userspace_config(void)
 	igt_fork(child, 1) {
 		igt_drop_root();
 
-		igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EACCES);
+		igt_assert_eq(__xe_oa_add_config(drm_fd, &config), -EACCES);
 	}
 	igt_waitchildren();
 
 	/* Create a new config */
-	config_id = i915_perf_add_config(drm_fd, &config);
+	config_id = xe_oa_add_config(drm_fd, &config);
 
 	/* Verify that adding the another config with the same uuid fails. */
-	igt_assert_eq(__i915_perf_add_config(drm_fd, &config), -EADDRINUSE);
+	igt_assert_eq(__xe_oa_add_config(drm_fd, &config), -EADDRINUSE);
 
 	/* Try to use the new config */
 	properties[3] = config_id;
 	stream_fd = __perf_open(drm_fd, &param, false);
 
 	/* Verify that destroying the config doesn't yield any error. */
-	i915_perf_remove_config(drm_fd, config_id);
+	xe_oa_remove_config(drm_fd, config_id);
 
 	/* Read the config to verify shouldn't raise any issue. */
-	config_id = i915_perf_add_config(drm_fd, &config);
+	config_id = xe_oa_add_config(drm_fd, &config);
 
 	__perf_close(stream_fd);
 
-	i915_perf_remove_config(drm_fd, config_id);
+	xe_oa_remove_config(drm_fd, config_id);
 }
 
 /* Registers required by userspace. This list should be maintained by
@@ -4096,12 +4014,12 @@ test_whitelisted_registers_userspace_config(void)
 		0xe65c
 	};
 
-	igt_require(has_i915_perf_userspace_config(drm_fd));
+	igt_require(has_xe_oa_userspace_config(drm_fd));
 
 	snprintf(path, sizeof(path), "metrics/%s/id", uuid);
 
 	if (try_sysfs_read_u64(path, &config_id))
-		i915_perf_remove_config(drm_fd, config_id);
+		xe_oa_remove_config(drm_fd, config_id);
 
 	memset(&config, 0, sizeof(config));
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
@@ -4163,19 +4081,19 @@ test_whitelisted_registers_userspace_config(void)
 	config.regs_ptr = (uintptr_t) regs;
 
 	/* Create a new config */
-	ret = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_ADD_CONFIG, &config);
+	ret = xe_perf_ioctl(drm_fd, DRM_XE_PERF_OP_ADD_CONFIG, &config);
 	igt_assert(ret > 0); /* Config 0 should be used by the kernel */
 	config_id = ret;
 
-	i915_perf_remove_config(drm_fd, config_id);
+	xe_oa_remove_config(drm_fd, config_id);
 }
 
-#define GEN12_OAG_OASTATUS (0xdafc)
-#define GEN12_OAG_MMIOTRIGGER (0xdb1c)
+#define OAG_OASTATUS (0xdafc)
+#define OAG_MMIOTRIGGER (0xdb1c)
 
 static const uint32_t oa_wl[] = {
-	GEN12_OAG_MMIOTRIGGER,
-	GEN12_OAG_OASTATUS,
+	OAG_MMIOTRIGGER,
+	OAG_OASTATUS,
 };
 
 static const uint32_t nonpriv_slot_offsets[] = {
@@ -4222,7 +4140,7 @@ static void
 emit_mmio_triggered_report(struct intel_bb *ibb, uint32_t value)
 {
 	intel_bb_out(ibb, MI_LOAD_REGISTER_IMM(1));
-	intel_bb_out(ibb, GEN12_OAG_MMIOTRIGGER);
+	intel_bb_out(ibb, OAG_MMIOTRIGGER);
 	intel_bb_out(ibb, value);
 }
 
@@ -4395,8 +4313,8 @@ __test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 	buf = mmap(0, OA_BUFFER_SIZE, PROT_READ, MAP_PRIVATE, stream_fd, 0);
 	igt_assert(buf != NULL);
 
-	emit_oa_reg_read(ibb, dst_buf, 0, GEN12_OAG_OABUFFER);
-	emit_oa_reg_read(ibb, dst_buf, 4, GEN12_OAG_OATAILPTR);
+	emit_oa_reg_read(ibb, dst_buf, 0, OAG_OABUFFER);
+	emit_oa_reg_read(ibb, dst_buf, 4, OAG_OATAILPTR);
 	emit_mmio_triggered_report(ibb, 0xc0ffee11);
 
 	if (render_copy)
@@ -4406,16 +4324,16 @@ __test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 
 	emit_mmio_triggered_report(ibb, 0xc0ffee22);
 
-	emit_oa_reg_read(ibb, dst_buf, 8, GEN12_OAG_OATAILPTR);
+	emit_oa_reg_read(ibb, dst_buf, 8, OAG_OATAILPTR);
 
 	intel_bb_flush_render(ibb);
 	intel_bb_sync(ibb);
 
 	buf_map(drm_fd, dst_buf, false);
 
-	oa_buffer = dst_buf->ptr[0] & GEN12_OAG_OATAILPTR_MASK;
-	offset_tail1 = (dst_buf->ptr[1] & GEN12_OAG_OATAILPTR_MASK) - oa_buffer;
-	offset_tail2 = (dst_buf->ptr[2] & GEN12_OAG_OATAILPTR_MASK) - oa_buffer;
+	oa_buffer = dst_buf->ptr[0] & OAG_OATAILPTR_MASK;
+	offset_tail1 = (dst_buf->ptr[1] & OAG_OATAILPTR_MASK) - oa_buffer;
+	offset_tail2 = (dst_buf->ptr[2] & OAG_OATAILPTR_MASK) - oa_buffer;
 
 	igt_debug("oa_buffer = %08x, tail1 = %08x, tail2 = %08x\n",
 		  oa_buffer, offset_tail1, offset_tail2);
@@ -4423,7 +4341,7 @@ __test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 	start = (uint32_t *)(buf + offset_tail1);
 	end = (uint32_t *)(buf + offset_tail2);
 	while (start < end) {
-		if (!gen8_report_reason(start))
+		if (!report_reason(start))
 			mmio_triggered_reports++;
 
 		if (get_oa_format(test_set->perf_oa_format).report_hdr_64bit) {
@@ -4472,8 +4390,7 @@ test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 		   WEXITSTATUS(ret) == 0);
 }
 
-static unsigned
-read_i915_module_ref(bool is_xe)
+static unsigned read_xe_module_ref(void)
 {
 	FILE *fp = fopen("/proc/modules", "r");
 	char *line = NULL;
@@ -4481,11 +4398,11 @@ read_i915_module_ref(bool is_xe)
 	int len = 0;
 	unsigned ref_count;
 	char mod[8];
-	int modn = is_xe ? 3 : 5;
+	int modn = 3;
 
 	igt_assert(fp);
 
-	strcpy(mod, is_xe ? "xe " : "i915 ");
+	strcpy(mod, "xe ");
 	while ((len = getline(&line, &line_buf_size, fp)) > 0) {
 		if (strncmp(line, mod, modn) == 0) {
 			unsigned long mem;
@@ -4503,23 +4420,7 @@ done:
 	return ref_count;
 }
 
-static int perf_sysfs_open(int i915)
-{
-	int dirfd, gt;
-
-	if (is_xe_device(drm_fd))
-		return igt_sysfs_open(drm_fd);
-
-	/* use the first available sysfs interface */
-	for_each_sysfs_gt_dirfd(i915, dirfd, gt)
-		break;
-
-	igt_assert(dirfd != -1);
-
-	return dirfd;
-}
-
-/* check that an open i915 perf stream holds a reference on the drm i915 module
+/* check that an open oa stream holds a reference on the xe module
  * including in the corner case where the original drm fd has been closed.
  */
 static void
@@ -4543,28 +4444,20 @@ test_xe_ref_count(void)
 	unsigned baseline, ref_count0, ref_count1;
 	uint32_t oa_report0[64];
 	uint32_t oa_report1[64];
-	bool is_xe;
 
 	/* This should be the first test before the first fixture so no drm_fd
 	 * should have been opened so far...
 	 */
 	igt_assert_eq(drm_fd, -1);
 
-	/* Tell read_i915_module_ref if we are on xe or i915 (because drm_fd is -1) */
-	drm_fd = __drm_open_driver(DRIVER_XE);
-	is_xe = is_xe_device(drm_fd);
-	drm_close_driver(drm_fd);
-	close(sysfs);
-	drm_fd = -1;
-
-	baseline = read_i915_module_ref(is_xe);
+	baseline = read_xe_module_ref();
 	igt_debug("baseline ref count (drm fd closed) = %u\n", baseline);
 
 	drm_fd = __drm_open_driver(DRIVER_XE);
 	if (is_xe_device(drm_fd))
 		xe_device_get(drm_fd);
 	devid = intel_get_drm_devid(drm_fd);
-	sysfs = perf_sysfs_open(drm_fd);
+	sysfs = igt_sysfs_open(drm_fd);
 
 	/* Note: these global variables are only initialized after calling
 	 * init_sys_info()...
@@ -4574,19 +4467,19 @@ test_xe_ref_count(void)
 	properties[7] = __ff(default_test_set->perf_oa_format);
 	properties[9] = oa_exp_1_millisec;
 
-	ref_count0 = read_i915_module_ref(is_xe);
+	ref_count0 = read_xe_module_ref();
 	igt_debug("initial ref count with drm_fd open = %u\n", ref_count0);
 
 	stream_fd = __perf_open(drm_fd, &param, false);
         set_fd_flags(stream_fd, O_CLOEXEC);
-	ref_count1 = read_i915_module_ref(is_xe);
-	igt_debug("ref count after opening i915 perf stream = %u\n", ref_count1);
+	ref_count1 = read_xe_module_ref();
+	igt_debug("ref count after opening oa stream = %u\n", ref_count1);
 
 	drm_close_driver(drm_fd);
 	close(sysfs);
 	drm_fd = -1;
 	sysfs = -1;
-	ref_count0 = read_i915_module_ref(is_xe);
+	ref_count0 = read_xe_module_ref();
 	igt_debug("ref count after closing drm fd = %u\n", ref_count0);
 
 	read_2_oa_reports(default_test_set->perf_oa_format,
@@ -4596,8 +4489,8 @@ test_xe_ref_count(void)
 			  false); /* not just timer reports */
 
 	__perf_close(stream_fd);
-	ref_count0 = read_i915_module_ref(is_xe);
-	igt_debug("ref count after closing i915 perf stream fd = %u\n", ref_count0);
+	ref_count0 = read_xe_module_ref();
+	igt_debug("ref count after closing oa stream fd = %u\n", ref_count0);
 }
 
 static void
@@ -4650,20 +4543,13 @@ static struct intel_perf_metric_set *metric_set(const struct drm_xe_engine_class
 	return test_set;
 }
 
-static bool has_class_instance(int i915, uint16_t class, uint16_t instance)
-{
-	if (class == DRM_XE_ENGINE_CLASS_RENDER && !IS_PONTEVECCHIO(devid))
-		return true;
-	return false;
-}
-
 /*
  * Test if OA buffer streams can be independently opened on OA unit. Once a user
- * opens a stream, that group is exclusive to the user, other users get -EBUSY on
+ * opens a stream, that oa unit is exclusive to the user, other users get -EBUSY on
  * trying to open a stream.
  */
 static void
-test_group_exclusive_stream(bool exponent)
+test_oa_unit_exclusive_stream(bool exponent)
 {
 	struct drm_xe_query_oa_units *qoa = xe_oa_units(drm_fd);
 	struct drm_xe_oa_unit *oau;
@@ -4686,7 +4572,7 @@ test_group_exclusive_stream(bool exponent)
 	struct intel_perf_metric_set *test_set;
 	uint32_t i;
 
-	/* for each group, open one random perf stream with sample OA */
+	/* for each oa unit, open one random perf stream with sample OA */
 	for (i = 0; i < qoa->num_oa_units; i++) {
 		struct drm_xe_engine_class_instance *hwe = oa_unit_engine(drm_fd, i);
 
@@ -4707,8 +4593,7 @@ test_group_exclusive_stream(bool exponent)
 		properties[5] = test_set->perf_oa_metrics_set;
 		properties[7] = __ff(test_set->perf_oa_format);
 		properties[9] = hwe->engine_instance;
-		perf_fd[i] = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF,
-					   DRM_XE_PERF_OP_STREAM_OPEN, &param);
+		perf_fd[i] = xe_perf_ioctl(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param);
 		igt_assert(perf_fd[i] >= 0);
 		poau += sizeof(*oau) + oau->num_engines * sizeof(oau->eci[0]);
 	}
@@ -4738,8 +4623,7 @@ test_group_exclusive_stream(bool exponent)
 		properties[9] = hwe->engine_instance;
 		properties[10] = DRM_XE_OA_PROPERTY_OA_EXPONENT;
 		properties[11] = oa_exp_1_millisec;
-		xe_perf_ioctl_err(drm_fd, DRM_IOCTL_XE_PERF, DRM_XE_PERF_OP_STREAM_OPEN,
-				  &param, EBUSY);
+		xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EBUSY);
 
 		/* case 2: concurrent access to non-OAG unit should fail */
 		igt_debug("try with exec_q with c:i %d:%d\n",
@@ -4748,8 +4632,7 @@ test_group_exclusive_stream(bool exponent)
 		properties[10] = DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID;
 		properties[11] = exec_q[i];
 		errno = 0;
-		err = xe_perf_ioctl(drm_fd, DRM_IOCTL_XE_PERF,
-				    DRM_XE_PERF_OP_STREAM_OPEN, &param);
+		err = xe_perf_ioctl(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param);
 		igt_assert(err < 0);
 		igt_assert(errno == EBUSY || errno == ENODEV);
 		poau += sizeof(*oau) + oau->num_engines * sizeof(oau->eci[0]);
@@ -4764,7 +4647,7 @@ test_group_exclusive_stream(bool exponent)
 }
 
 static void
-test_group_concurrent_oa_buffer_read(void)
+test_oa_unit_concurrent_oa_buffer_read(void)
 {
 	struct drm_xe_query_oa_units *qoa = xe_oa_units(drm_fd);
 
@@ -5066,17 +4949,13 @@ igt_main
 		xe_device_get(drm_fd);
 
 		devid = intel_get_drm_devid(drm_fd);
-		sysfs = perf_sysfs_open(drm_fd);
+		sysfs = igt_sysfs_open(drm_fd);
 
 		igt_require(init_sys_info());
 
 		write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
-		if (!xe_relax_checks(drm_fd))
-			gt_max_freq_mhz = sysfs_read(RPS_RP0_FREQ_MHZ);
-
-		if (has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0))
-			render_copy = igt_get_render_copyfunc(devid);
+		render_copy = igt_get_render_copyfunc(devid);
 	}
 
 	igt_subtest("non-system-wide-paranoid")
@@ -5149,7 +5028,7 @@ igt_main
 		test_polling_small_buf();
 
 	igt_subtest("short-reads") {
-		igt_require(!xe_relax_checks(drm_fd));
+		igt_require(!IS_LUNARLAKE(xe_dev_id(drm_fd)));
 		test_short_reads();
 	}
 
@@ -5157,36 +5036,35 @@ igt_main
 		igt_fixture igt_require(intel_gen(devid) >= 12);
 
 		igt_describe("Test MI REPORT PERF COUNT for Gen 12");
-		igt_subtest_with_dynamic("gen12-mi-rpc")
+		igt_subtest_with_dynamic("mi-rpc")
 			__for_one_hwe_in_oag(hwe)
-				gen12_test_mi_rpc(hwe);
+				test_mi_rpc(hwe);
 
 		igt_describe("Test OA TLB invalidate");
-		igt_subtest_with_dynamic("gen12-oa-tlb-invalidate")
+		igt_subtest_with_dynamic("oa-tlb-invalidate")
 			__for_one_hwe_in_oag(hwe)
-				gen12_test_oa_tlb_invalidate(hwe);
+				test_oa_tlb_invalidate(hwe);
 
 		igt_describe("Measure performance for a specific context using OAR in Gen 12");
-		igt_subtest_with_dynamic("gen12-unprivileged-single-ctx-counters") {
-			igt_require(has_class_instance(drm_fd, DRM_XE_ENGINE_CLASS_RENDER, 0));
+		igt_subtest_with_dynamic("unprivileged-single-ctx-counters") {
 			igt_require_f(render_copy, "no render-copy function\n");
 			igt_require(!IS_LUNARLAKE(devid));
 			__for_one_render_engine(hwe)
-				gen12_test_single_ctx_render_target_writes_a_counter(hwe);
+				test_single_ctx_render_target_writes_a_counter(hwe);
 		}
 	}
 	igt_subtest_group {
 		igt_describe("Verify exclusivity of oa streams with sample oa option");
-		igt_subtest("gen12-group-exclusive-stream-sample-oa")
-			test_group_exclusive_stream(true);
+		igt_subtest("oa-unit-exclusive-stream-sample-oa")
+			test_oa_unit_exclusive_stream(true);
 
 		igt_describe("Verify exclusivity of oa streams with exec queue");
-		igt_subtest("gen12-group-exclusive-stream-exec-q")
-			test_group_exclusive_stream(false);
+		igt_subtest("oa-unit-exclusive-stream-exec-q")
+			test_oa_unit_exclusive_stream(false);
 
-		igt_describe("Verify concurrent reads from OA buffers in different groups");
-		igt_subtest("gen12-group-concurrent-oa-buffer-read")
-			test_group_concurrent_oa_buffer_read();
+		igt_describe("Verify concurrent reads from OA buffers in different oa units");
+		igt_subtest("oa-unit-concurrent-oa-buffer-read")
+			test_oa_unit_concurrent_oa_buffer_read();
 	}
 
 	igt_subtest("rc6-disable")
