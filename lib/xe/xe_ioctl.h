@@ -101,9 +101,7 @@ struct drm_xe_oa_open_prop {
 	__u64 properties_ptr;
 };
 
-int xe_perf_ioctl(int fd, unsigned long request,
-		  enum drm_xe_perf_op op, void *arg);
-void xe_perf_ioctl_err(int fd, unsigned long request,
-		       enum drm_xe_perf_op op, void *arg, int err);
+int xe_perf_ioctl(int fd, enum drm_xe_perf_op op, void *arg);
+void xe_perf_ioctl_err(int fd, enum drm_xe_perf_op op, void *arg, int err);
 
 #endif /* XE_IOCTL_H */

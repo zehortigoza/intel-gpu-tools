@@ -562,8 +562,7 @@ static void xe_oa_prop_to_ext(struct drm_xe_oa_open_prop *properties,
 		ext[j].base.next_extension = (__u64)&ext[j + 1];
 }
 
-int xe_perf_ioctl(int fd, unsigned long request,
-		  enum drm_xe_perf_op op, void *arg)
+int xe_perf_ioctl(int fd, enum drm_xe_perf_op op, void *arg)
 {
 #define XE_OA_MAX_SET_PROPERTIES 16
 
@@ -584,13 +583,12 @@ int xe_perf_ioctl(int fd, unsigned long request,
 		xe_oa_prop_to_ext(oprop, ext);
 	}
 
-	return igt_ioctl(fd, request, &p);
+	return igt_ioctl(fd, DRM_IOCTL_XE_PERF, &p);
 }
 
-void xe_perf_ioctl_err(int fd, unsigned long request,
-		       enum drm_xe_perf_op op, void *arg, int err)
+void xe_perf_ioctl_err(int fd, enum drm_xe_perf_op op, void *arg, int err)
 {
-	igt_assert_eq(xe_perf_ioctl(fd, request, op, arg), -1);
+	igt_assert_eq(xe_perf_ioctl(fd, op, arg), -1);
 	igt_assert_eq(errno, err);
 	errno = 0;
 }
