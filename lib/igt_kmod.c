@@ -811,6 +811,63 @@ static int open_parameters(const char *module_name)
 	return open(path, O_RDONLY);
 }
 
+static bool kunit_set_filtering(const char *filter_glob, const char *filter,
+				const char *filter_action)
+{
+	int params;
+	bool ret;
+
+	params = open_parameters("kunit");
+	if (igt_debug_on(params < 0))
+		return false;
+
+	/*
+	 * Default values of the KUnit base module filtering parameters
+	 * are all NULLs.  Reapplying those NULLs over sysfs once
+	 * overwritten with non-NULL strings seems not possible.
+	 * As a workaround, we use non-NULL strings that exhibit
+	 * the same behaviour as if default NULLs were in place.
+	 */
+	ret = !igt_debug_on(!igt_sysfs_set(params, "filter_glob",
+					   filter_glob ?: "*"));
+	if (!ret)
+		goto close;
+
+	ret = !igt_debug_on(!igt_sysfs_set(params, "filter",
+					   filter ?: "module!=none"));
+	if (!ret)
+		goto close;
+
+	ret = !igt_debug_on(!igt_sysfs_set(params, "filter_action",
+					   filter_action ?: ""));
+
+	/*
+	 * TODO: Drop the extra check below as soon as igt_sysfs_set()
+	 *	 can correctly process empty strings which we are using
+	 *	 as filter_action NULL equivalent.
+	 *
+	 * We need this check only when NULL is requested for "filter_action"
+	 * and not for "filter" parameter, otherwise, even if "filter_action"
+	 * was previously set to "skip", we don't care since our
+	 * "module!=none" default filter guarantees that no test cases are
+	 * filtered out to be processed as "filter_action" says.
+	 */
+	if (ret && !filter_action && filter) {
+		filter_action = igt_sysfs_get(params, "filter_action");
+
+		ret = !(igt_debug_on_f(!filter_action,
+				       "open() failed\n") ||
+			igt_debug_on_f(strlen(filter_action),
+				       "empty string not applied\n"));
+		free((char *)filter_action);
+	}
+
+close:
+	close(params);
+
+	return ret;
+}
+
 struct modprobe_data {
 	struct kmod_module *kmod;
 	const char *opts;
@@ -1121,9 +1178,7 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 	 * perfectly -- seems to be more safe than extracting a test case list
 	 * of unknown length from /dev/kmsg.
 	 */
-	igt_ignore_warn(igt_kmod_unload("kunit", KMOD_REMOVE_FORCE));
-	if (igt_debug_on(igt_kmod_load("kunit",
-				       "filter=module=none filter_action=skip")))
+	if (igt_debug_on(!kunit_set_filtering(NULL, "module=none", "skip")))
 		return false;
 
 	igt_skip_on(modprobe(tst->kmod, opts));
@@ -1192,16 +1247,7 @@ static void __igt_kunit(struct igt_ktest *tst,
 			      t->case_name) {
 
 			if (!modprobe.thread) {
-				/*
-				 * Since we have successfully loaded the kunit
-				 * base module with non-default parameters in
-				 * order to get a list of test cases, now we
-				 * have to unload it so it is then automatically
-				 * reloaded with default parameter values when
-				 * we load the test module again for execution.
-				 */
-				igt_skip_on(igt_kmod_unload("kunit",
-							    KMOD_REMOVE_FORCE));
+				igt_require(kunit_set_filtering(NULL, NULL, NULL));
 
 				igt_assert_eq(pthread_mutexattr_init(&attr), 0);
 				igt_assert_eq(pthread_mutexattr_setrobust(&attr,
@@ -1369,6 +1415,9 @@ void igt_kunit(const char *module_name, const char *name, const char *opts)
 
 		igt_assert(igt_list_empty(&tests));
 	}
+
+	/* We need the base KUnit module loaded if not built-in */
+	igt_ignore_warn(igt_kmod_load("kunit", NULL));
 
 	/*
 	 * We need to use igt_subtest here, as otherwise it may crash with:
