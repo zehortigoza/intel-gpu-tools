@@ -10,7 +10,8 @@
 /* MTL perf */
 #ifndef INTEL_MTL_M_IDS
 #define INTEL_MTL_M_IDS(info) \
-	INTEL_VGA_DEVICE(0x7D60, info)
+	INTEL_VGA_DEVICE(0x7D60, info), \
+	INTEL_VGA_DEVICE(0x7D67, info)
 #endif
 
 #ifndef INTEL_MTL_P_GT2_IDS
