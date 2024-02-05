@@ -1019,7 +1019,7 @@ static void kunit_results_free(struct igt_list_head *results,
 }
 
 static void __igt_kunit_legacy(struct igt_ktest *tst,
-			       const char *name,
+			       const char *subtest,
 			       const char *opts)
 {
 	struct modprobe_data modprobe = { tst->kmod, opts, 0, pthread_self(), };
@@ -1058,8 +1058,8 @@ static void __igt_kunit_legacy(struct igt_ktest *tst,
 		r = igt_list_first_entry(&results, r, link);
 
 		igt_dynamic_f("%s%s%s",
-			      strcmp(r->suite_name, name) ?  r->suite_name : "",
-			      strcmp(r->suite_name, name) ? "-" : "",
+			      strcmp(r->suite_name, subtest) ?  r->suite_name : "",
+			      strcmp(r->suite_name, subtest) ? "-" : "",
 			      r->case_name) {
 
 			if (r->code == IGT_EXIT_INVALID) {
@@ -1154,7 +1154,7 @@ static void __igt_kunit_legacy(struct igt_ktest *tst,
 
 static bool kunit_get_tests(struct igt_list_head *tests,
 			    struct igt_ktest *tst,
-			    const char *filter,
+			    const char *suite,
 			    const char *opts)
 {
 	char *suite_name = NULL, *case_name = NULL;
@@ -1201,10 +1201,10 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 				break;
 			}
 
-			if (!filter)
+			if (!suite)
 				continue;
 
-			if (strcmp(r->suite_name, filter))
+			if (strcmp(r->suite_name, suite))
 				kunit_result_free(&r, &case_name, &suite_name);
 		}
 
@@ -1224,7 +1224,7 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 }
 
 static void __igt_kunit(struct igt_ktest *tst,
-			const char *name,
+			const char *subtest,
 			const char *opts,
 			struct igt_list_head *tests)
 {
@@ -1244,8 +1244,8 @@ static void __igt_kunit(struct igt_ktest *tst,
 
 	igt_list_for_each_entry(t, tests, link) {
 		igt_dynamic_f("%s%s%s",
-			      strcmp(t->suite_name, name) ?  t->suite_name : "",
-			      strcmp(t->suite_name, name) ? "-" : "",
+			      strcmp(t->suite_name, subtest) ?  t->suite_name : "",
+			      strcmp(t->suite_name, subtest) ? "-" : "",
 			      t->case_name) {
 
 			if (!modprobe.thread) {
@@ -1380,29 +1380,33 @@ static void __igt_kunit(struct igt_ktest *tst,
 /**
  * igt_kunit:
  * @module_name: the name of the module
- * @name: the name of subtest, if different from that derived from module name
+ * @suite: the name of test suite to be executed, also used as subtest name;
+ *	   if NULL then test cases from all test suites provided by the module
+ *	   are executed as dynamic sub-subtests of one IGT subtest, which name
+ *	   is derived from the module name by cutting off its optional trailing
+ *	   _test or _kunit suffix
  * @opts: options to load the module
  *
  * Loads the test module, parses its (k)tap dmesg output, then unloads it
  */
-void igt_kunit(const char *module_name, const char *name, const char *opts)
+void igt_kunit(const char *module_name, const char *suite, const char *opts)
 {
 	struct igt_ktest tst = { .kmsg = -1, };
-	const char *filter = name;
+	const char *subtest = suite;
 	IGT_LIST_HEAD(tests);
 
 	/*
-	 * If the caller (an IGT test) provides no subtest name then we
-	 * take the module name, drop the trailing "_test" or "_kunit"
+	 * If the caller (an IGT test) provides no test suite name then
+	 * we take the module name, drop the trailing "_test" or "_kunit"
 	 * suffix, if any, and use the result as our IGT subtest name.
 	 */
-	if (!name) {
-		name = strdup(module_name);
-		if (!igt_debug_on(!name)) {
-			char *suffix = strstr(name, "_test");
+	if (!subtest) {
+		subtest = strdup(module_name);
+		if (!igt_debug_on(!subtest)) {
+			char *suffix = strstr(subtest, "_test");
 
 			if (!suffix)
-				suffix = strstr(name, "_kunit");
+				suffix = strstr(subtest, "_kunit");
 
 			if (suffix)
 				*suffix = '\0';
@@ -1410,7 +1414,7 @@ void igt_kunit(const char *module_name, const char *name, const char *opts)
 	}
 
 	igt_fixture {
-		igt_require(name);
+		igt_require(subtest);
 
 		igt_skip_on(igt_ktest_init(&tst, module_name));
 		igt_skip_on(igt_ktest_begin(&tst));
@@ -1428,7 +1432,7 @@ void igt_kunit(const char *module_name, const char *name, const char *opts)
 	 * proper namespace for dynamic subtests, with is required for CI
 	 * and for documentation.
 	 */
-	igt_subtest_with_dynamic(name) {
+	igt_subtest_with_dynamic(subtest) {
 		/*
 		 * TODO: As soon as no longer needed by major Linux
 		 *	 distributions, replace the fallback to
@@ -1436,10 +1440,10 @@ void igt_kunit(const char *module_name, const char *name, const char *opts)
 		 *	 LTS kernels not capable of using KUnit filters for
 		 *	 listing test cases in KTAP format, with igt_require.
 		 */
-		if (!kunit_get_tests(&tests, &tst, filter, opts))
-			__igt_kunit_legacy(&tst, name, opts);
+		if (!kunit_get_tests(&tests, &tst, suite, opts))
+			__igt_kunit_legacy(&tst, subtest, opts);
 		else
-			__igt_kunit(&tst, name, opts, &tests);
+			__igt_kunit(&tst, subtest, opts, &tests);
 	}
 
 	igt_fixture {
