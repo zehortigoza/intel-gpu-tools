@@ -1087,7 +1087,7 @@ static void __igt_kunit_legacy(struct igt_ktest *tst,
 	igt_skip_on_f(ret, "KTAP parser failed\n");
 }
 
-static void kunit_get_tests(struct igt_list_head *tests,
+static bool kunit_get_tests(struct igt_list_head *tests,
 			    struct igt_ktest *tst,
 			    const char *filter,
 			    const char *opts)
@@ -1112,19 +1112,10 @@ static void kunit_get_tests(struct igt_list_head *tests,
 	 * however, parsing a KTAP report -- something that we already can do
 	 * perfectly -- seems to be more safe than extracting a test case list
 	 * of unknown length from /dev/kmsg.
-	 *
-	 * TODO: drop the following workaround, which is required by LTS kernel
-	 *       v6.1 not capable of listing test cases when built as a module.
-	 * If loading the kunit module with required parameters fails then
-	 * assume that we are running on a kernel with missing test case listing
-	 * capabilities.  Dont's skip but just return with empty list of test
-	 * cases, that should tell the caller to use a legacy method of
-	 * iterating over KTAP results collected from blind execution of all
-	 * Kunit test cases provided by a Kunit test module.
 	 */
 	if (igt_debug_on(igt_kmod_load("kunit",
 				       "filter=module=none filter_action=skip")))
-		return;
+		return false;
 
 	igt_skip_on(modprobe(tst->kmod, opts));
 
@@ -1163,6 +1154,8 @@ static void kunit_get_tests(struct igt_list_head *tests,
 
 	igt_skip_on_f(err,
 		      "KTAP parser failed while getting a list of test cases\n");
+
+	return true;
 }
 
 static void __igt_kunit(struct igt_ktest *tst,
@@ -1375,15 +1368,14 @@ void igt_kunit(const char *module_name, const char *name, const char *opts)
 	 * and for documentation.
 	 */
 	igt_subtest_with_dynamic(name) {
-		kunit_get_tests(&tests, &tst, filter, opts);
 		/*
-		 * TODO: drop the __igt_kunit() legacy processing path, required
-		 *	 by kernels v6.1-v6.5 with DRM Kunit support but not
-		 *	 capable of listing test cases when built as a module,
-		 *	 as soon as no longer required by major Linux
-		 *	 distributions, now usually based on LTS kernel v6.1.
+		 * TODO: As soon as no longer needed by major Linux
+		 *	 distributions, replace the fallback to
+		 *	 __igt_kunit_legacy() processing path, required by
+		 *	 LTS kernels not capable of using KUnit filters for
+		 *	 listing test cases in KTAP format, with igt_require.
 		 */
-		if (igt_debug_on(igt_list_empty(&tests)))
+		if (!kunit_get_tests(&tests, &tst, filter, opts))
 			__igt_kunit_legacy(&tst, name, opts);
 		else
 			__igt_kunit(&tst, name, opts, &tests);
