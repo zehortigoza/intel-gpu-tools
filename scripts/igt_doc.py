@@ -85,6 +85,9 @@ class IgtTestList(TestList):
                     tests_per_list[driver] = {}
 
                 for run_type in run_type_set:
+                    if not run_type:
+                        run_type = "other"
+
                     if run_type not in tests_per_list[driver]:
                         tests_per_list[driver][run_type] = {}
 
@@ -108,6 +111,10 @@ class IgtTestList(TestList):
         for driver, run_types in tests_per_list.items():
             testlists[driver] = {}
             for run_type, subnames in run_types.items():
+
+                if not run_type:
+                    run_type = "other"
+
                 for subname, gpus in subnames.items():
                     if not gpu_set:
                         gpu = "default"
