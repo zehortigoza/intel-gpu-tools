@@ -93,15 +93,4 @@ int64_t xe_wait_ufence(int fd, uint64_t *addr, uint64_t value,
 		       uint32_t exec_queue, int64_t timeout);
 void xe_force_gt_reset(int fd, int gt);
 
-struct drm_xe_oa_open_prop {
-	__u64 extensions;
-	__u32 config_syncobj;
-	__u32 reserved;
-	__u32 num_properties;
-	__u64 properties_ptr;
-};
-
-int xe_perf_ioctl(int fd, enum drm_xe_perf_op op, void *arg);
-void xe_perf_ioctl_err(int fd, enum drm_xe_perf_op op, void *arg, int err);
-
 #endif /* XE_IOCTL_H */

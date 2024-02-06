@@ -782,3 +782,54 @@ intel_perf_load_perf_configs(struct intel_perf *perf, int drm_fd)
 		load_metric_set_config(metric_set, drm_fd);
 	}
 }
+
+static void xe_oa_prop_to_ext(struct drm_xe_oa_open_prop *properties,
+			      struct drm_xe_ext_set_property *extn)
+{
+	__u64 *prop = (__u64 *)properties->properties_ptr;
+	struct drm_xe_ext_set_property *ext = extn;
+	int i, j;
+
+	for (i = 0; i < properties->num_properties; i++) {
+		ext->base.name = DRM_XE_OA_EXTENSION_SET_PROPERTY;
+		ext->property = *prop++;
+		ext->value = *prop++;
+		ext++;
+	}
+
+	igt_assert_lte(1, i);
+	ext = extn;
+	for (j = 0; j < i - 1; j++)
+		ext[j].base.next_extension = (__u64)&ext[j + 1];
+}
+
+int xe_perf_ioctl(int fd, enum drm_xe_perf_op op, void *arg)
+{
+#define XE_OA_MAX_SET_PROPERTIES 16
+
+	struct drm_xe_ext_set_property ext[XE_OA_MAX_SET_PROPERTIES] = {};
+
+	/* Chain the PERF layer struct */
+	struct drm_xe_perf_param p = {
+		.extensions = 0,
+		.perf_type = DRM_XE_PERF_TYPE_OA,
+		.perf_op = op,
+		.param = (__u64)((op == DRM_XE_PERF_OP_STREAM_OPEN) ? ext : arg),
+	};
+
+	if (op == DRM_XE_PERF_OP_STREAM_OPEN) {
+		struct drm_xe_oa_open_prop *oprop = (struct drm_xe_oa_open_prop *)arg;
+
+		igt_assert_lte(oprop->num_properties, XE_OA_MAX_SET_PROPERTIES);
+		xe_oa_prop_to_ext(oprop, ext);
+	}
+
+	return igt_ioctl(fd, DRM_IOCTL_XE_PERF, &p);
+}
+
+void xe_perf_ioctl_err(int fd, enum drm_xe_perf_op op, void *arg, int err)
+{
+	igt_assert_eq(xe_perf_ioctl(fd, op, arg), -1);
+	igt_assert_eq(errno, err);
+	errno = 0;
+}

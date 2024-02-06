@@ -29,16 +29,11 @@
 
 /**
  * TEST: xe_oa
- * Description: Test the xe perf metrics streaming interface
+ * Description: Test the xe oa metrics streaming interface
  * Run type: FULL
  *
  * SUBTEST: blocking
  * Description: Test blocking read with default hrtimer frequency
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: blocking-parameterized
- * Description: Test blocking read with different hrtimer frequencies
  * Feature: xe streaming interface, oa
  * Test category: Perf
  *
@@ -870,19 +865,6 @@ max_oa_exponent_for_period_lte(uint64_t period)
 
 	igt_assert(!"reached");
 	return -1;
-}
-
-/* Return: the largest OA exponent that will still result in a sampling
- * frequency greater than the given @frequency.
- */
-static int
-max_oa_exponent_for_freq_gt(uint64_t frequency)
-{
-	uint64_t period = NSEC_PER_SEC / frequency;
-
-	igt_assert_neq(period, 0);
-
-	return max_oa_exponent_for_period_lte(period - 1);
 }
 
 static uint64_t
@@ -2109,72 +2091,6 @@ test_invalid_oa_exponent(void)
 	}
 }
 
-/* The lowest periodic sampling exponent equates to a period of 160 nanoseconds
- * or a frequency of 6.25MHz which is only possible to request as root by
- * default. By default the maximum OA sampling rate is 100KHz
- */
-static void
-test_low_oa_exponent_permissions(void)
-{
-	int max_freq = read_u64_file("/proc/sys/dev/xe/oa_max_sample_rate");
-	int bad_exponent = max_oa_exponent_for_freq_gt(max_freq);
-	int ok_exponent = bad_exponent + 1;
-	uint64_t properties[] = {
-		/* Include OA reports in samples */
-		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
-
-		/* OA unit configuration */
-		DRM_XE_OA_PROPERTY_OA_METRIC_SET, default_test_set->perf_oa_metrics_set,
-		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(default_test_set->perf_oa_format),
-		DRM_XE_OA_PROPERTY_OA_EXPONENT, bad_exponent,
-	};
-	struct drm_xe_oa_open_prop param = {
-		.num_properties = ARRAY_SIZE(properties) / 2,
-		.properties_ptr = to_user_pointer(properties),
-	};
-	uint64_t oa_period, oa_freq;
-
-	igt_assert_eq(max_freq, 100000);
-
-	/* Avoid EACCES errors opening a stream without CAP_SYS_ADMIN */
-	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 0);
-
-	igt_fork(child, 1) {
-		igt_drop_root();
-
-		xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EACCES);
-	}
-
-	igt_waitchildren();
-
-	properties[7] = ok_exponent;
-
-	igt_fork(child, 1) {
-		igt_drop_root();
-
-		stream_fd = __perf_open(drm_fd, &param, false);
-		__perf_close(stream_fd);
-	}
-
-	igt_waitchildren();
-
-	oa_period = timebase_scale(2 << ok_exponent);
-	oa_freq = NSEC_PER_SEC / oa_period;
-	write_u64_file("/proc/sys/dev/xe/oa_max_sample_rate", oa_freq - 100);
-
-	igt_fork(child, 1) {
-		igt_drop_root();
-
-		xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EACCES);
-	}
-
-	igt_waitchildren();
-
-	/* restore the defaults */
-	write_u64_file("/proc/sys/dev/xe/oa_max_sample_rate", 100000);
-	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
-}
-
 static int64_t
 get_time(void)
 {
@@ -3067,7 +2983,7 @@ test_short_reads(void)
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
-	size_t record_size = 256;
+	size_t record_size = get_oa_format(default_test_set->perf_oa_format).size;
 	size_t page_size = sysconf(_SC_PAGE_SIZE);
 	int zero_fd = open("/dev/zero", O_RDWR|O_CLOEXEC);
 	uint8_t *pages = mmap(NULL, page_size * 2,
@@ -3376,7 +3292,7 @@ emit_stall_timestamp_and_rpc(struct intel_bb *ibb,
 	emit_report_perf_count(ibb, dst, report_dst_offset, report_id);
 }
 
-static void single_ctx_helper(const struct drm_xe_engine_class_instance *hwe)
+static void single_ctx_helper(struct drm_xe_engine_class_instance *hwe)
 {
 	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = oar_unit_default_format();
@@ -3433,8 +3349,8 @@ static void single_ctx_helper(const struct drm_xe_engine_class_instance *hwe)
 	}
 
 	vm = xe_vm_create(drm_fd, 0, 0);
-	context0_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
-	context1_id = xe_exec_queue_create(drm_fd, vm, &xe_engine(drm_fd, 0)->instance, 0);
+	context0_id = xe_exec_queue_create(drm_fd, vm, hwe, 0);
+	context1_id = xe_exec_queue_create(drm_fd, vm, hwe, 0);
 	ibb0 = intel_bb_create_with_context(drm_fd, context0_id, vm, NULL, BATCH_SZ);
 	ibb1 = intel_bb_create_with_context(drm_fd, context1_id, vm, NULL, BATCH_SZ);
 
@@ -3676,7 +3592,7 @@ static void single_ctx_helper(const struct drm_xe_engine_class_instance *hwe)
 }
 
 static void
-test_single_ctx_render_target_writes_a_counter(const struct drm_xe_engine_class_instance *hwe)
+test_single_ctx_render_target_writes_a_counter(struct drm_xe_engine_class_instance *hwe)
 {
 	int child_ret;
 	struct igt_helper_process child = {};
@@ -4976,10 +4892,7 @@ igt_main
 
 	igt_subtest("invalid-oa-exponent")
 		test_invalid_oa_exponent();
-	igt_subtest("low-oa-exponent-permissions") {
-		igt_require(!is_xe_device(drm_fd));
-		test_low_oa_exponent_permissions();
-	}
+
 	igt_subtest_with_dynamic("oa-exponents")
 		__for_one_hwe_in_oag(hwe)
 			test_oa_exponents(hwe);
@@ -4990,8 +4903,6 @@ igt_main
 
 	igt_describe("Test that reason field in OA reports is never 0 on Gen8+");
 	igt_subtest_with_dynamic("non-zero-reason") {
-		/* Reason field is only available on Gen8+ */
-		igt_require(intel_gen(devid) >= 8);
 		__for_one_hwe_in_oag(hwe)
 			test_non_zero_reason(hwe);
 	}
@@ -5028,13 +4939,10 @@ igt_main
 		test_polling_small_buf();
 
 	igt_subtest("short-reads") {
-		igt_require(!IS_LUNARLAKE(xe_dev_id(drm_fd)));
 		test_short_reads();
 	}
 
 	igt_subtest_group {
-		igt_fixture igt_require(intel_gen(devid) >= 12);
-
 		igt_describe("Test MI REPORT PERF COUNT for Gen 12");
 		igt_subtest_with_dynamic("mi-rpc")
 			__for_one_hwe_in_oag(hwe)
@@ -5072,7 +4980,6 @@ igt_main
 
 	igt_describe("Stress tests opening & closing the xe-oa stream in a busy loop");
 	igt_subtest_with_dynamic("stress-open-close") {
-		igt_require(!IS_LUNARLAKE(devid));
 		__for_one_hwe_in_oag(hwe)
 			test_stress_open_close(hwe);
 	}
