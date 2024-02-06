@@ -550,7 +550,7 @@ class TestList:
             if not update:
                 continue
 
-            default_value = update.get("default--if-not-excluded")
+            default_value = update.get("default-if-not-excluded")
             append_value = update.get("append-value-if-not-excluded")
 
             testname = subtest_dict["_summary_"]
