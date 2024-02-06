@@ -218,16 +218,14 @@ class IntelciTestlist:
 
                 for testlist, subtests in names.items():
                     if testlist == "":
-                        if not subtests:
-                            continue
-
                         testlist = "other"
                     else:
                         testlist = re.sub(r"[\W_]+", "-", testlist).lower()
                         testlist = re.sub(r"_+", "_", testlist)
 
                     if not subtests:
-                        sys.stderr.write(f"Warning: empty testlist: {testlist}\n")
+                        if testlist != "other":
+                            sys.stderr.write(f"Not creating empty testlist: {dname}/{testlist}\n")
                         continue
 
                     fname = os.path.join(dname, testlist) + ".testlist"
