@@ -1157,7 +1157,6 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 			    const char *suite,
 			    const char *opts)
 {
-	char *suite_name = NULL, *case_name = NULL;
 	struct igt_ktap_result *r, *rn;
 	struct igt_ktap_results *ktap;
 	unsigned long taints;
@@ -1179,7 +1178,7 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 	 * perfectly -- seems to be more safe than extracting a test case list
 	 * of unknown length from /dev/kmsg.
 	 */
-	if (igt_debug_on(!kunit_set_filtering(NULL, "module=none", "skip")))
+	if (igt_debug_on(!kunit_set_filtering(suite, "module=none", "skip")))
 		return false;
 
 	igt_skip_on(modprobe(tst->kmod, opts));
@@ -1194,29 +1193,12 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 
 	igt_ktap_free(ktap);
 
-	if (!err)
-		igt_list_for_each_entry_safe(r, rn, tests, link) {
-			if (igt_debug_on(r->code != IGT_EXIT_SKIP)) {
-				err = r->code ?: -EPROTO;
-				break;
-			}
-
-			if (!suite)
-				continue;
-
-			if (strcmp(r->suite_name, suite))
-				kunit_result_free(&r, &case_name, &suite_name);
-		}
-
-	if (err) {
-		kunit_results_free(tests, &case_name, &suite_name);
-	} else {
-		free(suite_name);
-		free(case_name);
-	}
-
 	igt_skip_on_f(err,
 		      "KTAP parser failed while getting a list of test cases\n");
+
+	igt_list_for_each_entry_safe(r, rn, tests, link)
+		igt_require_f(r->code == IGT_EXIT_SKIP,
+			      "Unexpected non-SKIP result while listing test cases\n");
 
 	igt_skip_on(kmod_module_remove_module(tst->kmod, KMOD_REMOVE_FORCE));
 
@@ -1225,6 +1207,7 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 
 static void __igt_kunit(struct igt_ktest *tst,
 			const char *subtest,
+			const char *suite,
 			const char *opts,
 			struct igt_list_head *tests)
 {
@@ -1249,7 +1232,7 @@ static void __igt_kunit(struct igt_ktest *tst,
 			      t->case_name) {
 
 			if (!modprobe.thread) {
-				igt_require(kunit_set_filtering(NULL, NULL, NULL));
+				igt_require(kunit_set_filtering(suite, NULL, NULL));
 
 				igt_assert_eq(pthread_mutexattr_init(&attr), 0);
 				igt_assert_eq(pthread_mutexattr_setrobust(&attr,
@@ -1443,7 +1426,7 @@ void igt_kunit(const char *module_name, const char *suite, const char *opts)
 		if (!kunit_get_tests(&tests, &tst, suite, opts))
 			__igt_kunit_legacy(&tst, subtest, opts);
 		else
-			__igt_kunit(&tst, subtest, opts, &tests);
+			__igt_kunit(&tst, subtest, suite, opts, &tests);
 	}
 
 	igt_fixture {
