@@ -231,11 +231,8 @@ class IntelciTestlist:
                     pass
 
                 for testlist, subtests in names.items():
-                    if testlist == "":
-                        testlist = "other"
-                    else:
-                        testlist = re.sub(r"[\W_]+", "-", testlist).lower()
-                        testlist = re.sub(r"_+", "_", testlist)
+                    testlist = re.sub(r"[\W_]+", "-", testlist).lower()
+                    testlist = re.sub(r"_+", "_", testlist)
 
                     if not subtests:
                         if testlist != "other":
