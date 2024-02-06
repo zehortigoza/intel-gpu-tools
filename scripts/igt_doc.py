@@ -107,6 +107,7 @@ class IgtTestList(TestList):
         # Create a testlist dictionary
 
         testlists = {}
+        default_gpu = "default"
 
         for driver, run_types in tests_per_list.items():
             testlists[driver] = {}
@@ -120,18 +121,15 @@ class IgtTestList(TestList):
                     if "all" in tests_per_list[driver][run_type][subname]:
                         continue
 
-                    if not gpu_set:
-                        gpu = "default"
-
                     # Trivial case: fields not defined: add subtest
                     if not gpu_set:
-                        if gpu not in testlists[driver]:
-                            testlists[driver][gpu] = {}
+                        if default_gpu not in testlists[driver]:
+                            testlists[driver][default_gpu] = {}
 
-                        if run_type not in testlists[driver][gpu]:
-                            testlists[driver][gpu][run_type] = set()
+                        if run_type not in testlists[driver][default_gpu]:
+                            testlists[driver][default_gpu][run_type] = set()
 
-                        testlists[driver][gpu][run_type].add(subname)
+                        testlists[driver][default_gpu][run_type].add(subname)
                         continue
 
                     if not gpus:
@@ -173,7 +171,16 @@ class IgtTestList(TestList):
                             testlists[driver][gpu][run_type].add(subname)
 
                     if default_gpu_value:
-                        testlists[driver][gpu][run_type].add(subname)
+                        if default_gpu not in testlists[driver]:
+                            testlists[driver][default_gpu] = {}
+
+                        if run_type not in testlists[driver][default_gpu]:
+                            testlists[driver][default_gpu][run_type] = set()
+
+                        testlists[driver][default_gpu][run_type].add(subname)
+
+        if len(gpu_set) == 0:
+            gpu_set.add(default_gpu)
 
         return (testlists, gpu_set)
 
