@@ -14,6 +14,7 @@ extern "C" {
 #include <stdint.h>
 
 #include "igt_list.h"
+#include <xe_drm.h>
 
 #define _DIV_ROUND_UP(a, b)  (((a) + (b) - 1) / (b))
 
@@ -309,6 +310,16 @@ void intel_perf_add_metric_set(struct intel_perf *perf,
 			       struct intel_perf_metric_set *metric_set);
 
 void intel_perf_load_perf_configs(struct intel_perf *perf, int drm_fd);
+
+
+struct drm_xe_oa_open_prop {
+	uint32_t num_properties;
+	uint32_t reserved;
+	uint64_t properties_ptr;
+};
+
+int xe_perf_ioctl(int fd, enum drm_xe_perf_op op, void *arg);
+void xe_perf_ioctl_err(int fd, enum drm_xe_perf_op op, void *arg, int err);
 
 #ifdef __cplusplus
 };
