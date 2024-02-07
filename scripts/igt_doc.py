@@ -116,31 +116,31 @@ class IgtTestList(TestList):
                     run_type = "other"
 
                 for subname, gpus in subnames.items():
-                    if not gpu_set:
-                        gpu = "default"
-
-                    if gpu not in testlists[driver]:
-                        testlists[driver][gpu] = {}
-
-                    if run_type not in testlists[driver][gpu]:
-                        testlists[driver][gpu][run_type] = set()
-
-                    # Trivial case: fields not defined
-                    if not gpu_set:
-                        testlists[driver][gpu][run_type].add(subname)
-                        continue
-
-                    # Globally blocklisted values
+                    # Globally blocklisted values: ignore subtest
                     if "all" in tests_per_list[driver][run_type][subname]:
                         continue
 
-                    # Nothing blocked of explicitly added.
-                    # It means that test should be on testlists
+                    if not gpu_set:
+                        gpu = "default"
+
+                    # Trivial case: fields not defined: add subtest
+                    if not gpu_set:
+                        if gpu not in testlists[driver]:
+                            testlists[driver][gpu] = {}
+
+                        if run_type not in testlists[driver][gpu]:
+                            testlists[driver][gpu][run_type] = set()
+
+                        testlists[driver][gpu][run_type].add(subname)
+                        continue
+
                     if not gpus:
                         for gpu in gpu_set:
+                            # blocked on all GPUs: ignore subtest
                             if gpu == "all":
                                 continue
 
+                            # Nothing blocked: add subtest
                             if gpu not in testlists[driver]:
                                 testlists[driver][gpu] = {}
 
