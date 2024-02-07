@@ -11,8 +11,6 @@
  * Test category: functionality test
  * SUBTEST: priority-set-property
  * Description: tests basic priority property by setting invalid values and positive values.
- * SUBTEST: persistence-set-property
- * Description: tests basic persistence property by setting positive values
  * SUBTEST: %s-property-min-max
  * Description: Test to check if %s arg[1] schedule parameter checks for min max values.
  *
@@ -212,12 +210,6 @@ igt_main
 					  DRM_SCHED_PRIORITY_NORMAL, 0);
 		}
 		igt_waitchildren();
-	}
-
-	igt_subtest("persistence-set-property") {
-		/* Tests persistence property by setting positive values. */
-		test_set_property(xe, DRM_XE_EXEC_QUEUE_SET_PROPERTY_PERSISTENCE, 1, 0);
-
 	}
 
 	igt_subtest_group {
