@@ -143,6 +143,7 @@ igt@xe_vm@shared-pde-page
 igt@xe_vm@shared-pde2-page
 igt@xe_vm@shared-pde3-page
 igt@xe_vm@bind-execqueues-independent
+igt@xe_vm@large-split-binds-268435456
 igt@xe_vm@munmap-style-unbind-one-partial
 igt@xe_vm@munmap-style-unbind-end
 igt@xe_vm@munmap-style-unbind-front
