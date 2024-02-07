@@ -541,6 +541,15 @@ static void set_fd_flags(int fd, int flags)
 	igt_assert_eq(0, fcntl(fd, F_SETFL, old | flags));
 }
 
+static u32 get_stream_status(int fd)
+{
+	struct drm_xe_oa_stream_status status;
+
+	do_ioctl(fd, DRM_XE_PERF_IOCTL_STATUS, &status);
+
+	return status.oa_status;
+}
+
 static void
 dump_report(const uint32_t *report, uint32_t size, const char *message) {
 	uint32_t i;
@@ -1465,7 +1474,7 @@ read_2_oa_reports(int format_id,
 		       errno == EINTR)
 			;
 
-		oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+		oa_status = get_stream_status(stream_fd);
 		igt_debug("oa_status %#x\n", oa_status);
 
 		igt_assert(len > 0);
@@ -1988,7 +1997,7 @@ test_oa_exponents(const struct drm_xe_engine_class_instance *hwe)
 				;
 
 			/* igt_debug(" > read %i bytes\n", ret); */
-			oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+			oa_status = get_stream_status(stream_fd);
 			igt_debug("oa_status %#x\n", oa_status);
 
 			/* We should never have no data. */
@@ -2660,7 +2669,7 @@ test_buffer_fill(const struct drm_xe_engine_class_instance *hwe)
 			;
 		igt_assert_neq(len, -1);
 
-		oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+		oa_status = get_stream_status(stream_fd);
 		igt_debug("oa_status %#x\n", oa_status);
 		overflow_seen = (oa_status & OASTATUS_BUFFER_OVERFLOW) ? true : false;
 
@@ -2696,7 +2705,7 @@ test_buffer_fill(const struct drm_xe_engine_class_instance *hwe)
 				;
 			igt_assert_neq(len, -1);
 
-			oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+			oa_status = get_stream_status(stream_fd);
 			igt_debug("oa_status %#x\n", oa_status);
 			igt_assert(!(oa_status & OASTATUS_BUFFER_OVERFLOW));
 
@@ -2793,7 +2802,7 @@ test_non_zero_reason(const struct drm_xe_engine_class_instance *hwe)
 			total_len += len;
 	}
 
-	oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+	oa_status = get_stream_status(stream_fd);
 	igt_debug("oa_status %#x\n", oa_status);
 	igt_assert(!(oa_status & OASTATUS_BUFFER_OVERFLOW));
 
@@ -2899,7 +2908,7 @@ test_enable_disable(const struct drm_xe_engine_class_instance *hwe)
 				;
 			igt_assert_neq(len, -1);
 
-			oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+			oa_status = get_stream_status(stream_fd);
 			igt_debug("oa_status %#x\n", oa_status);
 			igt_assert(!(oa_status & OASTATUS_BUFFER_OVERFLOW));
 
@@ -2989,7 +2998,7 @@ test_short_reads(void)
 	uint8_t *pages = mmap(NULL, page_size * 2,
 			      PROT_READ|PROT_WRITE, MAP_PRIVATE, zero_fd, 0);
 	u8 *header;
-	int ret;
+	int ret, errnum;
 	u32 oa_status;
 
 	igt_assert_neq(zero_fd, -1);
@@ -3018,7 +3027,7 @@ test_short_reads(void)
 		header = (void *)(pages + page_size - record_size);
 		ret = read(stream_fd, header, page_size);
 		igt_assert(ret > 0);
-		oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+		oa_status = get_stream_status(stream_fd);
 
 	} while (oa_status & OASTATUS_REPORT_LOST);
 
@@ -3032,7 +3041,9 @@ test_short_reads(void)
 	header = (void *)(pages + page_size - 16);
 	do {
 		ret = read(stream_fd, header, page_size);
-		oa_status = igt_ioctl(stream_fd, DRM_XE_PERF_IOCTL_STATUS, 0);
+		errnum = errno;
+		oa_status = get_stream_status(stream_fd);
+		errno = errnum;
 	} while (ret > 0 && oa_status & OASTATUS_REPORT_LOST);
 	igt_assert_eq(ret, -1);
 	igt_assert_eq(errno, EFAULT);
@@ -3045,6 +3056,9 @@ test_short_reads(void)
 	do {
 		header = (void *)(pages + page_size - record_size / 2);
 		ret = read(stream_fd, header, record_size / 2);
+		errnum = errno;
+		oa_status = get_stream_status(stream_fd);
+		errno = errnum;
 	} while (ret > 0 && oa_status & OASTATUS_REPORT_LOST);
 
 	igt_assert_eq(ret, -1);

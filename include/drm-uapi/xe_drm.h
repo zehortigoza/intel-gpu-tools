@@ -1414,6 +1414,9 @@ struct drm_xe_perf_param {
 
 /**
  * enum drm_xe_perf_ioctls - Perf fd ioctl's
+ *
+ * Information exchanged between userspace and kernel for perf fd ioctl's
+ * is stream type specific
  */
 enum drm_xe_perf_ioctls {
 	/** @DRM_XE_PERF_IOCTL_ENABLE: Enable data capture for a stream */
@@ -1425,8 +1428,11 @@ enum drm_xe_perf_ioctls {
 	/** @DRM_XE_PERF_IOCTL_CONFIG: Change stream configuration */
 	DRM_XE_PERF_IOCTL_CONFIG = _IO('i', 0x2),
 
-	/** @DRM_XE_PERF_IOCTL_STATUS: Stream status */
+	/** @DRM_XE_PERF_IOCTL_STATUS: Return stream status */
 	DRM_XE_PERF_IOCTL_STATUS = _IO('i', 0x3),
+
+	/** @DRM_XE_PERF_IOCTL_INFO: Return stream info */
+	DRM_XE_PERF_IOCTL_INFO = _IO('i', 0x4),
 };
 
 /** enum drm_xe_oa_unit_type - OA unit types */
@@ -1440,25 +1446,19 @@ enum drm_xe_oa_unit_type {
  */
 struct drm_xe_oa_unit {
 	/** @oa_unit_id: OA unit ID */
-	__u16 oa_unit_id;
+	__u32 oa_unit_id;
 
 	/** @oa_unit_type: OA unit type of @drm_xe_oa_unit_type */
-	__u16 oa_unit_type;
+	__u32 oa_unit_type;
 
-	/** @gt_id: GT ID for this OA unit */
-	__u16 gt_id;
-
-	/** @open_stream: True if a stream is open on the OA unit */
-	__u16 open_stream;
-
-	/** @capabilities: OA capabilities bit-mask */
+	/**
+	 * @capabilities: OA capabilities bit-mask: this is a bit-mask of
+	 * property id's in enum @drm_xe_oa_property_id
+	 */
 	__u64 capabilities;
 
 	/** @oa_timestamp_freq: OA timestamp freq */
 	__u64 oa_timestamp_freq;
-
-	/** @oa_buf_size: OA buffer size */
-	__u64 oa_buf_size;
 
 	/** @reserved: MBZ */
 	__u64 reserved[4];
@@ -1477,8 +1477,22 @@ struct drm_xe_oa_unit {
  * is equal to DRM_XE_DEVICE_QUERY_OA_UNITS, then the reply uses struct
  * drm_xe_query_oa_units in .data.
  *
- * When there is an @open_stream, the query returns properties specific to
- * that @open_stream. Else default properties are returned.
+ * OA unit properties for all OA units can be accessed using a code block
+ * such as the one below:
+ *
+ * .. code-block:: C
+ *
+ *	struct drm_xe_query_oa_units *qoa;
+ *	struct drm_xe_oa_unit *oau;
+ *	u8 *poau;
+ *
+ *	// malloc qoa and issue DRM_XE_DEVICE_QUERY_OA_UNITS. Then:
+ *	poau = (u8 *)&qoa->oa_units[0];
+ *	for (int i = 0; i < qoa->num_oa_units; i++) {
+ *		oau = (struct drm_xe_oa_unit *)poau;
+ *		// Access 'struct drm_xe_oa_unit' fields here
+ *		poau += sizeof(*oau) + oau->num_engines * sizeof(oau->eci[0]);
+ *	}
  */
 struct drm_xe_query_oa_units {
 	/** @num_oa_units: number of OA units returned in oau[] */
@@ -1518,8 +1532,9 @@ enum drm_xe_oa_property_id {
 	DRM_XE_OA_PROPERTY_OA_UNIT_ID = 1,
 
 	/**
-	 * @DRM_XE_OA_PROPERTY_SAMPLE_OA: A value of 1 requests the inclusion of
-	 * raw OA unit reports as part of stream samples.
+	 * @DRM_XE_OA_PROPERTY_SAMPLE_OA: A value of 1 requests inclusion of raw
+	 * OA unit reports or stream samples in a global buffer attached to an
+	 * OA unit.
 	 */
 	DRM_XE_OA_PROPERTY_SAMPLE_OA,
 
@@ -1590,6 +1605,30 @@ struct drm_xe_oa_config {
 	 * registers. Expected length of buffer is: (2 * sizeof(u32) * @n_regs).
 	 */
 	__u64 regs_ptr;
+};
+
+/**
+ * struct drm_xe_oa_stream_status - OA stream status returned from
+ * @DRM_XE_PERF_IOCTL_STATUS perf fd ioctl
+ */
+struct drm_xe_oa_stream_status {
+	/** @oa_status: OA status register as specified in Bspec */
+	__u64 oa_status;
+
+	/** @reserved */
+	__u64 reserved[3];
+};
+
+/**
+ * struct drm_xe_oa_stream_info - OA stream info returned from
+ * @DRM_XE_PERF_IOCTL_INFO perf fd ioctl
+ */
+struct drm_xe_oa_stream_info {
+	/** @oa_buf_size: OA buffer size */
+	__u64 oa_buf_size;
+
+	/** @reserved */
+	__u64 reserved[3];
 };
 
 #if defined(__cplusplus)

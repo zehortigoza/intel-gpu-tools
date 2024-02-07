@@ -940,10 +940,8 @@ static void test_query_oa_units(int fd)
 		igt_info("-------------------------------\n");
 		igt_info("oa_unit_id %d\n", oau->oa_unit_id);
 		igt_info("oa_unit_type %d\n", oau->oa_unit_type);
-		igt_info("gt_id %d\n", oau->gt_id);
 		igt_info("capabilities %#llx\n", oau->capabilities);
 		igt_info("oa_timestamp_freq %lld\n", oau->oa_timestamp_freq);
-		igt_info("oa_buf_size %lld\n", oau->oa_buf_size);
 		igt_info("num_engines %lld\n", oau->num_engines);
 		igt_info("Engines:");
 		for (j = 0; j < oau->num_engines; j++)
