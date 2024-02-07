@@ -9,23 +9,23 @@
  * Functionality: kunit
  * Test category: functionality test
  *
- * SUBTEST: bo
+ * SUBTEST: xe_bo
  * Description:
  *	Kernel dynamic selftests to check if GPU buffer objects are
  *	being handled properly.
  * Functionality: bo
  *
- * SUBTEST: dmabuf
+ * SUBTEST: xe_dma_buf
  * Description: Kernel dynamic selftests for dmabuf functionality.
  * Functionality: dmabuf
  *
- * SUBTEST: migrate
+ * SUBTEST: xe_migrate
  * Description:
  *	Kernel dynamic selftests to check if page table migrations
  *	are working properly.
  * Functionality: migrate
  *
- * SUBTEST: mocs
+ * SUBTEST: xe_mocs
  * Description:
  *	Kernel dynamic selftests to check mocs configuration.
  * Functionality: mocs
@@ -37,10 +37,10 @@ struct kunit_tests {
 };
 
 static const struct kunit_tests live_tests[] = {
-	{ "xe_bo_test",		"bo" },
-	{ "xe_dma_buf_test",	"dmabuf" },
-	{ "xe_migrate_test",	"migrate" },
-	{ "xe_mocs_test",	"mocs" },
+	{ "xe_bo_test",		"xe_bo" },
+	{ "xe_dma_buf_test",	"xe_dma_buf" },
+	{ "xe_migrate_test",	"xe_migrate" },
+	{ "xe_mocs_test",	"xe_mocs" },
 };
 
 igt_main

@@ -228,9 +228,9 @@ igt@kms_psr@psr-sprite-plane-onoff
 igt@core_hotunplug@unbind-rebind
 
 # Run KUnit tests at the end
-igt@xe_live_ktest@bo
-igt@xe_live_ktest@dmabuf
-igt@xe_live_ktest@migrate
+igt@xe_live_ktest@xe_bo
+igt@xe_live_ktest@xe_dma_buf
+igt@xe_live_ktest@xe_migrate
 
 # Move fault_mode tests at the end to unblock execution
 igt@xe_exec_fault_mode@twice-basic
