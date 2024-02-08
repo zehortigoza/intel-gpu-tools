@@ -18,6 +18,40 @@ import sys
 from test_list import TestList
 
 class IgtTestList(TestList):
+    def __init__(self, *args, **kwargs):
+        self.split_regex = re.compile(r",\s*")
+
+        super().__init__(*args, **kwargs)
+
+    def _get_run_type_drivers(self, run_types):
+        """
+            Ancillary routine to return drivers and run type set from
+            a run type string.
+        """
+
+        run_type_dict = {}
+        for run_type in set(self.split_regex.split(run_types)):
+            driver_set = set()
+            if not run_type:
+                run_type = "other"
+            else:
+                for driver in self.drivers:
+                    result = re.sub(r"^" + driver + r"[\W_]*", "", run_type, re.IGNORECASE)
+                    if result != run_type:
+                        driver_set = set([driver])
+                        run_type = result
+                        break
+
+            if not driver_set:
+                driver_set = set(self.drivers)
+
+            if run_type in run_type_dict:
+                run_type_dict[run_type].update(driver_set)
+            else:
+                run_type_dict[run_type] = driver_set
+
+        return run_type_dict
+
     """
         This class implements testlist generation as expected by Intel CI.
         It does that by handling test lists split by "Run type" and
@@ -50,7 +84,7 @@ class IgtTestList(TestList):
         - if "GPU excluded platform" exists, for each GPU listed on
           the list, it will block the test.
     """
-    def gen_intelci_testlist(self): #pylint: disable=R0912
+    def gen_intelci_testlist(self):
         """Return a list of gpu configs and testlists."""
 
         subtest_dict = self.expand_dictionary(True)
@@ -58,36 +92,17 @@ class IgtTestList(TestList):
         # Create a tests_per_list dict
         gpu_set = set()
         tests_per_list = {}
-        split_regex = re.compile(r",\s*")
+
+        for driver in set(self.drivers):
+            tests_per_list[driver] = {}
 
         for subname, subtest in subtest_dict.items():
             run_types = subtest.get("Run type", "other").lower()
-            drivers = set()
-            run_type_set = set()
-            for run_type in set(split_regex.split(run_types)):
 
-                for driver in self.drivers:
-                    if run_type.startswith(driver):
-                        run_type = re.sub(r"^" + driver + r"[\W_]*", "", run_type)
-                        drivers = set([driver])
-                        break
+            run_type_dict = self._get_run_type_drivers(run_types)
 
-                if not drivers:
-                    drivers.update(self.drivers)
-
-                if not run_type:
-                    run_type = "other"
-
-                run_type_set.add(run_type)
-
-            if not drivers:
-                drivers = set(self.drivers)
-
-            for driver in drivers:
-                if driver not in tests_per_list:
-                    tests_per_list[driver] = {}
-
-                for run_type in run_type_set:
+            for run_type, drivers in run_type_dict.items():
+                for driver in drivers:
                     if run_type not in tests_per_list[driver]:
                         tests_per_list[driver][run_type] = {}
 
@@ -95,12 +110,12 @@ class IgtTestList(TestList):
                         tests_per_list[driver][run_type][subname] = {}
 
                     if "GPU" in subtest:
-                        for gpu in split_regex.split(subtest["GPU"]):
+                        for gpu in self.split_regex.split(subtest["GPU"]):
                             gpu_set.add(gpu)
                             tests_per_list[driver][run_type][subname][gpu] = True
 
                     if "GPU excluded platform" in subtest:
-                        for gpu in split_regex.split(subtest["GPU excluded platform"]):
+                        for gpu in self.split_regex.split(subtest["GPU excluded platform"]):
                             gpu_set.add(gpu)
                             tests_per_list[driver][run_type][subname][gpu] = False
 
