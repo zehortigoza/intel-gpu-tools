@@ -112,4 +112,5 @@ if libudev.found()
 endif
 
 subdir('i915-perf')
+subdir('xe-perf')
 subdir('null_state_gen')
