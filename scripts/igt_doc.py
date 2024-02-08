@@ -61,33 +61,33 @@ class IgtTestList(TestList):
         split_regex = re.compile(r",\s*")
 
         for subname, subtest in subtest_dict.items():
-            run_types = subtest.get("Run type", "other")
-            run_type_set = set(split_regex.split(run_types))
-
+            run_types = subtest.get("Run type", "other").lower()
+            drivers = set()
             run_type_set = set()
             for run_type in set(split_regex.split(run_types)):
-                run_type = run_type.lower()
-
-                drivers = set(self.drivers)
 
                 for driver in self.drivers:
-                    driver = driver.lower()
-
                     if run_type.startswith(driver):
                         run_type = re.sub(r"^" + driver + r"[\W_]*", "", run_type)
                         drivers = set([driver])
                         break
 
+                if not drivers:
+                    drivers.update(self.drivers)
+
+                if not run_type:
+                    run_type = "other"
+
                 run_type_set.add(run_type)
+
+            if not drivers:
+                drivers = set(self.drivers)
 
             for driver in drivers:
                 if driver not in tests_per_list:
                     tests_per_list[driver] = {}
 
                 for run_type in run_type_set:
-                    if not run_type:
-                        run_type = "other"
-
                     if run_type not in tests_per_list[driver]:
                         tests_per_list[driver][run_type] = {}
 
