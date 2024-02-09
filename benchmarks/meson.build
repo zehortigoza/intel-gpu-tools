@@ -17,6 +17,7 @@ benchmark_progs = [
 	'intel_upload_blit_large_gtt',
 	'intel_upload_blit_large_map',
 	'intel_upload_blit_small',
+	'kms_fb_stress',
 	'kms_vblank',
 	'prime_lookup',
 	'vgem_mmap',
