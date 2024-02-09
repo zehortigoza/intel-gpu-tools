@@ -1484,6 +1484,7 @@ static drmModeModeInfo *connector_get_mode(igt_output_t *output)
 static void init_mode_params(struct modeset_params *params,
 			     igt_output_t *output, enum pipe pipe)
 {
+	int i;
 	drmModeModeInfo *mode;
 
 	igt_output_override_mode(output, NULL);
@@ -1514,6 +1515,18 @@ static void init_mode_params(struct modeset_params *params,
 	params->sprite.y = 0;
 	params->sprite.w = 64;
 	params->sprite.h = 64;
+
+	/* If we endup changing the primary mode parameters, we need to
+	 * invalidate any existing cached stuff from a previous configuration. */
+	if (params == &prim_mode_params) {
+		if (pipe_crc) {
+			igt_pipe_crc_free(pipe_crc);
+			pipe_crc = NULL;
+		}
+
+		for (i = 0; i < FORMAT_COUNT; i++)
+			blue_crcs[i].initialized = false;
+	}
 
 	free(mode);
 }
