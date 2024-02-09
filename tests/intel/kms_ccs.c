@@ -37,6 +37,9 @@
 #include "igt.h"
 
 #include "i915/gem_create.h"
+#include "intel_pat.h"
+#include "intel_blt.h"
+#include "intel_mocs.h"
 #include "xe/xe_ioctl.h"
 #include "xe/xe_query.h"
 
@@ -107,12 +110,54 @@
  * arg[2]:
  *
  * @bad-pixel-format:            Bad pixel format
+ *
+ * arg[3]:
+ *
+ * @4-tiled-dg2-mc-ccs:        4 tiled mc ccs
+ * @4-tiled-dg2-rc-ccs:        4 tiled dg2 rc ccs
+ * @4-tiled-dg2-rc-ccs-cc:     4 tiled dg2 rc ccs cc
+ * @4-tiled-mtl-mc-ccs:        4 tiled mtl mc ccs
+ * @4-tiled-mtl-rc-ccs:        4 tiled mtl rc ccs
+ * @4-tiled-mtl-rc-ccs-cc:     4 tiled mtl rc ccs cc
+ * @y-tiled-ccs:               Y tiled ccs
+ * @y-tiled-gen12-mc-ccs:      Y tiled gen12 mc ccs
+ * @y-tiled-gen12-rc-ccs:      Y tiled gen12 rc ccs
+ * @y-tiled-gen12-rc-ccs-cc:   Y tiled gen12 rc ccs cc
+ * @yf-tiled-ccs:              YF tiled ccs
+ */
+
+/**
+ * SUBTEST: %s-%s-%s
+ * Description: Test %arg[2] with %arg[3] modifier
+ *
+ * arg[1]:
+ *
+ * @pipe-A:                      Pipe A
+ * @pipe-B:                      Pipe B
+ * @pipe-C:                      Pipe C
+ * @pipe-D:                      Pipe D
+ * @pipe-E:                      Pipe E
+ * @pipe-F:                      Pipe F
+ * @pipe-G:                      Pipe G
+ * @pipe-H:                      Pipe H
+ * @pipe-I:                      Pipe I
+ * @pipe-J:                      Pipe J
+ * @pipe-K:                      Pipe K
+ * @pipe-L:                      Pipe L
+ * @pipe-M:                      Pipe M
+ * @pipe-N:                      Pipe N
+ * @pipe-O:                      Pipe O
+ * @pipe-P:                      Pipe P
+ *
+ * arg[2]:
+ *
  * @crc-primary-basic:           Primary plane CRC compatibility
  * @crc-sprite-planes-basic:     Sprite plane CRC compatability
  * @random-ccs-data:             Random CCS data
  *
  * arg[3]:
  *
+ * @4-tiled-xe2-ccs:           4 tiled xe2 pat controlled ccs
  * @4-tiled-dg2-mc-ccs:        4 tiled mc ccs
  * @4-tiled-dg2-rc-ccs:        4 tiled dg2 rc ccs
  * @4-tiled-dg2-rc-ccs-cc:     4 tiled dg2 rc ccs cc
@@ -157,6 +202,7 @@
  *
  * arg[3]:
  *
+ * @4-tiled-xe2-ccs:           4 tiled xe2 pat controlled ccs
  * @4-tiled-dg2-mc-ccs:        4 tiled mc ccs
  * @4-tiled-dg2-rc-ccs:        4 tiled dg2 rc ccs
  * @4-tiled-dg2-rc-ccs-cc:     4 tiled dg2 rc ccs cc
@@ -248,6 +294,7 @@ static const struct {
 	{I915_FORMAT_MOD_4_TILED_MTL_RC_CCS, "4-tiled-mtl-rc-ccs"},
 	{I915_FORMAT_MOD_4_TILED_MTL_MC_CCS, "4-tiled-mtl-mc-ccs"},
 	{I915_FORMAT_MOD_4_TILED_MTL_RC_CCS_CC, "4-tiled-mtl-rc-ccs-cc"},
+	{I915_FORMAT_MOD_4_TILED, "4-tiled-xe2-ccs"},
 };
 
 static bool check_ccs_planes;
@@ -534,6 +581,143 @@ static void fast_clear_fb(int drm_fd, struct igt_fb *fb, const float *cc_color)
 	buf_ops_destroy(bops);
 }
 
+static struct blt_copy_object *blt_fb_init(const struct igt_fb *fb,
+					   uint32_t plane, uint32_t memregion,
+					   uint8_t pat_index)
+{
+	uint32_t name, handle;
+	struct blt_copy_object *blt;
+	uint64_t stride;
+
+	blt = malloc(sizeof(*blt));
+	igt_assert(blt);
+
+	name = gem_flink(fb->fd, fb->gem_handle);
+	handle = gem_open(fb->fd, name);
+
+	stride = fb->strides[plane] / 4;
+
+	blt_set_object(blt, handle, fb->size, memregion,
+		       intel_get_uc_mocs_index(fb->fd),
+		       pat_index,
+		       T_TILE4,
+		       COMPRESSION_DISABLED,
+		       COMPRESSION_TYPE_3D);
+
+	blt_set_geom(blt, stride, 0, 0, fb->width, fb->plane_height[plane], 0, 0);
+	blt->plane_offset = fb->offsets[plane];
+	blt->ptr = xe_bo_mmap_ext(fb->fd, handle, fb->size,
+				  PROT_READ | PROT_WRITE);
+	return blt;
+}
+
+static enum blt_color_depth blt_get_bpp(const struct igt_fb *fb)
+{
+	switch (fb->plane_bpp[0]) {
+	case 8:
+		return CD_8bit;
+	case 16:
+		return CD_16bit;
+	case 32:
+		return CD_32bit;
+	case 64:
+		return CD_64bit;
+	case 96:
+		return CD_96bit;
+	case 128:
+		return CD_128bit;
+	default:
+		igt_assert(0);
+	}
+}
+
+static uint32_t blt_compression_format(struct blt_copy_data *blt,
+				       const struct igt_fb *fb)
+{
+	switch (fb->drm_format) {
+	case DRM_FORMAT_XRGB8888:
+	case DRM_FORMAT_P010:
+	case DRM_FORMAT_P012:
+	case DRM_FORMAT_P016:
+	case DRM_FORMAT_YUYV:
+		return 8;
+	case DRM_FORMAT_XYUV8888:
+	case DRM_FORMAT_NV12:
+		return 9;
+	default:
+		igt_assert_f(0, "Unknown format\n");
+	}
+}
+
+static void xe2_ccs_blit(data_t *data, struct igt_fb *fb, struct igt_fb *temp_fb)
+{
+	uint64_t ahnd = 0;
+
+	struct blt_copy_data blt = {};
+	struct blt_copy_object *src, *dst;
+	struct blt_block_copy_data_ext ext = {}, *pext = NULL;
+	uint32_t mem_region;
+	intel_ctx_t *xe_ctx;
+	uint32_t vm, exec_queue;
+	uint32_t xe_bb;
+	uint64_t bb_size = 4096;
+	struct igt_fb *dst_fb = fb, *src_fb = temp_fb;
+
+	struct drm_xe_engine_class_instance inst = {
+		.engine_class = DRM_XE_ENGINE_CLASS_COPY,
+	};
+
+	vm = xe_vm_create(src_fb->fd, 0, 0);
+
+	exec_queue = xe_exec_queue_create(src_fb->fd, vm, &inst, 0);
+	xe_ctx = intel_ctx_xe(src_fb->fd, vm, exec_queue, 0, 0, 0);
+	mem_region = vram_if_possible(src_fb->fd, 0);
+
+	ahnd = intel_allocator_open_full(src_fb->fd, xe_ctx->vm, 0, 0,
+						INTEL_ALLOCATOR_SIMPLE,
+						ALLOC_STRATEGY_LOW_TO_HIGH, 0);
+
+	bb_size = ALIGN(bb_size + xe_cs_prefetch_size(src_fb->fd),
+			xe_get_default_alignment(src_fb->fd));
+	xe_bb = xe_bo_create(src_fb->fd, 0, bb_size,
+			     vram_if_possible(dst_fb->fd, 0), 0);
+
+	for (int i = 0; i < dst_fb->num_planes; i++) {
+		src = blt_fb_init(src_fb, i, mem_region, intel_get_pat_idx_uc(src_fb->fd));
+		dst = blt_fb_init(dst_fb, i, mem_region, intel_get_pat_idx_wt(dst_fb->fd));
+
+		blt_copy_init(src_fb->fd, &blt);
+		blt.color_depth = blt_get_bpp(src_fb);
+		blt_set_copy_object(&blt.src, src);
+		blt_set_copy_object(&blt.dst, dst);
+
+		blt_set_object_ext(&ext.src,
+				blt_compression_format(&blt, src_fb),
+				src_fb->width, src_fb->height,
+				SURFACE_TYPE_2D);
+
+		blt_set_object_ext(&ext.dst,
+				blt_compression_format(&blt, dst_fb),
+				dst_fb->width, dst_fb->height,
+				SURFACE_TYPE_2D);
+
+		pext = &ext;
+
+		blt_set_batch(&blt.bb, xe_bb, bb_size, mem_region);
+
+		blt_block_copy(src_fb->fd, xe_ctx, NULL, ahnd, &blt, pext);
+
+		blt_destroy_object(src_fb->fd, src);
+		blt_destroy_object(dst_fb->fd, dst);
+	}
+
+	put_ahnd(ahnd);
+	gem_close(dst_fb->fd, xe_bb);
+	xe_exec_queue_destroy(dst_fb->fd, exec_queue);
+	xe_vm_destroy(dst_fb->fd, vm);
+	free(xe_ctx);
+}
+
 static void generate_fb(data_t *data, struct igt_fb *fb,
 			int width, int height,
 			enum test_fb_flags fb_flags)
@@ -572,15 +756,37 @@ static void generate_fb(data_t *data, struct igt_fb *fb,
 		if (do_fast_clear && (fb_flags & FB_COMPRESSED)) {
 			fast_clear_fb(data->drm_fd, fb, cc_color);
 		} else {
-			cr = igt_get_cairo_ctx(data->drm_fd, fb);
+			if (modifier == I915_FORMAT_MOD_4_TILED) {
+				struct igt_fb temp_fb;
+				/* tile4 is used as ccs modifier
+				 * on Xe2 where compression is handled
+				 * through PAT indexes.
+				 */
 
-			if (do_solid_fill)
-				igt_paint_color(cr, 0, 0, width, height,
-						colors[c].r, colors[c].g, colors[c].b);
-			else
-				igt_paint_test_pattern(cr, width, height);
+				// non compressed temporary pattern image
+				if (do_solid_fill)
+					igt_create_color_fb(data->drm_fd, width, height,
+						fb->drm_format, I915_FORMAT_MOD_4_TILED,
+						colors[c].r, colors[c].g, colors[c].b,
+						&temp_fb);
+				else
+					igt_create_pattern_fb(data->drm_fd, width, height,
+							fb->drm_format, I915_FORMAT_MOD_4_TILED,
+							&temp_fb);
 
-			igt_put_cairo_ctx(cr);
+				xe2_ccs_blit(data, fb, &temp_fb);
+				igt_remove_fb(data->drm_fd, &temp_fb);
+			} else {
+				cr = igt_get_cairo_ctx(data->drm_fd, fb);
+
+				if (do_solid_fill)
+					igt_paint_color(cr, 0, 0, width, height,
+							colors[c].r, colors[c].g, colors[c].b);
+				else
+					igt_paint_test_pattern(cr, width, height);
+
+				igt_put_cairo_ctx(cr);
+			}
 		}
 	}
 
@@ -748,8 +954,11 @@ static int test_ccs(data_t *data)
 
 static void test_output(data_t *data, const int testnum)
 {
+	uint16_t dev_id;
+
 	igt_fixture {
 		bool found = false;
+		dev_id = intel_get_drm_devid(data->drm_fd);
 
 		data->flags = tests[testnum].flags;
 
@@ -767,11 +976,13 @@ static void test_output(data_t *data, const int testnum)
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(ccs_modifiers); i++) {
-		if ((ccs_modifiers[i].modifier == I915_FORMAT_MOD_4_TILED_DG2_RC_CCS ||
+		if (((ccs_modifiers[i].modifier == I915_FORMAT_MOD_4_TILED_DG2_RC_CCS ||
 		    ccs_modifiers[i].modifier == I915_FORMAT_MOD_4_TILED_DG2_MC_CCS ||
 		    ccs_modifiers[i].modifier == I915_FORMAT_MOD_4_TILED_DG2_RC_CCS_CC) &&
-		    tests[testnum].flags & TEST_BAD_CCS_PLANE)
-		    continue;
+		    tests[testnum].flags & TEST_BAD_CCS_PLANE) ||
+		    (tests[testnum].flags & TEST_FAIL_ON_ADDFB2 &&
+		    ccs_modifiers[i].modifier == I915_FORMAT_MOD_4_TILED))
+			continue;
 
 		data->ccs_modifier = ccs_modifiers[i].modifier;
 
@@ -779,6 +990,14 @@ static void test_output(data_t *data, const int testnum)
 		igt_subtest_f("pipe-%s-%s-%s", kmstest_pipe_name(data->pipe),
 			      tests[testnum].testname, ccs_modifiers[i].str) {
 			int valid_tests = 0;
+
+			if (ccs_modifiers[i].modifier == I915_FORMAT_MOD_4_TILED) {
+				igt_require_f(AT_LEAST_GEN(dev_id, 20),
+					      "Xe2 platform needed.\n");
+			} else {
+				igt_require_f(intel_get_device_info(dev_id)->graphics_ver < 20,
+					      "Older than Xe2 platform needed.\n");
+			}
 
 			if (data->flags == TEST_RANDOM)
 				igt_info("Testing with seed %d\n", data->seed);
