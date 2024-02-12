@@ -577,6 +577,16 @@ igt_main
 
 		i915 = drm_reopen_driver(i915); /* Apply modparam. */
 		ctx = intel_ctx_create_all_physical(i915);
+
+		for_each_ctx_engine(i915, ctx, e) {
+			/*
+			 * Context termination by watchdog may require an engine reset. That only
+			 * occurs after a pre-emption attempt has expired. For RCS/CCS engines,
+			 * the pre-emption timeout is longer than this test is wanting to wait.
+			 * So reduce that timeout in addition to the watchdog timeout itself.
+			 */
+			gem_engine_property_printf(i915, e->name, "preempt_timeout_ms", "%d", 640);
+		}
 	}
 
 	igt_subtest_group {
