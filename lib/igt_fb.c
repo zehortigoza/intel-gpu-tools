@@ -2780,6 +2780,8 @@ static struct blt_copy_object *blt_fb_init(const struct igt_fb *fb,
 
 	blt->plane_offset = fb->offsets[plane];
 
+	igt_assert(fb->size);
+
 	if (is_xe_device(fb->fd))
 		blt->ptr = xe_bo_mmap_ext(fb->fd, handle, fb->size,
 					  PROT_READ | PROT_WRITE);
