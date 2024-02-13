@@ -163,36 +163,26 @@ class IgtTestList(TestList):
                             testlists[driver][gpu][run_type].add(subname)
                         continue
 
-                    default_gpu_value = True
-
                     # If GPU field is used, default is to block list
+                    default_gpu_value = True
                     for gpu, value in gpus.items():
                         if value:
                             default_gpu_value = False
                             break
 
-                    for gpu, value in gpus.items():
+                    for gpu in gpu_set:
+                        value = tests_per_list[driver][run_type][subname].get(gpu, default_gpu_value)
+
+                        if not value:
+                            continue
+
                         if gpu not in testlists[driver]:
                             testlists[driver][gpu] = {}
 
                         if run_type not in testlists[driver][gpu]:
                             testlists[driver][gpu][run_type] = set()
 
-                        value = default_gpu_value
-                        if gpu in tests_per_list[driver][run_type][subname]:
-                            value = tests_per_list[driver][run_type][subname]
-
-                        if value:
-                            testlists[driver][gpu][run_type].add(subname)
-
-                    if default_gpu_value:
-                        if default_gpu not in testlists[driver]:
-                            testlists[driver][default_gpu] = {}
-
-                        if run_type not in testlists[driver][default_gpu]:
-                            testlists[driver][default_gpu][run_type] = set()
-
-                        testlists[driver][default_gpu][run_type].add(subname)
+                        testlists[driver][gpu][run_type].add(subname)
 
         if len(gpu_set) == 0:
             gpu_set.add(default_gpu)
