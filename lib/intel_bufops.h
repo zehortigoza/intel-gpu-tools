@@ -185,8 +185,7 @@ struct intel_buf *intel_buf_create_using_handle_and_size(struct buf_ops *bops,
 							 int bpp, int alignment,
 							 uint32_t req_tiling,
 							 uint32_t compression,
-							 uint64_t size,
-							 int stride);
+							 uint64_t size);
 
 struct intel_buf *intel_buf_create_full(struct buf_ops *bops,
 					uint32_t handle,

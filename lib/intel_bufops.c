@@ -1120,6 +1120,7 @@ struct intel_buf *intel_buf_create(struct buf_ops *bops,
  * @alignment: alignment of the stride for linear surfaces
  * @tiling: surface tiling
  * @compression: surface compression type
+ * @size: real bo size
  *
  * Function creates intel_buf with passed BO handle from the caller. Doesn't
  * take ownership of the buffer. close()/destroy() paths doesn't close
@@ -1151,11 +1152,10 @@ struct intel_buf *intel_buf_create_using_handle_and_size(struct buf_ops *bops,
 							 int bpp, int alignment,
 							 uint32_t req_tiling,
 							 uint32_t compression,
-							 uint64_t size,
-							 int stride)
+							 uint64_t size)
 {
 	return intel_buf_create_full(bops, handle, width, height, bpp, alignment,
-				     req_tiling, compression, size, stride, -1,
+				     req_tiling, compression, size, 0, -1,
 				     DEFAULT_PAT_INDEX);
 }
 
