@@ -903,11 +903,6 @@ static void __intel_buf_init(struct buf_ops *bops,
 		size = buf->surface[0].stride * ALIGN(height, align_h);
 	}
 
-	if (bo_size > 0) {
-		igt_assert(bo_size >= size);
-		size = bo_size;
-	}
-
 	/* Store buffer size to avoid mistakes in calculating it again */
 	buf->size = size;
 	buf->handle = handle;
@@ -918,17 +913,22 @@ static void __intel_buf_init(struct buf_ops *bops,
 	buf->region = region;
 
 	if (!handle) {
+		if (!bo_size)
+			bo_size = size;
+
 		if (bops->driver == INTEL_DRIVER_I915) {
-			if (__gem_create_in_memory_regions(bops->fd, &buf->handle, &size, region))
-				igt_assert_eq(__gem_create(bops->fd, &size, &buf->handle), 0);
+			if (__gem_create_in_memory_regions(bops->fd, &buf->handle, &bo_size, region))
+				igt_assert_eq(__gem_create(bops->fd, &bo_size, &buf->handle), 0);
 		} else {
-			size = ALIGN(size, xe_get_default_alignment(bops->fd));
-			buf->handle = xe_bo_create(bops->fd, 0, size, region, 0);
+			bo_size = ALIGN(bo_size, xe_get_default_alignment(bops->fd));
+			buf->handle = xe_bo_create(bops->fd, 0, bo_size, region, 0);
 		}
 	}
 
+	igt_assert(bo_size >= size);
+
 	/* Store gem bo size */
-	buf->bo_size = size;
+	buf->bo_size = bo_size;
 
 	if (bops->driver == INTEL_DRIVER_I915)
 		set_hw_tiled(bops, buf);
