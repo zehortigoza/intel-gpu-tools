@@ -273,13 +273,11 @@ static void test_i915_import_pread_pwrite(void)
 	gem_close(intel_fd, intel_handle);
 }
 
-static uint32_t create_bo(uint32_t val, int width, int height)
+static void fill_bo(uint32_t intel_handle, uint32_t val, int width, int height)
 {
-	uint32_t intel_handle;
 	int size = width * height;
 	uint32_t *ptr, *currptr;
 
-	intel_handle = gem_create(intel_fd, 4*width*height);
 	igt_assert(intel_handle);
 
         /* gtt map doesn't have a write parameter, so just keep the mapping
@@ -293,15 +291,12 @@ static uint32_t create_bo(uint32_t val, int width, int height)
 		*currptr++ = val;
 
 	gem_munmap(ptr, size);
-
-	return intel_handle;
 }
 
 /* use intel hw to fill the BO with a blit from another BO,
    then readback from the nouveau bo, check value is correct */
 static void test_i915_blt_fill_nv_read(void)
 {
-	uint32_t dst_handle, src_handle;
 	int prime_fd;
 	struct nouveau_bo *nvbo = NULL;
 	uint32_t *ptr;
@@ -312,18 +307,18 @@ static void test_i915_blt_fill_nv_read(void)
 
 	ibb = intel_bb_create(intel_fd, 4096);
 
-	src_handle = create_bo(0xaa55aa55, w, h);
-	dst_handle = gem_create(intel_fd, BO_SIZE);
+	intel_buf_init(bops, &src, w, h, 32, 0,
+		       I915_TILING_NONE, I915_COMPRESSION_NONE);
+	intel_buf_init(bops, &dst, w, 256, 32, 0,
+		       I915_TILING_NONE, I915_COMPRESSION_NONE);
 
-	prime_fd = prime_handle_to_fd(intel_fd, dst_handle);
+	fill_bo(src.handle, 0xaa55aa55, w, h);
+
+	prime_fd = prime_handle_to_fd(intel_fd, dst.handle);
 
 	igt_assert(nouveau_bo_prime_handle_ref(ndev, prime_fd, &nvbo) == 0);
 	close(prime_fd);
 
-	intel_buf_init_using_handle(bops, src_handle, &src, w, h, 32, 0,
-				    I915_TILING_NONE, I915_COMPRESSION_NONE);
-	intel_buf_init_using_handle(bops, dst_handle, &dst, w, 256, 32, 0,
-				    I915_TILING_NONE, I915_COMPRESSION_NONE);
 	intel_bb_copy_intel_buf(ibb, &dst, &src, w * h * 4);
 
 	igt_assert(nouveau_bo_map(nvbo, NOUVEAU_BO_RDWR, nclient) == 0);
@@ -335,8 +330,6 @@ static void test_i915_blt_fill_nv_read(void)
 	intel_buf_destroy(&src);
 	intel_buf_destroy(&dst);
 	intel_bb_destroy(ibb);
-	gem_close(intel_fd, dst_handle);
-	gem_close(intel_fd, src_handle);
 }
 
 /* test 8 use nouveau to do blit */
