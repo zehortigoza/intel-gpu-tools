@@ -72,8 +72,9 @@ static void exec_nop(data_t *data, struct igt_fb *fb, uint32_t ctx)
 
 	name = gem_flink(data->drm_fd, fb->gem_handle);
 	handle = gem_open(data->drm_fd, name);
-	dst = intel_buf_create_using_handle(data->bops, handle,
-					    width, height, bpp, 0, tiling, 0);
+	dst = intel_buf_create_using_handle_and_size(data->bops, handle, width,
+						     height, bpp, 0, tiling, 0,
+						     size);
 	intel_buf_set_ownership(dst, true);
 
 	ibb = intel_bb_create_with_context(buf_ops_get_fd(data->bops),

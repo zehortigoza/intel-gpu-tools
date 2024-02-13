@@ -545,12 +545,20 @@ static void test_render_baseline(int i915)
 	igt_assert(ibb);
 
 	dstbo = alloc_and_fill_dest_buff(i915, false, TSTSURF_SIZE, TSTSURF_INITCOLOR1);
-	dstbuf = intel_buf_create_using_handle(bops, dstbo, TSTSURF_WIDTH, TSTSURF_HEIGHT,
-					       TSTSURF_BYTESPP*8, 0, I915_TILING_NONE, 0);
+	dstbuf = intel_buf_create_using_handle_and_size(bops, dstbo,
+							TSTSURF_WIDTH,
+							TSTSURF_HEIGHT,
+							TSTSURF_BYTESPP*8, 0,
+							I915_TILING_NONE, 0,
+							TSTSURF_SIZE);
 
 	srcbo = alloc_and_fill_dest_buff(i915, false, TSTSURF_SIZE, TSTSURF_FILLCOLOR1);
-	srcbuf = intel_buf_create_using_handle(bops, srcbo, TSTSURF_WIDTH, TSTSURF_HEIGHT,
-					       TSTSURF_BYTESPP*8, 0, I915_TILING_NONE, 0);
+	srcbuf = intel_buf_create_using_handle_and_size(bops, srcbo,
+							TSTSURF_WIDTH,
+							TSTSURF_HEIGHT,
+							TSTSURF_BYTESPP*8, 0,
+							I915_TILING_NONE, 0,
+							TSTSURF_SIZE);
 
 	render_copy(ibb, srcbuf, 0, 0, TSTSURF_WIDTH, TSTSURF_HEIGHT, dstbuf, 0, 0);
 	gem_sync(i915, dstbo);
@@ -595,13 +603,21 @@ static void __test_render_pxp_src_to_protdest(int i915, uint32_t *outpixels, int
 	intel_bb_set_pxp(ibb, true, DISPLAY_APPTYPE, I915_PROTECTED_CONTENT_DEFAULT_SESSION);
 
 	dstbo = alloc_and_fill_dest_buff(i915, true, TSTSURF_SIZE, TSTSURF_INITCOLOR2);
-	dstbuf = intel_buf_create_using_handle(bops, dstbo, TSTSURF_WIDTH, TSTSURF_HEIGHT,
-						TSTSURF_BYTESPP*8, 0, I915_TILING_NONE, 0);
+	dstbuf = intel_buf_create_using_handle_and_size(bops, dstbo,
+							TSTSURF_WIDTH,
+							TSTSURF_HEIGHT,
+							TSTSURF_BYTESPP*8, 0,
+							I915_TILING_NONE, 0,
+							TSTSURF_SIZE);
 	intel_buf_set_pxp(dstbuf, true);
 
 	srcbo = alloc_and_fill_dest_buff(i915, false, TSTSURF_SIZE, TSTSURF_FILLCOLOR2);
-	srcbuf = intel_buf_create_using_handle(bops, srcbo, TSTSURF_WIDTH, TSTSURF_HEIGHT,
-						TSTSURF_BYTESPP*8, 0, I915_TILING_NONE, 0);
+	srcbuf = intel_buf_create_using_handle_and_size(bops, srcbo,
+							TSTSURF_WIDTH,
+							TSTSURF_HEIGHT,
+							TSTSURF_BYTESPP*8, 0,
+							I915_TILING_NONE, 0,
+							TSTSURF_SIZE);
 
 	render_copy(ibb, srcbuf, 0, 0, TSTSURF_WIDTH, TSTSURF_HEIGHT, dstbuf, 0, 0);
 	gem_sync(i915, dstbo);
@@ -656,13 +672,21 @@ static void test_render_pxp_protsrc_to_protdest(int i915)
 	intel_bb_set_pxp(ibb, true, DISPLAY_APPTYPE, I915_PROTECTED_CONTENT_DEFAULT_SESSION);
 
 	dstbo = alloc_and_fill_dest_buff(i915, true, TSTSURF_SIZE, TSTSURF_INITCOLOR2);
-	dstbuf = intel_buf_create_using_handle(bops, dstbo, TSTSURF_WIDTH, TSTSURF_HEIGHT,
-						TSTSURF_BYTESPP*8, 0, I915_TILING_NONE, 0);
+	dstbuf = intel_buf_create_using_handle_and_size(bops, dstbo,
+							TSTSURF_WIDTH,
+							TSTSURF_HEIGHT,
+							TSTSURF_BYTESPP*8, 0,
+							I915_TILING_NONE, 0,
+							TSTSURF_SIZE);
 	intel_buf_set_pxp(dstbuf, true);
 
 	srcbo = alloc_and_fill_dest_buff(i915, false, TSTSURF_SIZE, TSTSURF_FILLCOLOR2);
-	srcbuf = intel_buf_create_using_handle(bops, srcbo, TSTSURF_WIDTH, TSTSURF_HEIGHT,
-						TSTSURF_BYTESPP*8, 0, I915_TILING_NONE, 0);
+	srcbuf = intel_buf_create_using_handle_and_size(bops, srcbo,
+							TSTSURF_WIDTH,
+							TSTSURF_HEIGHT,
+							TSTSURF_BYTESPP*8, 0,
+							I915_TILING_NONE, 0,
+							TSTSURF_SIZE);
 
 	render_copy(ibb, srcbuf, 0, 0, TSTSURF_WIDTH, TSTSURF_HEIGHT, dstbuf, 0, 0);
 	gem_sync(i915, dstbo);
@@ -682,8 +706,12 @@ static void test_render_pxp_protsrc_to_protdest(int i915)
 				TSTSURF_SIZE, 0, encrypted, TSTSURF_SIZE);
 
 	dstbo2 = alloc_and_fill_dest_buff(i915, true, TSTSURF_SIZE, TSTSURF_INITCOLOR3);
-	dstbuf2 = intel_buf_create_using_handle(bops, dstbo2, TSTSURF_WIDTH, TSTSURF_HEIGHT,
-						TSTSURF_BYTESPP*8, 0, I915_TILING_NONE, 0);
+	dstbuf2 = intel_buf_create_using_handle_and_size(bops, dstbo2,
+							 TSTSURF_WIDTH,
+							 TSTSURF_HEIGHT,
+							 TSTSURF_BYTESPP*8, 0,
+							 I915_TILING_NONE, 0,
+							 TSTSURF_SIZE);
 	intel_buf_set_pxp(dstbuf2, true);
 	intel_buf_set_pxp(dstbuf, true);/*this time, src is protected*/
 
@@ -751,15 +779,27 @@ static void test_pxp_dmabuffshare_refcnt(int i915)
 		if (n == 1)
 			fill_bo_content(fd[1], dbo[1], TSTSURF_SIZE, TSTSURF_INITCOLOR2);
 
-		dbuf[n] = intel_buf_create_using_handle(bops[n], dbo[n], TSTSURF_WIDTH,
-							TSTSURF_HEIGHT,	TSTSURF_BYTESPP*8, 0,
-							I915_TILING_NONE, 0);
+		dbuf[n] = intel_buf_create_using_handle_and_size(bops[n],
+								 dbo[n],
+								 TSTSURF_WIDTH,
+								 TSTSURF_HEIGHT,
+								 TSTSURF_BYTESPP*8,
+								 0,
+								 I915_TILING_NONE,
+								 0,
+								 TSTSURF_SIZE);
 		intel_buf_set_pxp(dbuf[n], true);
 
 		sbo[n] = alloc_and_fill_dest_buff(fd[n], false, TSTSURF_SIZE, TSTSURF_FILLCOLOR1);
-		sbuf[n] = intel_buf_create_using_handle(bops[n], sbo[n], TSTSURF_WIDTH,
-							TSTSURF_HEIGHT, TSTSURF_BYTESPP*8, 0,
-							I915_TILING_NONE, 0);
+		sbuf[n] = intel_buf_create_using_handle_and_size(bops[n],
+								 sbo[n],
+								 TSTSURF_WIDTH,
+								 TSTSURF_HEIGHT,
+								 TSTSURF_BYTESPP*8,
+								 0,
+								 I915_TILING_NONE,
+								 0,
+								 TSTSURF_SIZE);
 
 		render_copy(ibb[n], sbuf[n], 0, 0, TSTSURF_WIDTH, TSTSURF_HEIGHT,
 			    dbuf[n], 0, 0);
@@ -913,8 +953,11 @@ static void prepare_exec_assets(int i915, struct simple_exec_assets *data, bool 
 	data->bops = buf_ops_create(i915);
 	igt_assert(data->bops);
 
-	data->fencebuf = intel_buf_create_using_handle(data->bops, data->fencebo, 256, 4,
-						       32, 0, I915_TILING_NONE, 0);
+	data->fencebuf = intel_buf_create_using_handle_and_size(data->bops,
+								data->fencebo,
+								256, 4, 32, 0,
+								I915_TILING_NONE,
+								0, 4096);
 	intel_bb_add_intel_buf(data->ibb, data->fencebuf, true);
 }
 
@@ -1144,15 +1187,19 @@ static void setup_protected_fb(int i915, int width, int height, igt_fb_t *fb, ui
 			      fb->modifier, fb->strides, fb->offsets, fb->num_planes,
 			      DRM_MODE_FB_MODIFIERS, &fb->fb_id));
 
-	dstbuf = intel_buf_create_using_handle(bops, fb->gem_handle, fb->width, fb->height,
-					       fb->plane_bpp[0], 0,
-					       igt_fb_mod_to_tiling(fb->modifier), 0);
+	dstbuf = intel_buf_create_using_handle_and_size(bops, fb->gem_handle,
+							fb->width, fb->height,
+							fb->plane_bpp[0], 0,
+							igt_fb_mod_to_tiling(fb->modifier),
+							0, fb->size);
 	dstbuf->is_protected = true;
 
 	srcbo = alloc_and_fill_dest_buff(i915, false, fb->size, TSTSURF_GREENCOLOR);
-	srcbuf = intel_buf_create_using_handle(bops, srcbo, fb->width, fb->height,
-					       fb->plane_bpp[0], 0,
-					       igt_fb_mod_to_tiling(fb->modifier), 0);
+	srcbuf = intel_buf_create_using_handle_and_size(bops, srcbo, fb->width,
+							fb->height,
+							fb->plane_bpp[0], 0,
+							igt_fb_mod_to_tiling(fb->modifier),
+							0, fb->size);
 
 	ibb = intel_bb_create_with_context(i915, ctx, 0, NULL, 4096);
 	igt_assert(ibb);

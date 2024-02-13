@@ -172,8 +172,9 @@ create_private_bo(struct buf_ops *bops, uint32_t width, uint32_t height,
 	name = gem_flink(fd, handle);
 	buf_handle = gem_open(fd, name);
 
-	buf = intel_buf_create_using_handle(bops, buf_handle,
-					    width, height, bpp, 0, tiling, 0);
+	buf = intel_buf_create_using_handle_and_size(bops, buf_handle, width,
+						     height, bpp, 0, tiling, 0,
+						     size);
 	intel_buf_set_ownership(buf, true);
 
 	gem_close(fd, handle);
@@ -202,8 +203,9 @@ create_stolen_bo(struct buf_ops *bops, uint32_t width, uint32_t height,
 	name = gem_flink(fd, handle);
 	buf_handle = gem_open(fd, name);
 
-	buf = intel_buf_create_using_handle(bops, buf_handle,
-					    width, height, bpp, 0, tiling, 0);
+	buf = intel_buf_create_using_handle_and_size(bops, buf_handle, width,
+						     height, bpp, 0, tiling, 0,
+						     size);
 	intel_buf_set_ownership(buf, true);
 
 	gem_close(fd, handle);
@@ -305,9 +307,10 @@ userptr_create_bo(const struct buffers *b)
 	userptr.user_ptr = to_user_pointer(ptr);
 
 	do_or_die(drmIoctl(fd, DRM_IOCTL_I915_GEM_USERPTR, &userptr));
-	buf = intel_buf_create_using_handle(b->bops, userptr.handle,
-					    b->width, b->height, 32, 0,
-					    I915_TILING_NONE, 0);
+	buf = intel_buf_create_using_handle_and_size(b->bops, userptr.handle,
+						     b->width, b->height, 32, 0,
+						     I915_TILING_NONE, 0,
+						     userptr.user_size);
 	intel_buf_set_ownership(buf, true);
 
 	buf->ptr = (void *) from_user_pointer(userptr.user_ptr);
@@ -404,9 +407,9 @@ dmabuf_create_bo(const struct buffers *b)
 	igt_assert(args.fd != -1);
 
 	handle = prime_fd_to_handle(buf_ops_get_fd(b->bops), args.fd);
-	buf = intel_buf_create_using_handle(b->bops, handle,
-					    b->width, b->height, 32, 0,
-					    I915_TILING_NONE, 0);
+	buf = intel_buf_create_using_handle_and_size(b->bops, handle, b->width,
+						     b->height, 32, 0,
+						     I915_TILING_NONE, 0, size);
 	intel_buf_set_ownership(buf, true);
 
 	dmabuf = malloc(sizeof(*dmabuf));
@@ -511,9 +514,11 @@ vgem_create_bo(const struct buffers *b)
 	igt_assert(args.fd != -1);
 
 	handle = prime_fd_to_handle(buf_ops_get_fd(b->bops), args.fd);
-	buf = intel_buf_create_using_handle(b->bops, handle,
-					    vgem.width, vgem.height, vgem.bpp,
-					    0, I915_TILING_NONE, 0);
+	buf = intel_buf_create_using_handle_and_size(b->bops, handle,
+						     vgem.width, vgem.height,
+						     vgem.bpp, 0,
+						     I915_TILING_NONE, 0,
+						     vgem.size);
 	intel_buf_set_ownership(buf, true);
 
 	dmabuf = malloc(sizeof(*dmabuf));

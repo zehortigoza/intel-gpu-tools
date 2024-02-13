@@ -1111,7 +1111,7 @@ struct intel_buf *intel_buf_create(struct buf_ops *bops,
 }
 
 /**
- * intel_buf_create_using_handle
+ * intel_buf_create_using_handle_and_size
  * @bops: pointer to buf_ops
  * @handle: BO handle created by the caller
  * @width: surface width
@@ -1126,26 +1126,6 @@ struct intel_buf *intel_buf_create(struct buf_ops *bops,
  * take ownership of the buffer. close()/destroy() paths doesn't close
  * passed handle unless buffer will take ownership using set_ownership().
  */
-struct intel_buf *intel_buf_create_using_handle(struct buf_ops *bops,
-						uint32_t handle,
-						int width, int height,
-						int bpp, int alignment,
-						uint32_t req_tiling,
-						uint32_t compression)
-{
-	struct intel_buf *buf;
-
-	igt_assert(bops);
-
-	buf = calloc(1, sizeof(*buf));
-	igt_assert(buf);
-
-	intel_buf_init_using_handle(bops, handle, buf, width, height, bpp,
-				    alignment, req_tiling, compression);
-
-	return buf;
-}
-
 struct intel_buf *intel_buf_create_using_handle_and_size(struct buf_ops *bops,
 							 uint32_t handle,
 							 int width, int height,
@@ -1154,6 +1134,8 @@ struct intel_buf *intel_buf_create_using_handle_and_size(struct buf_ops *bops,
 							 uint32_t compression,
 							 uint64_t size)
 {
+	igt_assert(handle);
+	igt_assert(size);
 	return intel_buf_create_full(bops, handle, width, height, bpp, alignment,
 				     req_tiling, compression, size, 0, -1,
 				     DEFAULT_PAT_INDEX);
