@@ -138,9 +138,10 @@ static void do_test(struct buf_ops *bops, uint32_t tiling, unsigned stride,
 	gem_munmap(ptr, TEST_SIZE);
 
 	/* Reuse previously aligned in the gtt object */
-	intel_buf_init_using_handle(bops, test_buf->handle, test_buf,
-				    TEST_WIDTH(stride), TEST_HEIGHT(stride), 32,
-				    0, tiling, I915_COMPRESSION_NONE);
+	intel_buf_init_using_handle_and_size(bops, test_buf->handle, test_buf,
+					     TEST_WIDTH(stride), TEST_HEIGHT(stride), 32,
+					     0, tiling, I915_COMPRESSION_NONE,
+					     test_buf->bo_size);
 	igt_assert_eq_u32(intel_buf_size(test_buf), TEST_SIZE);
 	intel_buf_set_ownership(test_buf, true);
 	intel_bb_add_intel_buf(ibb, test_buf, false);

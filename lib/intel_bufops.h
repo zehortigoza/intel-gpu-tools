@@ -150,11 +150,6 @@ void intel_buf_init_in_region(struct buf_ops *bops,
 			      uint64_t region);
 void intel_buf_close(struct buf_ops *bops, struct intel_buf *buf);
 
-void intel_buf_init_using_handle(struct buf_ops *bops,
-				 uint32_t handle,
-				 struct intel_buf *buf,
-				 int width, int height, int bpp, int alignment,
-				 uint32_t req_tiling, uint32_t compression);
 void intel_buf_init_full(struct buf_ops *bops,
 			 uint32_t handle,
 			 struct intel_buf *buf,
@@ -172,12 +167,14 @@ struct intel_buf *intel_buf_create(struct buf_ops *bops,
 				   int bpp, int alignment,
 				   uint32_t req_tiling, uint32_t compression);
 
-struct intel_buf *intel_buf_create_using_handle(struct buf_ops *bops,
-						uint32_t handle,
-						int width, int height,
-						int bpp, int alignment,
-						uint32_t req_tiling,
-						uint32_t compression);
+void intel_buf_init_using_handle_and_size(struct buf_ops *bops,
+					  uint32_t handle,
+					  struct intel_buf *buf,
+					  int width, int height,
+					  int bpp, int alignment,
+					  uint32_t req_tiling,
+					  uint32_t compression,
+					  uint64_t size);
 
 struct intel_buf *intel_buf_create_using_handle_and_size(struct buf_ops *bops,
 							 uint32_t handle,

@@ -1011,7 +1011,7 @@ void intel_buf_close(struct buf_ops *bops, struct intel_buf *buf)
 }
 
 /**
- * intel_buf_init_using_handle
+ * intel_buf_init_using_handle_and_size
  * @bops: pointer to buf_ops
  * @handle: BO handle created by the caller
  * @buf: pointer to intel_buf structure to be filled
@@ -1021,6 +1021,7 @@ void intel_buf_close(struct buf_ops *bops, struct intel_buf *buf)
  * @alignment: alignment of the stride for linear surfaces
  * @tiling: surface tiling
  * @compression: surface compression type
+ * @size: real bo size
  *
  * Function configures BO handle within intel_buf structure passed by the caller
  * (with all its metadata - width, height, ...). Useful if BO was created
@@ -1029,14 +1030,17 @@ void intel_buf_close(struct buf_ops *bops, struct intel_buf *buf)
  * Note: intel_buf_close() can be used because intel_buf is aware it is not
  * buffer owner so it won't close it underneath.
  */
-void intel_buf_init_using_handle(struct buf_ops *bops,
-				 uint32_t handle,
-				 struct intel_buf *buf,
-				 int width, int height, int bpp, int alignment,
-				 uint32_t req_tiling, uint32_t compression)
+void intel_buf_init_using_handle_and_size(struct buf_ops *bops,
+					  uint32_t handle,
+					  struct intel_buf *buf,
+					  int width, int height, int bpp, int alignment,
+					  uint32_t req_tiling, uint32_t compression,
+					  uint64_t size)
 {
+	igt_assert(handle);
+	igt_assert(size);
 	__intel_buf_init(bops, handle, buf, width, height, bpp, alignment,
-			 req_tiling, compression, 0, 0, -1, DEFAULT_PAT_INDEX);
+			 req_tiling, compression, size, 0, -1, DEFAULT_PAT_INDEX);
 }
 
 /**
