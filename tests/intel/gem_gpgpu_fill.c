@@ -78,7 +78,6 @@ create_buf(data_t *data, int width, int height, uint8_t color, uint32_t region)
 {
 	struct intel_buf *buf;
 	uint8_t *ptr;
-	uint32_t handle;
 	int i;
 
 	buf = calloc(1, sizeof(*buf));
@@ -88,10 +87,8 @@ create_buf(data_t *data, int width, int height, uint8_t color, uint32_t region)
 	 * Legacy code uses 32 bpp after buffer creation.
 	 * Let's do the same due to keep shader intact.
 	 */
-	handle = gem_create_in_memory_regions(data->drm_fd, SIZE, region);
-	intel_buf_init_using_handle(data->bops, handle, buf,
-				    width/4, height, 32, 0,
-				    I915_TILING_NONE, 0);
+	intel_buf_init_in_region(data->bops, buf, width/4, height, 32, 0,
+				 I915_TILING_NONE, 0, region);
 
 	ptr = gem_mmap__cpu_coherent(data->drm_fd, buf->handle, 0,
 				     buf->surface[0].size, PROT_WRITE);

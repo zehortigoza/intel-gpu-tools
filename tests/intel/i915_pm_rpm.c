@@ -218,7 +218,6 @@ create_buf(struct data_t *data, uint32_t color)
 {
 	struct intel_buf *buf;
 	uint8_t *ptr;
-	uint32_t handle;
 	struct buf_ops *bops;
 	int i;
 
@@ -226,10 +225,9 @@ create_buf(struct data_t *data, uint32_t color)
 	igt_assert(buf);
 	bops = buf_ops_create(drm_fd);
 
-	handle = gem_create_in_memory_regions(drm_fd, SIZE, data->region);
-	intel_buf_init_using_handle(bops, handle, buf,
-				    data->width / 4, data->height, 32, 0,
-				    I915_TILING_NONE, 0);
+	intel_buf_init_in_region(bops, buf,
+				 data->width / 4, data->height, 32, 0,
+				 I915_TILING_NONE, 0, data->region);
 
 	ptr = gem_mmap__cpu_coherent(drm_fd, buf->handle, 0,
 				     buf->surface[0].size, PROT_WRITE);
