@@ -254,7 +254,7 @@ static void run_test(data_t *data)
 				    igt_drm_format_to_bpp(data->fbs[1].drm_format),
 				    0,
 				    igt_fb_mod_to_tiling(data->fbs[1].modifier),
-				    0, 0, 0, is_xe_device(data->drm_fd) ?
+				    0, data->fbs[1].size, 0, is_xe_device(data->drm_fd) ?
 				    system_memory(data->drm_fd) : 0,
 				    intel_get_pat_idx_uc(data->drm_fd));
 	dst = intel_buf_create_full(data->bops, data->fbs[2].gem_handle,
@@ -262,7 +262,7 @@ static void run_test(data_t *data)
 				    data->fbs[2].height,
 				    igt_drm_format_to_bpp(data->fbs[2].drm_format),
 				    0, igt_fb_mod_to_tiling(data->fbs[2].modifier),
-				    0, 0, 0, is_xe_device(data->drm_fd) ?
+				    0, data->fbs[2].size, 0, is_xe_device(data->drm_fd) ?
 				    system_memory(data->drm_fd) : 0,
 				    intel_get_pat_idx_uc(data->drm_fd));
 	ibb = intel_bb_create(data->drm_fd, PAGE_SIZE);
