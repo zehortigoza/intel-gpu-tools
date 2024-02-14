@@ -1372,9 +1372,7 @@ struct drm_xe_wait_user_fence {
 	__u64 reserved[2];
 };
 
-/**
- * enum drm_xe_perf_type - Perf stream types
- */
+/** enum drm_xe_perf_type - Perf stream types */
 enum drm_xe_perf_type {
 	DRM_XE_PERF_TYPE_OA,
 	DRM_XE_PERF_TYPE_MAX,
@@ -1437,7 +1435,13 @@ enum drm_xe_perf_ioctls {
 
 /** enum drm_xe_oa_unit_type - OA unit types */
 enum drm_xe_oa_unit_type {
+	/**
+	 * @DRM_XE_OA_UNIT_TYPE_OAG: OAG OA unit. OAR/OAC are considered
+	 * sub-types of OAG. For OAR/OAC, use OAG.
+	 */
 	DRM_XE_OA_UNIT_TYPE_OAG,
+
+	/** @DRM_XE_OA_UNIT_TYPE_OAM: OAM OA unit */
 	DRM_XE_OA_UNIT_TYPE_OAM,
 };
 
@@ -1451,11 +1455,9 @@ struct drm_xe_oa_unit {
 	/** @oa_unit_type: OA unit type of @drm_xe_oa_unit_type */
 	__u32 oa_unit_type;
 
-	/**
-	 * @capabilities: OA capabilities bit-mask: this is a bit-mask of
-	 * property id's in enum @drm_xe_oa_property_id
-	 */
+	/** @capabilities: OA capabilities bit-mask */
 	__u64 capabilities;
+#define DRM_XE_OA_CAPS_BASE		(1 << 0)
 
 	/** @oa_timestamp_freq: OA timestamp freq */
 	__u64 oa_timestamp_freq;
@@ -1546,10 +1548,11 @@ enum drm_xe_oa_property_id {
 
 	/** @DRM_XE_OA_PROPERTY_OA_FORMAT: Perf counter report format */
 	DRM_XE_OA_PROPERTY_OA_FORMAT,
-	/**
-	 * OA_FORMAT's are specified the same way as in Bspec, in terms of
-	 * the following quantities: a. enum @drm_xe_oa_format_type
-	 * b. Counter select c. Counter size and d. BC report
+	/*
+	 * OA_FORMAT's are specified the same way as in PRM/Bspec 52198/60942,
+	 * in terms of the following quantities: a. enum @drm_xe_oa_format_type
+	 * b. Counter select c. Counter size and d. BC report. Also refer to the
+	 * oa_formats array in drivers/gpu/drm/xe/xe_oa.c.
 	 */
 #define DRM_XE_OA_FORMAT_MASK_FMT_TYPE		(0xff << 0)
 #define DRM_XE_OA_FORMAT_MASK_COUNTER_SEL	(0xff << 8)
@@ -1580,7 +1583,8 @@ enum drm_xe_oa_property_id {
 	 */
 	DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE,
 
-	DRM_XE_OA_PROPERTY_MAX /* non-ABI */
+	/** @DRM_XE_OA_PROPERTY_MAX: non-ABI */
+	DRM_XE_OA_PROPERTY_MAX
 };
 
 /**
@@ -1594,7 +1598,7 @@ struct drm_xe_oa_config {
 	/** @extensions: Pointer to the first extension struct, if any */
 	__u64 extensions;
 
-	/** * @uuid: String formatted like "%\08x-%\04x-%\04x-%\04x-%\012x" */
+	/** @uuid: String formatted like "%\08x-%\04x-%\04x-%\04x-%\012x" */
 	char uuid[36];
 
 	/** @n_regs: Number of regs in @regs_ptr */
@@ -1608,14 +1612,36 @@ struct drm_xe_oa_config {
 };
 
 /**
+ * struct drm_xe_oa_stream_config - OA stream re-configuration with
+ * @DRM_XE_PERF_IOCTL_CONFIG perf fd ioctl
+ */
+struct drm_xe_oa_stream_config {
+	/** @extensions: Pointer to the first extension struct, if any */
+	__u64 extensions;
+
+	/**
+	 * @metric_set: metric set id, previously added using
+	 * @DRM_XE_PERF_OP_ADD_CONFIG
+	 */
+	__u64 metric_set;
+
+	/** @reserved: reserved for future use */
+	__u64 reserved[3];
+};
+
+/**
  * struct drm_xe_oa_stream_status - OA stream status returned from
  * @DRM_XE_PERF_IOCTL_STATUS perf fd ioctl
  */
 struct drm_xe_oa_stream_status {
-	/** @oa_status: OA status register as specified in Bspec */
+	/** @oa_status: OA status register as specified in PRM/Bspec 46717/61226 */
 	__u64 oa_status;
+#define DRM_XE_OASTATUS_MMIO_TRG_Q_FULL		(1 << 6)
+#define DRM_XE_OASTATUS_COUNTER_OVERFLOW	(1 << 2)
+#define DRM_XE_OASTATUS_BUFFER_OVERFLOW		(1 << 1)
+#define DRM_XE_OASTATUS_REPORT_LOST		(1 << 0)
 
-	/** @reserved */
+	/** @reserved: reserved for future use */
 	__u64 reserved[3];
 };
 
@@ -1627,7 +1653,7 @@ struct drm_xe_oa_stream_info {
 	/** @oa_buf_size: OA buffer size */
 	__u64 oa_buf_size;
 
-	/** @reserved */
+	/** @reserved: reserved for future use */
 	__u64 reserved[3];
 };
 

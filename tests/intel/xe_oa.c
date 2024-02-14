@@ -690,12 +690,6 @@ __perf_open(int fd, struct drm_xe_oa_open_prop *param, bool prevent_pm)
 	return ret;
 }
 
-static bool
-has_param_class_instance(void)
-{
-	return true;
-}
-
 static uint64_t
 read_u64_file(const char *path)
 {
@@ -914,10 +908,6 @@ oar_unit_default_format(void)
 	return default_test_set->perf_oa_format;
 }
 
-/*
- * Temporary wrapper to distinguish mappings on !llc platforms,
- * where it seems cache over GEM_MMAP_OFFSET is not flushed before execution.
- */
 static void *buf_map(int fd, struct intel_buf *buf, bool write)
 {
 	void *p;
@@ -1049,18 +1039,13 @@ accumulate_reports(struct accumulator *accumulator,
 	uint64_t *deltas = accumulator->deltas;
 	int idx = 0;
 
-	if (intel_gen(devid) >= 8) {
-		/* timestamp */
-		deltas[idx] += oa_timestamp_delta(end, start, accumulator->format);
-		idx++;
+	/* timestamp */
+	deltas[idx] += oa_timestamp_delta(end, start, accumulator->format);
+	idx++;
 
-		/* clock cycles */
-		deltas[idx] += oa_tick_delta(end, start, accumulator->format);
-		idx++;
-	} else {
-		/* timestamp */
-		accumulate_uint32(4, start, end, deltas + idx++);
-	}
+	/* clock cycles */
+	deltas[idx] += oa_tick_delta(end, start, accumulator->format);
+	idx++;
 
 	for (int i = 0; i < format.n_a40; i++) {
 		accumulate_uint40(i, start, end, accumulator->format,
@@ -1096,18 +1081,14 @@ accumulator_print(struct accumulator *accumulator, const char *title)
 	int idx = 0;
 
 	igt_debug("%s:\n", title);
-	if (intel_gen(devid) >= 8) {
-		igt_debug("\ttime delta = %"PRIu64"\n", deltas[idx++]);
-		igt_debug("\tclock cycle delta = %"PRIu64"\n", deltas[idx++]);
+	igt_debug("\ttime delta = %"PRIu64"\n", deltas[idx++]);
+	igt_debug("\tclock cycle delta = %"PRIu64"\n", deltas[idx++]);
 
-		for (int i = 0; i < format.n_a40; i++)
-			igt_debug("\tA%u = %"PRIu64"\n", i, deltas[idx++]);
+	for (int i = 0; i < format.n_a40; i++)
+		igt_debug("\tA%u = %"PRIu64"\n", i, deltas[idx++]);
 
-		for (int i = 0; i < format.n_a64; i++)
-			igt_debug("\tA64_%u = %"PRIu64"\n", i, deltas[idx++]);
-	} else {
-		igt_debug("\ttime delta = %"PRIu64"\n", deltas[idx++]);
-	}
+	for (int i = 0; i < format.n_a64; i++)
+		igt_debug("\tA64_%u = %"PRIu64"\n", i, deltas[idx++]);
 
 	for (int i = 0; i < format.n_a; i++) {
 		int a_id = format.first_a + i;
@@ -1407,11 +1388,9 @@ test_invalid_oa_format_id(void)
 	properties[ARRAY_SIZE(properties) - 1] = __ff(default_test_set->perf_oa_format);
 	stream_fd = __perf_open(drm_fd, &param, false);
 	__perf_close(stream_fd);
-#if 0 /* Can't do this if we have struct not propoerty key/value pairs */
 	/* There's no valid default OA format... */
 	param.num_properties--;
-	xe_perf_ioctl_err(drm_fd, XE_PERF_STREAM_OPEN, &param, EINVAL);
-#endif
+	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 }
 
 static void
@@ -1563,9 +1542,7 @@ open_and_read_2_oa_reports(int format_id,
 
 	};
 	struct drm_xe_oa_open_prop param = {
-		.num_properties = has_param_class_instance() ?
-				  ARRAY_SIZE(properties) / 2 :
-				  (ARRAY_SIZE(properties) / 2) - 2,
+		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
 
@@ -1588,9 +1565,7 @@ print_reports(uint32_t *oa_report0, uint32_t *oa_report1, int fmt)
 	igt_debug("TIMESTAMP: 1st = %"PRIu64", 2nd = %"PRIu64", delta = %"PRIu64"\n",
 		  ts0, ts1, ts1 - ts0);
 
-	if (IS_HASWELL(devid) && format.n_c == 0) {
-		igt_debug("CLOCK = N/A\n");
-	} else {
+	{
 		uint64_t clock0 = read_report_ticks(oa_report0, fmt);
 		uint64_t clock1 = read_report_ticks(oa_report1, fmt);
 
@@ -1598,7 +1573,7 @@ print_reports(uint32_t *oa_report0, uint32_t *oa_report1, int fmt)
 			  clock0, clock1, clock1 - clock0);
 	}
 
-	if (intel_gen(devid) >= 8) {
+	{
 		uint32_t slice_freq0, slice_freq1, unslice_freq0, unslice_freq1;
 		const char *reason0 = read_report_reason(oa_report0);
 		const char *reason1 = read_report_reason(oa_report1);
@@ -1607,9 +1582,9 @@ print_reports(uint32_t *oa_report0, uint32_t *oa_report1, int fmt)
 			  oa_report0[2], oa_report1[2]);
 
 		read_report_clock_ratios(oa_report0,
-					      &slice_freq0, &unslice_freq0);
+					 &slice_freq0, &unslice_freq0);
 		read_report_clock_ratios(oa_report1,
-					      &slice_freq1, &unslice_freq1);
+					 &slice_freq1, &unslice_freq1);
 
 		igt_debug("SLICE CLK: 1st = %umhz, 2nd = %umhz, delta = %d\n",
 			  slice_freq0, slice_freq1,
@@ -1693,15 +1668,13 @@ print_report(uint32_t *report, int fmt)
 
 	igt_debug("TIMESTAMP: %"PRIu64"\n", oa_timestamp(report, fmt));
 
-	if (IS_HASWELL(devid) && format.n_c == 0) {
-		igt_debug("CLOCK = N/A\n");
-	} else {
+	{
 		uint64_t clock = read_report_ticks(report, fmt);
 
 		igt_debug("CLOCK: %"PRIu64"\n", clock);
 	}
 
-	if (intel_gen(devid) >= 8) {
+	{
 		uint32_t slice_freq, unslice_freq;
 		const char *reason = read_report_reason(report);
 
@@ -1891,12 +1864,6 @@ static void load_helper_init(void)
 	}
 
 	lh.devid = intel_get_drm_devid(drm_fd);
-
-	/* MI_STORE_DATA can only use GTT address on gen4+/g33 and needs
-	 * snoopable mem on pre-gen6. Hence load-helper only works on gen6+, but
-	 * that's also all we care about for the rps testcase*/
-	igt_assert(intel_gen(lh.devid) >= 6);
-
 	lh.bops = buf_ops_create(drm_fd);
 	lh.vm = xe_vm_create(drm_fd, 0, 0);
 	lh.context_id = xe_exec_queue_create(drm_fd, lh.vm, &xe_engine(drm_fd, 0)->instance, 0);
@@ -1964,9 +1931,7 @@ test_oa_exponents(const struct drm_xe_engine_class_instance *hwe)
 			DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 		};
 		struct drm_xe_oa_open_prop param = {
-			.num_properties = has_param_class_instance() ?
-					  ARRAY_SIZE(properties) / 2 :
-					  (ARRAY_SIZE(properties) / 2) - 2,
+			.num_properties = ARRAY_SIZE(properties) / 2,
 			.properties_ptr = to_user_pointer(properties),
 		};
 		uint64_t expected_timestamp_delta = 2ULL << exponent;
@@ -2170,11 +2135,8 @@ test_blocking(uint64_t requested_oa_period,
 	ADD_PROPS(props, idx, OA_FORMAT, __ff(test_set->perf_oa_format));
 	ADD_PROPS(props, idx, OA_EXPONENT, oa_exponent);
 	ADD_PROPS(props, idx, OA_DISABLED, true);
-
-	if (has_param_class_instance()) {
-		ADD_PROPS(props, idx, OA_UNIT_ID, 0);
-		ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, hwe->engine_instance);
-	}
+	ADD_PROPS(props, idx, OA_UNIT_ID, 0);
+	ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, hwe->engine_instance);
 
 	param.num_properties = (idx - props) / 2;
 	param.properties_ptr = to_user_pointer(props);
@@ -2224,15 +2186,13 @@ test_blocking(uint64_t requested_oa_period,
 
 		igt_assert(ret > 0);
 
-		if (intel_gen(devid) >= 8) {
-			for (int offset = 0; offset < ret; offset += format_size) {
-				uint32_t *report = (void *)(buf + offset);
+		for (int offset = 0; offset < ret; offset += format_size) {
+			uint32_t *report = (void *)(buf + offset);
 
-				if (oa_report_is_periodic(oa_exponent, report))
-					timer_report_read = true;
-				else
-					non_timer_report_read = true;
-			}
+			if (oa_report_is_periodic(oa_exponent, report))
+				timer_report_read = true;
+			else
+				non_timer_report_read = true;
 		}
 
 		if (non_timer_report_read && !timer_report_read)
@@ -2318,11 +2278,8 @@ test_polling(uint64_t requested_oa_period,
 	ADD_PROPS(props, idx, OA_FORMAT, __ff(test_set->perf_oa_format));
 	ADD_PROPS(props, idx, OA_EXPONENT, oa_exponent);
 	ADD_PROPS(props, idx, OA_DISABLED, true);
-
-	if (has_param_class_instance()) {
-		ADD_PROPS(props, idx, OA_UNIT_ID, 0);
-		ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, hwe->engine_instance);
-	}
+	ADD_PROPS(props, idx, OA_UNIT_ID, 0);
+	ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, hwe->engine_instance);
 
 	param.num_properties = (idx - props) / 2;
 	param.properties_ptr = to_user_pointer(props);
@@ -2400,15 +2357,13 @@ test_polling(uint64_t requested_oa_period,
 		 * periodic sampling and we don't want these extra reads to
 		 * cause the test to fail...
 		 */
-		if (intel_gen(devid) >= 8) {
-			for (int offset = 0; offset < ret; offset += format_size) {
-				uint32_t *report = (void *)(buf + offset);
+		for (int offset = 0; offset < ret; offset += format_size) {
+			uint32_t *report = (void *)(buf + offset);
 
-				if (oa_report_is_periodic(oa_exponent, report))
-					timer_report_read = true;
-				else
-					non_timer_report_read = true;
-			}
+			if (oa_report_is_periodic(oa_exponent, report))
+				timer_report_read = true;
+			else
+				non_timer_report_read = true;
 		}
 
 		if (non_timer_report_read && !timer_report_read)
@@ -2584,9 +2539,7 @@ test_oa_tlb_invalidate(const struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.num_properties = has_param_class_instance() ?
-				  ARRAY_SIZE(properties) / 2 :
-				  (ARRAY_SIZE(properties) / 2) - 2,
+		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
 	int num_reports1, num_reports2, num_expected_reports;
@@ -2634,9 +2587,7 @@ test_buffer_fill(const struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.num_properties = has_param_class_instance() ?
-				  ARRAY_SIZE(properties) / 2 :
-				  (ARRAY_SIZE(properties) / 2) - 2,
+		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
 	size_t report_size = get_oa_format(fmt).size;
@@ -2773,9 +2724,7 @@ test_non_zero_reason(const struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.num_properties = has_param_class_instance() ?
-				  ARRAY_SIZE(properties) / 2 :
-				  (ARRAY_SIZE(properties) / 2) - 2,
+		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
 	uint32_t buf_size = 3 * 65536 * report_size;
@@ -2851,9 +2800,7 @@ test_enable_disable(const struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.num_properties = has_param_class_instance() ?
-				  ARRAY_SIZE(properties) / 2 :
-				  (ARRAY_SIZE(properties) / 2) - 2,
+		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
 	size_t report_size = get_oa_format(fmt).size;
@@ -3202,9 +3149,7 @@ test_mi_rpc(struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.num_properties = has_param_class_instance() ?
-				  ARRAY_SIZE(properties) / 2 :
-				  (ARRAY_SIZE(properties) / 2) - 2,
+		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
 	struct buf_ops *bops;
@@ -3290,12 +3235,7 @@ emit_stall_timestamp_and_rpc(struct intel_bb *ibb,
 				   PIPE_CONTROL_WRITE_TIMESTAMP);
 
 	intel_bb_add_intel_buf(ibb, dst, true);
-
-	if (intel_gen(devid) >= 8)
-		intel_bb_out(ibb, GFX_OP_PIPE_CONTROL(6));
-	else
-		intel_bb_out(ibb, GFX_OP_PIPE_CONTROL(5));
-
+	intel_bb_out(ibb, GFX_OP_PIPE_CONTROL(6));
 	intel_bb_out(ibb, pipe_ctl_flags);
 	intel_bb_emit_reloc(ibb, dst->handle,
 			    I915_GEM_DOMAIN_INSTRUCTION, I915_GEM_DOMAIN_INSTRUCTION,
@@ -3331,9 +3271,7 @@ static void single_ctx_helper(struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.num_properties = has_param_class_instance() ?
-				  ARRAY_SIZE(properties) / 2 :
-				  (ARRAY_SIZE(properties) / 2) - 2,
+		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
 	struct buf_ops *bops;
@@ -3700,9 +3638,7 @@ test_stress_open_close(const struct drm_xe_engine_class_instance *hwe)
 			DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 		};
 		struct drm_xe_oa_open_prop param = {
-			.num_properties = has_param_class_instance() ?
-					  ARRAY_SIZE(properties) / 2 :
-					  (ARRAY_SIZE(properties) / 2) - 2,
+			.num_properties = ARRAY_SIZE(properties) / 2,
 			.properties_ptr = to_user_pointer(properties),
 		};
 
@@ -3954,17 +3890,10 @@ test_whitelisted_registers_userspace_config(void)
 	memset(&config, 0, sizeof(config));
 	memcpy(config.uuid, uuid, sizeof(config.uuid));
 
-	if (intel_gen(devid) >= 12) {
-		oa_start_trig1 = 0xd900;
-		oa_start_trig8 = 0xd91c;
-		oa_report_trig1 = 0xd920;
-		oa_report_trig8 = 0xd93c;
-	} else {
-		oa_start_trig1 = 0x2710;
-		oa_start_trig8 = 0x272c;
-		oa_report_trig1 = 0x2740;
-		oa_report_trig8 = 0x275c;
-	}
+	oa_start_trig1 = 0xd900;
+	oa_start_trig8 = 0xd91c;
+	oa_report_trig1 = 0xd920;
+	oa_report_trig8 = 0xd93c;
 
 	/* b_counters_regs: OASTARTTRIG[1-8] */
 	for (i = oa_start_trig1; i <= oa_start_trig8; i += 4) {
@@ -4753,9 +4682,7 @@ static void closed_fd_and_unmapped_access(const struct drm_xe_engine_class_insta
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 	};
 	struct drm_xe_oa_open_prop param = {
-		.num_properties = has_param_class_instance() ?
-				  ARRAY_SIZE(properties) / 2 :
-				  (ARRAY_SIZE(properties) / 2) - 2,
+		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
 	void *vaddr;
