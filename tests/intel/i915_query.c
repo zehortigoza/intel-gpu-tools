@@ -121,6 +121,10 @@
  * SUBTEST: test-query-geometry-subslices
  * Description: Test DRM_I915_QUERY_GEOMETRY_SUBSLICES query
  * Feature: gem_core
+ *
+ * SUBTEST: guc_submission_version
+ * Description: Test DRM_I915_QUERY_GUC_SUBMISSION_VERSION query"
+ * Feature: gem_core
  */
 
 IGT_TEST_DESCRIPTION("Testing the i915 query uAPI.");
@@ -1473,6 +1477,28 @@ static void query_parse_and_validate_hwconfig_table(int i915)
 	free(data);
 }
 
+static void
+query_guc_submission_version(int fd)
+{
+	struct drm_i915_query_guc_submission_version *guc_submission_ver;
+	struct drm_i915_query_item item = {};
+
+	item.query_id = DRM_I915_QUERY_GUC_SUBMISSION_VERSION;
+	i915_query_items(fd, &item, 1);
+	if (item.length < 0) {
+		igt_skip_on_f(item.length == -ENODEV, "GuC submission not enabled\n");
+		igt_skip_on_f(item.length == -EINVAL, "Query not supported by this i915 version\n");
+	}
+
+	guc_submission_ver = calloc(1, item.length);
+	igt_assert(guc_submission_ver);
+	item.data_ptr = to_user_pointer(guc_submission_ver);
+	i915_query_items(fd, &item, 1);
+
+	igt_assert(guc_submission_ver->major > 0 || guc_submission_ver->branch > 0);
+	free(guc_submission_ver);
+}
+
 igt_main
 {
 	int fd = -1;
@@ -1569,6 +1595,10 @@ igt_main
 	igt_describe("Test DRM_I915_QUERY_HWCONFIG_BLOB query");
 	igt_subtest("hwconfig_table")
 		query_parse_and_validate_hwconfig_table(fd);
+
+	igt_describe("Test DRM_I915_QUERY_GUC_SUBMISSION_VERSION query");
+	igt_subtest("guc_submission_version")
+		query_guc_submission_version(fd);
 
 	igt_fixture {
 		drm_close_driver(fd);
