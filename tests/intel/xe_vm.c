@@ -221,12 +221,40 @@ test_bind_once(int fd)
 }
 
 /**
- * SUBTEST: bind-one-bo-many-times
- * Description: bind many times on one BO
- * Functionality: bind BO
+ * SUBTEST: unbind-all
+ * Description: bind and unbind with DRM_XE_VM_BIND_OP_UNMAP_ALL
+ * Functionality: unbind BO
  * Test category: functionality test
  */
+static void
+test_unbind_all(int fd)
+{
+	uint32_t bo_size = xe_get_default_alignment(fd);
+	uint32_t va_bits = xe_va_bits(fd);
+	uint64_t *addrs = (va_bits == 57) ? addrs_57b : addrs_48b;
+	struct drm_xe_sync sync = {
+		.type = DRM_XE_SYNC_TYPE_SYNCOBJ,
+		.flags = DRM_XE_SYNC_FLAG_SIGNAL,
+		.handle = syncobj_create(fd, 0),
+	};
+	uint32_t vm, bo;
 
+	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_SCRATCH_PAGE, 0);
+	bo = xe_bo_create(fd, vm, bo_size, vram_if_possible(fd, 0),
+			  DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
+	xe_vm_bind_sync(fd, vm, bo, 0, addrs[0], bo_size);
+
+	xe_vm_unbind_all_async(fd, vm, 0, bo, &sync, 1);
+	igt_assert(syncobj_wait(fd, &sync.handle, 1, INT64_MAX, 0, NULL));
+	syncobj_destroy(fd, sync.handle);
+}
+
+/**
+ * SUBTEST: bind-one-bo-many-times
+ * Description: bind many times on one BO
+ * Functionality: unbind BO
+ * Test category: functionality test
+ */
 static void
 test_bind_one_bo_many_times(int fd)
 {
@@ -2089,6 +2117,9 @@ igt_main
 					     s->flags);
 		}
 	}
+
+	igt_subtest("unbind-all")
+		test_unbind_all(fd);
 
 	igt_fixture
 		drm_close_driver(fd);
