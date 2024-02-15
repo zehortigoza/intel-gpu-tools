@@ -412,13 +412,6 @@ open_master_sysfs_dir(int drm_fd)
 	return sysfs;
 }
 
-typedef enum {
-	RPS_MIN_FREQ_MHZ,
-	RPS_MAX_FREQ_MHZ,
-
-	RPS_MAX_ATTR,
-} intel_sysfs_attr_id;
-
 static void process_hwconfig(void *data, uint32_t len,
 			     struct drm_i915_query_topology_info *topinfo)
 {
