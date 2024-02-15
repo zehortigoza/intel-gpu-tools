@@ -28,196 +28,12 @@
 #include "xe/xe_oa.h"
 
 /**
- * TEST: xe_oa
- * Description: Test the xe oa metrics streaming interface
- * Run type: FULL
- *
- * SUBTEST: blocking
- * Description: Test blocking read with default hrtimer frequency
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: buffer-fill
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: create-destroy-userspace-config
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: disabled-read-error
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: enable-disable
- * Feature: oa
- *
- * SUBTEST: oa-unit-concurrent-oa-buffer-read
- * Description: Verify concurrent reads from OA buffers in different oa units
- * Feature: oa
- *
- * SUBTEST: oa-unit-exclusive-stream-ctx-handle
- * Description: Verify exclusivity of perf streams with ctx handle
- * Feature: oa
- *
- * SUBTEST: oa-unit-exclusive-stream-sample-oa
- * Description: Verify exclusivity of perf streams with sample oa option
- * Feature: oa
- *
- * SUBTEST: mi-rpc
- * Description: Test MI REPORT PERF COUNT
- * Feature: oa
- *
- * SUBTEST: oa-tlb-invalidate
- * Description: Test OA TLB invalidate
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: unprivileged-single-ctx-counters
- * Description: Measure performance for a specific context using OAR
- * Feature: oa
- *
- * SUBTEST: xe-ref-count
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: invalid-create-userspace-config
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: invalid-oa-exponent
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: invalid-oa-format-id
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: invalid-oa-metric-set-id
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: invalid-open-flags
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: invalid-remove-userspace-config
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: low-oa-exponent-permissions
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: mi-rpc
- * Feature: oa
- *
- * SUBTEST: missing-sample-flags
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: non-sampling-read-error
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: non-system-wide-paranoid
- * Feature: oa
- *
- * SUBTEST: non-zero-reason
- * Description: Test that reason field in OA reports is never 0
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: oa-exponents
- * Feature: oa
- *
- * SUBTEST: oa-formats
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: per-context-mode-unprivileged
- * Feature: oa, obsolete
- *
- * SUBTEST: polling
- * Description: Test polled read with default hrtimer frequency
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: polling-parameterized
- * Description: Test polled read with different hrtimer frequencies
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: polling-small-buf
- * Description: Test polled read with buffer size smaller than available data
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: rc6-disable
- * Feature: oa
- *
- * SUBTEST: short-reads
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: stress-open-close
- * Description: Stress tests opening & closing the xe-perf stream in a busy loop
- * Feature: oa
- *
- * SUBTEST: sysctl-defaults
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: unprivileged-single-ctx-counters
- * Feature: oa, obsolete
- *
- * SUBTEST: whitelisted-registers-userspace-config
- * Description: Test the xe perf metrics streaming interface
- * Feature: xe streaming interface, oa
- * Test category: Perf
- *
- * SUBTEST: map-oa-buffer
- * Description: Test oa buffer mmap
- * Feature: oa
- *
- * SUBTEST: invalid-map-oa-buffer
- * Description: Test oa buffer mmap
- * Feature: oa
- *
- * SUBTEST: non-privileged-map-oa-buffer
- * Description: Test oa buffer mmap
- * Feature: oa
- *
- * SUBTEST: non-privileged-access-vaddr
- * Description: Test oa buffer mmap
- * Feature: oa
- *
- * SUBTEST: privileged-forked-access-vaddr
- * Description: Test oa buffer mmap
- * Feature: oa
- *
- * SUBTEST: closed-fd-and-unmapped-access
- * Description: Test oa buffer mmap
- * Feature: oa
+ * TEST: Test the xe oa metrics streaming interface
+ * Category: Perf
+ * Sub-category: OA
+ * Functionality: OA
+ * Test category: functionality test
  */
-
-IGT_TEST_DESCRIPTION("Test the xe oa metrics streaming interface");
 
 #define OASTATUS_MMIO_TRG_Q_FULL	REG_BIT(6)
 #define OASTATUS_COUNTER_OVERFLOW	REG_BIT(2)
@@ -530,7 +346,47 @@ static uint64_t oa_exp_1_millisec;
 struct intel_mmio_data mmio_data;
 static igt_render_copyfunc_t render_copy;
 
-static struct intel_perf_metric_set *metric_set(const struct drm_xe_engine_class_instance *hwe);
+static struct intel_perf_metric_set *metric_set(const struct drm_xe_engine_class_instance *hwe)
+{
+	const char *test_set_name = NULL;
+	struct intel_perf_metric_set *metric_set_iter;
+	struct intel_perf_metric_set *test_set = NULL;
+
+	if (hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER ||
+	    hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE)
+		test_set_name = "TestOa";
+	else if ((hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_DECODE ||
+		  hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE) &&
+		 HAS_OAM(devid))
+		test_set_name = "MediaSet1";
+	else
+		igt_assert(!"reached");
+
+	igt_list_for_each_entry(metric_set_iter, &intel_perf->metric_sets, link) {
+		if (strcmp(metric_set_iter->symbol_name, test_set_name) == 0) {
+			test_set = metric_set_iter;
+			break;
+		}
+	}
+
+	igt_assert(test_set);
+
+	/*
+	 * configuration was loaded in init_sys_info() ->
+	 * intel_perf_load_perf_configs(), and test_set->perf_oa_metrics_set
+	 * should point to metric id returned by the config add ioctl. 0 is
+	 * invalid.
+	 */
+	igt_assert_neq_u64(test_set->perf_oa_metrics_set, 0);
+
+	igt_debug("engine %d:%d - %s metric set UUID = %s\n",
+		  hwe->engine_class,
+		  hwe->engine_instance,
+		  test_set->symbol_name,
+		  test_set->hw_config_guid);
+
+	return test_set;
+}
 #define default_test_set metric_set(&default_hwe)
 
 static void set_fd_flags(int fd, int flags)
@@ -877,15 +733,6 @@ oa_exponent_to_ns(int exponent)
 }
 
 static bool
-oa_report_is_periodic(uint32_t oa_exponent, const uint32_t *report)
-{
-	if (report_reason(report) & OAREPORT_REASON_TIMER)
-		return true;
-
-	return false;
-}
-
-static bool
 oa_report_ctx_is_valid(uint32_t *report)
 {
 	return report[0] & (1ul << 16);
@@ -959,6 +806,15 @@ emit_report_perf_count(struct intel_bb *ibb,
 			    I915_GEM_DOMAIN_INSTRUCTION, I915_GEM_DOMAIN_INSTRUCTION,
 			    dst_offset, dst->addr.offset);
 	intel_bb_out(ibb, report_id);
+}
+
+static bool
+oa_report_is_periodic(uint32_t oa_exponent, const uint32_t *report)
+{
+	if (report_reason(report) & OAREPORT_REASON_TIMER)
+		return true;
+
+	return false;
 }
 
 static uint64_t
@@ -1265,10 +1121,12 @@ init_sys_info(void)
 	return true;
 }
 
-/* CAP_SYS_ADMIN is required to open system wide metrics, unless the system
- * control parameter dev.xe.perf_stream_paranoid == 0 */
-static void
-test_system_wide_paranoid(void)
+/**
+ * SUBTEST: non-system-wide-paranoid
+ * Description: CAP_SYS_ADMIN is required to open system wide metrics, unless
+ *		sysctl parameter dev.xe.perf_stream_paranoid == 0
+ */
+static void test_system_wide_paranoid(void)
 {
 	igt_fork(child, 1) {
 		uint64_t properties[] = {
@@ -1326,8 +1184,11 @@ test_system_wide_paranoid(void)
 	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 }
 
-static void
-test_invalid_oa_metric_set_id(void)
+/**
+ * SUBTEST: invalid-oa-metric-set-id
+ * Description: Test behavior for invalid metric set id's
+ */
+static void test_invalid_oa_metric_set_id(void)
 {
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
@@ -1360,8 +1221,11 @@ test_invalid_oa_metric_set_id(void)
 	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 }
 
-static void
-test_invalid_oa_format_id(void)
+/**
+ * SUBTEST: invalid-oa-format-id
+ * Description: Test behavior for invalid OA format fields
+ */
+static void test_invalid_oa_format_id(void)
 {
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
@@ -1393,8 +1257,11 @@ test_invalid_oa_format_id(void)
 	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 }
 
-static void
-test_missing_sample_flags(void)
+/**
+ * SUBTEST: missing-sample-flags
+ * Description: Test behavior for no SAMPLE_OA and no EXEC_QUEUE_ID
+ */
+static void test_missing_sample_flags(void)
 {
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
@@ -1745,8 +1612,11 @@ hwe_supports_oa_type(int oa_type, const struct drm_xe_engine_class_instance *hwe
 
 }
 
-static void
-test_oa_formats(const struct drm_xe_engine_class_instance *hwe)
+/**
+ * SUBTEST: oa-formats
+ * Description: Test that supported OA formats work as expected
+ */
+static void test_oa_formats(const struct drm_xe_engine_class_instance *hwe)
 {
 	for (int i = 0; i < XE_OA_FORMAT_MAX; i++) {
 		struct oa_format format = get_oa_format(i);
@@ -1904,8 +1774,11 @@ static bool expected_report_timing_delta(uint32_t delta, uint32_t expected_delta
 		return delta <= expected_delta;
 }
 
-static void
-test_oa_exponents(const struct drm_xe_engine_class_instance *hwe)
+/**
+ * SUBTEST: oa-exponents
+ * Description: Test that oa exponent values behave as expected
+ */
+static void test_oa_exponents(const struct drm_xe_engine_class_instance *hwe)
 {
 	struct intel_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = test_set->perf_oa_format;
@@ -2027,6 +1900,10 @@ test_oa_exponents(const struct drm_xe_engine_class_instance *hwe)
 	load_helper_fini();
 }
 
+/**
+ * SUBTEST: invalid-oa-exponent
+ * Description: Test that invalid exponent values are rejected
+ */
 /* The OA exponent selects a timestamp counter bit to trigger reports on.
  *
  * With a 64bit timestamp and least significant bit approx == 80ns then the MSB
@@ -2037,8 +1914,7 @@ test_oa_exponents(const struct drm_xe_engine_class_instance *hwe)
  * possible to use periodic sampling as a means for tracking the overflow of
  * 32bit OA report timestamps.
  */
-static void
-test_invalid_oa_exponent(void)
+static void test_invalid_oa_exponent(void)
 {
 	uint64_t properties[] = {
 		/* Include OA reports in samples */
@@ -2075,6 +1951,10 @@ get_time(void)
 	return ts.tv_sec * 1000000000 + ts.tv_nsec;
 }
 
+/**
+ * SUBTEST: blocking
+ * Description: Test blocking reads
+ */
 /* Note: The interface doesn't currently provide strict guarantees or control
  * over the upper bound for how long it might take for a POLLIN event after
  * some OA report is written by the OA unit.
@@ -2094,11 +1974,10 @@ get_time(void)
  * and that we aren't spending any significant time burning the cpu in
  * kernelspace.
  */
-static void
-test_blocking(uint64_t requested_oa_period,
-	      bool set_kernel_hrtimer,
-	      uint64_t kernel_hrtimer,
-	      const struct drm_xe_engine_class_instance *hwe)
+static void test_blocking(uint64_t requested_oa_period,
+			  bool set_kernel_hrtimer,
+			  uint64_t kernel_hrtimer,
+			  const struct drm_xe_engine_class_instance *hwe)
 {
 	int oa_exponent = max_oa_exponent_for_period_lte(requested_oa_period);
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
@@ -2236,11 +2115,14 @@ test_blocking(uint64_t requested_oa_period,
 	__perf_close(perf_fd);
 }
 
-static void
-test_polling(uint64_t requested_oa_period,
-	     bool set_kernel_hrtimer,
-	     uint64_t kernel_hrtimer,
-	     const struct drm_xe_engine_class_instance *hwe)
+/**
+ * SUBTEST: polling
+ * Description: Test polled reads
+ */
+static void test_polling(uint64_t requested_oa_period,
+			 bool set_kernel_hrtimer,
+			 uint64_t kernel_hrtimer,
+			 const struct drm_xe_engine_class_instance *hwe)
 {
 	int oa_exponent = max_oa_exponent_for_period_lte(requested_oa_period);
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
@@ -2425,6 +2307,10 @@ test_polling(uint64_t requested_oa_period,
 	__perf_close(stream_fd);
 }
 
+/**
+ * SUBTEST: polling-small-buf
+ * Description: Test polled read with buffer size smaller than available data
+ */
 static void test_polling_small_buf(void)
 {
 	int oa_exponent = max_oa_exponent_for_period_lte(40 * 1000); /* 40us */
@@ -2523,6 +2409,10 @@ num_valid_reports_captured(struct drm_xe_oa_open_prop *param,
 	return num_reports;
 }
 
+/**
+ * SUBTEST: oa-tlb-invalidate
+ * Description: Open OA stream twice to verify OA TLB invalidation
+ */
 static void
 test_oa_tlb_invalidate(const struct drm_xe_engine_class_instance *hwe)
 {
@@ -2565,7 +2455,10 @@ test_oa_tlb_invalidate(const struct drm_xe_engine_class_instance *hwe)
 	igt_assert(num_reports2 > 0.95 * num_expected_reports);
 }
 
-
+/**
+ * SUBTEST: buffer-fill
+ * Description: Test filling, wraparound and overflow of OA buffer
+ */
 static void
 test_buffer_fill(const struct drm_xe_engine_class_instance *hwe)
 {
@@ -2703,6 +2596,10 @@ test_buffer_fill(const struct drm_xe_engine_class_instance *hwe)
 	__perf_close(stream_fd);
 }
 
+/**
+ * SUBTEST: non-zero-reason
+ * Description: Test reason field is non-zero. Can also check OA buffer wraparound issues
+ */
 static void
 test_non_zero_reason(const struct drm_xe_engine_class_instance *hwe)
 {
@@ -2778,6 +2675,10 @@ test_non_zero_reason(const struct drm_xe_engine_class_instance *hwe)
 	free(buf);
 }
 
+/**
+ * SUBTEST: enable-disable
+ * Description: Test that OA stream enable/disable works as expected
+ */
 static void
 test_enable_disable(const struct drm_xe_engine_class_instance *hwe)
 {
@@ -2920,6 +2821,10 @@ test_enable_disable(const struct drm_xe_engine_class_instance *hwe)
 	load_helper_fini();
 }
 
+/**
+ * SUBTEST: short-reads
+ * Description: Test behavior for short reads
+ */
 static void
 test_short_reads(void)
 {
@@ -3016,6 +2921,10 @@ test_short_reads(void)
 	munmap(pages, page_size * 2);
 }
 
+/**
+ * SUBTEST: non-sampling-read-error
+ * Description: Test that a stream without periodic sampling (no exponent) cannot be read
+ */
 static void
 test_non_sampling_read_error(void)
 {
@@ -3050,8 +2959,10 @@ test_non_sampling_read_error(void)
 	__perf_close(stream_fd);
 }
 
-/* Check that attempts to read from a stream while it is disable will return
- * EIO instead of blocking indefinitely.
+/**
+ * SUBTEST: disabled-read-error
+ * Description: Test that attempts to read from a stream while it is disable
+ *		will return EIO instead of blocking indefinitely
  */
 static void
 test_disabled_read_error(void)
@@ -3115,6 +3026,10 @@ test_disabled_read_error(void)
 	__perf_close(stream_fd);
 }
 
+/**
+ * SUBTEST: mi-rpc
+ * Description: Test OAR/OAC using MI_REPORT_PERF_COUNT
+ */
 static void
 test_mi_rpc(struct drm_xe_engine_class_instance *hwe)
 
@@ -3543,6 +3458,10 @@ static void single_ctx_helper(struct drm_xe_engine_class_instance *hwe)
 	__perf_close(stream_fd);
 }
 
+/**
+ * SUBTEST: unprivileged-single-ctx-counters
+ * Description: A harder test for OAR/OAC using MI_REPORT_PERF_COUNT
+ */
 static void
 test_single_ctx_render_target_writes_a_counter(struct drm_xe_engine_class_instance *hwe)
 {
@@ -3569,6 +3488,40 @@ test_single_ctx_render_target_writes_a_counter(struct drm_xe_engine_class_instan
 	} while (WEXITSTATUS(child_ret) == EAGAIN);
 }
 
+static unsigned read_xe_module_ref(void)
+{
+	FILE *fp = fopen("/proc/modules", "r");
+	char *line = NULL;
+	size_t line_buf_size = 0;
+	int len = 0;
+	unsigned ref_count;
+	char mod[8];
+	int modn = 3;
+
+	igt_assert(fp);
+
+	strcpy(mod, "xe ");
+	while ((len = getline(&line, &line_buf_size, fp)) > 0) {
+		if (strncmp(line, mod, modn) == 0) {
+			unsigned long mem;
+			int ret = sscanf(line + 5, "%lu %u", &mem, &ref_count);
+			igt_assert(ret == 2);
+			goto done;
+		}
+	}
+
+	igt_assert(!"reached");
+
+done:
+	free(line);
+	fclose(fp);
+	return ref_count;
+}
+
+/**
+ * SUBTEST: rc6-disable
+ * Description: Check that opening an OA stream disables RC6
+ */
 static void
 test_rc6_disable(void)
 {
@@ -3612,6 +3565,10 @@ test_rc6_disable(void)
 	igt_assert_neq(rc6_end - rc6_start, 0);
 }
 
+/**
+ * SUBTEST: stress-open-close
+ * Description: Open/close OA streams in a tight loop
+ */
 static void
 test_stress_open_close(const struct drm_xe_engine_class_instance *hwe)
 {
@@ -3687,6 +3644,10 @@ static bool has_xe_oa_userspace_config(int fd)
 #define SAMPLE_MUX_REG (IS_LUNARLAKE(xe_dev_id(drm_fd)) ? \
 			0x13000 /* PES* */ : 0x9888 /* NOA_WRITE */)
 
+/**
+ * SUBTEST: invalid-create-userspace-config
+ * Description: Test invalid configs are rejected
+ */
 static void
 test_invalid_create_userspace_config(void)
 {
@@ -3736,6 +3697,10 @@ test_invalid_create_userspace_config(void)
 	igt_assert_eq(__xe_oa_add_config(drm_fd, &config), -EFAULT);
 }
 
+/**
+ * SUBTEST: invalid-remove-userspace-config
+ * Description: Test invalid remove configs are rejected
+ */
 static void
 test_invalid_remove_userspace_config(void)
 {
@@ -3776,6 +3741,10 @@ test_invalid_remove_userspace_config(void)
 	xe_oa_remove_config(drm_fd, config_id);
 }
 
+/**
+ * SUBTEST: create-destroy-userspace-config
+ * Description: Test add/remove OA configs
+ */
 static void
 test_create_destroy_userspace_config(void)
 {
@@ -3853,6 +3822,10 @@ test_create_destroy_userspace_config(void)
 	xe_oa_remove_config(drm_fd, config_id);
 }
 
+/**
+ * SUBTEST: whitelisted-registers-userspace-config
+ * Description: Test that an OA config constructed using whitelisted register works
+ */
 /* Registers required by userspace. This list should be maintained by
  * the OA configs developers and agreed upon with kernel developers as
  * some of the registers have bits used by the kernel (for workarounds
@@ -4074,6 +4047,10 @@ static u32 oa_get_mmio_base(const struct drm_xe_engine_class_instance *hwe)
 	return mmio_base;
 }
 
+/**
+ * SUBTEST: oa-regs-whitelisted
+ * Description: Verify that OA registers are whitelisted
+ */
 static void test_oa_regs_whitelist(const struct drm_xe_engine_class_instance *hwe)
 {
 	struct intel_perf_metric_set *test_set = metric_set(hwe);
@@ -4230,6 +4207,10 @@ __test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 	__perf_close(stream_fd);
 }
 
+/**
+ * SUBTEST: mmio-triggered-reports
+ * Description: Test MMIO trigger functionality
+ */
 static void
 test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 {
@@ -4249,38 +4230,9 @@ test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 		   WEXITSTATUS(ret) == 0);
 }
 
-static unsigned read_xe_module_ref(void)
-{
-	FILE *fp = fopen("/proc/modules", "r");
-	char *line = NULL;
-	size_t line_buf_size = 0;
-	int len = 0;
-	unsigned ref_count;
-	char mod[8];
-	int modn = 3;
-
-	igt_assert(fp);
-
-	strcpy(mod, "xe ");
-	while ((len = getline(&line, &line_buf_size, fp)) > 0) {
-		if (strncmp(line, mod, modn) == 0) {
-			unsigned long mem;
-			int ret = sscanf(line + 5, "%lu %u", &mem, &ref_count);
-			igt_assert(ret == 2);
-			goto done;
-		}
-	}
-
-	igt_assert(!"reached");
-
-done:
-	free(line);
-	fclose(fp);
-	return ref_count;
-}
-
-/* check that an open oa stream holds a reference on the xe module
- * including in the corner case where the original drm fd has been closed.
+/**
+ * SUBTEST: xe-ref-count
+ * Description: Check that an open oa stream holds a reference on the xe module
  */
 static void
 test_xe_ref_count(void)
@@ -4352,6 +4304,10 @@ test_xe_ref_count(void)
 	igt_debug("ref count after closing oa stream fd = %u\n", ref_count0);
 }
 
+/**
+ * SUBTEST: sysctl-defaults
+ * Description: Test that perf_stream_paranoid sysctl exists
+ */
 static void
 test_sysctl_defaults(void)
 {
@@ -4360,48 +4316,13 @@ test_sysctl_defaults(void)
 	igt_assert_eq(paranoid, 1);
 }
 
-static struct intel_perf_metric_set *metric_set(const struct drm_xe_engine_class_instance *hwe)
-{
-	const char *test_set_name = NULL;
-	struct intel_perf_metric_set *metric_set_iter;
-	struct intel_perf_metric_set *test_set = NULL;
-
-	if (hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER ||
-	    hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE)
-		test_set_name = "TestOa";
-	else if ((hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_DECODE ||
-		  hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE) &&
-		 HAS_OAM(devid))
-		test_set_name = "MediaSet1";
-	else
-		igt_assert(!"reached");
-
-	igt_list_for_each_entry(metric_set_iter, &intel_perf->metric_sets, link) {
-		if (strcmp(metric_set_iter->symbol_name, test_set_name) == 0) {
-			test_set = metric_set_iter;
-			break;
-		}
-	}
-
-	igt_assert(test_set);
-
-	/*
-	 * configuration was loaded in init_sys_info() ->
-	 * intel_perf_load_perf_configs(), and test_set->perf_oa_metrics_set
-	 * should point to metric id returned by the config add ioctl. 0 is
-	 * invalid.
-	 */
-	igt_assert_neq_u64(test_set->perf_oa_metrics_set, 0);
-
-	igt_debug("engine %d:%d - %s metric set UUID = %s\n",
-		  hwe->engine_class,
-		  hwe->engine_instance,
-		  test_set->symbol_name,
-		  test_set->hw_config_guid);
-
-	return test_set;
-}
-
+/**
+ * SUBTEST: oa-unit-exclusive-stream-sample-oa
+ * Description: Check that only a single stream can be opened on an OA unit (with sampling)
+ *
+ * SUBTEST: oa-unit-exclusive-stream-exec-q
+ * Description: Check that only a single stream can be opened on an OA unit (for OAR/OAC)
+*/
 /*
  * Test if OA buffer streams can be independently opened on OA unit. Once a user
  * opens a stream, that oa unit is exclusive to the user, other users get -EBUSY on
@@ -4505,6 +4426,10 @@ test_oa_unit_exclusive_stream(bool exponent)
 	}
 }
 
+/**
+ * SUBTEST: oa-unit-concurrent-oa-buffer-read
+ * Description: Test that we can read streams concurrently on all OA units
+ */
 static void
 test_oa_unit_concurrent_oa_buffer_read(void)
 {
@@ -4672,6 +4597,10 @@ static void check_reports_from_mapped_buffer(const struct drm_xe_engine_class_in
 	munmap(vaddr, size);
 }
 
+/**
+ * SUBTEST: closed-fd-and-unmapped-access
+ * Description: Unmap buffer, close fd and try to access
+ */
 static void closed_fd_and_unmapped_access(const struct drm_xe_engine_class_instance *hwe)
 {
 	uint64_t properties[] = {
@@ -4701,6 +4630,22 @@ static void closed_fd_and_unmapped_access(const struct drm_xe_engine_class_insta
 	try_invalid_access(vaddr);
 }
 
+/**
+ * SUBTEST: map-oa-buffer
+ * Description: Verify mapping of oa buffer
+ *
+ * SUBTEST: invalid-map-oa-buffer
+ * Description: Verify invalid mappings of oa buffer
+ *
+ * SUBTEST: non-privileged-map-oa-buffer
+ * Description: Verify if non-privileged user can map oa buffer
+ *
+ * SUBTEST: non-privileged-access-vaddr
+ * Description: Verify if non-privileged user can map oa buffer
+ *
+ * SUBTEST: privileged-forked-access-vaddr
+ * Description: Verify that forked access to mapped buffer fails
+ */
 typedef void (*map_oa_buffer_test_t)(const struct drm_xe_engine_class_instance *hwe);
 static void test_mapped_oa_buffer(map_oa_buffer_test_t test_with_fd_open,
 				  const struct drm_xe_engine_class_instance *hwe)
@@ -4842,7 +4787,6 @@ igt_main
 		__for_one_hwe_in_oag(hwe)
 			test_buffer_fill(hwe);
 
-	igt_describe("Test that reason field in OA reports is never 0 on Gen8+");
 	igt_subtest_with_dynamic("non-zero-reason") {
 		__for_one_hwe_in_oag(hwe)
 			test_non_zero_reason(hwe);
@@ -4857,7 +4801,6 @@ igt_main
 		__for_one_hwe_in_oag(hwe)
 			test_enable_disable(hwe);
 
-	igt_describe("Test blocking read with default hrtimer frequency");
 	igt_subtest_with_dynamic("blocking") {
 		__for_one_hwe_in_oag(hwe)
 			test_blocking(40 * 1000 * 1000 /* 40ms oa period */,
@@ -4866,7 +4809,6 @@ igt_main
 				      hwe);
 	}
 
-	igt_describe("Test polled read with default hrtimer frequency");
 	igt_subtest_with_dynamic("polling") {
 		__for_one_hwe_in_oag(hwe)
 			test_polling(40 * 1000 * 1000 /* 40ms oa period */,
@@ -4875,26 +4817,21 @@ igt_main
 				     hwe);
 	}
 
-	igt_describe("Test polled read with buffer size smaller than available data");
 	igt_subtest("polling-small-buf")
 		test_polling_small_buf();
 
-	igt_subtest("short-reads") {
+	igt_subtest("short-reads")
 		test_short_reads();
-	}
 
 	igt_subtest_group {
-		igt_describe("Test MI REPORT PERF COUNT for Gen 12");
 		igt_subtest_with_dynamic("mi-rpc")
 			__for_one_hwe_in_oag(hwe)
 				test_mi_rpc(hwe);
 
-		igt_describe("Test OA TLB invalidate");
 		igt_subtest_with_dynamic("oa-tlb-invalidate")
 			__for_one_hwe_in_oag(hwe)
 				test_oa_tlb_invalidate(hwe);
 
-		igt_describe("Measure performance for a specific context using OAR in Gen 12");
 		igt_subtest_with_dynamic("unprivileged-single-ctx-counters") {
 			igt_require_f(render_copy, "no render-copy function\n");
 			igt_require(!IS_LUNARLAKE(devid));
@@ -4903,15 +4840,12 @@ igt_main
 		}
 	}
 	igt_subtest_group {
-		igt_describe("Verify exclusivity of oa streams with sample oa option");
 		igt_subtest("oa-unit-exclusive-stream-sample-oa")
 			test_oa_unit_exclusive_stream(true);
 
-		igt_describe("Verify exclusivity of oa streams with exec queue");
 		igt_subtest("oa-unit-exclusive-stream-exec-q")
 			test_oa_unit_exclusive_stream(false);
 
-		igt_describe("Verify concurrent reads from OA buffers in different oa units");
 		igt_subtest("oa-unit-concurrent-oa-buffer-read")
 			test_oa_unit_concurrent_oa_buffer_read();
 	}
@@ -4919,7 +4853,6 @@ igt_main
 	igt_subtest("rc6-disable")
 		test_rc6_disable();
 
-	igt_describe("Stress tests opening & closing the xe-oa stream in a busy loop");
 	igt_subtest_with_dynamic("stress-open-close") {
 		__for_one_hwe_in_oag(hwe)
 			test_stress_open_close(hwe);
@@ -4938,32 +4871,26 @@ igt_main
 		test_whitelisted_registers_userspace_config();
 
 	igt_subtest_group {
-		igt_describe("Verify mapping of oa buffer");
 		igt_subtest_with_dynamic("map-oa-buffer")
 			__for_one_hwe_in_oag(hwe)
 				test_mapped_oa_buffer(check_reports_from_mapped_buffer, hwe);
 
-		igt_describe("Verify invalid mappings of oa buffer");
 		igt_subtest_with_dynamic("invalid-map-oa-buffer")
 			__for_one_hwe_in_oag(hwe)
 				test_mapped_oa_buffer(invalid_param_map_oa_buffer, hwe);
 
-		igt_describe("Verify if non-privileged user can map oa buffer");
 		igt_subtest_with_dynamic("non-privileged-map-oa-buffer")
 			__for_one_hwe_in_oag(hwe)
 				test_mapped_oa_buffer(unprivileged_map_oa_buffer, hwe);
 
-		igt_describe("Verify if non-privileged user can map oa buffer");
 		igt_subtest_with_dynamic("non-privileged-access-vaddr")
 			__for_one_hwe_in_oag(hwe)
 				test_mapped_oa_buffer(map_oa_buffer_unprivilege_access, hwe);
 
-		igt_describe("Verify that forked access to mapped buffer fails");
 		igt_subtest_with_dynamic("privileged-forked-access-vaddr")
 			__for_one_hwe_in_oag(hwe)
 				test_mapped_oa_buffer(map_oa_buffer_forked_access, hwe);
 
-		igt_describe("Unmap buffer, close fd and try to access");
 		igt_subtest_with_dynamic("closed-fd-and-unmapped-access")
 			__for_one_hwe_in_oag(hwe)
 				closed_fd_and_unmapped_access(hwe);
@@ -4974,12 +4901,10 @@ igt_main
 			perf_init_whitelist();
 		}
 
-		igt_describe("Verify that OA registers are whitelisted");
 		igt_subtest_with_dynamic("oa-regs-whitelisted")
 			__for_one_hwe_in_oag(hwe)
 				test_oa_regs_whitelist(hwe);
 
-		igt_describe("Verify mmio triggered reports");
 		igt_subtest_with_dynamic("mmio-triggered-reports") {
 			igt_require(HAS_OA_MMIO_TRIGGER(devid));
 			__for_one_hwe_in_oag(hwe)

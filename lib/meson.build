@@ -382,25 +382,6 @@ xe_oa_files = [
   'xe/xe_oa.c',
 ]
 
-# If we don't copy lib/perf-configs/ and can link against
-# lib_igt_i915_perf, all we need here is something like:
-#
-# lib_igt_xe_oa = declare_dependency(
-#   link_with : lib_igt_i915_perf_build,
-#   include_directories : inc)
-#
-# install_headers(
-#   'igt_list.h',
-#   'intel_chipset.h',
-#   'xe/xe_oa.h',
-#   subdir : 'xe-oa'
-# )
-#
-# xe_oa_files = [
-#   'igt_list.c',
-#   'xe/xe_oa.c',
-# ]
-
 xe_oa_hardware = [
   'adl',
   'acmgt1', 'acmgt2', 'acmgt3',
@@ -478,6 +459,7 @@ pkgconf.set('prefix', get_option('prefix'))
 pkgconf.set('exec_prefix', '${prefix}')
 pkgconf.set('libdir', '${prefix}/@0@'.format(get_option('libdir')))
 pkgconf.set('includedir', '${prefix}/@0@'.format(get_option('includedir')))
+pkgconf.set('i915_perf_version', '1.5.1')
 pkgconf.set('xe_oa_version', '1.5.1')
 
 configure_file(

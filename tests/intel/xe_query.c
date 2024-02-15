@@ -908,6 +908,14 @@ test_query_uc_fw_version_huc(int fd)
 	test_query_uc_fw_version(fd, XE_QUERY_UC_TYPE_HUC);
 }
 
+/**
+ * SUBTEST: query-oa-units
+ * Description: Display fields for OA unit query
+ *
+ * SUBTEST: multigpu-query-oa-units
+ * Description: Display fields for OA unit query for all GPU devices
+ * Sub-category: MultiGPU
+ */
 static void test_query_oa_units(int fd)
 {
 	struct drm_xe_query_oa_units *qoa;
