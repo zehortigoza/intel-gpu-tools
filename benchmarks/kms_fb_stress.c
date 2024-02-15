@@ -150,8 +150,6 @@ igt_simple_main
 
 	data.fd = drm_open_driver_master(DRIVER_ANY);
 
-	igt_display_require(&data.display, data.fd);
-
 	kmstest_set_vt_graphics_mode();
 
 	igt_display_require(&data.display, data.fd);

@@ -563,7 +563,6 @@ igt_main_args("b:c:f:dl", long_options, help_str, opt_handler, NULL)
 
 	igt_fixture {
 		display.drm_fd = drm_open_driver_master(DRIVER_ANY);
-		igt_display_require(&display, display.drm_fd);
 
 		kmstest_set_vt_graphics_mode();
 
