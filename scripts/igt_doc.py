@@ -229,6 +229,10 @@ class IntelciTestlist:
             for gpu, names in gpus.items():
                 gpu = re.sub(r"[\W_]+", "-", gpu).lower()
 
+                # "all" is used used only as a default value for unlisted GPUs
+                if gpu == "all":
+                    continue
+
                 dname = os.path.join(driver_path, gpu)
                 try:
                     os.makedirs(dname)
