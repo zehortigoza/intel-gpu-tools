@@ -16,32 +16,51 @@
     "exclude_files": [ "kms_*", "gem_concurrent_all.c", "gem_concurrent_blit.c",
                        "xe_*" ],
     "fields": {
-	"Mega feature": {
+        "Category": {
+            "_properties_": {
+                "mandatory": true,
+                "description": "Contains the major group for the tested functionality, being hardware, software or firmware"
+            },
+            "Mega feature": {
                 "_properties_": {
                     "description": "Contains the mega feature for end to end use case, e. g. the 'sellable' feature."
                 },
-                "Category": {
-                "_properties_": {
-                    "description": "Contains the major group for the tested functionality"
-                },
-
                 "Sub-category": {
                     "_properties_": {
-                        "description": "Contains the minor group of the functionality"
+                        "mandatory": true,
+                        "description": "Contains the technical feature/functionality"
                     },
                     "Functionality": {
                         "_properties_": {
-                            "description": "Describes the functionality to be tested"
+                            "mandatory": true,
+                            "description": "Groups page table tests on buckets containg more detailed functionality"
                         },
                         "Feature": {
                             "_properties_": {
                                 "description": "Describes the lowest level feature bucket"
-                            },
-                            "Run type": {
-                                "_properties_": {
-                                    "description": "Defines what category of testlist it belongs"
-                                }
                             }
+                        }
+                    },
+                    "Run type": {
+                        "_properties_": {
+                            "mandatory": true,
+                            "description": "Defines what category of testlist it belongs",
+                            "default-testlist": "FULL",
+                            "update-from-file": {
+                                "exclude-type": "regex-ignorecase",
+                                "append-value-if-not-excluded": "i915 FULL",
+                                "include": [
+                                    { "i915 BAT": "../intel-ci/fast-feedback.testlist" }
+                                ],
+                                "exclude": [
+                                    { "i915 BAT, 915 FULL": "../intel-ci/blacklist.txt" }
+                                ]
+                            },
+                            "order": [
+                                "boot",
+                                "__all__",
+                                "kunit"
+                            ]
                         }
                     }
                 }
