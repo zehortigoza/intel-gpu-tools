@@ -693,6 +693,7 @@ int setup_amdgpu_ip_blocks(uint32_t major, uint32_t minor, struct amdgpu_gpu_inf
 		break;
 	case FAMILY_GFX1150:
 		identify_chip(GFX1150);
+		identify_chip(GFX1151);
 		break;
 	}
 	if (!info->name) {
