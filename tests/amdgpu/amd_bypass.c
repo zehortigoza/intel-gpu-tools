@@ -72,6 +72,17 @@ static void test_init(data_t *data)
 	data->output = igt_get_single_output_for_pipe(display, data->pipe_id);
 	igt_assert(data->output);
 
+	if (data->output->config.connector->connector_type == DRM_MODE_CONNECTOR_eDP) {
+		kmstest_set_connector_dpms(data->output->display->drm_fd,
+			data->output->config.connector, DRM_MODE_DPMS_OFF);
+
+		/* Disable PSR before reading eDP Rx CRC to avoid timeout */
+		igt_amd_disallow_edp_enter_psr(data->drm_fd, data->output->name, true);
+
+		kmstest_set_connector_dpms(data->output->display->drm_fd,
+			data->output->config.connector, DRM_MODE_DPMS_ON);
+	}
+
 	data->mode = igt_output_get_mode(data->output);
 	igt_assert(data->mode);
 
@@ -367,9 +378,23 @@ static void bypass_8bpc_test(data_t *data)
 		igt_assert_crc_equal(&data->crc_fb, &data->crc_dprx);
 	}
 
+	/* igt_pipe_crc_stop is called within igt_pipe_crc_collect_crc,
+	 * but kernel drm_dp_aux_crc_work is not flushed out. Create
+	 * and commit of new fb let kernel stop dp aux crc work.
+	 */
+	igt_create_pattern_fb(data->drm_fd, data->width, data->height,
+			DRM_FORMAT_XRGB8888, 0, &fb);
+	igt_plane_set_fb(data->primary, &fb);
+	igt_display_commit_atomic(&data->display, DRM_MODE_ATOMIC_ALLOW_MODESET, NULL);
+
 	igt_plane_set_fb(data->primary, NULL);
 	test_fini(data);
 	igt_remove_fb(data->drm_fd, &fb);
+
+	if (data->output->config.connector->connector_type == DRM_MODE_CONNECTOR_eDP) {
+		/* Enable eDP PSR within kernel driver */
+		igt_amd_disallow_edp_enter_psr(data->drm_fd, data->output->name, false);
+	}
 }
 
 igt_main
