@@ -35,11 +35,11 @@
 #define DEBUGFS_CURRENT_BACKLIGHT_PWM "amdgpu_current_backlight_pwm"
 #define DEBUGFS_TARGET_BACKLIGHT_PWM "amdgpu_target_backlight_pwm"
 #define BACKLIGHT_PATH "/sys/class/backlight/amdgpu_bl0"
+#define PANEL_POWER_SAVINGS_PATH "/sys/class/drm/card0-%s/amdgpu/panel_power_savings"
 
 typedef struct data {
 	igt_display_t display;
 	int drm_fd;
-	uint32_t abm_prop_id;
 } data_t;
 
 
@@ -104,14 +104,22 @@ static int backlight_write_brightness(int value)
 	return 0;
 }
 
-static void set_abm_level(int drm_fd, int level, uint32_t abm_prop_id, uint32_t output_id)
+static void set_abm_level(char *connector_name, int level)
 {
-	uint32_t type = DRM_MODE_OBJECT_CONNECTOR;
-	int ret;
+	char buf[PATH_MAX];
+	int fd;
 
-	ret = drmModeObjectSetProperty(drm_fd, output_id, type,
-				       abm_prop_id, level);
-	igt_assert_eq(ret, 0);
+	igt_assert(snprintf(buf, PATH_MAX, PANEL_POWER_SAVINGS_PATH,
+			    connector_name) < PATH_MAX);
+
+	fd = open(buf, O_WRONLY);
+
+	igt_assert(fd != -1);
+
+	igt_assert_eq(snprintf(buf, sizeof(buf), "%d", level),
+		      write(fd, buf, 1));
+
+	igt_assert_eq(close(fd), 0);
 }
 
 static int backlight_read_max_brightness(int *result)
@@ -142,31 +150,19 @@ static int backlight_read_max_brightness(int *result)
 static void test_init(data_t *data)
 {
 	igt_display_t *display = &data->display;
+	drmModeConnectorPtr conn;
 	int i;
-	bool abm_prop_exists;
-	uint32_t type = DRM_MODE_OBJECT_CONNECTOR;
-	uint32_t output_id;
-
-	for (i = 0; i < display->n_outputs; i++)
-		if (display->outputs[i].config.connector->connector_type == DRM_MODE_CONNECTOR_eDP)
-			break;
-	igt_skip_on_f(i ==  display->n_outputs, "no eDP connector found\n");
-
-	abm_prop_exists = false;
 
 	for (i = 0; i < display->n_outputs; i++) {
-		output_id = display->outputs[i].id;
+		conn = display->outputs[i].config.connector;
 
-		abm_prop_exists = kmstest_get_property(
-			data->drm_fd, output_id, type, "abm level",
-			&data->abm_prop_id, NULL, NULL);
-
-		if (abm_prop_exists)
-			break;
+		if (conn->connector_type == DRM_MODE_CONNECTOR_eDP &&
+		    conn->connection == DRM_MODE_CONNECTED) {
+			return;
+		}
 	}
 
-	if (!abm_prop_exists)
-		igt_skip("No abm level property on any connector.\n");
+	igt_skip("No eDP connector found\n");
 }
 
 
@@ -187,7 +183,7 @@ static void backlight_dpms_cycle(data_t *data)
 		ret = backlight_read_max_brightness(&max_brightness);
 		igt_assert_eq(ret, 0);
 
-		set_abm_level(data->drm_fd, 0, data->abm_prop_id, output->id);
+		set_abm_level(output->name, 0);
 		backlight_write_brightness(max_brightness / 2);
 		usleep(100000);
 		pwm_1 = read_target_backlight_pwm(data->drm_fd, output->name);
@@ -218,7 +214,7 @@ static void backlight_monotonic_basic(data_t *data)
 
 		brightness_step = max_brightness / 10;
 
-		set_abm_level(data->drm_fd, 0, data->abm_prop_id, output->id);
+		set_abm_level(output->name, 0);
 		backlight_write_brightness(max_brightness);
 		usleep(100000);
 		prev_pwm = read_target_backlight_pwm(data->drm_fd, output->name);
@@ -252,7 +248,7 @@ static void backlight_monotonic_abm(data_t *data)
 
 		brightness_step = max_brightness / 10;
 		for (i = 1; i < 5; i++) {
-			set_abm_level(data->drm_fd, 0, data->abm_prop_id, output->id);
+			set_abm_level(output->name, 0);
 			backlight_write_brightness(max_brightness);
 			usleep(100000);
 			prev_pwm = read_target_backlight_pwm(data->drm_fd, output->name);
@@ -284,14 +280,14 @@ static void abm_enabled(data_t *data)
 		ret = backlight_read_max_brightness(&max_brightness);
 		igt_assert_eq(ret, 0);
 
-		set_abm_level(data->drm_fd, 0, data->abm_prop_id, output->id);
+		set_abm_level(output->name, 0);
 		backlight_write_brightness(max_brightness);
 		usleep(100000);
 		prev_pwm = read_target_backlight_pwm(data->drm_fd, output->name);
 		pwm_without_abm = prev_pwm;
 
 		for (i = 1; i < 5; i++) {
-			set_abm_level(data->drm_fd, i, data->abm_prop_id, output->id);
+			set_abm_level(output->name, i);
 			usleep(100000);
 			pwm = read_target_backlight_pwm(data->drm_fd, output->name);
 			igt_assert(pwm <= prev_pwm);
@@ -318,7 +314,7 @@ static void abm_gradual(data_t *data)
 
 		igt_assert_eq(ret, 0);
 
-		set_abm_level(data->drm_fd, 0, data->abm_prop_id, output->id);
+		set_abm_level(output->name, 0);
 		backlight_write_brightness(max_brightness);
 
 		sleep(convergence_delay);
@@ -326,7 +322,7 @@ static void abm_gradual(data_t *data)
 		curr = read_current_backlight_pwm(data->drm_fd, output->name);
 
 		igt_assert_eq(prev_pwm, curr);
-		set_abm_level(data->drm_fd, 4, data->abm_prop_id, output->id);
+		set_abm_level(output->name, 4);
 		for (i = 0; i < 10; i++) {
 			usleep(100000);
 			pwm = read_current_backlight_pwm(data->drm_fd, output->name);
