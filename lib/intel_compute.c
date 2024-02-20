@@ -1526,7 +1526,8 @@ static void xe2lpg_compute_preempt_exec(int fd, const unsigned char *long_kernel
 					const unsigned char *short_kernel,
 					unsigned int short_kernel_size,
 					const unsigned char *sip_kernel,
-					unsigned int sip_kernel_size)
+					unsigned int sip_kernel_size,
+					struct drm_xe_engine_class_instance *eci)
 {
 #define XE2_BO_PREEMPT_DICT_ENTRIES 11
 	struct bo_dict_entry bo_dict_long[XE2_BO_PREEMPT_DICT_ENTRIES] = {
@@ -1578,8 +1579,8 @@ static void xe2lpg_compute_preempt_exec(int fd, const unsigned char *long_kernel
 	for (int i = 0; i < XE2_BO_PREEMPT_DICT_ENTRIES; ++i)
 		bo_dict_short[i] = bo_dict_long[i];
 
-	bo_execenv_create(fd, &execenv_short, NULL);
-	bo_execenv_create(fd, &execenv_long, NULL);
+	bo_execenv_create(fd, &execenv_short, eci);
+	bo_execenv_create(fd, &execenv_long, eci);
 
 	bo_dict_long[0].size = ALIGN(long_kernel_size, 0x1000);
 	bo_dict_short[0].size = ALIGN(short_kernel_size, 0x1000);
@@ -1673,7 +1674,8 @@ static const struct {
 			     const unsigned char *short_kernel,
 			     unsigned int short_kernel_size,
 			     const unsigned char *sip_kernel,
-			     unsigned int sip_kernel_size);
+			     unsigned int sip_kernel_size,
+			     struct drm_xe_engine_class_instance *eci);
 	uint32_t compat;
 } intel_compute_preempt_batches[] = {
 	{
@@ -1683,7 +1685,8 @@ static const struct {
 	},
 };
 
-static bool __run_intel_compute_kernel_preempt(int fd)
+static bool __run_intel_compute_kernel_preempt(int fd,
+		struct drm_xe_engine_class_instance *eci)
 {
 	unsigned int ip_ver = intel_graphics_ver(intel_get_drm_devid(fd));
 	unsigned int batch;
@@ -1720,7 +1723,8 @@ static bool __run_intel_compute_kernel_preempt(int fd)
 							  kernels->long_kernel_size,
 							  kernels->kernel, kernels->size,
 							  kernels->sip_kernel,
-							  kernels->sip_kernel_size);
+							  kernels->sip_kernel_size,
+							  eci);
 
 	return true;
 }
@@ -1732,7 +1736,8 @@ static bool __run_intel_compute_kernel_preempt(int fd)
  *
  * Returns true on success, false otherwise.
  */
-bool run_intel_compute_kernel_preempt(int fd)
+bool run_intel_compute_kernel_preempt(int fd,
+		struct drm_xe_engine_class_instance *eci)
 {
-	return __run_intel_compute_kernel_preempt(fd);
+	return __run_intel_compute_kernel_preempt(fd, eci);
 }

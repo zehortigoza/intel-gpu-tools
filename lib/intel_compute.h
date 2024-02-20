@@ -37,5 +37,5 @@ extern const struct intel_compute_kernels intel_compute_square_kernels[];
 
 bool run_intel_compute_kernel(int fd);
 bool xe_run_intel_compute_kernel_on_engine(int fd, struct drm_xe_engine_class_instance *eci);
-bool run_intel_compute_kernel_preempt(int fd);
+bool run_intel_compute_kernel_preempt(int fd, struct drm_xe_engine_class_instance *eci);
 #endif	/* INTEL_COMPUTE_H */
