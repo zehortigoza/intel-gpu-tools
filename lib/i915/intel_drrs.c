@@ -30,7 +30,7 @@ bool intel_is_drrs_supported(int device, enum pipe pipe)
 	igt_debugfs_simple_read(dir, "i915_drrs_status", buf, sizeof(buf));
 	close(dir);
 
-	return strstr(buf, "DRRS enabled: yes");
+	return strstr(buf, "DRRS capable: yes");
 }
 
 /**
