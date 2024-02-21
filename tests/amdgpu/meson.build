@@ -23,6 +23,7 @@ if libdrm_amdgpu.found()
 			  'amd_mem_leak',
 			  'amd_mode_switch',
 			  'amd_module_load',
+			  'amd_multidisplay_modeset',
 			  'amd_pci_unplug',
 			  'amd_plane',
 			  'amd_prime',
