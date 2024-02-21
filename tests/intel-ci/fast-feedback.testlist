@@ -5,6 +5,7 @@ igt@i915_module_load@load
 igt@core_auth@basic-auth
 igt@debugfs_test@read_all_entries
 igt@debugfs_test@basic-hwmon
+igt@debugfs_test@sysfs
 igt@fbdev@eof
 igt@fbdev@info
 igt@fbdev@nullptr
