@@ -172,12 +172,48 @@ typedef struct {
 	uint32_t screen_changes;
 	int cur_x, cur_y;
 	enum pipe pipe;
+	enum psr_mode psr_mode;
 	enum {
 		FEATURE_NONE  = 0,
 		FEATURE_DSC   = 1,
 		FEATURE_COUNT = 2,
 	} coexist_feature;
 } data_t;
+
+static bool set_sel_fetch_mode_for_output(data_t *data)
+{
+	bool supported = false;
+
+	if (psr_sink_support(data->drm_fd, data->debugfs_fd,
+						 PR_MODE_SEL_FETCH, data->output)) {
+		supported = true;
+		data->psr_mode = PR_MODE_SEL_FETCH;
+	} else if (psr_sink_support(data->drm_fd, data->debugfs_fd,
+							  PSR_MODE_2, data->output)) {
+		supported = true;
+		data->psr_mode = PSR_MODE_2;
+	} else
+		igt_info("selective fetch not supported on output %s\n", data->output->name);
+
+	return supported;
+}
+
+static const char *get_psr_mode_str_for_output(data_t *data)
+{
+	static const char *psr_mode;
+
+	switch (data->psr_mode) {
+	case PSR_MODE_2:
+		psr_mode = "psr2";
+		break;
+	case PR_MODE_SEL_FETCH:
+		psr_mode = "pr";
+		break;
+	default:
+		psr_mode = "";
+	}
+	return psr_mode;
+}
 
 static const char *op_str(enum operations op)
 {
@@ -688,7 +724,7 @@ static void damaged_plane_move(data_t *data)
 
 	igt_display_commit2(&data->display, COMMIT_ATOMIC);
 
-	igt_assert(psr_wait_entry(data->debugfs_fd, PSR_MODE_2, NULL));
+	igt_assert(psr_wait_entry(data->debugfs_fd, data->psr_mode, data->output));
 
 	expected_output(data);
 }
@@ -788,7 +824,7 @@ static void plane_move_continuous(data_t *data)
 {
 	int target_x, target_y;
 
-	igt_assert(psr_wait_entry(data->debugfs_fd, PSR_MODE_2, NULL));
+	igt_assert(psr_wait_entry(data->debugfs_fd, data->psr_mode, data->output));
 
 	get_target_coords(data, &target_x, &target_y);
 
@@ -865,7 +901,7 @@ static void damaged_plane_update(data_t *data)
 	igt_plane_set_position(data->test_plane, 0, 0);
 	igt_display_commit2(&data->display, COMMIT_ATOMIC);
 
-	igt_assert(psr_wait_entry(data->debugfs_fd, PSR_MODE_2, NULL));
+	igt_assert(psr_wait_entry(data->debugfs_fd, data->psr_mode, data->output));
 
 	expected_output(data);
 }
@@ -874,7 +910,7 @@ static void run(data_t *data)
 {
 	int i;
 
-	igt_assert(psr_wait_entry(data->debugfs_fd, PSR_MODE_2, NULL));
+	igt_assert(psr_wait_entry(data->debugfs_fd, data->psr_mode, data->output));
 
 	if (data->fbc_flag == true && data->op_fbc_mode == FBC_ENABLED)
 		igt_assert_f(intel_fbc_wait_until_enabled(data->drm_fd,
@@ -952,14 +988,22 @@ static void cleanup(data_t *data)
 	igt_remove_fb(data->drm_fd, &data->fb_test);
 }
 
-static int check_psr2_support(data_t *data)
+static bool check_pr_psr2_sel_fetch_support(data_t *data)
 {
-	int status;
+	bool status = false;
+
+	/* Check sink supports PR/PSR2 selective fetch */
+	if (!set_sel_fetch_mode_for_output(data))
+		return false;
+
+	/* Check if selective fetch can be enabled */
+	if (!selective_fetch_check(data->debugfs_fd, data->output))
+		igt_assert("Selective fetch is not enabled even though panel should support it\n");
 
 	prepare(data);
-	status = psr_wait_entry(data->debugfs_fd, PSR_MODE_2, NULL);
+	/* We enter into DEEP_SLEEP for both PSR2 and PR sel fetch */
+	status = psr_wait_entry(data->debugfs_fd, data->psr_mode, data->output);
 	cleanup(data);
-
 	return status;
 }
 
@@ -981,6 +1025,8 @@ pipe_output_combo_valid(igt_display_t *display,
 
 igt_main
 {
+	bool output_supports_pr_psr2_sel_fetch = false;
+	bool pr_psr2_sel_fetch_supported = false;
 	data_t data = {};
 	igt_output_t *outputs[IGT_MAX_PIPES * IGT_MAX_PIPES];
 	int i, j, k, y;
@@ -999,11 +1045,6 @@ igt_main
 		data.drm_fd = drm_open_driver_master(DRIVER_INTEL | DRIVER_XE);
 		data.debugfs_fd = igt_debugfs_dir(data.drm_fd);
 		kmstest_set_vt_graphics_mode();
-
-		igt_require_f(psr_sink_support(data.drm_fd,
-					       data.debugfs_fd, PSR_MODE_2,
-					       NULL),
-			      "Sink does not support PSR2\n");
 
 		display_init(&data);
 
@@ -1028,7 +1069,8 @@ igt_main
 
 		for_each_pipe_with_valid_output(&data.display, data.pipe, data.output) {
 			coexist_features[n_pipes] = 0;
-			if (check_psr2_support(&data)) {
+			output_supports_pr_psr2_sel_fetch = check_pr_psr2_sel_fetch_support(&data);
+			if (output_supports_pr_psr2_sel_fetch) {
 				pipes[n_pipes] = data.pipe;
 				outputs[n_pipes] = data.output;
 
@@ -1037,7 +1079,10 @@ igt_main
 
 				n_pipes++;
 			}
+			pr_psr2_sel_fetch_supported |= output_supports_pr_psr2_sel_fetch;
 		}
+		igt_require_f(pr_psr2_sel_fetch_supported,
+					  "No output supports selective fetch\n");
 	}
 
 	for (y = 0; y < ARRAY_SIZE(fbc_status); y++) {
@@ -1054,15 +1099,18 @@ igt_main
 			for (i = 0; i < n_pipes; i++) {
 				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
 					continue;
+				data.pipe = pipes[i];
+				data.output = outputs[i];
+				igt_assert_f(set_sel_fetch_mode_for_output(&data),
+							 "Selective fetch is not supported\n");
 
 				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 					if (j != FEATURE_NONE && !(coexist_features[i] & j))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+					igt_dynamic_f("%s-pipe-%s-%s%s", get_psr_mode_str_for_output(&data),
+							  kmstest_pipe_name(pipes[i]),
 						      igt_output_name(outputs[i]),
 						      coexist_feature_str(j)) {
-						data.pipe = pipes[i];
-						data.output = outputs[i];
 						data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
 						data.coexist_feature = j;
 						for (k = 1; k <= MAX_DAMAGE_AREAS; k++) {
@@ -1087,18 +1135,22 @@ igt_main
 					if (!pipe_output_combo_valid(&data.display, pipes[i],
 								     outputs[i]))
 						continue;
+					data.pipe = pipes[i];
+					data.output = outputs[i];
+					igt_assert_f(set_sel_fetch_mode_for_output(&data),
+								 "Selective fetch is not supported\n");
 
 					for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 						if (j != FEATURE_NONE && !(coexist_features[i] & j))
 							continue;
-						igt_dynamic_f("pipe-%s-%s%s",
+						igt_dynamic_f("%s-pipe-%s-%s%s",
+								  get_psr_mode_str_for_output(&data),
 							      kmstest_pipe_name(pipes[i]),
 							      igt_output_name(outputs[i]),
 							      coexist_feature_str(j)) {
-							data.pipe = pipes[i];
-							data.output = outputs[i];
 							data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
 							data.coexist_feature = j;
+
 							for (k = 1; k <= MAX_DAMAGE_AREAS; k++) {
 								data.damage_area_count = k;
 								prepare(&data);
@@ -1119,17 +1171,21 @@ igt_main
 			for (i = 0; i < n_pipes; i++) {
 				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
 					continue;
+				data.pipe = pipes[i];
+				data.output = outputs[i];
+				igt_assert_f(set_sel_fetch_mode_for_output(&data),
+							 "Selective fetch is not supported\n");
 
 				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 					if (j != FEATURE_NONE && !(coexist_features[i] & j))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+					igt_dynamic_f("%s-pipe-%s-%s%s", get_psr_mode_str_for_output(&data),
+							  kmstest_pipe_name(pipes[i]),
 						      igt_output_name(outputs[i]),
 						      coexist_feature_str(j)) {
-						data.pipe = pipes[i];
-						data.output = outputs[i];
 						data.test_plane_id = DRM_PLANE_TYPE_OVERLAY;
 						data.coexist_feature = j;
+
 						for (k = 1; k <= MAX_DAMAGE_AREAS; k++) {
 							data.damage_area_count = k;
 							prepare(&data);
@@ -1149,15 +1205,18 @@ igt_main
 			for (i = 0; i < n_pipes; i++) {
 				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
 					continue;
+				data.pipe = pipes[i];
+				data.output = outputs[i];
+				igt_assert_f(set_sel_fetch_mode_for_output(&data),
+							 "Selective fetch is not supported\n");
 
 				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 					if (j != FEATURE_NONE && !(coexist_features[i] & j))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+					igt_dynamic_f("%s-pipe-%s-%s%s", get_psr_mode_str_for_output(&data),
+							  kmstest_pipe_name(pipes[i]),
 						      igt_output_name(outputs[i]),
 						      coexist_feature_str(j)) {
-						data.pipe = pipes[i];
-						data.output = outputs[i];
 						data.test_plane_id = DRM_PLANE_TYPE_CURSOR;
 						data.coexist_feature = j;
 						prepare(&data);
@@ -1175,17 +1234,21 @@ igt_main
 			for (i = 0; i < n_pipes; i++) {
 				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
 					continue;
+				data.pipe = pipes[i];
+				data.output = outputs[i];
+				igt_assert_f(set_sel_fetch_mode_for_output(&data),
+							 "Selective fetch is not supported\n");
 
 				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 					if (j != FEATURE_NONE && !(coexist_features[i] & j))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+					igt_dynamic_f("%s-pipe-%s-%s%s", get_psr_mode_str_for_output(&data),
+							  kmstest_pipe_name(pipes[i]),
 						      igt_output_name(outputs[i]),
 						      coexist_feature_str(j)) {
-						data.pipe = pipes[i];
-						data.output = outputs[i];
 						data.test_plane_id = DRM_PLANE_TYPE_CURSOR;
 						data.coexist_feature = j;
+
 						prepare(&data);
 						run(&data);
 						cleanup(&data);
@@ -1202,15 +1265,18 @@ igt_main
 			for (i = 0; i < n_pipes; i++) {
 				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
 					continue;
+				data.pipe = pipes[i];
+				data.output = outputs[i];
+				igt_assert_f(set_sel_fetch_mode_for_output(&data),
+							 "Selective fetch is not supported\n");
 
 				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 					if (j != FEATURE_NONE && !(coexist_features[i] & j))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+					igt_dynamic_f("%s-pipe-%s-%s%s", get_psr_mode_str_for_output(&data),
+							  kmstest_pipe_name(pipes[i]),
 						      igt_output_name(outputs[i]),
 						      coexist_feature_str(j)) {
-						data.pipe = pipes[i];
-						data.output = outputs[i];
 						data.test_plane_id = DRM_PLANE_TYPE_CURSOR;
 						data.coexist_feature = j;
 						prepare(&data);
@@ -1229,15 +1295,18 @@ igt_main
 			for (i = 0; i < n_pipes; i++) {
 				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
 					continue;
+				data.pipe = pipes[i];
+				data.output = outputs[i];
+				igt_assert_f(set_sel_fetch_mode_for_output(&data),
+							 "Selective fetch is not supported\n");
 
 				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 					if (j != FEATURE_NONE && !(coexist_features[i] & j))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+					igt_dynamic_f("%s-pipe-%s-%s%s", get_psr_mode_str_for_output(&data),
+							  kmstest_pipe_name(pipes[i]),
 						      igt_output_name(outputs[i]),
 						      coexist_feature_str(j)) {
-						data.pipe = pipes[i];
-						data.output = outputs[i];
 						data.test_plane_id = DRM_PLANE_TYPE_CURSOR;
 						data.coexist_feature = j;
 						prepare(&data);
@@ -1257,15 +1326,19 @@ igt_main
 			for (i = 0; i < n_pipes; i++) {
 				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
 					continue;
+				data.pipe = pipes[i];
+				data.output = outputs[i];
+				igt_assert_f(set_sel_fetch_mode_for_output(&data),
+							 "Selective fetch is not supported\n");
 
 				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 					if (j != FEATURE_NONE && !(coexist_features[i] & j))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+					igt_dynamic_f("%s-pipe-%s-%s%s",
+							  get_psr_mode_str_for_output(&data),
+							  kmstest_pipe_name(pipes[i]),
 						      igt_output_name(outputs[i]),
 						      coexist_feature_str(j)) {
-						data.pipe = pipes[i];
-						data.output = outputs[i];
 						data.test_plane_id = DRM_PLANE_TYPE_OVERLAY;
 						data.coexist_feature = j;
 						for (k = POS_TOP_LEFT; k <= POS_BOTTOM_RIGHT ; k++) {
@@ -1286,15 +1359,18 @@ igt_main
 			for (i = 0; i < n_pipes; i++) {
 				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
 					continue;
+				data.pipe = pipes[i];
+				data.output = outputs[i];
+				igt_assert_f(set_sel_fetch_mode_for_output(&data),
+							 "Selective fetch is not supported\n");
 
 				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 					if (j != FEATURE_NONE && !(coexist_features[i] & j))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+					igt_dynamic_f("%s-pipe-%s-%s%s", get_psr_mode_str_for_output(&data),
+							  kmstest_pipe_name(pipes[i]),
 						      igt_output_name(outputs[i]),
 						      coexist_feature_str(j)) {
-					data.pipe = pipes[i];
-					data.output = outputs[i];
 					data.test_plane_id = DRM_PLANE_TYPE_OVERLAY;
 					data.coexist_feature = j;
 					prepare(&data);
@@ -1313,15 +1389,18 @@ igt_main
 			for (i = 0; i < n_pipes; i++) {
 				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
 					continue;
+				data.pipe = pipes[i];
+				data.output = outputs[i];
+				igt_assert_f(set_sel_fetch_mode_for_output(&data),
+							 "Selective fetch is not supported\n");
 
 				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 					if (j != FEATURE_NONE && !(coexist_features[i] & j))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+					igt_dynamic_f("%s-pipe-%s-%s%s", get_psr_mode_str_for_output(&data),
+							  kmstest_pipe_name(pipes[i]),
 						      igt_output_name(outputs[i]),
 						      coexist_feature_str(j)) {
-						data.pipe = pipes[i];
-						data.output = outputs[i];
 						data.test_plane_id = DRM_PLANE_TYPE_OVERLAY;
 						data.coexist_feature = j;
 						prepare(&data);
@@ -1340,15 +1419,18 @@ igt_main
 			for (i = 0; i < n_pipes; i++) {
 				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
 					continue;
+				data.pipe = pipes[i];
+				data.output = outputs[i];
+				igt_assert_f(set_sel_fetch_mode_for_output(&data),
+							 "Selective fetch is not supported\n");
 
 				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 					if (j != FEATURE_NONE && !(coexist_features[i] & j))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+					igt_dynamic_f("%s-pipe-%s-%s%s", get_psr_mode_str_for_output(&data),
+							  kmstest_pipe_name(pipes[i]),
 						      igt_output_name(outputs[i]),
 						      coexist_feature_str(j)) {
-						data.pipe = pipes[i];
-						data.output = outputs[i];
 						data.test_plane_id = DRM_PLANE_TYPE_OVERLAY;
 						data.coexist_feature = j;
 						prepare(&data);
@@ -1368,19 +1450,23 @@ igt_main
 			for (i = 0; i < n_pipes; i++) {
 				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
 					continue;
+				data.pipe = pipes[i];
+				data.output = outputs[i];
+				igt_assert_f(set_sel_fetch_mode_for_output(&data),
+							 "Selective fetch is not supported\n");
 
 				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 					if (j != FEATURE_NONE && !(coexist_features[i] & j))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+					igt_dynamic_f("%s-pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+							  get_psr_mode_str_for_output(&data),
 						      igt_output_name(outputs[i]),
 						      coexist_feature_str(j)) {
-						data.pipe = pipes[i];
-						data.output = outputs[i];
 						for (k = 1; k <= MAX_DAMAGE_AREAS; k++) {
 							data.damage_area_count = k;
 							data.test_plane_id = DRM_PLANE_TYPE_PRIMARY;
 							data.coexist_feature = j;
+
 							prepare(&data);
 							run(&data);
 							cleanup(&data);
@@ -1401,15 +1487,18 @@ igt_main
 			for (i = 0; i < n_pipes; i++) {
 				if (!pipe_output_combo_valid(&data.display, pipes[i], outputs[i]))
 					continue;
+				data.pipe = pipes[i];
+				data.output = outputs[i];
+				igt_assert_f(set_sel_fetch_mode_for_output(&data),
+							 "Selective fetch is not supported\n");
 
 				for (j = FEATURE_NONE; j < FEATURE_COUNT; j++) {
 					if (j != FEATURE_NONE && !(coexist_features[i] & j))
 						continue;
-					igt_dynamic_f("pipe-%s-%s%s", kmstest_pipe_name(pipes[i]),
+					igt_dynamic_f("%s-pipe-%s-%s%s", get_psr_mode_str_for_output(&data),
+							  kmstest_pipe_name(pipes[i]),
 						      igt_output_name(outputs[i]),
 						      coexist_feature_str(j)) {
-						data.pipe = pipes[i];
-						data.output = outputs[i];
 						data.damage_area_count = 1;
 						if (data.op_fbc_mode == FBC_ENABLED)
 							data.primary_format = DRM_FORMAT_XRGB8888;
