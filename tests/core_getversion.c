@@ -38,19 +38,17 @@
  * Sub-category: DRM
  * Test category: GEM_Legacy
  *
- * SUBTEST:
+ * SUBTEST: basic
+ * Description: Tests GET_VERSION ioctl of the first device.
  */
 
 IGT_TEST_DESCRIPTION("Tests the DRM_IOCTL_GET_VERSION ioctl and libdrm's "
 		     "drmGetVersion() interface to it.");
 
-igt_simple_main
+static void check(int fd)
 {
-	int fd;
 	drmVersionPtr v;
 
-	fd = __drm_open_driver(DRIVER_ANY);
-	igt_assert_fd(fd);
 	v = drmGetVersion(fd);
 	igt_assert_neq(strlen(v->name), 0);
 	igt_assert_neq(strlen(v->date), 0);
@@ -59,5 +57,21 @@ igt_simple_main
 		igt_assert_lte(1, v->version_major);
 
 	drmFree(v);
-	drm_close_driver(fd);
+}
+
+igt_main
+{
+	int fd;
+
+	igt_fixture {
+		fd = __drm_open_driver(DRIVER_ANY);
+		igt_assert_fd(fd);
+	}
+
+	igt_describe("Check GET_VERSION ioctl of the first drm device.");
+	igt_subtest("basic")
+		check(fd);
+
+	igt_fixture
+		drm_close_driver(fd);
 }
