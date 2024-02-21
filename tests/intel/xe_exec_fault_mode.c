@@ -29,9 +29,8 @@
 #define INVALIDATE	(0x1 << 2)
 #define RACE		(0x1 << 3)
 #define BIND_EXEC_QUEUE	(0x1 << 4)
-#define IMMEDIATE	(0x1 << 5)
-#define PREFETCH	(0x1 << 6)
-#define INVALID_FAULT	(0x1 << 7)
+#define PREFETCH	(0x1 << 5)
+#define INVALID_FAULT	(0x1 << 6)
 
 /**
  * SUBTEST: once-%s
@@ -66,21 +65,6 @@
  *					bindexecqueue userptr invalidate
  * @bindexecqueue-userptr-invalidate-race:
  *					bindexecqueue userptr invalidate race
- * @basic-imm:				basic imm
- * @userptr-imm:			userptr imm
- * @rebind-imm:				rebind imm
- * @userptr-rebind-imm:			userptr rebind imm
- * @userptr-invalidate-imm:		userptr invalidate imm
- * @userptr-invalidate-race-imm:	userptr invalidate race imm
- * @bindexecqueue-imm:			bindexecqueue imm
- * @bindexecqueue-userptr-imm:		bindexecqueue userptr imm
- * @bindexecqueue-rebind-imm:		bindexecqueue rebind imm
- * @bindexecqueue-userptr-rebind-imm:
- *					bindexecqueue userptr rebind imm
- * @bindexecqueue-userptr-invalidate-imm:
- *					bindexecqueue userptr invalidate imm
- * @bindexecqueue-userptr-invalidate-race-imm:
- *					bindexecqueue userptr invalidate race imm
  * @basic-prefetch:			basic prefetch
  * @userptr-prefetch:			userptr prefetch
  * @rebind-prefetch:			rebind prefetch
@@ -172,25 +156,13 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 	};
 
 	sync[0].addr = to_user_pointer(&data[0].vm_sync);
-	if (flags & IMMEDIATE) {
-		if (bo)
-			xe_vm_bind_async_flags(fd, vm, bind_exec_queues[0], bo, 0,
-					       addr, bo_size, sync, 1,
-					       DRM_XE_VM_BIND_FLAG_IMMEDIATE);
-		else
-			xe_vm_bind_userptr_async_flags(fd, vm, bind_exec_queues[0],
-						       to_user_pointer(data),
-						       addr, bo_size, sync, 1,
-						       DRM_XE_VM_BIND_FLAG_IMMEDIATE);
-	} else {
-		if (bo)
-			xe_vm_bind_async(fd, vm, bind_exec_queues[0], bo, 0, addr,
+	if (bo)
+		xe_vm_bind_async(fd, vm, bind_exec_queues[0], bo, 0, addr,
+				 bo_size, sync, 1);
+	else
+		xe_vm_bind_userptr_async(fd, vm, bind_exec_queues[0],
+					 to_user_pointer(data), addr,
 					 bo_size, sync, 1);
-		else
-			xe_vm_bind_userptr_async(fd, vm, bind_exec_queues[0],
-						 to_user_pointer(data), addr,
-						 bo_size, sync, 1);
-	}
 
 #define ONE_SEC	MS_TO_NS(1000)
 	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE,
@@ -343,22 +315,6 @@ igt_main
 			INVALIDATE },
 		{ "bindexecqueue-userptr-invalidate-race", BIND_EXEC_QUEUE | USERPTR |
 			INVALIDATE | RACE },
-		{ "basic-imm", IMMEDIATE },
-		{ "userptr-imm", IMMEDIATE | USERPTR },
-		{ "rebind-imm", IMMEDIATE | REBIND },
-		{ "userptr-rebind-imm", IMMEDIATE | USERPTR | REBIND },
-		{ "userptr-invalidate-imm", IMMEDIATE | USERPTR | INVALIDATE },
-		{ "userptr-invalidate-race-imm", IMMEDIATE | USERPTR |
-			INVALIDATE | RACE },
-		{ "bindexecqueue-imm", IMMEDIATE | BIND_EXEC_QUEUE },
-		{ "bindexecqueue-userptr-imm", IMMEDIATE | BIND_EXEC_QUEUE | USERPTR },
-		{ "bindexecqueue-rebind-imm", IMMEDIATE | BIND_EXEC_QUEUE | REBIND },
-		{ "bindexecqueue-userptr-rebind-imm", IMMEDIATE | BIND_EXEC_QUEUE |
-			USERPTR | REBIND },
-		{ "bindexecqueue-userptr-invalidate-imm", IMMEDIATE | BIND_EXEC_QUEUE |
-			USERPTR | INVALIDATE },
-		{ "bindexecqueue-userptr-invalidate-race-imm", IMMEDIATE |
-			BIND_EXEC_QUEUE | USERPTR | INVALIDATE | RACE },
 		{ "basic-prefetch", PREFETCH },
 		{ "userptr-prefetch", PREFETCH | USERPTR },
 		{ "rebind-prefetch", PREFETCH | REBIND },

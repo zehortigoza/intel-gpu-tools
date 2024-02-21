@@ -1761,6 +1761,72 @@ test_mmap_style_bind(int fd, struct drm_xe_engine_class_instance *eci,
 	xe_vm_destroy(fd, vm);
 }
 
+/**
+ * SUBTEST: bind-flag-invalid
+ * Description:
+ *	Ensure invalid bind flags are rejected.
+ * Functionality: bind
+ * Test category: negative test
+ */
+static void bind_flag_invalid(int fd)
+{
+	uint32_t bo, bo_size = xe_get_default_alignment(fd);
+	uint64_t addr = 0x1a0000;
+	uint32_t vm;
+	struct drm_xe_vm_bind bind;
+	struct drm_xe_sync sync[1] = {
+		{ .type = DRM_XE_SYNC_TYPE_SYNCOBJ, .flags = DRM_XE_SYNC_FLAG_SIGNAL, },
+	};
+
+	vm = xe_vm_create(fd, 0, 0);
+	bo = xe_bo_create(fd, vm, bo_size, vram_if_possible(fd, 0), 0);
+	sync[0].handle = syncobj_create(fd, 0);
+
+	memset(&bind, 0, sizeof(bind));
+	bind.vm_id = vm;
+	bind.num_binds = 1;
+	bind.bind.obj = bo;
+	bind.bind.range = bo_size;
+	bind.bind.addr = addr;
+	bind.bind.op = DRM_XE_VM_BIND_OP_MAP;
+	bind.num_syncs = 1;
+	bind.syncs = (uintptr_t)sync;
+
+	/* Using valid flags should work */
+	bind.bind.flags = 0;
+	igt_ioctl(fd, DRM_IOCTL_XE_VM_BIND, &bind);
+	igt_assert(syncobj_wait(fd, &sync[0].handle, 1, INT64_MAX, 0, NULL));
+	syncobj_reset(fd, &sync[0].handle, 1);
+
+	bind.bind.flags = DRM_XE_VM_BIND_FLAG_NULL;
+	bind.bind.obj = 0;
+	igt_ioctl(fd, DRM_IOCTL_XE_VM_BIND, &bind);
+	igt_assert(syncobj_wait(fd, &sync[0].handle, 1, INT64_MAX, 0, NULL));
+	syncobj_reset(fd, &sync[0].handle, 1);
+	bind.bind.obj = bo;
+
+	/* Using invalid flags should not work */
+	bind.bind.flags = 1 << 0;
+	igt_ioctl(fd, DRM_IOCTL_XE_VM_BIND, &bind);
+	do_ioctl_err(fd, DRM_IOCTL_XE_VM_BIND, &bind, EINVAL);
+
+	bind.bind.flags = 1 << 1;
+	igt_ioctl(fd, DRM_IOCTL_XE_VM_BIND, &bind);
+	do_ioctl_err(fd, DRM_IOCTL_XE_VM_BIND, &bind, EINVAL);
+
+	bind.bind.flags = 1 << 3;
+	igt_ioctl(fd, DRM_IOCTL_XE_VM_BIND, &bind);
+	do_ioctl_err(fd, DRM_IOCTL_XE_VM_BIND, &bind, EINVAL);
+
+	/* Using valid flags should still work */
+	bind.bind.flags = 0;
+	igt_ioctl(fd, DRM_IOCTL_XE_VM_BIND, &bind);
+	igt_assert(syncobj_wait(fd, &sync[0].handle, 1, INT64_MAX, 0, NULL));
+
+	syncobj_destroy(fd, sync[0].handle);
+	xe_vm_destroy(fd, vm);
+}
+
 igt_main
 {
 	struct drm_xe_engine_class_instance *hwe, *hwe_non_copy = NULL;
@@ -1891,6 +1957,9 @@ igt_main
 
 	igt_subtest("userptr-invalid")
 		userptr_invalid(fd);
+
+	igt_subtest("bind-flag-invalid")
+		bind_flag_invalid(fd);
 
 	igt_subtest("shared-pte-page")
 		xe_for_each_engine(fd, hwe)

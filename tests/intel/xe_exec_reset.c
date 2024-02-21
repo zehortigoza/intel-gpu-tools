@@ -93,22 +93,14 @@ static void test_spin(int fd, struct drm_xe_engine_class_instance *eci)
 
 #define MAX_N_EXECQUEUES	16
 #define MAX_INSTANCE		9
-#define CANCEL				(0x1 << 0)
-#define EXEC_QUEUE_RESET	(0x1 << 1)
-#define GT_RESET			(0x1 << 2)
-#define CLOSE_FD			(0x1 << 3)
-#define CLOSE_EXEC_QUEUES	(0x1 << 4)
-#define VIRTUAL				(0x1 << 5)
-#define PARALLEL			(0x1 << 6)
-#define CAT_ERROR			(0x1 << 7)
+#define GT_RESET			(0x1 << 0)
+#define CLOSE_FD			(0x1 << 1)
+#define CLOSE_EXEC_QUEUES	(0x1 << 2)
+#define VIRTUAL				(0x1 << 3)
+#define PARALLEL			(0x1 << 4)
+#define CAT_ERROR			(0x1 << 5)
 
 /**
- * SUBTEST: %s-cancel
- * Description: Test %arg[1] cancel
- *
- * SUBTEST: %s-execqueue-reset
- * Description: Test %arg[1] exec_queue reset
- *
  * SUBTEST: %s-cat-error
  * Description: Test %arg[1] cat error
  *
@@ -185,29 +177,12 @@ test_balancer(int fd, int gt, int class, int n_exec_queues, int n_execs,
 	data = xe_bo_map(fd, bo, bo_size);
 
 	for (i = 0; i < n_exec_queues; i++) {
-		struct drm_xe_ext_set_property job_timeout = {
-			.base.next_extension = 0,
-			.base.name = DRM_XE_EXEC_QUEUE_EXTENSION_SET_PROPERTY,
-			.property = DRM_XE_EXEC_QUEUE_SET_PROPERTY_JOB_TIMEOUT,
-			.value = 50,
-		};
-		struct drm_xe_ext_set_property preempt_timeout = {
-			.base.next_extension = 0,
-			.base.name = DRM_XE_EXEC_QUEUE_EXTENSION_SET_PROPERTY,
-			.property = DRM_XE_EXEC_QUEUE_SET_PROPERTY_PREEMPTION_TIMEOUT,
-			.value = 1000,
-		};
 		struct drm_xe_exec_queue_create create = {
 			.vm_id = vm,
 			.width = flags & PARALLEL ? num_placements : 1,
 			.num_placements = flags & PARALLEL ? 1 : num_placements,
 			.instances = to_user_pointer(eci),
 		};
-
-		if (flags & CANCEL)
-			create.extensions = to_user_pointer(&job_timeout);
-		else if (flags & EXEC_QUEUE_RESET)
-			create.extensions = to_user_pointer(&preempt_timeout);
 
 		igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_EXEC_QUEUE_CREATE,
 					&create), 0);
@@ -219,8 +194,7 @@ test_balancer(int fd, int gt, int class, int n_exec_queues, int n_execs,
 	sync[0].handle = syncobj_create(fd, 0);
 	xe_vm_bind_async(fd, vm, 0, bo, 0, addr, bo_size, sync, 1);
 
-	if (flags & VIRTUAL && (flags & CAT_ERROR || flags & EXEC_QUEUE_RESET ||
-				flags & GT_RESET))
+	if (flags & VIRTUAL && (flags & CAT_ERROR || flags & GT_RESET))
 		bad_batches = num_placements;
 
 	for (i = 0; i < n_execs; i++) {
@@ -309,12 +283,6 @@ test_balancer(int fd, int gt, int class, int n_exec_queues, int n_execs,
 }
 
 /**
- * SUBTEST: cancel
- * Description: Test cancel
- *
- * SUBTEST: execqueue-reset
- * Description: Test exec_queue reset
- *
  * SUBTEST: cat-error
  * Description: Test cat error
  *
@@ -374,26 +342,7 @@ test_legacy_mode(int fd, struct drm_xe_engine_class_instance *eci,
 	data = xe_bo_map(fd, bo, bo_size);
 
 	for (i = 0; i < n_exec_queues; i++) {
-		struct drm_xe_ext_set_property job_timeout = {
-			.base.next_extension = 0,
-			.base.name = DRM_XE_EXEC_QUEUE_EXTENSION_SET_PROPERTY,
-			.property = DRM_XE_EXEC_QUEUE_SET_PROPERTY_JOB_TIMEOUT,
-			.value = 50,
-		};
-		struct drm_xe_ext_set_property preempt_timeout = {
-			.base.next_extension = 0,
-			.base.name = DRM_XE_EXEC_QUEUE_EXTENSION_SET_PROPERTY,
-			.property = DRM_XE_EXEC_QUEUE_SET_PROPERTY_PREEMPTION_TIMEOUT,
-			.value = 1000,
-		};
-		uint64_t ext = 0;
-
-		if (flags & CANCEL)
-			ext = to_user_pointer(&job_timeout);
-		else if (flags & EXEC_QUEUE_RESET)
-			ext = to_user_pointer(&preempt_timeout);
-
-		exec_queues[i] = xe_exec_queue_create(fd, vm, eci, ext);
+		exec_queues[i] = xe_exec_queue_create(fd, vm, eci, 0);
 		syncobjs[i] = syncobj_create(fd, 0);
 	};
 
@@ -478,9 +427,6 @@ test_legacy_mode(int fd, struct drm_xe_engine_class_instance *eci,
 }
 
 /**
- * SUBTEST: cm-execqueue-reset
- * Description: Test compute mode exec_queue reset
- *
  * SUBTEST: cm-cat-error
  * Description: Test compute mode cat-error
  *
@@ -543,20 +489,7 @@ test_compute_mode(int fd, struct drm_xe_engine_class_instance *eci,
 	memset(data, 0, bo_size);
 
 	for (i = 0; i < n_exec_queues; i++) {
-		struct drm_xe_ext_set_property preempt_timeout = {
-			.base.next_extension = 0,
-			.base.name = DRM_XE_EXEC_QUEUE_EXTENSION_SET_PROPERTY,
-			.property = DRM_XE_EXEC_QUEUE_SET_PROPERTY_PREEMPTION_TIMEOUT,
-			.value = 1000,
-		};
-		uint64_t ext = 0;
-
-		if (flags & EXEC_QUEUE_RESET)
-			ext = to_user_pointer(&preempt_timeout);
-		else
-			ext = 0;
-
-		exec_queues[i] = xe_exec_queue_create(fd, vm, eci, ext);
+		exec_queues[i] = xe_exec_queue_create(fd, vm, eci, 0);
 	};
 
 	sync[0].addr = to_user_pointer(&data[0].vm_sync);
@@ -803,14 +736,6 @@ igt_main
 		xe_for_each_engine(fd, hwe)
 			test_spin(fd, hwe);
 
-	igt_subtest("cancel")
-		xe_for_each_engine(fd, hwe)
-			test_legacy_mode(fd, hwe, 1, 1, CANCEL);
-
-	igt_subtest("execqueue-reset")
-		xe_for_each_engine(fd, hwe)
-			test_legacy_mode(fd, hwe, 2, 2, EXEC_QUEUE_RESET);
-
 	igt_subtest("cat-error")
 		xe_for_each_engine(fd, hwe)
 			test_legacy_mode(fd, hwe, 2, 2, CAT_ERROR);
@@ -831,10 +756,6 @@ igt_main
 		xe_for_each_engine(fd, hwe)
 			test_legacy_mode(-1, hwe, 16, 256, CLOSE_FD |
 					 CLOSE_EXEC_QUEUES);
-
-	igt_subtest("cm-execqueue-reset")
-		xe_for_each_engine(fd, hwe)
-			test_compute_mode(fd, hwe, 2, 2, EXEC_QUEUE_RESET);
 
 	igt_subtest("cm-cat-error")
 		xe_for_each_engine(fd, hwe)
@@ -858,19 +779,6 @@ igt_main
 					  CLOSE_EXEC_QUEUES);
 
 	for (const struct section *s = sections; s->name; s++) {
-		igt_subtest_f("%s-cancel", s->name)
-			xe_for_each_gt(fd, gt)
-				xe_for_each_engine_class(class)
-					test_balancer(fd, gt, class, 1, 1,
-						      CANCEL | s->flags);
-
-		igt_subtest_f("%s-execqueue-reset", s->name)
-			xe_for_each_gt(fd, gt)
-				xe_for_each_engine_class(class)
-					test_balancer(fd, gt, class, MAX_INSTANCE + 1,
-						      MAX_INSTANCE + 1,
-						      EXEC_QUEUE_RESET | s->flags);
-
 		igt_subtest_f("%s-cat-error", s->name)
 			xe_for_each_gt(fd, gt)
 				xe_for_each_engine_class(class)

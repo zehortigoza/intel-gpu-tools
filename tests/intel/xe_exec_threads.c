@@ -518,18 +518,7 @@ test_legacy_mode(int fd, uint32_t vm, uint64_t addr, uint64_t userptr,
 
 	memset(sync_all, 0, sizeof(sync_all));
 	for (i = 0; i < n_exec_queues; i++) {
-		struct drm_xe_ext_set_property preempt_timeout = {
-			.base.next_extension = 0,
-			.base.name = DRM_XE_EXEC_QUEUE_EXTENSION_SET_PROPERTY,
-			.property = DRM_XE_EXEC_QUEUE_SET_PROPERTY_PREEMPTION_TIMEOUT,
-			.value = 1000,
-		};
-		uint64_t ext = to_user_pointer(&preempt_timeout);
-
-		if (flags & HANG && i == hang_exec_queue)
-			exec_queues[i] = xe_exec_queue_create(fd, vm, eci, ext);
-		else
-			exec_queues[i] = xe_exec_queue_create(fd, vm, eci, 0);
+		exec_queues[i] = xe_exec_queue_create(fd, vm, eci, 0);
 		if (flags & BIND_EXEC_QUEUE)
 			bind_exec_queues[i] = xe_bind_exec_queue_create(fd, vm,
 									0);

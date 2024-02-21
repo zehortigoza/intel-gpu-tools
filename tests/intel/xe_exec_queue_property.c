@@ -16,9 +16,7 @@
  *
  * arg[1]:
  *
- * @preempt_timeout_us:		preempt timeout us
  * @timeslice_duration_us:	timeslice duration us
- * @job_timeout_ms:		job timeout ms
  */
 
 #include <dirent.h>
@@ -40,11 +38,7 @@
 
 static int get_property_name(const char *property)
 {
-	if (strstr(property, "preempt"))
-		return DRM_XE_EXEC_QUEUE_SET_PROPERTY_PREEMPTION_TIMEOUT;
-	else if (strstr(property, "job_timeout"))
-		return DRM_XE_EXEC_QUEUE_SET_PROPERTY_JOB_TIMEOUT;
-	else if (strstr(property, "timeslice"))
+	if (strstr(property, "timeslice"))
 		return DRM_XE_EXEC_QUEUE_SET_PROPERTY_TIMESLICE;
 	else
 		return -1;
@@ -172,6 +166,46 @@ static void basic_get_property(int xe)
 	xe_vm_destroy(xe, vm);
 }
 
+/**
+ * SUBTEST: invalid-property
+ * Description: Ensure only valid values for property are accepted.
+ * Test category: functionality test
+ */
+static void invalid_property(int xe)
+{
+	uint32_t valid_property = DRM_XE_EXEC_QUEUE_SET_PROPERTY_PRIORITY;
+	struct drm_xe_engine_class_instance instance = {
+			.engine_class = DRM_XE_ENGINE_CLASS_VM_BIND,
+	};
+	struct drm_xe_ext_set_property ext = {
+		.base.next_extension = 0,
+		.base.name = DRM_XE_EXEC_QUEUE_EXTENSION_SET_PROPERTY,
+		.property = valid_property,
+		.value = 1,
+	};
+
+	struct drm_xe_exec_queue_create create = {
+		.extensions = to_user_pointer(&ext),
+		.width = 1,
+		.num_placements = 1,
+		.instances = to_user_pointer(&instance),
+		.vm_id = xe_vm_create(xe, 0, 0),
+	};
+	/* Correct value should pass */
+	igt_assert_eq(igt_ioctl(xe, DRM_IOCTL_XE_EXEC_QUEUE_CREATE, &create), 0);
+
+	/* This will fail as soon as a new property is introduced. It is
+	 * expected and the test will have to be updated. */
+	for (int i = 2; i < 16; i++ ) {
+		ext.property = i;
+		do_ioctl_err(xe, DRM_IOCTL_XE_EXEC_QUEUE_CREATE, &create, EINVAL);
+	}
+
+	/* Correct value should still pass */
+	ext.property = valid_property;
+	igt_assert_eq(igt_ioctl(xe, DRM_IOCTL_XE_EXEC_QUEUE_CREATE, &create), 0);
+}
+
 igt_main
 {
 	static const struct {
@@ -179,9 +213,7 @@ igt_main
 		void (*fn)(int, int, const char **);
 	} tests[] = {{"property-min-max", test_property_min_max}, {} };
 
-	const char *property[][3] = { {"preempt_timeout_us", "preempt_timeout_min", "preempt_timeout_max"},
-				      {"timeslice_duration_us", "timeslice_duration_min", "timeslice_duration_max"},
-				      {"job_timeout_ms", "job_timeout_min", "job_timeout_max"},
+	const char *property[][3] = { {"timeslice_duration_us", "timeslice_duration_min", "timeslice_duration_max"},
 	};
 	int count = sizeof(property) / sizeof(property[0]);
 	int sys_fd;
@@ -248,6 +280,9 @@ igt_main
 
 	igt_subtest("basic-get-property")
 		basic_get_property(xe);
+
+	igt_subtest("invalid-property")
+		invalid_property(xe);
 
 	igt_fixture {
 		xe_device_put(xe);
