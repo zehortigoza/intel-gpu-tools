@@ -620,6 +620,27 @@ static void dump_general_features(struct context *context,
 	printf("\tDP SSC dongle supported: %s\n", YESNO(features->dp_ssc_dongle_supported));
 }
 
+static const char *inverter_type(u8 type)
+{
+	switch (type) {
+	case 0: return "none/external";
+	case 1: return "I2C";
+	case 2: return "PWM";
+	default: return "<reserved>";
+	}
+}
+
+static const char *i2c_speed(u8 i2c_speed)
+{
+	switch (i2c_speed) {
+	case 0: return "100 kHz";
+	case 1: return "50 kHz";
+	case 2: return "400 kHz";
+	case 3: return "1 MHz";
+	default: return "<unknown>";
+	}
+}
+
 static void dump_backlight_info(struct context *context,
 				const struct bdb_block *block)
 {
@@ -642,10 +663,19 @@ static void dump_backlight_info(struct context *context,
 
 		blc = &backlight->data[i];
 
-		printf("\t\tInverter type: %u\n", blc->type);
-		printf("\t\tActive low: %u\n", blc->active_low_pwm);
+		printf("\t\tInverter type: %s (%u)\n",
+		       inverter_type(blc->type), blc->type);
+		printf("\t\tActive low: %s\n", YESNO(blc->active_low_pwm));
 		printf("\t\tPWM freq: %u\n", blc->pwm_freq_hz);
 		printf("\t\tMinimum brightness: %u\n", blc->min_brightness);
+
+		if (blc->type == 1) {
+			printf("\t\tI2C pin: 0x%02x\n", blc->i2c_pin);
+			printf("\t\tI2C speed: %s (0x%02x)\n",
+			       i2c_speed(blc->i2c_speed), blc->i2c_speed);
+			printf("\t\tI2C address: 0x%02x\n", blc->i2c_address);
+			printf("\t\tI2C command: 0x%02x\n", blc->i2c_command);
+		}
 
 		printf("\t\tLevel: %u\n", backlight->level[i]);
 
@@ -956,17 +986,6 @@ static const char *hdmi_frl_rate(u8 frl_rate)
 	case 3: return "8 GT/s";
 	case 4: return "10 GT/s";
 	case 5: return "12 GT/s";
-	default: return "<unknown>";
-	}
-}
-
-static const char *i2c_speed(u8 i2c_speed)
-{
-	switch (i2c_speed) {
-	case 0: return "100 kHz";
-	case 1: return "50 kHz";
-	case 2: return "400 kHz";
-	case 3: return "1 MHz";
 	default: return "<unknown>";
 	}
 }
