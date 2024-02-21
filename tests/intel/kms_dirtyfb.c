@@ -154,7 +154,7 @@ static void check_feature(data_t *data)
 			     "PSR still disabled\n");
 		break;
 	case FEATURE_DRRS:
-		igt_assert_f(intel_is_drrs_inactive(data->drm_fd, data->pipe),
+		igt_assert_f(!intel_is_drrs_inactive(data->drm_fd, data->pipe),
 			     "DRRS INACTIVE\n");
 		break;
 	case FEATURE_DEFAULT:
