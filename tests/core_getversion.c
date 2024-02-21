@@ -45,7 +45,7 @@
 IGT_TEST_DESCRIPTION("Tests the DRM_IOCTL_GET_VERSION ioctl and libdrm's "
 		     "drmGetVersion() interface to it.");
 
-static void check(int fd)
+static void check(int fd, char *dst, int len)
 {
 	drmVersionPtr v;
 
@@ -56,11 +56,15 @@ static void check(int fd)
 	if (is_i915_device(fd))
 		igt_assert_lte(1, v->version_major);
 
+	snprintf(dst, len, "%s v%d.%d %s %s", v->name, v->version_major,
+		v->version_minor, v->date, v->desc);
+	dst[len - 1] = 0;
 	drmFree(v);
 }
 
 igt_main
 {
+	char info[256];
 	int fd;
 
 	igt_fixture {
@@ -69,8 +73,10 @@ igt_main
 	}
 
 	igt_describe("Check GET_VERSION ioctl of the first drm device.");
-	igt_subtest("basic")
-		check(fd);
+	igt_subtest("basic") {
+		check(fd, info, sizeof(info));
+		igt_info("0: %s\n", info);
+	}
 
 	igt_fixture
 		drm_close_driver(fd);
