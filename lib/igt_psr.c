@@ -27,6 +27,10 @@
 #include "igt_sysfs.h"
 #include <errno.h>
 
+#define SET_DEBUGFS_PATH(output, path) \
+	sprintf(path, "%s%s%s", output ? output->name : "", output ? "/" : "", \
+			output ? "i915_psr_status" : "i915_edp_psr_status")
+
 bool psr_disabled_check(int debugfs_fd)
 {
 	char buf[PSR_STATUS_MAX_LEN];
@@ -37,11 +41,13 @@ bool psr_disabled_check(int debugfs_fd)
 	return strstr(buf, "PSR mode: disabled\n");
 }
 
-bool psr2_selective_fetch_check(int debugfs_fd)
+bool psr2_selective_fetch_check(int debugfs_fd, igt_output_t *output)
 {
 	char buf[PSR_STATUS_MAX_LEN];
+	char debugfs_file[128] = {0};
 
-	igt_debugfs_simple_read(debugfs_fd, "i915_edp_psr_status", buf,
+	SET_DEBUGFS_PATH(output, debugfs_file);
+	igt_debugfs_simple_read(debugfs_fd, debugfs_file, buf,
 				sizeof(buf));
 
 	return strstr(buf, "PSR2 selective fetch: enabled");
@@ -54,11 +60,7 @@ static bool psr_active_check(int debugfs_fd, enum psr_mode mode, igt_output_t *o
 	const char *state = (mode == PSR_MODE_1 || mode == PR_MODE) ? "SRDENT" : "DEEP_SLEEP";
 	int ret;
 
-	if (output)
-		sprintf(debugfs_file, "%s/i915_psr_status", output->name);
-	else
-		sprintf(debugfs_file, "%s", "i915_edp_psr_status");
-
+	SET_DEBUGFS_PATH(output, debugfs_file);
 	ret = igt_debugfs_simple_read(debugfs_fd, debugfs_file,
 				     buf, sizeof(buf));
 	if (ret < 0) {
@@ -90,13 +92,18 @@ bool psr_long_wait_update(int debugfs_fd, enum psr_mode mode, igt_output_t *outp
 	return igt_wait(!psr_active_check(debugfs_fd, mode, output), 500, 10);
 }
 
-static ssize_t psr_write(int debugfs_fd, const char *buf)
+static ssize_t psr_write(int debugfs_fd, const char *buf, igt_output_t *output)
 {
+	/*
+	 * FIXME: Currently we don't have separate psr_debug file for each output.
+	 * so, we are using i915_edp_psr_debug file for all outputs.
+	 * Later we need to add support for separate psr_debug file for each output.
+	 */
 	return igt_sysfs_write(debugfs_fd, "i915_edp_psr_debug", buf,
-			       strlen(buf));
+						   strlen(buf));
 }
 
-static int has_psr_debugfs(int debugfs_fd)
+static int has_psr_debugfs(int debugfs_fd, igt_output_t *output)
 {
 	int ret;
 
@@ -105,7 +112,7 @@ static int has_psr_debugfs(int debugfs_fd)
 	 * Legacy mode will return OK here, debugfs api will return -EINVAL.
 	 * -ENODEV is returned when PSR is unavailable.
 	 */
-	ret = psr_write(debugfs_fd, "0xf");
+	ret = psr_write(debugfs_fd, "0xf", output);
 	if (ret == -EINVAL) {
 		errno = 0;
 		return 0;
@@ -113,7 +120,7 @@ static int has_psr_debugfs(int debugfs_fd)
 		return ret;
 
 	/* legacy debugfs api, we enabled irqs by writing, disable them. */
-	psr_write(debugfs_fd, "0");
+	psr_write(debugfs_fd, "0", output);
 	return -EINVAL;
 }
 
@@ -134,14 +141,14 @@ static int psr_restore_debugfs_fd = -1;
 
 static void restore_psr_debugfs(int sig)
 {
-	psr_write(psr_restore_debugfs_fd, "0");
+	psr_write(psr_restore_debugfs_fd, "0", NULL);
 }
 
-static bool psr_set(int device, int debugfs_fd, int mode)
+static bool psr_set(int device, int debugfs_fd, int mode, igt_output_t *output)
 {
 	int ret;
 
-	ret = has_psr_debugfs(debugfs_fd);
+	ret = has_psr_debugfs(debugfs_fd, output);
 	if (ret == -ENODEV) {
 		igt_skip("PSR not available\n");
 		return false;
@@ -179,7 +186,7 @@ static bool psr_set(int device, int debugfs_fd, int mode)
 			debug_val = "0x1";
 		}
 
-		ret = psr_write(debugfs_fd, debug_val);
+		ret = psr_write(debugfs_fd, debug_val, output);
 		igt_require_f(ret > 0, "PSR2 SF feature not available\n");
 	}
 
@@ -193,15 +200,15 @@ static bool psr_set(int device, int debugfs_fd, int mode)
 	return ret;
 }
 
-bool psr_enable(int device, int debugfs_fd, enum psr_mode mode)
+bool psr_enable(int device, int debugfs_fd, enum psr_mode mode, igt_output_t *output)
 {
-	return psr_set(device, debugfs_fd, mode);
+	return psr_set(device, debugfs_fd, mode, output);
 }
 
-bool psr_disable(int device, int debugfs_fd)
+bool psr_disable(int device, int debugfs_fd, igt_output_t *output)
 {
 	/* Any mode different than PSR_MODE_1/2 will disable PSR */
-	return psr_set(device, debugfs_fd, -1);
+	return psr_set(device, debugfs_fd, -1, output);
 }
 
 bool psr_sink_support(int device, int debugfs_fd, enum psr_mode mode, igt_output_t *output)
@@ -211,11 +218,7 @@ bool psr_sink_support(int device, int debugfs_fd, enum psr_mode mode, igt_output
 	char buf[PSR_STATUS_MAX_LEN];
 	int ret;
 
-	if (output)
-		sprintf(debugfs_file, "%s/i915_psr_status", output->name);
-	else
-		sprintf(debugfs_file, "%s", "i915_edp_psr_status");
-
+	SET_DEBUGFS_PATH(output, debugfs_file);
 	ret = igt_debugfs_simple_read(debugfs_fd, debugfs_file, buf,
 				      sizeof(buf));
 	if (ret < 1)
@@ -305,7 +308,7 @@ void psr_print_debugfs(int debugfs_fd)
 	igt_info("%s", buf);
 }
 
-bool i915_psr2_selective_fetch_check(int drm_fd)
+bool i915_psr2_selective_fetch_check(int drm_fd, igt_output_t *output)
 {
 	int debugfs_fd;
 	bool ret;
@@ -314,7 +317,7 @@ bool i915_psr2_selective_fetch_check(int drm_fd)
 		return false;
 
 	debugfs_fd = igt_debugfs_dir(drm_fd);
-	ret = psr2_selective_fetch_check(debugfs_fd);
+	ret = psr2_selective_fetch_check(debugfs_fd, output);
 	close(debugfs_fd);
 
 	return ret;
@@ -331,7 +334,7 @@ bool i915_psr2_selective_fetch_check(int drm_fd)
  * Returns:
  * True if PSR mode changed to PSR1, false otherwise.
  */
-bool i915_psr2_sel_fetch_to_psr1(int drm_fd)
+bool i915_psr2_sel_fetch_to_psr1(int drm_fd, igt_output_t *output)
 {
 	int debugfs_fd;
 	bool ret = false;
@@ -340,8 +343,8 @@ bool i915_psr2_sel_fetch_to_psr1(int drm_fd)
 		return ret;
 
 	debugfs_fd = igt_debugfs_dir(drm_fd);
-	if (psr2_selective_fetch_check(debugfs_fd)) {
-		psr_set(drm_fd, debugfs_fd, PSR_MODE_1);
+	if (psr2_selective_fetch_check(debugfs_fd, output)) {
+		psr_set(drm_fd, debugfs_fd, PSR_MODE_1, output);
 		ret = true;
 	}
 
@@ -355,12 +358,12 @@ bool i915_psr2_sel_fetch_to_psr1(int drm_fd)
  * Restore PSR2 selective fetch after tests were executed, this function should
  * only be called if i915_psr2_sel_fetch_to_psr1() returned true.
  */
-void i915_psr2_sel_fetch_restore(int drm_fd)
+void i915_psr2_sel_fetch_restore(int drm_fd, igt_output_t *output)
 {
 	int debugfs_fd;
 
 	debugfs_fd = igt_debugfs_dir(drm_fd);
-	psr_set(drm_fd, debugfs_fd, PSR_MODE_2_SEL_FETCH);
+	psr_set(drm_fd, debugfs_fd, PSR_MODE_2_SEL_FETCH, output);
 	close(debugfs_fd);
 }
 
@@ -369,16 +372,17 @@ void i915_psr2_sel_fetch_restore(int drm_fd)
  *
  * Return the current PSR mode.
  */
-enum psr_mode psr_get_mode(int debugfs_fd)
+enum psr_mode psr_get_mode(int debugfs_fd, igt_output_t *output)
 {
 	char buf[PSR_STATUS_MAX_LEN];
+	char debugfs_file[128] = {0};
 	int ret;
 
-
-	ret = igt_debugfs_simple_read(debugfs_fd, "i915_edp_psr_status", buf,
+	SET_DEBUGFS_PATH(output, debugfs_file);
+	ret = igt_debugfs_simple_read(debugfs_fd, debugfs_file, buf,
 				      sizeof(buf));
 	if (ret < 0) {
-		igt_info("Could not read i915_edp_psr_status: %s\n",
+		igt_info("Could not read psr status: %s\n",
 			 strerror(-ret));
 		return PSR_DISABLED;
 	}

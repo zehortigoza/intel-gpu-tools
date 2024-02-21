@@ -1014,7 +1014,7 @@ igt_main
 
 		/* Test if PSR2 can be enabled */
 		igt_require_f(psr_enable(data.drm_fd,
-					 data.debugfs_fd, PSR_MODE_2_SEL_FETCH),
+					 data.debugfs_fd, PSR_MODE_2_SEL_FETCH, NULL),
 			      "Error enabling PSR2\n");
 
 		data.damage_area_count = MAX_DAMAGE_AREAS;
@@ -1025,9 +1025,6 @@ igt_main
 		data.big_fb_height = res->max_height;
 		igt_info("Big framebuffer size %dx%d\n",
 			 data.big_fb_width, data.big_fb_height);
-
-		igt_require_f(psr2_selective_fetch_check(data.debugfs_fd),
-			      "PSR2 selective fetch not enabled\n");
 
 		for_each_pipe_with_valid_output(&data.display, data.pipe, data.output) {
 			coexist_features[n_pipes] = 0;

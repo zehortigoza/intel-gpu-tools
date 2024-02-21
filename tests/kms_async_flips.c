@@ -391,7 +391,7 @@ static void test_cursor(data_t *data)
 	 * necessary, causing the async flip to fail because async flip is not
 	 * supported in cursor plane.
 	 */
-	igt_skip_on_f(i915_psr2_selective_fetch_check(data->drm_fd),
+	igt_skip_on_f(i915_psr2_selective_fetch_check(data->drm_fd, NULL),
 		      "PSR2 sel fetch causes cursor to be added to primary plane " \
 		      "pages flips and async flip is not supported in cursor\n");
 
@@ -704,7 +704,7 @@ igt_main
 		 * necessary, causing the async flip to fail because async flip is not
 		 * supported in cursor plane.
 		 */
-		igt_skip_on_f(i915_psr2_selective_fetch_check(data.drm_fd),
+		igt_skip_on_f(i915_psr2_selective_fetch_check(data.drm_fd, NULL),
 			      "PSR2 sel fetch causes cursor to be added to primary plane " \
 			      "pages flips and async flip is not supported in cursor\n");
 

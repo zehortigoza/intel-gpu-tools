@@ -519,7 +519,7 @@ static bool psr_enable_if_enabled(data_t *data)
 		igt_skip("enable_psr modparam doesn't allow psr mode %d\n",
 			 data->op_psr_mode);
 
-	return psr_enable(data->drm_fd, data->debugfs_fd, data->op_psr_mode);
+	return psr_enable(data->drm_fd, data->debugfs_fd, data->op_psr_mode, data->output);
 }
 
 static inline void manual(const char *expected)
@@ -658,6 +658,7 @@ static void test_cleanup(data_t *data)
 
 	igt_remove_fb(data->drm_fd, &data->fb_green);
 	igt_remove_fb(data->drm_fd, &data->fb_white);
+	psr_disable(data->drm_fd, data->debugfs_fd, data->output);
 }
 
 static void setup_test_plane(data_t *data, int test_plane)
@@ -976,7 +977,6 @@ igt_main
 	}
 
 	igt_fixture {
-		psr_disable(data.drm_fd, data.debugfs_fd);
 
 		close(data.debugfs_fd);
 		buf_ops_destroy(data.bops);

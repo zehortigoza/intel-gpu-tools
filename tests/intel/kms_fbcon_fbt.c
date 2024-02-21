@@ -277,7 +277,7 @@ static void disable_features(int device, int debugfs_fd)
 {
 	igt_set_module_param_int(device, "enable_fbc", 0);
 	if (psr_sink_support(device, debugfs_fd, PSR_MODE_1, NULL))
-		psr_disable(device, debugfs_fd);
+		psr_disable(device, debugfs_fd, NULL);
 }
 
 static inline void fbc_modparam_enable(int device, int debugfs_fd)
@@ -287,7 +287,7 @@ static inline void fbc_modparam_enable(int device, int debugfs_fd)
 
 static inline void psr_debugfs_enable(int device, int debugfs_fd)
 {
-	psr_enable(device, debugfs_fd, PSR_MODE_1);
+	psr_enable(device, debugfs_fd, PSR_MODE_1, NULL);
 }
 
 static void fbc_skips_on_fbcon(int debugfs_fd)
