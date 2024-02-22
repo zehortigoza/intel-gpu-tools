@@ -882,7 +882,7 @@ void igt_draw_rect(int fd, struct buf_ops *bops, uint32_t ctx,
 	};
 
 	swizzle = I915_BIT_6_SWIZZLE_NONE;
-	if (tiling != I915_TILING_NONE && gem_available_fences(fd)) {
+	if (is_i915_device(fd) && tiling != I915_TILING_NONE && gem_available_fences(fd)) {
 		gem_get_tiling(fd, buf_handle, &buf_tiling, &swizzle);
 		igt_assert(tiling == buf_tiling);
 	}
