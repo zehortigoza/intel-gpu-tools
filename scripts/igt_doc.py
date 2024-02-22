@@ -190,10 +190,10 @@ class IntelciTestlist:
     def __init__(self):
         self.testlists = {}
         self.gpu_set = set()
+        self.default_gpu = "default"
 
     def add(self, testlist, gpu_set):
-        self.gpu_set.update(gpu_set)
-
+        # Handle GPUs found at the set to be added
         for driver, gpus in testlist.items():
             if driver not in self.testlists:
                 self.testlists[driver] = {}
@@ -207,6 +207,26 @@ class IntelciTestlist:
                         self.testlists[driver][gpu][run_type] = set()
 
                     self.testlists[driver][gpu][run_type].update(testlist[driver][gpu][run_type])
+
+        # Apply default values to gpus that aren't in common
+        if self.gpu_set:
+            not_intersecting_gpus = self.gpu_set.symmetric_difference(gpu_set)
+
+            for driver in self.testlists.keys():
+                for gpu in not_intersecting_gpus:
+                    if gpu not in self.testlists[driver]:
+                        self.testlists[driver][gpu] = {}
+
+                    for run_type in self.testlists[driver][gpu].keys():
+                        if run_type not in self.testlists[driver][self.default_gpu]:
+                            continue
+
+                        default_list = self.testlists[driver][self.default_gpu][run_type]
+
+                        self.testlists[driver][gpu][run_type].update(default_list)
+
+        self.gpu_set.update(gpu_set)
+
 
     def write(self, directory):
         '''Create testlist directory (if needed) and files'''
