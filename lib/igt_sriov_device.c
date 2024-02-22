@@ -12,6 +12,7 @@
 #include "igt_device.h"
 #include "igt_sriov_device.h"
 #include "igt_sysfs.h"
+#include "xe/xe_query.h"
 
 /**
  * igt_sriov_is_pf - Check if device is PF
@@ -232,6 +233,7 @@ int igt_sriov_open_vf_drm_device(int pf, unsigned int vf_num)
 	DIR *dir;
 	struct dirent *de;
 	bool found = false;
+	int fd;
 
 	if (!vf_num)
 		return -1;
@@ -258,7 +260,11 @@ int igt_sriov_open_vf_drm_device(int pf, unsigned int vf_num)
 	if (!found)
 		return -1;
 
-	return __drm_open_device(dev_name, DRIVER_ANY);
+	fd = __drm_open_device(dev_name, DRIVER_ANY);
+	if (fd >= 0 && is_xe_device(fd))
+		xe_device_get(fd);
+
+	return fd;
 }
 
 /**
