@@ -202,6 +202,9 @@ static void preempter(int fd, struct drm_xe_engine_class_instance *hwe)
 	data = xe_bo_map(fd, bo, bo_size);
 	store_dword_batch(data, addr, value);
 
+	igt_assert(syncobj_wait(fd, &syncobj, 1, INT64_MAX, 0, NULL));
+	syncobj_reset(fd, &syncobj, 1);
+
 	exec_queue = xe_exec_queue_create(fd, vm, hwe, to_user_pointer(&ext));
 	exec.exec_queue_id = exec_queue;
 	exec.address = data->addr;
