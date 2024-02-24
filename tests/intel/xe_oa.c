@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: MIT */
+// SPDX-License-Identifier: MIT
 /*
  * Copyright © 2024 Intel Corporation
  */
@@ -426,7 +426,7 @@ get_oa_format(enum xe_oa_format_name format)
 		return dg2_oa_formats[format];
 	else if (IS_METEORLAKE(devid))
 		return mtl_oa_formats[format];
-	else if (IS_LUNARLAKE(devid))
+	else if (intel_graphics_ver(devid) >= IP_VER(20, 0))
 		return lnl_oa_formats[format];
 	else
 		return gen12_oa_formats[format];
@@ -2518,7 +2518,7 @@ test_buffer_fill(const struct drm_xe_engine_class_instance *hwe)
 		overflow_seen = (oa_status & OASTATUS_BUFFER_OVERFLOW) ? true : false;
 
 		/* Overrun mode is disabled in the kernel for Xe2+ */
-		if (!IS_LUNARLAKE(xe_dev_id(drm_fd)))
+		if (intel_graphics_ver(devid) < IP_VER(20, 0))
 			igt_assert_eq(overflow_seen, true);
 
 		do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_DISABLE, 0);
@@ -3430,7 +3430,7 @@ static void single_ctx_helper(struct drm_xe_engine_class_instance *hwe)
 	}
 
 	/* FIXME: can we deduce the presence of A26 from get_oa_format(fmt)? */
-	if (IS_LUNARLAKE(devid))
+	if (intel_graphics_ver(devid) >= IP_VER(20, 0))
 		goto skip_check;
 
 	/* Check that this test passed. The test measures the number of 2x2
@@ -3641,7 +3641,7 @@ static bool has_xe_oa_userspace_config(int fd)
 	return errno != EINVAL;
 }
 
-#define SAMPLE_MUX_REG (IS_LUNARLAKE(xe_dev_id(drm_fd)) ? \
+#define SAMPLE_MUX_REG (intel_graphics_ver(devid) >= IP_VER(20, 0) ?	\
 			0x13000 /* PES* */ : 0x9888 /* NOA_WRITE */)
 
 /**
@@ -3895,7 +3895,8 @@ test_whitelisted_registers_userspace_config(void)
 	config.n_regs++;
 
 	/* NOA_CONFIG */
-	if (!IS_LUNARLAKE(devid)) {
+	/* Prior to Xe2 */
+	if (intel_graphics_ver(devid) < IP_VER(20, 0)) {
 		regs[config.n_regs * 2] = 0xD04;
 		regs[config.n_regs * 2 + 1] = 0;
 		config.n_regs++;
@@ -3903,7 +3904,8 @@ test_whitelisted_registers_userspace_config(void)
 		regs[config.n_regs * 2 + 1] = 0;
 		config.n_regs++;
 	}
-	if (!IS_LUNARLAKE(devid) && !IS_METEORLAKE(devid)) {
+	/* Prior to MTLx */
+	if (intel_graphics_ver(devid) < IP_VER(12, 70)) {
 		/* WAIT_FOR_RC6_EXIT */
 		regs[config.n_regs * 2] = 0x20CC;
 		regs[config.n_regs * 2 + 1] = 0;
@@ -3942,7 +3944,8 @@ struct test_perf {
 } perf;
 
 #define HAS_OA_MMIO_TRIGGER(__d) \
-	(IS_DG2(__d) || IS_PONTEVECCHIO(__d) || IS_METEORLAKE(__d) || IS_LUNARLAKE(__d))
+	(IS_DG2(__d) || IS_PONTEVECCHIO(__d) || IS_METEORLAKE(__d) || \
+	 intel_graphics_ver(devid) >= IP_VER(20, 0))
 
 static void perf_init_whitelist(void)
 {
@@ -4834,7 +4837,7 @@ igt_main
 
 		igt_subtest_with_dynamic("unprivileged-single-ctx-counters") {
 			igt_require_f(render_copy, "no render-copy function\n");
-			igt_require(!IS_LUNARLAKE(devid));
+			igt_require(intel_graphics_ver(devid) < IP_VER(20, 0));
 			__for_one_render_engine(hwe)
 				test_single_ctx_render_target_writes_a_counter(hwe);
 		}

@@ -328,7 +328,7 @@ intel_perf_for_devinfo(uint32_t device_id,
 			intel_perf_load_metrics_mtlgt3(perf);
 		else
 			return unsupported_xe_oa_platform(perf);
-	} else if (devinfo->is_lunarlake) {
+	} else if (intel_graphics_ver(device_id) >= IP_VER(20, 0)) {
 		intel_perf_load_metrics_lnl(perf);
 	} else {
 		return unsupported_xe_oa_platform(perf);
