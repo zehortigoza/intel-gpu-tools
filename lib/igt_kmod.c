@@ -28,6 +28,7 @@
 #include <limits.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -39,6 +40,7 @@
 
 #include "igt_aux.h"
 #include "igt_core.h"
+#include "igt_debugfs.h"
 #include "igt_kmod.h"
 #include "igt_ktap.h"
 #include "igt_sysfs.h"
@@ -864,6 +866,19 @@ static int open_parameters(const char *module_name)
 	return open(path, O_RDONLY);
 }
 
+static void kunit_debugfs_path(char *kunit_path)
+{
+	const char *debugfs_path = igt_debugfs_mount();
+
+	if (igt_debug_on(!debugfs_path))
+		return;
+
+	if (igt_debug_on(strlen(debugfs_path) + strlen("/kunit/") >= PATH_MAX))
+		return;
+
+	strcpy(stpcpy(kunit_path, debugfs_path), "/kunit/");
+}
+
 static bool kunit_set_filtering(const char *filter_glob, const char *filter,
 				const char *filter_action)
 {
@@ -1071,21 +1086,41 @@ static void kunit_results_free(struct igt_list_head *results,
 	free(*suite_name);
 }
 
-static int kunit_get_results(struct igt_list_head *results, int kmsg_fd,
-			     struct igt_ktap_results **ktap)
+static int kunit_get_results(struct igt_list_head *results, const char *debugfs_path,
+			     const char *suite, struct igt_ktap_results **ktap)
 {
+	char results_path[PATH_MAX];
+	FILE *results_stream;
+	char *buf = NULL;
+	size_t size = 0;
+	ssize_t len;
 	int err;
 
-	*ktap = igt_ktap_alloc(results);
-	if (igt_debug_on(!*ktap))
-		return -ENOMEM;
+	if (igt_debug_on(strlen(debugfs_path) + strlen(suite) + strlen("/results") >= PATH_MAX))
+		return -ENOSPC;
 
-	do
-		igt_debug_on((err = kunit_kmsg_result_get(results, NULL, kmsg_fd, *ktap),
-			      err && err != -EINPROGRESS));
-	while (err == -EINPROGRESS);
+	strcpy(stpcpy(stpcpy(results_path, debugfs_path), suite), "/results");
+	results_stream = fopen(results_path, "r");
+	if (igt_debug_on(!results_stream))
+		return -errno;
+
+	*ktap = igt_ktap_alloc(results);
+	if (igt_debug_on(!*ktap)) {
+		err = -ENOMEM;
+		goto out_fclose;
+	}
+
+	while (len = getline(&buf, &size, results_stream), len > 0) {
+		err = igt_ktap_parse(buf, *ktap);
+		if (err != -EINPROGRESS)
+			break;
+	}
+
+	free(buf);
 
 	igt_ktap_free(ktap);
+out_fclose:
+	fclose(results_stream);
 
 	return err;
 }
@@ -1101,7 +1136,13 @@ static void __igt_kunit_legacy(struct igt_ktest *tst,
 	pthread_mutexattr_t attr;
 	IGT_LIST_HEAD(results);
 	unsigned long taints;
-	int ret;
+	int flags, ret;
+
+	igt_skip_on_f(tst->kmsg < 0, "Could not open /dev/kmsg\n");
+
+	igt_skip_on((flags = fcntl(tst->kmsg, F_GETFL, 0), flags < 0));
+	igt_skip_on_f(fcntl(tst->kmsg, F_SETFL, flags & ~O_NONBLOCK) == -1,
+		      "Could not set /dev/kmsg to blocking mode\n");
 
 	igt_skip_on(lseek(tst->kmsg, 0, SEEK_END) < 0);
 
@@ -1224,30 +1265,21 @@ static void __igt_kunit_legacy(struct igt_ktest *tst,
 	igt_skip_on_f(ret, "KTAP parser failed\n");
 }
 
-static void kunit_get_tests_timeout(int signal)
-{
-	igt_skip("Timed out while trying to extract a list of KUnit test cases from /dev/kmsg\n");
-}
-
 static bool kunit_get_tests(struct igt_list_head *tests,
 			    struct igt_ktest *tst,
 			    const char *suite,
 			    const char *opts,
+			    const char *debugfs_path,
+			    DIR **debugfs_dir,
 			    struct igt_ktap_results **ktap)
 {
-	struct sigaction sigalrm = { .sa_handler = kunit_get_tests_timeout, },
-			 saved;
 	struct igt_ktap_result *r, *rn;
+	struct dirent *subdir;
 	unsigned long taints;
-	int flags, err;
 
-	igt_skip_on_f(tst->kmsg < 0, "Could not open /dev/kmsg\n");
-
-	igt_skip_on((flags = fcntl(tst->kmsg, F_GETFL, 0), flags < 0));
-	igt_skip_on_f(fcntl(tst->kmsg, F_SETFL, flags & ~O_NONBLOCK) == -1,
-		      "Could not set /dev/kmsg to blocking mode\n");
-
-	igt_skip_on(lseek(tst->kmsg, 0, SEEK_END) < 0);
+	*debugfs_dir = opendir(debugfs_path);
+	if (igt_debug_on(!*debugfs_dir))
+		return false;
 
 	/*
 	 * To get a list of test cases provided by a kunit test module, ask the
@@ -1260,19 +1292,37 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 	if (igt_debug_on(!kunit_set_filtering(suite, "module=none", "skip")))
 		return false;
 
+	if (!suite) {
+		seekdir(*debugfs_dir, 2);	/* directory itself and its parent */
+		errno = 0;
+		igt_skip_on_f(readdir(*debugfs_dir) || errno,
+			      "Require empty KUnit debugfs directory\n");
+		rewinddir(*debugfs_dir);
+	}
+
 	igt_skip_on(modprobe(tst->kmod, opts));
 	igt_skip_on(igt_kernel_tainted(&taints));
 
-	igt_skip_on(sigaction(SIGALRM, &sigalrm, &saved));
-	alarm(10);
+	while (subdir = readdir(*debugfs_dir), subdir) {
+		if (!(subdir->d_type & DT_DIR))
+			continue;
 
-	err = kunit_get_results(tests, tst->kmsg, ktap);
+		if (!strcmp(subdir->d_name, ".") || !strcmp(subdir->d_name, ".."))
+			continue;
 
-	alarm(0);
-	igt_debug_on(sigaction(SIGALRM, &saved, NULL));
+		if (suite && strcmp(subdir->d_name, suite))
+			continue;
 
-	igt_skip_on_f(err,
-		      "KTAP parser failed while getting a list of test cases\n");
+		igt_warn_on_f(kunit_get_results(tests, debugfs_path, subdir->d_name, ktap),
+			      "parsing KTAP report from test suite \"%s\" failed\n",
+			      subdir->d_name);
+
+		if (suite)
+			break;
+	}
+
+	closedir(*debugfs_dir);
+	*debugfs_dir = NULL;
 
 	igt_list_for_each_entry_safe(r, rn, tests, link)
 		igt_require_f(r->code == IGT_EXIT_SKIP,
@@ -1287,6 +1337,7 @@ static void __igt_kunit(struct igt_ktest *tst,
 			const char *subtest,
 			const char *suite,
 			const char *opts,
+			const char *debugfs_path,
 			struct igt_list_head *tests,
 			struct igt_ktap_results **ktap)
 {
@@ -1307,8 +1358,6 @@ static void __igt_kunit(struct igt_ktest *tst,
 
 			igt_skip_on(igt_kernel_tainted(&taints));
 
-			igt_fail_on(lseek(tst->kmsg, 0, SEEK_END) == -1 && errno);
-
 			igt_assert_lt(snprintf(glob, sizeof(glob), "%s.%s",
 					       t->suite_name, t->case_name),
 				      sizeof(glob));
@@ -1317,7 +1366,8 @@ static void __igt_kunit(struct igt_ktest *tst,
 			igt_assert_eq(modprobe(tst->kmod, opts), 0);
 			igt_assert_eq(igt_kernel_tainted(&taints), 0);
 
-			igt_assert_eq(kunit_get_results(&results, tst->kmsg, ktap), 0);
+			igt_assert_eq(kunit_get_results(&results, debugfs_path,
+							t->suite_name, ktap), 0);
 
 			for (i = 0; i < 2; i++) {
 				kunit_result_free(&r, &suite_name, &case_name);
@@ -1385,9 +1435,11 @@ static void __igt_kunit(struct igt_ktest *tst,
  */
 void igt_kunit(const char *module_name, const char *suite, const char *opts)
 {
+	char debugfs_path[PATH_MAX] = { '\0', };
 	struct igt_ktest tst = { .kmsg = -1, };
 	struct igt_ktap_results *ktap = NULL;
 	const char *subtest = suite;
+	DIR *debugfs_dir = NULL;
 	IGT_LIST_HEAD(tests);
 
 	/*
@@ -1435,10 +1487,12 @@ void igt_kunit(const char *module_name, const char *suite, const char *opts)
 		 *	 LTS kernels not capable of using KUnit filters for
 		 *	 listing test cases in KTAP format, with igt_require.
 		 */
-		if (!kunit_get_tests(&tests, &tst, suite, opts, &ktap))
+		kunit_debugfs_path(debugfs_path);
+		if (igt_debug_on(!*debugfs_path) ||
+		    !kunit_get_tests(&tests, &tst, suite, opts, debugfs_path, &debugfs_dir, &ktap))
 			__igt_kunit_legacy(&tst, subtest, opts);
 		else
-			__igt_kunit(&tst, subtest, suite, opts, &tests, &ktap);
+			__igt_kunit(&tst, subtest, suite, opts, debugfs_path, &tests, &ktap);
 	}
 
 	igt_fixture {
@@ -1447,6 +1501,9 @@ void igt_kunit(const char *module_name, const char *suite, const char *opts)
 		igt_ktap_free(&ktap);
 
 		kunit_results_free(&tests, &suite_name, &case_name);
+
+		if (debugfs_dir)
+			closedir(debugfs_dir);
 
 		igt_ktest_end(&tst);
 	}
