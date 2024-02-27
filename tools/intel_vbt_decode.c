@@ -1827,6 +1827,8 @@ static void dump_lfp_power(struct context *context,
 	       YESNO(lfp_block->features.lace_enabled_status));
 	printf("\tPower conservation preference level: %d\n",
 	       lfp_block->features.power_conservation_pref);
+	printf("\tDPST support: %s\n",
+	       YESNO(lfp_block->features.dpst_support));
 
 	for (i = 0; i < 5; i++) {
 		printf("\tALS backlight adjust: %d\n",
