@@ -17,6 +17,7 @@
 
 #include "xe_drm.h"
 #include "xe/xe_ioctl.h"
+#include "xe/xe_spin.h"
 #include "xe/xe_query.h"
 #include "xe/xe_util.h"
 
@@ -153,6 +154,9 @@ static void test_freq_basic_api(int fd, int gt_id)
 /**
  * SUBTEST: freq_fixed_idle
  * Description: Test fixed frequency request with exec_queue in idle state
+ *
+ * SUBTEST: freq_fixed_exec
+ * Description: Test fixed frequency request when spinner is run
  */
 
 static void test_freq_fixed(int fd, int gt_id, bool gt_idle)
@@ -217,8 +221,10 @@ static void test_freq_fixed(int fd, int gt_id, bool gt_idle)
 /**
  * SUBTEST: freq_range_idle
  * Description: Test range frequency request with exec_queue in idle state
+ *
+ * SUBTEST: freq_range_exec
+ * Description: Test range frequency request when spinner is run
  */
-
 static void test_freq_range(int fd, int gt_id, bool gt_idle)
 {
 	uint32_t rpn = get_freq(fd, gt_id, "rpn");
@@ -319,10 +325,88 @@ static void test_reset(int fd, int gt_id, int cycles)
 	}
 }
 
+static void test_spin(int fd, struct drm_xe_engine_class_instance *eci, bool fixed)
+{
+	struct drm_xe_sync sync[2] = {
+		{ .type = DRM_XE_SYNC_TYPE_SYNCOBJ, .flags = DRM_XE_SYNC_FLAG_SIGNAL, },
+		{ .type = DRM_XE_SYNC_TYPE_SYNCOBJ, .flags = DRM_XE_SYNC_FLAG_SIGNAL, },
+	};
+	struct drm_xe_exec exec = {
+		.num_batch_buffer = 1,
+		.num_syncs = 2,
+		.syncs = to_user_pointer(sync),
+	};
+	uint64_t addr = 0x1a0000;
+	struct xe_spin_opts spin_opts = {
+		.addr = addr,
+		.preempt = false
+	};
+	struct xe_spin *spin;
+	uint32_t exec_queue;
+	uint32_t syncobj;
+	size_t bo_size;
+	uint32_t bo;
+	uint32_t vm;
+
+	vm = xe_vm_create(fd, 0, 0);
+	bo_size = sizeof(*spin);
+	bo_size = xe_bb_size(fd, bo_size);
+
+	bo = xe_bo_create(fd, vm, bo_size,
+			  vram_if_possible(fd, eci->gt_id), 0);
+	spin = xe_bo_map(fd, bo, bo_size);
+
+	exec_queue = xe_exec_queue_create(fd, vm, eci, 0);
+	syncobj = syncobj_create(fd, 0);
+
+	sync[0].handle = syncobj_create(fd, 0);
+	xe_vm_bind_async(fd, vm, 0, bo, 0, addr, bo_size, sync, 1);
+
+	xe_spin_init(spin, &spin_opts);
+
+	sync[0].flags &= ~DRM_XE_SYNC_FLAG_SIGNAL;
+	sync[1].flags |= DRM_XE_SYNC_FLAG_SIGNAL;
+	sync[1].handle = syncobj;
+
+	exec.exec_queue_id = exec_queue;
+	exec.address = addr;
+	xe_exec(fd, &exec);
+
+	xe_spin_wait_started(spin);
+	usleep(50000);
+	igt_assert(!syncobj_wait(fd, &syncobj, 1, 1, 0, NULL));
+
+	igt_info("Running on GT %d Engine %s:%d\n", eci->gt_id,
+		 xe_engine_class_string(eci->engine_class), eci->engine_instance);
+
+	if (fixed)
+		test_freq_fixed(fd, eci->gt_id, false);
+	else
+		test_freq_range(fd, eci->gt_id, false);
+
+	xe_spin_end(spin);
+
+	igt_assert(syncobj_wait(fd, &syncobj, 1, INT64_MAX, 0, NULL));
+	igt_assert(syncobj_wait(fd, &sync[0].handle, 1, INT64_MAX, 0, NULL));
+
+	sync[0].flags |= DRM_XE_SYNC_FLAG_SIGNAL;
+	xe_vm_unbind_async(fd, vm, 0, 0, addr, bo_size, sync, 1);
+	igt_assert(syncobj_wait(fd, &sync[0].handle, 1, INT64_MAX, 0, NULL));
+
+	syncobj_destroy(fd, sync[0].handle);
+	syncobj_destroy(fd, syncobj);
+	xe_exec_queue_destroy(fd, exec_queue);
+
+	munmap(spin, bo_size);
+	gem_close(fd, bo);
+	xe_vm_destroy(fd, vm);
+}
+
 igt_main
 {
 	int fd;
 	int gt;
+	struct drm_xe_engine_class_instance *hwe;
 	uint32_t stash_min;
 	uint32_t stash_max;
 
@@ -352,11 +436,31 @@ igt_main
 		}
 	}
 
+	igt_subtest("freq_fixed_exec") {
+		xe_for_each_gt(fd, gt) {
+			xe_for_each_engine(fd, hwe) {
+				if (hwe->gt_id != gt)
+					continue;
+				test_spin(fd, hwe, true);
+			}
+		}
+	}
+
 	igt_subtest("freq_range_idle") {
 		xe_for_each_gt(fd, gt) {
 			igt_require_f(igt_wait(xe_is_gt_in_c6(fd, gt), 1000, 10),
 				      "GT %d should be in C6\n", gt);
 			test_freq_range(fd, gt, true);
+		}
+	}
+
+	igt_subtest("freq_range_exec") {
+		xe_for_each_gt(fd, gt) {
+			xe_for_each_engine(fd, hwe) {
+				if (hwe->gt_id != gt)
+					continue;
+				test_spin(fd, hwe, false);
+			}
 		}
 	}
 
