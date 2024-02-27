@@ -677,27 +677,38 @@ static void dump_backlight_info(struct context *context,
 			printf("\t\tI2C command: 0x%02x\n", blc->i2c_command);
 		}
 
+		if (context->bdb->version < 162)
+			continue;
+
 		printf("\t\tLevel: %u\n", backlight->level[i]);
+
+		if (context->bdb->version < 191)
+			continue;
 
 		control = &backlight->backlight_control[i];
 
 		printf("\t\tControl type: %u\n", control->type);
 		printf("\t\tController: %u\n", control->controller);
 
-		if (context->bdb->version >= 234) {
-			printf("\t\tBrightness level: %u\n",
-			       backlight->brightness_level[i].level);
-			printf("\t\tBrightness min level: %u\n",
-			       backlight->brightness_min_level[i].level);
-		}
+		if (context->bdb->version < 234)
+			continue;
 
-		if (context->bdb->version >= 236)
-			printf("\t\tBrigthness precision bits: %u\n",
-			       backlight->brightness_precision_bits[i]);
+		printf("\t\tBrightness level: %u\n",
+		       backlight->brightness_level[i].level);
+		printf("\t\tBrightness min level: %u\n",
+		       backlight->brightness_min_level[i].level);
 
-		if (context->bdb->version >= 239)
-			printf("\t\tHDR DPCD refresh timeout: %.2f ms\n",
-			       backlight->hdr_dpcd_refresh_timeout[i] / 100.0);
+		if (context->bdb->version < 236)
+			continue;
+
+		printf("\t\tBrigthness precision bits: %u\n",
+		       backlight->brightness_precision_bits[i]);
+
+		if (context->bdb->version < 239)
+			continue;
+
+		printf("\t\tHDR DPCD refresh timeout: %.2f ms\n",
+		       backlight->hdr_dpcd_refresh_timeout[i] / 100.0);
 	}
 }
 
