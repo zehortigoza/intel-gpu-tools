@@ -1837,6 +1837,9 @@ static void dump_lfp_power(struct context *context,
 		       lfp_block->als[i].lux);
 	}
 
+	if (context->bdb->version < 210)
+		return;
+
 	printf("\tDisplay LACE aggressiveness profile: %d\n",
 	       lfp_block->lace_aggressiveness_profile);
 
