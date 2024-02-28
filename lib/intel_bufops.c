@@ -813,6 +813,43 @@ void linear_to_intel_buf(struct buf_ops *bops, struct intel_buf *buf,
 		__copy_ccs(bops, buf, linear, CCS_LINEAR_TO_BUF);
 }
 
+static uint32_t __get_min_stride(uint32_t width, uint32_t bpp, int tiling)
+{
+	switch (tiling) {
+	case I915_TILING_NONE:
+		return width * bpp / 8;
+	case I915_TILING_X:
+		return ALIGN(width * bpp / 8, 512);
+	case I915_TILING_64:
+		if (bpp == 8)
+			return ALIGN(width, 256);
+		else if (bpp == 16 || bpp == 32)
+			return ALIGN(width * bpp / 8, 512);
+		return ALIGN(width * bpp / 8, 1024);
+
+	default:
+		return ALIGN(width * bpp / 8, 128);
+	}
+}
+
+static uint32_t __get_aligned_height(uint32_t height, uint32_t bpp, int tiling)
+{
+	switch (tiling) {
+	case I915_TILING_NONE:
+		return height;
+	case I915_TILING_X:
+		return ALIGN(height, 8);
+	case I915_TILING_64:
+		if (bpp == 8)
+			return ALIGN(height, 256);
+		else if (bpp == 16 || bpp == 32)
+			return ALIGN(height, 128);
+		return ALIGN(height, 64);
+	default:
+		return ALIGN(height, 32);
+	}
+}
+
 static void __intel_buf_init(struct buf_ops *bops,
 			     uint32_t handle,
 			     struct intel_buf *buf,
@@ -823,9 +860,7 @@ static void __intel_buf_init(struct buf_ops *bops,
 {
 	uint32_t tiling = req_tiling;
 	uint64_t size;
-	uint32_t devid;
-	int tile_width;
-	int align_h = 1;
+	int tile_width, aligned_height;
 
 	igt_assert(bops);
 	igt_assert(buf);
@@ -838,11 +873,23 @@ static void __intel_buf_init(struct buf_ops *bops,
 	buf->bops = bops;
 	buf->width = width;
 	buf->height = height;
+	buf->tiling = tiling;
+	buf->bpp = bpp;
+	buf->compression = compression;
 	buf->addr.offset = INTEL_BUF_INVALID_ADDRESS;
-	IGT_INIT_LIST_HEAD(&buf->link);
 	buf->mocs = INTEL_BUF_MOCS_DEFAULT;
-
 	buf->pat_index = pat_index;
+	IGT_INIT_LIST_HEAD(&buf->link);
+
+	tile_width = __get_min_stride(width, bpp, tiling);
+	aligned_height = __get_aligned_height(height, bpp, tiling);
+
+	if (bo_stride)
+		buf->surface[0].stride = bo_stride;
+	else
+		buf->surface[0].stride = tile_width;
+
+	size = buf->surface[0].size = buf->surface[0].stride * aligned_height;
 
 	if (compression) {
 		igt_require(bops->intel_gen >= 9);
@@ -855,20 +902,6 @@ static void __intel_buf_init(struct buf_ops *bops,
 		 * CCS units, that is 4 * 64 bytes. These 4 CCS units are in
 		 * turn mapped by one L1 AUX page table entry.
 		 */
-		if (bo_stride)
-			buf->surface[0].stride = bo_stride;
-		else if (bops->intel_gen >= 12)
-			buf->surface[0].stride = ALIGN(width * (bpp / 8), 128 * 4);
-		else
-			buf->surface[0].stride = ALIGN(width * (bpp / 8), 128);
-
-		if (bops->intel_gen >= 12)
-			height = ALIGN(height, 32);
-
-		buf->surface[0].size = buf->surface[0].stride * height;
-		buf->tiling = tiling;
-		buf->bpp = bpp;
-		buf->compression = compression;
 
 		if (!HAS_FLATCCS(intel_get_drm_devid(bops->fd))) {
 			int aux_width, aux_height;
@@ -879,30 +912,7 @@ static void __intel_buf_init(struct buf_ops *bops,
 			buf->ccs[0].offset = buf->surface[0].stride * ALIGN(height, 32);
 			buf->ccs[0].stride = aux_width;
 			size = buf->ccs[0].offset + aux_width * aux_height;
-		} else {
-			size = buf->ccs[0].offset;
 		}
-	} else {
-		if (tiling) {
-			devid =  intel_get_drm_devid(bops->fd);
-			tile_width = get_stride(devid, tiling);
-			if (bo_stride)
-				buf->surface[0].stride = bo_stride;
-			else
-				buf->surface[0].stride = ALIGN(width * (bpp / 8), tile_width);
-			align_h = tiling == I915_TILING_X ? 8 : 32;
-		} else {
-			if (bo_stride)
-				buf->surface[0].stride = bo_stride;
-			else
-				buf->surface[0].stride = ALIGN(width * (bpp / 8), alignment ?: 1);
-		}
-
-		buf->surface[0].size = buf->surface[0].stride * height;
-		buf->tiling = tiling;
-		buf->bpp = bpp;
-
-		size = buf->surface[0].stride * ALIGN(height, align_h);
 	}
 
 	/* Store buffer size to avoid mistakes in calculating it again */
