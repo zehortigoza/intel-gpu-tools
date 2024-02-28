@@ -23,7 +23,7 @@
 #if DEBUG_RENDERCPY
 static void dump_batch(struct intel_bb *ibb)
 {
-	intel_bb_dump(ibb, "/tmp/gen7-batchbuffers.dump");
+	intel_bb_dump(ibb, "/tmp/gen7-batchbuffers.dump", true);
 }
 #else
 #define dump_batch(x) do { } while (0)

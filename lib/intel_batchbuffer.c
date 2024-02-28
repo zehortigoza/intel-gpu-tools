@@ -1499,21 +1499,40 @@ void intel_bb_print(struct intel_bb *ibb)
  * intel_bb_dump:
  * @ibb: pointer to intel_bb
  * @filename: name to which write bb
+ * @in_hex: dump bb in hex form
  *
  * Dump batch bo to file.
  */
-void intel_bb_dump(struct intel_bb *ibb, const char *filename)
+void intel_bb_dump(struct intel_bb *ibb, const char *filename, bool in_hex)
 {
 	FILE *out;
 	void *ptr;
 
-	ptr = gem_mmap__device_coherent(ibb->fd, ibb->handle, 0, ibb->size,
-					PROT_READ);
+	/*
+	 * Note - for i915/relocations offsets inside batch are not resolved
+	 * until intel_bb_exec() will write collected instructions to bb
+	 * object. For i915/xe with allocator offsets are already acquired
+	 * and bb is complete so there's no need to map.
+	 */
+	if (ibb->driver == INTEL_DRIVER_I915 && ibb->enforce_relocs)
+		ptr = gem_mmap__device_coherent(ibb->fd, ibb->handle, 0,
+						ibb->size, PROT_READ);
+	else
+		ptr = ibb->batch;
+
 	out = fopen(filename, "wb");
 	igt_assert(out);
-	fwrite(ptr, ibb->size, 1, out);
+
+	if (in_hex) {
+		for (int i = 0; i < ibb->size / sizeof(uint32_t); i++)
+			fprintf(out, "%08x\n", ((uint32_t *)ptr)[i]);
+	} else {
+		fwrite(ptr, ibb->size, 1, out);
+	}
 	fclose(out);
-	munmap(ptr, ibb->size);
+
+	if (ptr != ibb->batch)
+		munmap(ptr, ibb->size);
 }
 
 /**

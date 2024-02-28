@@ -344,7 +344,7 @@ void intel_bb_reset(struct intel_bb *ibb, bool purge_objects_cache);
 int intel_bb_sync(struct intel_bb *ibb);
 
 void intel_bb_print(struct intel_bb *ibb);
-void intel_bb_dump(struct intel_bb *ibb, const char *filename);
+void intel_bb_dump(struct intel_bb *ibb, const char *filename, bool in_hex);
 void intel_bb_set_debug(struct intel_bb *ibb, bool debug);
 void intel_bb_set_dump_base64(struct intel_bb *ibb, bool dump);
 
