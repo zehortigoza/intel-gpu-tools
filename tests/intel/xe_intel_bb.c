@@ -50,15 +50,6 @@ static bool write_png;
 static bool buf_info;
 static bool print_base64;
 
-static void *alloc_aligned(uint64_t size)
-{
-	void *p;
-
-	igt_assert_eq(posix_memalign(&p, 16, size), 0);
-
-	return p;
-}
-
 static void fill_buf(struct intel_buf *buf, uint8_t color)
 {
 	uint8_t *ptr;
@@ -521,63 +512,6 @@ static void scratch_buf_init(struct buf_ops *bops,
 	igt_assert(intel_buf_height(buf) == height);
 }
 
-static void scratch_buf_draw_pattern(struct buf_ops *bops,
-				     struct intel_buf *buf,
-				     int x, int y, int w, int h,
-				     int cx, int cy, int cw, int ch,
-				     bool use_alternate_colors)
-{
-	cairo_surface_t *surface;
-	cairo_pattern_t *pat;
-	cairo_t *cr;
-	void *linear;
-
-	linear = alloc_aligned(buf->surface[0].size);
-
-	surface = cairo_image_surface_create_for_data(linear,
-						      CAIRO_FORMAT_RGB24,
-						      intel_buf_width(buf),
-						      intel_buf_height(buf),
-						      buf->surface[0].stride);
-
-	cr = cairo_create(surface);
-
-	cairo_rectangle(cr, cx, cy, cw, ch);
-	cairo_clip(cr);
-
-	pat = cairo_pattern_create_mesh();
-	cairo_mesh_pattern_begin_patch(pat);
-	cairo_mesh_pattern_move_to(pat, x,   y);
-	cairo_mesh_pattern_line_to(pat, x+w, y);
-	cairo_mesh_pattern_line_to(pat, x+w, y+h);
-	cairo_mesh_pattern_line_to(pat, x,   y+h);
-	if (use_alternate_colors) {
-		cairo_mesh_pattern_set_corner_color_rgb(pat, 0, 0.0, 1.0, 1.0);
-		cairo_mesh_pattern_set_corner_color_rgb(pat, 1, 1.0, 0.0, 1.0);
-		cairo_mesh_pattern_set_corner_color_rgb(pat, 2, 1.0, 1.0, 0.0);
-		cairo_mesh_pattern_set_corner_color_rgb(pat, 3, 0.0, 0.0, 0.0);
-	} else {
-		cairo_mesh_pattern_set_corner_color_rgb(pat, 0, 1.0, 0.0, 0.0);
-		cairo_mesh_pattern_set_corner_color_rgb(pat, 1, 0.0, 1.0, 0.0);
-		cairo_mesh_pattern_set_corner_color_rgb(pat, 2, 0.0, 0.0, 1.0);
-		cairo_mesh_pattern_set_corner_color_rgb(pat, 3, 1.0, 1.0, 1.0);
-	}
-	cairo_mesh_pattern_end_patch(pat);
-
-	cairo_rectangle(cr, x, y, w, h);
-	cairo_set_source(cr, pat);
-	cairo_fill(cr);
-	cairo_pattern_destroy(pat);
-
-	cairo_destroy(cr);
-
-	cairo_surface_destroy(surface);
-
-	linear_to_intel_buf(bops, buf, linear);
-
-	free(linear);
-}
-
 #define GROUP_SIZE 4096
 static int compare_detail(const uint32_t *ptr1, uint32_t *ptr2,
 			  uint32_t size)
@@ -704,9 +638,9 @@ static int __do_intel_bb_blit(struct buf_ops *bops, uint32_t tiling)
 		intel_buf_print(&dst);
 	}
 
-	scratch_buf_draw_pattern(bops, &src,
-				 0, 0, width, height,
-				 0, 0, width, height, 0);
+	intel_buf_draw_pattern(bops, &src,
+			       0, 0, width, height,
+			       0, 0, width, height, 0);
 
 	intel_bb_blt_copy(ibb,
 			  &src, 0, 0, src.surface[0].stride,
@@ -954,9 +888,9 @@ static int render(struct buf_ops *bops, uint32_t tiling,
 	scratch_buf_init(bops, &final, width, height, I915_TILING_NONE,
 			 I915_COMPRESSION_NONE);
 
-	scratch_buf_draw_pattern(bops, &src,
-				 0, 0, width, height,
-				 0, 0, width, height, 0);
+	intel_buf_draw_pattern(bops, &src,
+			       0, 0, width, height,
+			       0, 0, width, height, 0);
 
 	render_copy = igt_get_render_copyfunc(devid);
 	igt_assert(render_copy);

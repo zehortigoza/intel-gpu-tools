@@ -1338,6 +1338,71 @@ void intel_buf_write_aux_to_png(struct intel_buf *buf, const char *filename)
 	__intel_buf_write_to_png(buf->bops, buf, filename, true);
 }
 
+static void *alloc_aligned(uint64_t size)
+{
+	void *p;
+
+	igt_assert_eq(posix_memalign(&p, 16, size), 0);
+
+	return p;
+}
+
+void intel_buf_draw_pattern(struct buf_ops *bops, struct intel_buf *buf,
+			    int x, int y, int w, int h,
+			    int cx, int cy, int cw, int ch,
+			    bool use_alternate_colors)
+{
+	cairo_surface_t *surface;
+	cairo_pattern_t *pat;
+	cairo_t *cr;
+	void *linear;
+
+	linear = alloc_aligned(buf->surface[0].size);
+
+	surface = cairo_image_surface_create_for_data(linear,
+						      CAIRO_FORMAT_RGB24,
+						      intel_buf_width(buf),
+						      intel_buf_height(buf),
+						      buf->surface[0].stride);
+
+	cr = cairo_create(surface);
+
+	cairo_rectangle(cr, cx, cy, cw, ch);
+	cairo_clip(cr);
+
+	pat = cairo_pattern_create_mesh();
+	cairo_mesh_pattern_begin_patch(pat);
+	cairo_mesh_pattern_move_to(pat, x,   y);
+	cairo_mesh_pattern_line_to(pat, x+w, y);
+	cairo_mesh_pattern_line_to(pat, x+w, y+h);
+	cairo_mesh_pattern_line_to(pat, x,   y+h);
+	if (use_alternate_colors) {
+		cairo_mesh_pattern_set_corner_color_rgb(pat, 0, 0.0, 1.0, 1.0);
+		cairo_mesh_pattern_set_corner_color_rgb(pat, 1, 1.0, 0.0, 1.0);
+		cairo_mesh_pattern_set_corner_color_rgb(pat, 2, 1.0, 1.0, 0.0);
+		cairo_mesh_pattern_set_corner_color_rgb(pat, 3, 0.0, 0.0, 0.0);
+	} else {
+		cairo_mesh_pattern_set_corner_color_rgb(pat, 0, 1.0, 0.0, 0.0);
+		cairo_mesh_pattern_set_corner_color_rgb(pat, 1, 0.0, 1.0, 0.0);
+		cairo_mesh_pattern_set_corner_color_rgb(pat, 2, 0.0, 0.0, 1.0);
+		cairo_mesh_pattern_set_corner_color_rgb(pat, 3, 1.0, 1.0, 1.0);
+	}
+	cairo_mesh_pattern_end_patch(pat);
+
+	cairo_rectangle(cr, x, y, w, h);
+	cairo_set_source(cr, pat);
+	cairo_fill(cr);
+	cairo_pattern_destroy(pat);
+
+	cairo_destroy(cr);
+
+	cairo_surface_destroy(surface);
+
+	linear_to_intel_buf(bops, buf, linear);
+
+	free(linear);
+}
+
 #define DEFAULT_BUFOPS(__gen_start, __gen_end) \
 	.gen_start          = __gen_start, \
 	.gen_end            = __gen_end, \
@@ -1406,15 +1471,6 @@ end:
 	gem_close(bops->fd, handle);
 
 	return is_set;
-}
-
-static void *alloc_aligned(uint64_t size)
-{
-	void *p;
-
-	igt_assert_eq(posix_memalign(&p, 16, size), 0);
-
-	return p;
 }
 
 /*

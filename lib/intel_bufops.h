@@ -221,6 +221,10 @@ const char *intel_buf_set_name(struct intel_buf *buf, const char *name);
 
 void intel_buf_write_to_png(struct intel_buf *buf, const char *filename);
 void intel_buf_write_aux_to_png(struct intel_buf *buf, const char *filename);
+void intel_buf_draw_pattern(struct buf_ops *bops, struct intel_buf *buf,
+			    int x, int y, int w, int h,
+			    int cx, int cy, int cw, int ch,
+			    bool use_alternate_colors);
 
 static inline enum intel_buf_mocs intel_buf_get_mocs(const struct intel_buf *buf)
 {
