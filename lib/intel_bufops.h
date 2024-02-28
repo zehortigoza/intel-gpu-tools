@@ -24,6 +24,8 @@ struct intel_buf {
 	bool is_owner;
 	uint32_t handle;
 	uint64_t size;
+	uint32_t width;
+	uint32_t height;
 	uint32_t tiling;
 	uint32_t bpp;
 	uint32_t compression;
@@ -77,12 +79,12 @@ static inline bool intel_buf_compressed(const struct intel_buf *buf)
 
 static inline unsigned int intel_buf_width(const struct intel_buf *buf)
 {
-	return buf->surface[0].stride / (buf->bpp / 8);
+	return buf->width;
 }
 
 static inline unsigned int intel_buf_height(const struct intel_buf *buf)
 {
-	return buf->surface[0].size / buf->surface[0].stride;
+	return buf->height;
 }
 
 static inline unsigned int

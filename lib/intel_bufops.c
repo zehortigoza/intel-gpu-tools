@@ -836,6 +836,8 @@ static void __intel_buf_init(struct buf_ops *bops,
 	memset(buf, 0, sizeof(*buf));
 
 	buf->bops = bops;
+	buf->width = width;
+	buf->height = height;
 	buf->addr.offset = INTEL_BUF_INVALID_ADDRESS;
 	IGT_INIT_LIST_HEAD(&buf->link);
 	buf->mocs = INTEL_BUF_MOCS_DEFAULT;
