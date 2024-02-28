@@ -13,7 +13,7 @@
 #define BATCH_SZ 4096
 
 /*
- * Yf/Ys/4 tiling
+ * Yf/Ys/4/64 tiling
  *
  * Tiling mode in the I915_TILING_... namespace for new tiling modes which are
  * defined in the kernel. (They are not fenceable so the kernel does not need
@@ -24,6 +24,7 @@
 #define I915_TILING_4	(I915_TILING_LAST + 1)
 #define I915_TILING_Yf	(I915_TILING_LAST + 2)
 #define I915_TILING_Ys	(I915_TILING_LAST + 3)
+#define I915_TILING_64	(I915_TILING_LAST + 4)
 
 enum i915_compression {
 	I915_COMPRESSION_NONE,
