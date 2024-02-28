@@ -529,8 +529,8 @@ int igt_sysfs_vprintf(int dir, const char *attr, const char *fmt, va_list ap)
 			goto end;
 		}
 
-		ret = vsnprintf(buf, ret, fmt, ap);
-		if (igt_debug_on(ret > len)) {
+		ret = vsnprintf(buf, len, fmt, ap);
+		if (igt_debug_on(ret != len - 1)) {
 			ret = -EINVAL;
 			goto free_buf;
 		}
