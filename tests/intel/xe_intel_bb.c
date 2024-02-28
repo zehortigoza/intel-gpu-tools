@@ -913,9 +913,9 @@ static int render(struct buf_ops *bops, uint32_t tiling,
 	if (write_png) {
 		snprintf(name, sizeof(name) - 1,
 			 "render_dst_tiling_%d.png", tiling);
-		intel_buf_write_to_png(&src, "render_src_tiling_none.png");
-		intel_buf_write_to_png(&dst, name);
-		intel_buf_write_to_png(&final, "render_final_tiling_none.png");
+		intel_buf_raw_write_to_png(&src, "render_src_tiling_none.png");
+		intel_buf_raw_write_to_png(&dst, name);
+		intel_buf_raw_write_to_png(&final, "render_final_tiling_none.png");
 	}
 
 	/* We'll fail on src <-> final compare so just warn */
