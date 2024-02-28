@@ -292,6 +292,15 @@ amdgpu_uvd_enc_destroy(amdgpu_device_handle device_handle,
 	free_resource(&context->enc.session);
 }
 
+static void
+amdgpu_uvd_enc_test(amdgpu_device_handle device, struct uvd_enc_context *context)
+{
+	amdgpu_uvd_enc_create(device, context);
+	amdgpu_uvd_enc_session_init(device, context);
+	amdgpu_uvd_enc_encode(device, context);
+	amdgpu_uvd_enc_destroy(device, context);
+}
+
 igt_main
 {
 	amdgpu_device_handle device;
@@ -307,27 +316,16 @@ igt_main
 		igt_require(err == 0);
 		igt_info("Initialized amdgpu, driver version %d.%d\n",
 			 major, minor);
+		memset(&context, 0, sizeof(context));
 		err = mmd_context_init(device, &context.uvd);
 		igt_require(err == 0);
 
 		igt_skip_on(!is_uvd_enc_enable(device));
 	}
 
-	igt_describe("Test whether uvd enc is created");
-	igt_subtest("uvd_enc_create")
-	amdgpu_uvd_enc_create(device, &context);
-
-	igt_describe("Test whether uvd enc session init");
-	igt_subtest("amdgpu_uvd_enc_session_init")
-	amdgpu_uvd_enc_session_init(device, &context);
-
-	igt_describe("Test whether uvd enc encode");
-	igt_subtest("amdgpu_uvd_enc_encode")
-	amdgpu_uvd_enc_encode(device, &context);
-
-	igt_describe("Test whether uvd enc is destroyed");
-	igt_subtest("uvd_enc_destroy")
-	amdgpu_uvd_enc_destroy(device, &context);
+	igt_describe("Test uvd session, encode, destroy");
+	igt_subtest("uvd_encoder")
+		amdgpu_uvd_enc_test(device, &context);
 
 	igt_fixture {
 		mmd_context_clean(device, &context.uvd);
