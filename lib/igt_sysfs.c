@@ -515,28 +515,35 @@ int igt_sysfs_vprintf(int dir, const char *attr, const char *fmt, va_list ap)
 	va_copy(tmp, ap);
 	ret = vsnprintf(stack, sizeof(stack), fmt, tmp);
 	va_end(tmp);
-	if (igt_debug_on(ret < 0))
-		return -EINVAL;
+	if (igt_debug_on(ret < 0)) {
+		ret = -EINVAL;
+		goto end;
+	}
 
 	if (ret > sizeof(stack)) {
 		unsigned int len = ret + 1;
 
 		buf = malloc(len);
-		if (igt_debug_on(!buf))
-			return -ENOMEM;
+		if (igt_debug_on(!buf)) {
+			ret = -ENOMEM;
+			goto end;
+		}
 
 		ret = vsnprintf(buf, ret, fmt, ap);
 		if (igt_debug_on(ret > len)) {
-			free(buf);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto free_buf;
 		}
 	}
 
 	ret = igt_writen(fd, buf, ret);
 
-	close(fd);
+free_buf:
 	if (buf != stack)
 		free(buf);
+
+end:
+	close(fd);
 
 	return ret;
 }
