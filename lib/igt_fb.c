@@ -2513,6 +2513,9 @@ static bool blitter_ok(const struct igt_fb *fb)
 	     is_gen12_mc_ccs_modifier(fb->modifier))
 		return false;
 
+	if (is_xe_device(fb->fd))
+		return true;
+
 	for (int i = 0; i < fb->num_planes; i++) {
 		int width = fb->plane_width[i];
 
