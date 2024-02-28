@@ -1337,6 +1337,40 @@ void intel_buf_write_aux_to_png(struct intel_buf *buf, const char *filename)
 
 	__intel_buf_write_to_png(buf->bops, buf, filename, true);
 }
+static void __intel_buf_raw_write_to_png(struct buf_ops *bops,
+					 struct intel_buf *buf,
+					 const char *filename)
+{
+	cairo_surface_t *surface;
+	cairo_status_t ret;
+	uint8_t *linear;
+	int format, width, height, stride;
+
+	format = CAIRO_FORMAT_RGB24;
+	width = buf->surface[0].stride / 4;
+	height = __get_aligned_height(intel_buf_height(buf),
+				      buf->bpp, buf->tiling);
+	stride = buf->surface[0].stride;
+
+	if (is_xe_device(bops->fd))
+		linear = xe_bo_map(bops->fd, buf->handle, buf->bo_size);
+	else
+		linear = gem_mmap__device_coherent(bops->fd, buf->handle,
+						   0, buf->bo_size, PROT_READ);
+	surface = cairo_image_surface_create_for_data(linear,
+						      format, width, height,
+						      stride);
+	ret = cairo_surface_write_to_png(surface, filename);
+	igt_assert(ret == CAIRO_STATUS_SUCCESS);
+	cairo_surface_destroy(surface);
+
+	munmap(linear, buf->bo_size);
+}
+
+void intel_buf_raw_write_to_png(struct intel_buf *buf, const char *filename)
+{
+	__intel_buf_raw_write_to_png(buf->bops, buf, filename);
+}
 
 static void *alloc_aligned(uint64_t size)
 {
