@@ -348,7 +348,10 @@ int igt_sysfs_get_num_gt(int device)
  * @data: the block to write from
  * @len: the length to write
  *
- * This writes @len bytes from @data to the sysfs file.
+ * This writes @len bytes from @data to the sysfs file.  Contrary to
+ * igt_sysfs_set(), this does not automatically write a null char if len is 0.
+ * It's caller responsibility to pass the right len according to the data being
+ * written.
  *
  * Returns:
  * The number of bytes written, or -errno on error.
@@ -407,6 +410,14 @@ int igt_sysfs_read(int dir, const char *attr, void *data, int len)
 bool igt_sysfs_set(int dir, const char *attr, const char *value)
 {
 	int len = strlen(value);
+
+	/*
+	 * Always write at least 1 char, the null byte, otherwise it
+	 * won't write anything on sysfs.
+	 */
+	if (!len)
+		len = 1;
+
 	return igt_sysfs_write(dir, attr, value, len) == len;
 }
 
@@ -506,7 +517,7 @@ int igt_sysfs_vprintf(int dir, const char *attr, const char *fmt, va_list ap)
 {
 	char stack[128], *buf = stack;
 	va_list tmp;
-	int ret, fd;
+	int ret, fd, len;
 
 	fd = openat(dir, attr, O_WRONLY);
 	if (igt_debug_on(fd < 0))
@@ -520,23 +531,37 @@ int igt_sysfs_vprintf(int dir, const char *attr, const char *fmt, va_list ap)
 		goto end;
 	}
 
-	if (ret > sizeof(stack)) {
-		unsigned int len = ret + 1;
+	len = ret;
 
-		buf = malloc(len);
+	if (!ret) {
+		/*
+		 * Make sure to always issue a write() syscall, even if writing
+		 * an empty string, otherwise values in sysfs like module
+		 * parameters don't really get overwritten.  vsnprintf()
+		 * guarantees to return a \0 terminated string, so just add
+		 * that char. The return code is still the same as before, to
+		 * abstract that from caller.
+		 */
+		ret = 1;
+	} else if (ret > sizeof(stack)) {
+		buf = malloc(len + 1);
 		if (igt_debug_on(!buf)) {
 			ret = -ENOMEM;
 			goto end;
 		}
 
-		ret = vsnprintf(buf, len, fmt, ap);
-		if (igt_debug_on(ret != len - 1)) {
+		ret = vsnprintf(buf, len + 1, fmt, ap);
+		if (igt_debug_on(ret != len)) {
 			ret = -EINVAL;
 			goto free_buf;
 		}
 	}
 
 	ret = igt_writen(fd, buf, ret);
+
+	/* Caller shouldn't know about special sysfs handling, just return 0 */
+	if (!len && ret == 1)
+		ret = 0;
 
 free_buf:
 	if (buf != stack)
