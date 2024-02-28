@@ -22,6 +22,11 @@
  * Description:
  *      Exercise compute walker mid thread preemption scenario
  * Functionality: compute openCL kernel
+ * SUBTEST: compute-preempt-many
+ * GPU requirement: LNL
+ * Description:
+ *      Exercise multiple walker mid thread preemption scenario
+ * Functionality: compute openCL kernel
  */
 static void
 test_compute_preempt(int fd, struct drm_xe_engine_class_instance *hwe)
@@ -45,6 +50,20 @@ igt_main
 
 			igt_dynamic_f("engine-%s", xe_engine_class_string(hwe->engine_class))
 				test_compute_preempt(xe, hwe);
+		}
+	}
+
+	igt_subtest_with_dynamic("compute-preempt-many") {
+		xe_for_each_engine(xe, hwe) {
+			/* TODO: This subtest fails on RCS engine */
+			if (hwe->engine_class != DRM_XE_ENGINE_CLASS_COMPUTE)
+				continue;
+
+			igt_dynamic_f("engine-%s", xe_engine_class_string(hwe->engine_class)) {
+				igt_fork(child, 100)
+					test_compute_preempt(xe, hwe);
+				igt_waitchildren();
+			}
 		}
 	}
 
