@@ -115,6 +115,7 @@ typedef struct data {
 	drmModeModeInfo switch_modes[RR_MODES_COUNT];
 	vtest_ns_t vtest_ns;
 	uint64_t duration_ns;
+	bool static_image;
 } data_t;
 
 typedef void (*test_t)(data_t*, enum pipe, igt_output_t*, uint32_t);
@@ -283,6 +284,7 @@ static void prepare_test(data_t *data, igt_output_t *output, enum pipe pipe)
 	drmModeModeInfo mode;
 	cairo_t *cr;
 	int bar_width, bar_height, bar_remaining, horizontal_bar_height;
+	int num_painted_fbs;
 
 	mode = *igt_output_get_mode(output);
 
@@ -312,25 +314,31 @@ static void prepare_test(data_t *data, igt_output_t *output, enum pipe pipe)
 	horizontal_bar_height = mode.vdisplay / 8;
 	bar_height = mode.vdisplay - horizontal_bar_height * 2;
 	bar_remaining = mode.hdisplay % bar_width;
-	cr = igt_get_cairo_ctx(data->drm_fd, &data->fb[0]);
-	for (int j = 0; j < num_bars; ++j) {
-		unsigned int width = bar_width;
-		if (j == num_bars - 1)
-			width += bar_remaining;
+	num_painted_fbs = data->static_image ? 2 : 1;
+	for (int i = 0; i < num_painted_fbs; ++i) {
+		cr = igt_get_cairo_ctx(data->drm_fd, &data->fb[i]);
+		for (int j = 0; j < num_bars; ++j) {
+			unsigned int width = bar_width;
+			if (j == num_bars - 1)
+				width += bar_remaining;
 
-		/* Red->Green->Blue gradient */
-		if (j < num_bars / 2)
-			paint_bar(cr, j * bar_width, 0, width, bar_height,
-				  j, num_bars / 2,
-				  1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-		else
-			paint_bar(cr, j * bar_width, 0, width, bar_height,
-				  j - num_bars / 2, num_bars / 2,
-				  0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+			/* Red->Green->Blue gradient */
+			if (j < num_bars / 2)
+				paint_bar(cr, j * bar_width, 0, width,
+					  bar_height,
+					  j, num_bars / 2,
+					  1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+			else
+				paint_bar(cr, j * bar_width, 0, width,
+					  bar_height,
+					  j - num_bars / 2, num_bars / 2,
+					  0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+		}
+		igt_paint_color(cr, 0, mode.vdisplay - horizontal_bar_height,
+				mode.hdisplay, horizontal_bar_height,
+				1.00, 1.00, 1.00);
+		igt_put_cairo_ctx(cr);
 	}
-	igt_paint_color(cr, 0, mode.vdisplay - horizontal_bar_height,
-			mode.hdisplay, horizontal_bar_height, 1.00, 1.00, 1.00);
-	igt_put_cairo_ctx(cr);
 
 	/* Take care of any required modesetting before the test begins. */
 	data->primary = igt_output_get_plane_type(output, DRM_PLANE_TYPE_PRIMARY);
@@ -725,6 +733,9 @@ static int opt_handler(int opt, int opt_index, void *_data)
 	case 'r':
 		data->vtest_ns.rate_ns = rate_from_refresh(atoi(optarg));
 		break;
+	case 's':
+		data->static_image = true;
+		break;
 	}
 	return IGT_OPT_HANDLER_SUCCESS;
 }
@@ -732,16 +743,18 @@ static int opt_handler(int opt, int opt_index, void *_data)
 static const struct option long_opts[] = {
 	{ .name = "duration", .has_arg = true, .val = 'd', },
 	{ .name = "refresh-rate", .has_arg = true, .val = 'r', },
+	{ .name = "static-image", .has_arg = false, .val = 's', },
 	{}
 };
 
 static const char help_str[] =
 	"  --duration <duration-seconds>\t\tHow long to run the test for\n"
-	"  --refresh-rate <refresh-hz>\t\tThe refresh rate to flip at\n";
+	"  --refresh-rate <refresh-hz>\t\tThe refresh rate to flip at\n"
+	"  --static-image\t\tFlip a static image for flicker profiling\n";
 
 static data_t data;
 
-igt_main_args("dr:", long_opts, help_str, opt_handler, &data)
+igt_main_args("drs:", long_opts, help_str, opt_handler, &data)
 {
 	igt_fixture {
 		data.drm_fd = drm_open_driver_master(DRIVER_ANY);
