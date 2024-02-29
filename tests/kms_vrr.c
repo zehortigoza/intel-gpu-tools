@@ -102,7 +102,7 @@ typedef struct range {
 
 typedef struct vtest_ns {
 	uint64_t min;
-	uint64_t mid;
+	uint64_t rate_ns;
 	uint64_t max;
 } vtest_ns_t;
 
@@ -266,9 +266,14 @@ static void prepare_test(data_t *data, igt_output_t *output, enum pipe pipe)
 	mode = *igt_output_get_mode(output);
 
 	data->vtest_ns.min = rate_from_refresh(data->range.min);
-	data->vtest_ns.mid = rate_from_refresh(
-				(data->range.min + data->range.max) / 2);
 	data->vtest_ns.max = rate_from_refresh(data->range.max);
+
+	/* If unspecified on the command line, default rate to the midpoint */
+	if (data->vtest_ns.rate_ns == 0) {
+		range_t *range = &data->range;
+		data->vtest_ns.rate_ns = rate_from_refresh(
+						(range->min + range->max) / 2);
+	}
 
 	/* Prepare resources */
 	igt_create_color_fb(data->drm_fd, mode.hdisplay, mode.vdisplay,
@@ -418,7 +423,7 @@ test_basic(data_t *data, enum pipe pipe, igt_output_t *output, uint32_t flags)
 	prepare_test(data, output, pipe);
 	range = data->range;
 	vtest_ns = data->vtest_ns;
-	rate = vtest_ns.mid;
+	rate = vtest_ns.rate_ns;
 
 	igt_info("VRR Test execution on %s, PIPE_%s with VRR range: (%u-%u) Hz\n",
 		 output->name, kmstest_pipe_name(pipe), range.min, range.max);
@@ -471,7 +476,7 @@ test_basic(data_t *data, enum pipe pipe, igt_output_t *output, uint32_t flags)
 	}
 
 	if (flags & ~TEST_NEGATIVE) {
-		rate = vtest_ns.mid;
+		rate = vtest_ns.rate_ns;
 		result = flip_and_measure(data, output, pipe, rate, TEST_DURATION_NS);
 		igt_assert_f(result > 75,
 			     "Refresh rate (%u Hz) %"PRIu64"ns: Target VRR on threshold not reached, result was %u%%\n",
@@ -492,7 +497,7 @@ test_basic(data_t *data, enum pipe pipe, igt_output_t *output, uint32_t flags)
 	 * a VRR capable panel.
 	 */
 	set_vrr_on_pipe(data, pipe, !(flags & TEST_FASTSET), (flags & TEST_NEGATIVE) ? true : false);
-	rate = vtest_ns.mid;
+	rate = vtest_ns.rate_ns;
 	result = flip_and_measure(data, output, pipe, rate, TEST_DURATION_NS);
 	igt_assert_f(result < 10,
 		     "Refresh rate (%u Hz) %"PRIu64"ns: Target VRR %s threshold exceeded, result was %u%%\n",
@@ -548,7 +553,7 @@ test_seamless_rr_basic(data_t *data, enum pipe pipe, igt_output_t *output, uint3
 	igt_output_override_mode(output, &data->switch_modes[HIGH_RR_MODE]);
 	igt_assert(igt_display_try_commit_atomic(&data->display, 0, NULL) == 0);
 
-	rate = vtest_ns.mid;
+	rate = vtest_ns.rate_ns;
 	result = flip_and_measure(data, output, pipe, rate, TEST_DURATION_NS);
 	igt_assert_f(vrr ? (result > 75) : (result < 10),
 		     "Refresh rate (%u Hz) %"PRIu64"ns: Target VRR %s threshold %s, result was %u%%\n",
@@ -668,10 +673,30 @@ run_vrr_test(data_t *data, test_t test, uint32_t flags)
 	}
 }
 
-igt_main
+static int opt_handler(int opt, int opt_index, void *_data)
 {
-	data_t data = {};
+	data_t *data = _data;
 
+	switch (opt) {
+	case 'r':
+		data->vtest_ns.rate_ns = rate_from_refresh(atoi(optarg));
+		break;
+	}
+	return IGT_OPT_HANDLER_SUCCESS;
+}
+
+static const struct option long_opts[] = {
+	{ .name = "refresh-rate", .has_arg = true, .val = 'r', },
+	{}
+};
+
+static const char help_str[] =
+	"  --refresh-rate <refresh-hz>\t\tThe refresh rate to flip at\n";
+
+static data_t data;
+
+igt_main_args("r:", long_opts, help_str, opt_handler, &data)
+{
 	igt_fixture {
 		data.drm_fd = drm_open_driver_master(DRIVER_ANY);
 
