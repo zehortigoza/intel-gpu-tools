@@ -258,11 +258,31 @@ static void set_vrr_on_pipe(data_t *data, enum pipe pipe,
 						 NULL) == 0);
 }
 
+static void paint_bar(cairo_t *cr, unsigned int x, unsigned int y,
+		      unsigned int w, unsigned int h,
+		      unsigned int bar, unsigned int num_bars,
+		      float start_r, float start_g, float start_b,
+		      float end_r, float end_g, float end_b)
+{
+	float progress = (float)bar / (float)num_bars;
+	float color[] = {
+		start_r + progress * (end_r - start_r),
+		start_g + progress * (end_g - start_g),
+		start_b + progress * (end_b - start_b)
+	};
+	igt_paint_color(cr, x, y, w, h,
+			color[0] > 0 ? color[0] : 0.0,
+			color[1] > 0 ? color[1] : 0.0,
+			color[2] > 0 ? color[2] : 0.0);
+}
+
 /* Prepare the display for testing on the given pipe. */
 static void prepare_test(data_t *data, igt_output_t *output, enum pipe pipe)
 {
+	unsigned int num_bars = 256;
 	drmModeModeInfo mode;
 	cairo_t *cr;
+	int bar_width, bar_height, bar_remaining, horizontal_bar_height;
 
 	mode = *igt_output_get_mode(output);
 
@@ -288,11 +308,28 @@ static void prepare_test(data_t *data, igt_output_t *output, enum pipe pipe)
 			    DRM_FORMAT_XRGB8888, DRM_FORMAT_MOD_LINEAR,
 			    0.50, 0.50, 0.50, &data->fb[1]);
 
+	bar_width = mode.hdisplay / num_bars;
+	horizontal_bar_height = mode.vdisplay / 8;
+	bar_height = mode.vdisplay - horizontal_bar_height * 2;
+	bar_remaining = mode.hdisplay % bar_width;
 	cr = igt_get_cairo_ctx(data->drm_fd, &data->fb[0]);
+	for (int j = 0; j < num_bars; ++j) {
+		unsigned int width = bar_width;
+		if (j == num_bars - 1)
+			width += bar_remaining;
 
-	igt_paint_color(cr, 0, 0, mode.hdisplay / 10, mode.vdisplay / 10,
-			1.00, 0.00, 0.00);
-
+		/* Red->Green->Blue gradient */
+		if (j < num_bars / 2)
+			paint_bar(cr, j * bar_width, 0, width, bar_height,
+				  j, num_bars / 2,
+				  1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+		else
+			paint_bar(cr, j * bar_width, 0, width, bar_height,
+				  j - num_bars / 2, num_bars / 2,
+				  0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+	}
+	igt_paint_color(cr, 0, mode.vdisplay - horizontal_bar_height,
+			mode.hdisplay, horizontal_bar_height, 1.00, 1.00, 1.00);
 	igt_put_cairo_ctx(cr);
 
 	/* Take care of any required modesetting before the test begins. */
