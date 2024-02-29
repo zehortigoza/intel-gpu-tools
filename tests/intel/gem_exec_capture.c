@@ -21,9 +21,10 @@
  * IN THE SOFTWARE.
  */
 
+#include <ctype.h>
+#include <sched.h>
 #include <sys/poll.h>
 #include <zlib.h>
-#include <sched.h>
 
 #include "i915/gem.h"
 #include "i915/gem_create.h"
@@ -176,6 +177,19 @@ static int check_error_state(int dir, struct offset *obj_offsets, int obj_count,
 	igt_assert(error);
 	igt_assert(errno != ENOMEM);
 	igt_debug("%.*s\n", error_dump_limit, error);
+
+	/*
+	 * global --- GuC Error Capture on rcs0 command stream:
+	 * Coverage:  partial-capture
+	 * Coverage:  full-capture
+	 */
+	for (str = error; (str = strstr(str, "Coverage: ")); ) {
+		str += 10;
+		while (isspace(*str))
+			str++;
+
+		igt_assert(strncmp(str, "full-capture", 12) == 0);
+	}
 
 	/* render ring --- user = 0x00000000 ffffd000 */
 	for (str = error; (str = strstr(str, "--- user = ")); ) {
