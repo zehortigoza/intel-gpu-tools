@@ -7,7 +7,7 @@
  * TEST: Check flat-ccs eviction
  * Category: Software building block
  * Sub-category: Flat-CCS
- * Functionality: evict
+ * Functionality: ccs-evict
  * GPU requirements: GPU needs to have dedicated VRAM
  */
 
