@@ -176,6 +176,7 @@ const char *get_topo_name(int value)
  * Test category: functionality test
  *
  * SUBTEST: multigpu-query-engines
+ * Category: Hardware building block
  * Description: Display engine classes available for all Xe devices.
  * Test category: functionality test
  * Sub-category: MultiGPU
@@ -203,6 +204,7 @@ test_query_engines(int fd)
  *	and alignment.
  *
  * SUBTEST: multigpu-query-mem-usage
+ * Category: Hardware building block
  * Test category: functionality test
  * Sub-category: MultiGPU
  * Description: Display memory information for all Xe devices.
@@ -267,6 +269,7 @@ test_query_mem_regions(int fd)
  * Description: Display information about available GT components for xe device.
  *
  * SUBTEST: multigpu-query-gt-list
+ * Category: Hardware building block
  * Test category: functionality test
  * Description: Display information about GT components for all Xe devices.
  * Sub-category: MultiGPU
@@ -309,6 +312,7 @@ test_query_gt_list(int fd)
  * Description: Display topology information of GT.
  *
  * SUBTEST: multigpu-query-topology
+ * Category: Hardware building block
  * Test category: functionality test
  * Description: Display topology information of GT for all Xe devices.
  * Sub-category: MultiGPU
@@ -358,6 +362,7 @@ test_query_gt_topology(int fd)
  * Description: Display xe device id, revision and configuration.
  *
  * SUBTEST: multigpu-query-config
+ * Category: Hardware building block
  * Test category: functionality test
  * Description: Display config information for all Xe devices.
  * Sub-category: MultiGPU
@@ -412,6 +417,7 @@ test_query_config(int fd)
  * Description: Display hardware configuration of xe device.
  *
  * SUBTEST: multigpu-query-hwconfig
+ * Category: Hardware building block
  * Test category: functionality test
  * Description: Display hardware configuration for all Xe devices.
  * Sub-category: MultiGPU
@@ -451,6 +457,7 @@ test_query_hwconfig(int fd)
  * Description: Check query with invalid arguments returns expected error code.
  *
  * SUBTEST: multigpu-query-invalid-query
+ * Category: Hardware building block
  * Test category: negative test
  * Description: Check query with invalid arguments for all Xe devices.
  * Sub-category: MultiGPU
@@ -474,6 +481,7 @@ test_query_invalid_query(int fd)
  * Description: Check query with invalid size returns expected error code.
  *
  * SUBTEST: multigpu-query-invalid-size
+ * Category: Hardware building block
  * Test category: negative test
  * Description: Check query with invalid size for all Xe devices.
  * Sub-category: MultiGPU
@@ -497,6 +505,7 @@ test_query_invalid_size(int fd)
  * Description: Check query with invalid extension returns expected error code.
  *
  * SUBTEST: multigpu-query-invalid-extension
+ * Category: Hardware building block
  * Test category: negative test
  * Description: Check query with invalid extension for all Xe devices.
  * Sub-category: MultiGPU
@@ -661,6 +670,7 @@ __engine_cycles(int fd, struct drm_xe_engine_class_instance *hwe)
  * Description: Query CPU-GPU timestamp correlation
  *
  * SUBTEST: multigpu-query-cs-cycles
+ * Category: Hardware building block
  * Description: Query CPU-GPU timestamp correlation for all Xe devices.
  * Sub-category: MultiGPU
  */
@@ -681,6 +691,7 @@ static void test_query_engine_cycles(int fd)
  * Description: Check query with invalid arguments returns expected error code.
  *
  * SUBTEST: multigpu-query-invalid-cs-cycles
+ * Category: Hardware building block
  * Description: Check query with invalid arguments for all Xe devices.
  * Sub-category: MultiGPU
  */
