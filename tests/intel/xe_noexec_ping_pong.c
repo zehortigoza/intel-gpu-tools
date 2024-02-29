@@ -17,7 +17,7 @@
 
 /**
  * TEST: Expose compute VM's unnecessary rebinds
- * Category: Software building block
+ * Category: Hardware building block
  * Sub-category: compute
  * Functionality: compute VM rebind
  * Test category: functionality test
