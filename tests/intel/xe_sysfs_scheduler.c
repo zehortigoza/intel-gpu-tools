@@ -5,7 +5,7 @@
 
 /**
  * TEST: xe sysfs scheduler
- * Category: Software building block
+ * Category: Infrastructure
  * Sub-category: sysman
  * Functionality: scheduler control interface
  *
