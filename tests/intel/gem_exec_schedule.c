@@ -128,6 +128,7 @@
 IGT_TEST_DESCRIPTION("Check that we can control the order of execution");
 
 /*
+ * Wa_16019325821
  * The RCS/CCS workaround on MTL means that if spinners are sent to both RCS
  * and CCS engines concurrently then the system is effectively dead and will
  * require a reset of both engines to recover. Even pre-emptible spinners
