@@ -66,6 +66,10 @@
  * Description: Test to switch RR seamlessly without modeset.
  * Functionality: adaptive_sync, drrs
  *
+ * SUBTEST: max-min
+ * Description: Oscillates between highest and lowest refresh each frame for
+ *              manual flicker profiling
+ *
  * SUBTEST: negative-basic
  * Description: Make sure that VRR should not be enabled on the Non-VRR panel.
  */
@@ -86,7 +90,8 @@ enum {
 	TEST_SEAMLESS_VRR = 1 << 4,
 	TEST_SEAMLESS_DRRS = 1 << 5,
 	TEST_FASTSET = 1 << 6,
-	TEST_NEGATIVE = 1 << 7,
+	TEST_MAXMIN = 1 << 7,
+	TEST_NEGATIVE = 1 << 8,
 };
 
 enum {
@@ -537,7 +542,7 @@ test_basic(data_t *data, enum pipe pipe, igt_output_t *output, uint32_t flags)
 			     (range.max + 5), rate[0], result);
 	}
 
-	if (flags & ~TEST_NEGATIVE) {
+	if (flags & ~(TEST_NEGATIVE | TEST_MAXMIN)) {
 		rate[0] = vtest_ns.rate_ns;
 		result = flip_and_measure(data, output, pipe, rate, 1, data->duration_ns);
 		igt_assert_f(result > 75,
@@ -551,6 +556,19 @@ test_basic(data_t *data, enum pipe pipe, igt_output_t *output, uint32_t flags)
 		igt_assert_f(result < 50,
 			     "Refresh rate (%u Hz) %"PRIu64"ns: Target VRR on threshold exceeded, result was %u%%\n",
 			     (range.min - 10), rate[0], result);
+	}
+
+	if (flags & TEST_MAXMIN) {
+		unsigned int range_min =
+			/* For Intel h/w tweak the min rate, as h/w will terminate the vblank at Vmax. */
+			is_intel_device(data->drm_fd) ? (range.min + 2) : range.min;
+		uint64_t maxmin_rates[] = {vtest_ns.max, rate_from_refresh(range_min)};
+
+		result = flip_and_measure(data, output, pipe, maxmin_rates, 2, data->duration_ns);
+		igt_assert_f(result > 75,
+			     "Refresh rates (%u/%u Hz) %"PRIu64"ns/%"PRIu64"ns: Target VRR on threshold not reached, result was %u%%\n",
+			     range.max, range_min, maxmin_rates[0], maxmin_rates[1], result);
+		return;
 	}
 
 	/*
@@ -801,6 +819,11 @@ igt_main_args("drs:", long_opts, help_str, opt_handler, &data)
 	igt_describe("Make sure that VRR should not be enabled on the Non-VRR panel.");
 	igt_subtest_with_dynamic("negative-basic")
 		run_vrr_test(&data, test_basic, TEST_NEGATIVE);
+
+	igt_describe("Oscillates between highest and lowest refresh each frame for manual "
+		     "flicker profiling");
+	igt_subtest_with_dynamic("max-min")
+		run_vrr_test(&data, test_basic, TEST_MAXMIN);
 
 	igt_subtest_group {
 		igt_fixture
