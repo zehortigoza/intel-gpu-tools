@@ -160,6 +160,19 @@ spin_on_all_engines(int fd, const intel_ctx_t *ctx,
 	igt_waitchildren();
 }
 
+/*
+ * Wa_14019159160:
+ * An RCS/CCS workaround on MTL means that contexts from different address spaces
+ * cannot run in parallel, they must be timesliced. However, a non-preemptible
+ * spinner cannot be timesliced. Thus the PARALLEL_SPIN_NEW_CTX test cannot be run
+ * across both RCS and CCS engines, one or other must be skipped for the test to
+ * not hit a heartbeat timeout and be killed.
+ */
+static bool skip_bad_engine(int fd, const struct intel_execution_engine2 *e)
+{
+	return IS_METEORLAKE(intel_get_drm_devid(fd)) && (e->class == I915_ENGINE_CLASS_COMPUTE);
+}
+
 static void spin_all(int i915, const intel_ctx_t *ctx, unsigned int flags)
 #define PARALLEL_SPIN_NEW_CTX BIT(0)
 {
@@ -174,6 +187,9 @@ static void spin_all(int i915, const intel_ctx_t *ctx, unsigned int flags)
 			continue;
 
 		if (gem_engine_can_block_ggtt_binder(i915, e))
+			continue;
+
+		if (skip_bad_engine(i915, e))
 			continue;
 
 		if (flags & PARALLEL_SPIN_NEW_CTX)
