@@ -710,6 +710,27 @@ bool xe_has_media_gt(int fd)
 	return false;
 }
 
+/**
+ * xe_is_media_gt:
+ * @fd: xe device fd
+ * @gt: gt id
+ *
+ * Returns true if @gt for device @fd is media GT, otherwise false.
+ */
+bool xe_is_media_gt(int fd, int gt)
+{
+	struct xe_device *xe_dev;
+
+	xe_dev = find_in_cache(fd);
+	igt_assert(xe_dev);
+	igt_assert(gt < xe_number_gt(fd));
+
+	if (xe_dev->gt_list->gt_list[gt].type == DRM_XE_QUERY_GT_TYPE_MEDIA)
+		return true;
+
+	return false;
+}
+
 igt_constructor
 {
 	xe_device_cache_init();
