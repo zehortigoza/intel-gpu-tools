@@ -100,7 +100,7 @@ extern "C" {
 #define DRM_XE_EXEC_QUEUE_GET_PROPERTY	0x08
 #define DRM_XE_EXEC			0x09
 #define DRM_XE_WAIT_USER_FENCE		0x0a
-#define DRM_XE_PERF			0x0e
+#define DRM_XE_PERF			0x0b
 
 /* Must be kept compact -- no holes */
 
@@ -1393,7 +1393,7 @@ enum drm_xe_perf_op {
 };
 
 /**
- * struct drm_xe_perf_param - Perf layer param
+ * struct drm_xe_perf_param - Input of &DRM_XE_PERF
  *
  * The perf layer enables multiplexing perf counter streams of multiple
  * types. The actual params for a particular stream operation are supplied
@@ -1449,6 +1449,9 @@ enum drm_xe_oa_unit_type {
  * struct drm_xe_oa_unit - describe OA unit
  */
 struct drm_xe_oa_unit {
+	/** @extensions: Pointer to the first extension struct, if any */
+	__u64 extensions;
+
 	/** @oa_unit_id: OA unit ID */
 	__u32 oa_unit_id;
 
@@ -1497,6 +1500,8 @@ struct drm_xe_oa_unit {
  *	}
  */
 struct drm_xe_query_oa_units {
+	/** @extensions: Pointer to the first extension struct, if any */
+	__u64 extensions;
 	/** @num_oa_units: number of OA units returned in oau[] */
 	__u32 num_oa_units;
 	/** @pad: MBZ */
@@ -1523,6 +1528,10 @@ enum drm_xe_oa_format_type {
  * @drm_xe_user_extension base.name set to @DRM_XE_OA_EXTENSION_SET_PROPERTY.
  * @param field in struct @drm_xe_perf_param points to the first
  * @drm_xe_ext_set_property struct.
+ *
+ * Exactly the same mechanism is also used for stream reconfiguration using
+ * the @DRM_XE_PERF_IOCTL_CONFIG perf fd ioctl, though only a subset of
+ * properties below can be specified for stream reconfiguration.
  */
 enum drm_xe_oa_property_id {
 #define DRM_XE_OA_EXTENSION_SET_PROPERTY	0
@@ -1612,28 +1621,13 @@ struct drm_xe_oa_config {
 };
 
 /**
- * struct drm_xe_oa_stream_config - OA stream re-configuration with
- * @DRM_XE_PERF_IOCTL_CONFIG perf fd ioctl
- */
-struct drm_xe_oa_stream_config {
-	/** @extensions: Pointer to the first extension struct, if any */
-	__u64 extensions;
-
-	/**
-	 * @metric_set: metric set id, previously added using
-	 * @DRM_XE_PERF_OP_ADD_CONFIG
-	 */
-	__u64 metric_set;
-
-	/** @reserved: reserved for future use */
-	__u64 reserved[3];
-};
-
-/**
  * struct drm_xe_oa_stream_status - OA stream status returned from
  * @DRM_XE_PERF_IOCTL_STATUS perf fd ioctl
  */
 struct drm_xe_oa_stream_status {
+	/** @extensions: Pointer to the first extension struct, if any */
+	__u64 extensions;
+
 	/** @oa_status: OA status register as specified in PRM/Bspec 46717/61226 */
 	__u64 oa_status;
 #define DRM_XE_OASTATUS_MMIO_TRG_Q_FULL		(1 << 6)
@@ -1650,6 +1644,9 @@ struct drm_xe_oa_stream_status {
  * @DRM_XE_PERF_IOCTL_INFO perf fd ioctl
  */
 struct drm_xe_oa_stream_info {
+	/** @extensions: Pointer to the first extension struct, if any */
+	__u64 extensions;
+
 	/** @oa_buf_size: OA buffer size */
 	__u64 oa_buf_size;
 
