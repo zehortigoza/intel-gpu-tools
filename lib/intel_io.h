@@ -79,6 +79,7 @@ static inline uint##x__##_t ioread##x__(void *mmio, uint32_t reg) \
 {\
 	return *(volatile uint##x__##_t *)(mmio + reg);\
 }
+__ioread(64)
 __ioread(32)
 __ioread(16)
 __ioread(8)
@@ -89,6 +90,7 @@ static inline void iowrite##x__(void *mmio, uint32_t reg, uint##x__##_t val) \
 {\
 	*(volatile uint##x__##_t *)(mmio + reg) = val; \
 }
+__iowrite(64)
 __iowrite(32)
 __iowrite(16)
 __iowrite(8)
