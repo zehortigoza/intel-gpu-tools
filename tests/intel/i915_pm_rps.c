@@ -47,58 +47,32 @@
 /**
  * TEST: i915 pm rps
  * Description: Render P-States tests - verify GPU frequency changes
+ * Feature: pm_rps
+ * Test category: pm_rps
+ * Run type: FULL
  *
  * SUBTEST: basic-api
- * Feature: pm_rps
  * Run type: BAT
  *
  * SUBTEST: engine-order
  * Description:
  *   Check if context reuse does not affect waitboosting.
  *   Render P-States tests - verify GPU frequency changes
- * Feature: pm_rps
- * Run type: FULL
- * Test category: pm_rps
  *
  * SUBTEST: fence-order
  * Description:
  *   Check if the order of fences does not affect waitboosting.
  *   Render P-States tests - verify GPU frequency changes
  * Feature: pm_rps, synchronization
- * Run type: FULL
- * Test category: pm_rps
  *
  * SUBTEST: min-max-config-idle
- * Feature: pm_rps
- * Run type: FULL
- *
  * SUBTEST: min-max-config-loaded
- * Feature: pm_rps
- * Run type: FULL
- *
  * SUBTEST: reset
- * Feature: pm_rps
- * Run type: FULL
- *
- * SUBTEST: waitboost
- * Feature: pm_rps
- * Run type: FULL
- *
  * SUBTEST: thresholds
- * Feature: pm_rps
- * Run type: FULL
- *
  * SUBTEST: thresholds-idle
- * Feature: pm_rps
- * Run type: FULL
- *
  * SUBTEST: thresholds-idle-park
- * Feature: pm_rps
- * Run type: FULL
- *
  * SUBTEST: thresholds-park
- * Feature: pm_rps
- * Run type: FULL
+ * SUBTEST: waitboost
  */
 
 IGT_TEST_DESCRIPTION("Render P-States tests - verify GPU frequency changes");

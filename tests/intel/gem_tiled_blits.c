@@ -58,6 +58,7 @@
  * TEST: gem tiled blits
  * Description: Test doing many tiled blits, with a working set larger than the aperture size.
  * Feature: gtt, mapping
+ * Run type: FULL
  *
  * SUBTEST: basic
  * Description: Check basic functionality.
@@ -65,11 +66,9 @@
  *
  * SUBTEST: interruptible
  * Description: Check with interrupts in parallel execution.
- * Run type: FULL
  *
  * SUBTEST: normal
  * Description: Check with parallel execution.
- * Run type: FULL
  */
 
 IGT_TEST_DESCRIPTION("Test doing many tiled blits, with a working set larger"

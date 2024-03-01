@@ -52,87 +52,59 @@
 /**
  * TEST: perf pmu
  * Description: Test the i915 pmu perf interface
+ * Feature: i915 pmu perf interface, pmu
+ * Test category: Perf
+ * Sub-category: Performance
+ * Functionality: pmu
  * Run type: FULL
  *
  * SUBTEST: all-busy-check-all
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: all-busy-idle-check-all
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: busy
  * Description: Test to ensure gpu is busy when there a workload by reading engine busyness pmu counters
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: busy-accuracy-2
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: busy-accuracy-50
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: busy-accuracy-98
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: busy-check-all
  * Description: Test to ensure gpu all engines report busy when there is a workload by reading engine busyness pmu counters
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: busy-double-start
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: busy-hang
  * Description: Test to ensure there is no hanf when all engines are busy
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: busy-idle
  * Description: Test to ensure gpu engine reports idle when there is no workload
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: busy-idle-check-all
  * Description: Test to ensure gpu all engine reports idle when there is no workload
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: busy-idle-no-semaphores
  * Description: Test to verify gpu idle through engine business pmu counters
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: busy-no-semaphores
  * Description: Test to verify gpu busyness through engine business pmu counters
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: busy-start
  * Description: Test to verify gpu busyness through engine business pmu counters
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: cpu-hotplug
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: enable-race
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: event-wait
  * Feature: obsolete, pmu
@@ -142,83 +114,52 @@
  *
  * SUBTEST: frequency
  * Description: Read requested freq and actual frequency via PMU within specified time interval for any given workload changes
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: gt-awake
  * Description: Setup workload on all engines,measure gt awake time via pmu
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: idle
  * Description: Test to ensure gpu is idle when there is no workload by reading engine busyness pmu counters
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: idle-no-semaphores
  * Description: Test to ensure gpu is idle when there is no workload by reading engine busyness pmu counters
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: init-busy
  * Description: Test to verify gpu busyness init through pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: init-sema
  * Description: Test to verify gpu busyness init through pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: init-wait
  * Description: Test to verify gpu busyness init through pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: interrupts
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: interrupts-sync
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: invalid-init
  * Description: Tests that i915 PMU corectly errors out in invalid initialization
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: invalid-open
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: module-unload
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: most-busy-check-all
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: most-busy-idle-check-all
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: multi-client
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: pmu-read
  * Description: Verify i915 pmu dir exists and read all events
  * Feature: pmu
- * Test category: Perf
  *
  * SUBTEST: rc6
  * Feature: pmu
@@ -237,18 +178,12 @@
  *
  * SUBTEST: semaphore-busy
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: semaphore-wait
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  *
  * SUBTEST: semaphore-wait-idle
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
- * Test category: Perf
  */
 
 IGT_TEST_DESCRIPTION("Test the i915 pmu perf interface");

@@ -48,32 +48,26 @@
 /**
  * TEST: perf
  * Description: Test the i915 perf metrics streaming interface
+ * Feature: i915 streaming interface, oa
+ * Test category: Perf
+ * Functionality: oa
+ * Sub-category: Performance
  * Run type: FULL
  *
  * SUBTEST: blocking
  * Description: Test blocking read with default hrtimer frequency
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: blocking-parameterized
  * Description: Test blocking read with different hrtimer frequencies
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: buffer-fill
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: create-destroy-userspace-config
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: disabled-read-error
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: enable-disable
  * Feature: oa
@@ -92,8 +86,6 @@
  *
  * SUBTEST: gen12-invalid-class-instance
  * Description: Verify invalid class instance
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: gen12-mi-rpc
  * Description: Test MI REPORT PERF COUNT for Gen 12
@@ -101,8 +93,6 @@
  *
  * SUBTEST: gen12-oa-tlb-invalidate
  * Description: Test OA TLB invalidate
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: gen12-unprivileged-single-ctx-counters
  * Description: Measure performance for a specific context using OAR in Gen 12
@@ -121,98 +111,66 @@
  *
  * SUBTEST: i915-ref-count
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: invalid-create-userspace-config
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: invalid-oa-exponent
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: invalid-oa-format-id
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: invalid-oa-metric-set-id
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: invalid-open-flags
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: invalid-remove-userspace-config
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: low-oa-exponent-permissions
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: mi-rpc
  * Feature: oa
  *
  * SUBTEST: missing-sample-flags
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: non-sampling-read-error
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: non-system-wide-paranoid
  * Feature: oa
  *
  * SUBTEST: non-zero-reason
  * Description: Test that reason field in OA reports is never 0 on Gen8+
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: oa-exponents
  * Feature: oa
  *
  * SUBTEST: oa-formats
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: per-context-mode-unprivileged
  * Feature: oa, obsolete
  *
  * SUBTEST: polling
  * Description: Test polled read with default hrtimer frequency
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: polling-parameterized
  * Description: Test polled read with different hrtimer frequencies
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: polling-small-buf
  * Description: Test polled read with buffer size smaller than available data
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: rc6-disable
  * Feature: oa
  *
  * SUBTEST: short-reads
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: stress-open-close
  * Description: Stress tests opening & closing the i915-perf stream in a busy loop
@@ -220,16 +178,12 @@
  *
  * SUBTEST: sysctl-defaults
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  *
  * SUBTEST: unprivileged-single-ctx-counters
  * Feature: oa, obsolete
  *
  * SUBTEST: whitelisted-registers-userspace-config
  * Description: Test the i915 perf metrics streaming interface
- * Feature: i915 streaming interface, oa
- * Test category: Perf
  */
 
 IGT_TEST_DESCRIPTION("Test the i915 perf metrics streaming interface");

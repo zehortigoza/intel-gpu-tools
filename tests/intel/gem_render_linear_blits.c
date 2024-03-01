@@ -52,18 +52,16 @@
 /**
  * TEST: gem render linear blits
  * Feature: mapping
+ * Run type: FULL
  *
  * SUBTEST: aperture-shrink
- * Run type: FULL
  *
  * SUBTEST: aperture-thrash
- * Run type: FULL
  *
  * SUBTEST: basic
  * Run type: BAT
  *
  * SUBTEST: swap-thrash
- * Run type: FULL
  */
 
 #define WIDTH 512

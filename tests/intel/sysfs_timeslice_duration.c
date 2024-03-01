@@ -46,25 +46,28 @@
 /**
  * TEST: sysfs timeslice duration
  * Feature: SMI, cmd_submission
+ * Test category: SysMan
  * Run type: FULL
  *
  * SUBTEST: duration
- * Description: Test to measure the timeslice duration by watching the xCS_TIMESTAMP and recording its value every time we switch into the context, using a couple of semaphores to busyspin for the timeslice.
- * Test category: SysMan
+ * Description: Test to measure the timeslice duration by watching the
+ *		xCS_TIMESTAMP and recording its value every time we switch
+ *		into the context, using a couple of semaphores to busyspin for
+ *		the timeslice.
  *
  * SUBTEST: idempotent
  * Description: Test to check whether timeslice parameter reports the values set.
- * Test category: SysMan
  *
  * SUBTEST: invalid
- * Description: Test to check if timeslice parameter rejects any unrepresentable intervals.
- * Test category: SysMan
+ * Description: Test to check if timeslice parameter rejects any unrepresentable
+ *		intervals.
  *
  * SUBTEST: off
  *
  * SUBTEST: timeout
- * Description: Couple a unpreemptable hog with a fast forced reset and measure the timeslice by how long it takes for the hog to be reset and the high priority context to complete.
- * Test category: SysMan
+ * Description: Couple a unpreemptable hog with a fast forced reset and measure
+ *		the timeslice by how long it takes for the hog to be reset and
+ *		the high priority context to complete.
  */
 
 #define ATTR "timeslice_duration_ms"

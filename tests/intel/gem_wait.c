@@ -33,26 +33,21 @@
 #include "igt_vgem.h"
 /**
  * TEST: gem wait
+ * Category: Infrastructure
  * Description: Tests the GEM_WAIT ioctl
  * Feature: synchronization
+ * Functionality: semaphore
+ * Sub-category: i915
+ * Test category: GEM_Legacy
  * Run type: FULL
  *
  * SUBTEST: await
- * Category: Infrastructure
  * Description: Verify GEM_WAIT functionality in await mode.
- * Functionality: semaphore
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: busy
- * Category: Infrastructure
  * Description: Verify GEM_WAIT functionality in busy mode.
- * Functionality: semaphore
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: busy@all
- * Functionality: semaphore
  *
  * SUBTEST: busy@all-engines
  * Run type: BAT
@@ -70,45 +65,24 @@
  * Description: Verify GEM_WAIT functionality in wait-write mode, when hang is allowed.
  *
  * SUBTEST: invalid-buf
- * Category: Infrastructure
  * Description: Verify that GEM_WAIT called with invalid buffer object will fail.
- * Functionality: semaphore
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: invalid-flags
- * Category: Infrastructure
  * Description: Verify that GEM_WAIT called with invalid flag will fail.
- * Functionality: semaphore
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: wait
- * Category: Infrastructure
  * Description: Verify GEM_WAIT functionality in wait mode.
- * Functionality: semaphore
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: wait@all
- * Functionality: semaphore
  *
  * SUBTEST: wait@all-engines
  * Run type: BAT
  *
  * SUBTEST: write-busy
- * Category: Infrastructure
  * Description: Verify GEM_WAIT functionality in write-busy mode.
- * Functionality: semaphore
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: write-wait
- * Category: Infrastructure
  * Description: Verify GEM_WAIT functionality in write-wait mode.
- * Functionality: semaphore
- * Sub-category: i915
- * Test category: GEM_Legacy
  */
 
 IGT_TEST_DESCRIPTION("Tests the GEM_WAIT ioctl");

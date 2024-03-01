@@ -32,29 +32,22 @@
 #include "intel_batchbuffer.h"	/* igt_blitter_copy() */
 /**
  * TEST: prime vgem
+ * Category: Infrastructure
  * Description: Basic check of polling for prime/vgem fences.
+ * Feature: prime
+ * Functionality: mock device
+ * Sub-category: DRM
+ * Test category: GEM_Legacy
+ * Run type: FULL
  *
  * SUBTEST: basic-blt
- * Category: Infrastructure
  * Description: Examine blitter access path.
- * Feature: prime
- * Functionality: mock device
- * Run type: FULL
- * Sub-category: DRM
- * Test category: GEM_Legacy
  *
  * SUBTEST: basic-fence-blt
- * Category: Infrastructure
  * Description: Examine blitter access path fencing.
- * Feature: prime
- * Functionality: mock device
- * Run type: FULL
- * Sub-category: DRM
- * Test category: GEM_Legacy
  *
  * SUBTEST: basic-fence-flip
  * Description: Examine vgem bo front/back flip fencing.
- * Feature: prime
  * Run type: BAT
  *
  * SUBTEST: basic-fence-mmap
@@ -83,78 +76,38 @@
  * Run type: BAT
  *
  * SUBTEST: busy
- * Category: Infrastructure
  * Description: Examine busy check of polling for vgem fence.
- * Feature: prime
- * Functionality: mock device
- * Run type: FULL
- * Sub-category: DRM
- * Test category: GEM_Legacy
  *
  * SUBTEST: coherency-blt
- * Category: Infrastructure
  * Description: Examine blitter access path WC coherency.
- * Feature: prime
- * Functionality: mock device
- * Run type: FULL
- * Sub-category: DRM
- * Test category: GEM_Legacy
  *
  * SUBTEST: coherency-gtt
  * Description: Examine concurrent access of vgem bo.
  * Feature: gtt, prime
- * Run type: FULL
  *
  * SUBTEST: fence-flip-hang
  * Description: Examine vgem bo front/back flip fencing with a pending gpu hang.
  * Feature: blacklist, prime, synchronization
- * Run type: FULL
  *
  * SUBTEST: fence-read-hang
  * Description: Examine read access path fencing with a pending gpu hang.
  * Feature: blacklist, prime, synchronization
- * Run type: FULL
  *
  * SUBTEST: fence-wait
- * Category: Infrastructure
  * Description: Examine basic dma-buf fence interop.
- * Feature: prime, synchronization
- * Functionality: mock device
- * Run type: FULL
- * Sub-category: DRM
- * Test category: GEM_Legacy
  *
  * SUBTEST: fence-write-hang
  * Description: Examine write access path fencing with a pending gpu hang.
  * Feature: blacklist, prime, synchronization
- * Run type: FULL
  *
  * SUBTEST: shrink
- * Category: Infrastructure
  * Description: Examine link establishment between shrinker and vgem bo.
- * Feature: prime
- * Functionality: mock device
- * Run type: FULL
- * Sub-category: DRM
- * Test category: GEM_Legacy
  *
  * SUBTEST: sync
- * Category: Infrastructure
  * Description: Examine sync on vgem fence.
- * Feature: prime
- * Functionality: mock device
- * Run type: FULL
- * Sub-category: DRM
- * Test category: GEM_Legacy
  *
  * SUBTEST: wait
- * Category: Infrastructure
  * Description: Examine wait on vgem fence.
- * Feature: prime
- * Functionality: mock device
- * Run type: FULL
- * Sub-category: DRM
- * Test category: GEM_Legacy
  */
 
 IGT_TEST_DESCRIPTION("Basic check of polling for prime/vgem fences.");

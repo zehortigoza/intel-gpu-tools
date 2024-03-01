@@ -29,90 +29,51 @@
 #include <limits.h>
 /**
  * TEST: i915 query
+ * Category: Infrastructure
  * Description: Testing the i915 query uAPI.
+ * Feature: gem_core
+ * Functionality: device topology
+ * Sub-category: uapi
+ * Test category: GEM_Legacy
  * Run type: FULL
  *
  * SUBTEST: engine-info
- * Category: Infrastructure
  * Description: Positive tests for DRM_I915_QUERY_ENGINE_INFO
- * Feature: gem_core
- * Functionality: device topology
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: engine-info-invalid
- * Category: Infrastructure
  * Description: Negative tests for DRM_I915_QUERY_ENGINE_INFO
- * Feature: gem_core
- * Functionality: device topology
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: hwconfig_table
- * Category: Infrastructure
  * Description: Test DRM_I915_QUERY_HWCONFIG_BLOB query
- * Feature: gem_core
- * Functionality: device topology
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: query-garbage
- * Category: Infrastructure
  * Description: Test response to an invalid query call
- * Feature: gem_core
- * Functionality: device topology
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: query-regions-garbage-items
- * Category: Infrastructure
  * Description: Dodgy returned data tests for DRM_I915_QUERY_MEMORY_REGIONS
- * Feature: gem_core
- * Functionality: device topology
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: query-regions-sanity-check
- * Category: Infrastructure
  * Description: Basic tests for DRM_I915_QUERY_MEMORY_REGIONS
- * Feature: gem_core
- * Functionality: device topology
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: query-regions-unallocated
  * Description: Sanity check the region unallocated tracking
- * Feature: gem_core
  *
  * SUBTEST: query-topology-coherent-slice-mask
  * Description: Compare new DRM_I915_QUERY_TOPOLOGY_INFO query with legacy (sub)slice getparams
- * Feature: gem_core
  *
  * SUBTEST: query-topology-garbage-items
- * Category: Infrastructure
  * Description: Test response to invalid DRM_I915_QUERY_TOPOLOGY_INFO query
- * Feature: gem_core
- * Functionality: device topology
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: query-topology-kernel-writes
- * Category: Infrastructure
  * Description: Guardband test for DRM_I915_QUERY_TOPOLOGY_INFO query
- * Feature: gem_core
- * Functionality: device topology
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: query-topology-known-pci-ids
  * Description:
  *   Verify DRM_I915_QUERY_TOPOLOGY_INFO query against hardcoded known values for certain
  *   platforms
- * Feature: gem_core
  *
  * SUBTEST: query-topology-matches-eu-total
  * Description: More compare new DRM_I915_QUERY_TOPOLOGY_INFO query with legacy (sub)slice getparams
- * Feature: gem_core
  *
  * SUBTEST: query-topology-unsupported
  * Description: Verify DRM_I915_QUERY_TOPOLOGY_INFO query fails when it is not supported
@@ -120,7 +81,6 @@
  *
  * SUBTEST: test-query-geometry-subslices
  * Description: Test DRM_I915_QUERY_GEOMETRY_SUBSLICES query
- * Feature: gem_core
  */
 
 IGT_TEST_DESCRIPTION("Testing the i915 query uAPI.");

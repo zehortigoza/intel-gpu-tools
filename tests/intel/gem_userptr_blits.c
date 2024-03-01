@@ -69,171 +69,65 @@
 #include "intel_blt.h"
 /**
  * TEST: gem userptr blits
+ * Category: Server
+ * Feature: userptr
+ * Functionality: buffer management
+ * Sub-category: Compute
+ * Test category: GEM_Legacy
  * Run type: FULL
  *
  * SUBTEST: access-control
- * Feature: userptr
- *
  * SUBTEST: coherency-sync
- * Feature: userptr
- *
  * SUBTEST: coherency-unsync
- * Feature: userptr
- *
  * SUBTEST: create-destroy-sync
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: create-destroy-unsync
- * Feature: userptr
- *
  * SUBTEST: dmabuf-sync
- * Feature: prime, userptr
- *
  * SUBTEST: dmabuf-unsync
- * Feature: prime, userptr
- *
  * SUBTEST: forbidden-operations
- * Feature: userptr
- *
  * SUBTEST: forked-access
- * Feature: userptr
- *
  * SUBTEST: forked-sync-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-sync-mempressure-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-sync-mempressure-normal
- * Feature: userptr
- *
  * SUBTEST: forked-sync-multifd-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-sync-multifd-mempressure-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-sync-multifd-mempressure-normal
- * Feature: userptr
- *
  * SUBTEST: forked-sync-multifd-normal
- * Feature: userptr
- *
  * SUBTEST: forked-sync-normal
- * Feature: userptr
- *
  * SUBTEST: forked-sync-swapping-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-sync-swapping-mempressure-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-sync-swapping-mempressure-normal
- * Feature: userptr
- *
  * SUBTEST: forked-sync-swapping-multifd-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-sync-swapping-multifd-mempressure-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-sync-swapping-multifd-mempressure-normal
- * Feature: userptr
- *
  * SUBTEST: forked-sync-swapping-multifd-normal
- * Feature: userptr
- *
  * SUBTEST: forked-sync-swapping-normal
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-mempressure-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-mempressure-normal
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-multifd-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-multifd-mempressure-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-multifd-mempressure-normal
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-multifd-normal
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-normal
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-swapping-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-swapping-mempressure-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-swapping-mempressure-normal
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-swapping-multifd-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-swapping-multifd-mempressure-interruptible
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-swapping-multifd-mempressure-normal
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-swapping-multifd-normal
- * Feature: userptr
- *
  * SUBTEST: forked-unsync-swapping-normal
- * Feature: userptr
- *
  * SUBTEST: huge-split
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: input-checking
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
  *
  * SUBTEST: invalid-mmap-offset-unsync
  * Description: Verify unsynchronized userptr on mmap-offset mappings fails
- * Feature: userptr
  *
  * SUBTEST: invalid-null-pointer
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: major-normal-sync
- * Feature: userptr
- *
  * SUBTEST: major-sync-interruptible
- * Feature: userptr
- *
  * SUBTEST: major-unsync-interruptible
- * Feature: userptr
- *
  * SUBTEST: major-unsync-normal
- * Feature: userptr
  *
  * SUBTEST: map-fixed-invalidate
  * Description: Try to anger lockdep with MMU notifier still active after MAP_FIXED remap
@@ -252,176 +146,45 @@
  * Feature: gtt, userptr
  *
  * SUBTEST: minor-normal-sync
- * Feature: userptr
- *
  * SUBTEST: minor-sync-interruptible
- * Feature: userptr
- *
  * SUBTEST: minor-unsync-interruptible
- * Feature: userptr
- *
  * SUBTEST: minor-unsync-normal
- * Feature: userptr
- *
  * SUBTEST: mlocked-normal-sync
- * Feature: userptr
- *
  * SUBTEST: mlocked-sync-interruptible
- * Feature: userptr
- *
  * SUBTEST: mlocked-unsync-interruptible
- * Feature: userptr
- *
  * SUBTEST: mlocked-unsync-normal
- * Feature: userptr
  *
  * SUBTEST: mmap-offset-banned
- * Category: Server
  * Description: Verify mmap_offset to userptr is banned
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
  *
  * SUBTEST: nohangcheck
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: probe
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: process-exit
- * Feature: userptr
- *
  * SUBTEST: process-exit-busy
- * Feature: userptr
- *
  * SUBTEST: readonly-pwrite-unsync
- * Feature: userptr
- *
  * SUBTEST: readonly-unsync
- * Feature: userptr
- *
  * SUBTEST: relocations
- * Feature: userptr
- *
  * SUBTEST: sd-probe
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: set-cache-level
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: stress-mm
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: stress-mm-invalidate-close
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: stress-mm-invalidate-close-overlap
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: stress-purge
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: swapping-normal-sync
- * Feature: userptr
- *
  * SUBTEST: swapping-sync-interruptible
- * Feature: userptr
- *
  * SUBTEST: swapping-unsync-interruptible
- * Feature: userptr
- *
  * SUBTEST: swapping-unsync-normal
- * Feature: userptr
- *
  * SUBTEST: sync-overlap
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: sync-unmap
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: sync-unmap-after-close
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: sync-unmap-cycles
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: unsync-overlap
- * Feature: userptr
- *
  * SUBTEST: unsync-unmap
- * Feature: userptr
- *
  * SUBTEST: unsync-unmap-after-close
- * Feature: userptr
- *
  * SUBTEST: unsync-unmap-cycles
- * Feature: userptr
- *
  * SUBTEST: usage-restrictions
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
- *
  * SUBTEST: userfault
- * Feature: userptr
- *
  * SUBTEST: vma-merge
- * Category: Server
- * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
- * Test category: GEM_Legacy
  */
 
 #ifndef PAGE_SIZE
