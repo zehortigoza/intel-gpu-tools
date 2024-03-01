@@ -99,6 +99,15 @@ void __set_forced_driver(const char *name);
  */
 #define ALIGN_DOWN(x, a)	ALIGN((x) - ((a) - 1), (a))
 
+/**
+ * IS_ALIGNED:
+ * @v: value to check
+ * @a: alignment unit in bytes
+ *
+ * Macro to check if value @v is aligned to @a
+ */
+#define IS_ALIGNED(v, a)	(((v) & ((typeof(v))(a) - 1)) == 0)
+
 int __drm_open_device(const char *name, unsigned int chipset);
 void drm_load_module(unsigned int chipset);
 int drm_open_driver(int chipset);
