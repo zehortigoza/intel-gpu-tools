@@ -38,91 +38,64 @@
 /**
  * TEST: gem ctx create
  * Description: Test the context create ioctls
+ * Category: Infrastructure
+ * Feature: context
+ * Functionality: context
+ * Sub-category: Context
+ * Test category: GEM_Legacy
+ * Run type: FULL
  *
  * SUBTEST: active
- * Description:
- *   For each engine calculate the average performance of context creation execution and
- *   exercise context reclaim
- * Feature: context
- * Run type: FULL
+ * Description: For each engine calculate the average performance of context
+ *		creation execution and exercise context reclaim
  *
  * SUBTEST: active-all
- * Description: Calculate the average performance of context creation and it's execution using all engines
- * Feature: context
- * Run type: FULL
+ * Description: Calculate the average performance of context creation and it's
+ *		execution using all engines
  *
  * SUBTEST: basic
- * Category: Infrastructure
  * Description: Test random context creation
- * Feature: context
- * Functionality: context management
  * Run type: BAT
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: basic-files
- * Category: Infrastructure
  * Description: Exercise implicit per-fd context creation
- * Feature: context
- * Functionality: context management
  * Run type: BAT
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: ext-param
  * Description: Verify valid and invalid context extensions
- * Feature: context
- * Run type: FULL
  *
  * SUBTEST: files
  * Description: Exercise implicit per-fd context creation on 1 CPU for long duration
- * Feature: context
- * Run type: FULL
  *
  * SUBTEST: forked-active
- * Description:
- *   For each engine calculate the average performance of context creation and execution on
- *   multiple parallel processes
- * Feature: context
- * Run type: FULL
+ * Description: For each engine calculate the average performance of context
+ *		creation and execution on multiple parallel processes
  *
  * SUBTEST: forked-active-all
- * Description:
- *   Calculate the average performance of context creation and it's execution using all engines
- *   on multiple parallel processes
- * Feature: context
- * Run type: FULL
+ * Description: Calculate the average performance of context creation and it's
+ *		execution using all engines on multiple parallel processes
  *
  * SUBTEST: forked-files
- * Description: Exercise implicit per-fd context creation on all CPUs for long duration
- * Feature: context
- * Run type: FULL
+ * Description: Exercise implicit per-fd context creation on all CPUs for long
+ *		duration
  *
  * SUBTEST: hog
- * Description:
- *   For each engine calculate the average performance of context creation and execution while
- *   all other engines are hogging the resources
- * Feature: context
- * Run type: FULL
+ * Description: For each engine calculate the average performance of context
+ *		creation and execution while all other engines are hogging the
+ *		resources
  *
  * SUBTEST: iris-pipeline
  * Description: Set, validate and execute particular context params
- * Feature: context
- * Run type: FULL
  *
  * SUBTEST: maximum-mem
- * Description:
- *   Create contexts upto available RAM size, calculate the average performance of their
- *   execution on multiple parallel processes
- * Feature: context
- * Run type: FULL
+ * Description: Create contexts up to available RAM size, calculate the average
+ *		performance of their execution on multiple parallel processes
  *
  * SUBTEST: maximum-swap
- * Description:
- *   Create contexts upto available RAM+SWAP size, calculate the average performance of their
- *   execution on multiple parallel processes
- * Feature: context
- * Run type: FULL
+ * Description: Create contexts up to available RAM+SWAP size, calculate the
+ *		average performance of their execution on multiple parallel
+ *		processes
+ *
  */
 
 IGT_TEST_DESCRIPTION("Test the context create ioctls");

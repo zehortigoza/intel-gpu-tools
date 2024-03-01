@@ -28,62 +28,31 @@
 #include "igt_types.h"
 /**
  * TEST: gem ctx isolation
+ * Category: Infrastructure
+ * Feature: context
+ * Functionality: priv/non-priv registers
+ * Sub-category: Security
+ * Test category: GEM_Legacy
  * Run type: FULL
  *
  * SUBTEST: clean
- * Category: Infrastructure
- * Feature: context
- * Functionality: security
- * Sub-category: HW
- * Test category: GEM_Legacy
  *
  * SUBTEST: dirty-create
- * Category: Infrastructure
- * Feature: context
- * Functionality: security
- * Sub-category: HW
- * Test category: GEM_Legacy
  *
  * SUBTEST: dirty-switch
- * Category: Infrastructure
- * Feature: context
- * Functionality: security
- * Sub-category: HW
- * Test category: GEM_Legacy
  *
  * SUBTEST: nonpriv
- * Category: Infrastructure
- * Feature: context
- * Functionality: security
- * Sub-category: HW
- * Test category: GEM_Legacy
  *
  * SUBTEST: nonpriv-switch
- * Category: Infrastructure
- * Feature: context
- * Functionality: security
- * Sub-category: HW
- * Test category: GEM_Legacy
  *
  * SUBTEST: preservation
- * Category: Infrastructure
- * Feature: context
- * Functionality: security
- * Sub-category: HW
- * Test category: GEM_Legacy
  *
  * SUBTEST: preservation-S3
- * Feature: context
  *
  * SUBTEST: preservation-S4
- * Feature: context
  *
  * SUBTEST: preservation-reset
- * Category: Infrastructure
- * Feature: context
- * Functionality: security
- * Sub-category: HW
- * Test category: GEM_Legacy
+ *
  */
 
 /* MAX_REG must be greater than the maximum register address. */
