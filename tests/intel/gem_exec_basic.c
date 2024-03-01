@@ -28,17 +28,16 @@
 /**
  * TEST: gem exec basic
  * Description: Basic sanity check of execbuf-ioctl rings.
+ * Category: Infrastructure
+ * Feature: cmd_submission
+ * Functionality: execbuf
+ * Run type: BAT
+ * Sub-category: CMD submission
+ * Test category: GEM_Legacy
  *
  * SUBTEST: basic
- * Category: Infrastructure
- * Description:
- *   Check basic functionality of GEM_EXECBUFFER2 ioctl on every ring and iterating over memory
- *   regions.
- * Feature: cmd_submission
- * Functionality: command submission
- * Run type: BAT
- * Sub-category: i915
- * Test category: GEM_Legacy
+ * Description: Check basic functionality of GEM_EXECBUFFER2 ioctl on every
+ *		ring and iterating over memory regions.
  */
 
 IGT_TEST_DESCRIPTION("Basic sanity check of execbuf-ioctl rings.");

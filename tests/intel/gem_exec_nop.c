@@ -50,61 +50,41 @@
 
 /**
  * TEST: gem exec nop
+ * Category: Infrastructure
+ * Feature: cmd_submission
+ * Functionality: command submission
+ * Sub-category: i915
+ * Test category: GEM_Legacy
  * Run type: FULL
  *
  * SUBTEST: basic-parallel
- * Category: Infrastructure
- * Feature: cmd_submission
- * Functionality: command submission
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: basic-sequential
- * Category: Infrastructure
- * Feature: cmd_submission
- * Functionality: command submission
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: basic-series
- * Category: Infrastructure
- * Feature: cmd_submission
- * Functionality: command submission
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: context-sequential
- * Feature: cmd_submission
  *
  * SUBTEST: forked-sequential
- * Feature: cmd_submission
  *
  * SUBTEST: headless
- * Feature: cmd_submission
  *
  * SUBTEST: independent
- * Feature: cmd_submission
  *
  * SUBTEST: multiple
- * Feature: cmd_submission
  *
  * SUBTEST: parallel
- * Feature: cmd_submission
  *
  * SUBTEST: poll
- * Feature: cmd_submission
  *
  * SUBTEST: poll-sequential
- * Feature: cmd_submission
  *
  * SUBTEST: preempt
  * Feature: cmd_submission, multitile
  *
  * SUBTEST: sequential
- * Feature: cmd_submission
  *
  * SUBTEST: series
- * Feature: cmd_submission
  *
  * SUBTEST: signal
  * Feature: cmd_submission, multitile
@@ -113,7 +93,6 @@
  * Feature: cmd_submission, multitile
  *
  * SUBTEST: single
- * Feature: cmd_submission
  */
 
 #define ENGINE_FLAGS  (I915_EXEC_RING_MASK | I915_EXEC_BSD_MASK)

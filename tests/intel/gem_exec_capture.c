@@ -35,21 +35,21 @@
  * TEST: gem exec capture
  * Description: Check that we capture the user specified objects on a hang
  * Feature: cmd_submission
+ * Category: Server
+ * Functionality: offline debugging
+ * Sub-category: Debugger
+ * Test category: GEM_Legacy
  * Run type: FULL
  *
  * SUBTEST: capture
- * Category: Server
- * Functionality: offline debugging
- * Sub-category: debugger
- * Test category: GEM_Legacy
  *
  * SUBTEST: capture-invisible
- * Description:
- *   Check that the kernel doesn't crash if the pages can't be copied from the CPU during error
- *   capture.
+ * Description: Check that the kernel doesn't crash if the pages can't be
+ *		copied from the CPU during error capture.
  *
  * SUBTEST: capture-recoverable
- * Description: Verify that the kernel rejects EXEC_OBJECT_CAPTURE with recoverable contexts.
+ * Description: Verify that the kernel rejects EXEC_OBJECT_CAPTURE with
+ *		recoverable contexts.
  *
  * SUBTEST: many-256M-incremental
  *
@@ -62,16 +62,9 @@
  * SUBTEST: many-4K-zero
  *
  * SUBTEST: pi
- * Category: Server
- * Functionality: offline debugging
- * Sub-category: debugger
- * Test category: GEM_Legacy
  *
  * SUBTEST: userptr
- * Category: Server
- * Functionality: offline debugging
- * Sub-category: debugger
- * Test category: GEM_Legacy
+ *
  */
 
 #define MAX_RESET_TIME	600

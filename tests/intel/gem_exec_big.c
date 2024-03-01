@@ -52,15 +52,15 @@
  * TEST: gem exec big
  * Description: Run a large nop batch to stress test the error capture code.
  * Feature: cmd_submission
+ * Category: Infrastructure
+ * Functionality: large nop batch
+ * Sub-category: CMD submission
+ * Test category: GEM_Legacy
  * Run type: FULL
  *
  * SUBTEST: exhaustive
  *
  * SUBTEST: single
- * Category: Infrastructure
- * Functionality: command submission
- * Sub-category: i915
- * Test category: GEM_Legacy
  */
 
 IGT_TEST_DESCRIPTION("Run a large nop batch to stress test the error capture"
