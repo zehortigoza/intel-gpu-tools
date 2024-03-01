@@ -33,57 +33,43 @@
 /**
  * TEST: gem busy
  * Description: Basic check of busy-ioctl ABI.
+ * Category: Desktop client
+ * Functionality: semaphore
+ * Sub-category: uapi
+ * Test category: GEM_Legacy
  * Feature: cmd_submission
  * Run type: FULL
  *
  * SUBTEST: busy
- * Category: Desktop client
  * Description: Basic test to check busyness of each engine.
- * Functionality: semaphore
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: busy@all
- * Functionality: Semaphore
  *
  * SUBTEST: busy@all-engines
  * Run type: BAT
  *
  * SUBTEST: close-race
- * Category: Desktop client
- * Description: Test to check race condition by randomly closing the handle using gem_close.
- * Functionality: semaphore
- * Sub-category: i915
- * Test category: GEM_Legacy
+ * Description: Test to check race condition by randomly closing the handle
+ *		using gem_close.
  *
  * SUBTEST: extended
- * Category: Desktop client
  * Description: Extended test to check busyness of dwstore-capable engines.
- * Functionality: semaphore
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: hang
- * Description: Basic test to check hang state behaviour of engines with increased timeout.
+ * Description: Basic test to check hang state behaviour of engines with
+ *		increased timeout.
  *
  * SUBTEST: hang-extended
- * Description:
- *   Extended test to check hang state behaviour of dwstore-capable engines with increased
- *   timeout.
+ * Description: Extended test to check hang state behaviour of dwstore-capable
+ *		engines with increased timeout.
  *
  * SUBTEST: parallel
- * Category: Desktop client
- * Description:
- *   Extended test to check busyness of dwstore-capable engines while doing parallel
- *   execution.
- * Functionality: semaphore
- * Sub-category: i915
- * Test category: GEM_Legacy
+ * Description: Extended test to check busyness of dwstore-capable engines
+ *		while doing parallel execution.
  *
  * SUBTEST: semaphore
- * Description:
- *   Test to check busyness of engine on submitting a new batch while engine is busy in executing
- *   previous batch.
+ * Description: Test to check busyness of engine on submitting a new batch
+ *		while engine is busy in executing previous batch.
  */
 
 #define PAGE_ALIGN(x) ALIGN(x, 4096)

@@ -34,7 +34,7 @@
  * Feature: blitter
  * Functionality: command streamer
  * Run type: FULL
- * Sub-category: HW
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic

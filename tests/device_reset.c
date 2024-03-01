@@ -18,29 +18,30 @@
  * TEST: device reset
  * Category: Hardware building block
  * Description: Examine behavior of a driver on device sysfs reset
+ * Category: Server
+ * Feature: reset
+ * Functionality: reset
+ * Sub-category: Reset
+ * Test category: GEM_Legacy
  * Run type: FULL
  *
  * SUBTEST: cold-reset-bound
  * Description: Cold Resets device with bound driver
- * Feature: reset
  *
  * SUBTEST: reset-bound
  * Description: Resets device with bound driver
- * Feature: reset
  *
  * SUBTEST: unbind-cold-reset-rebind
  * Description: Unbinds driver from device, initiates cold reset then rebinds driver to device
- * Feature: reset
  *
  * SUBTEST: unbind-reset-rebind
  * Description:
  *   Unbinds driver from device, initiates reset then rebinds driver to device
  *   validating device resets
  * Category: Infrastructure
- * Sub-category: sysman
+ * Sub-category: SysMan
  * Functionality: reset
  * Feature: reset, sriov-reset
- * Test category: GEM_Legacy
  */
 
 IGT_TEST_DESCRIPTION("Examine behavior of a driver on device sysfs reset");

@@ -44,64 +44,43 @@
  * Description: Examine behavior of a driver on device hot unplug
  * Feature: SMI, core
  * Test category: functionality test
+ * Category: Software building block
+ * Sub-category: driver
+ * Functionality: device hotplug
+ * Run type: FULL
  *
  * SUBTEST: hotrebind
- * Category: Software building block
- * Sub-category: driver
- * Functionality: device hotplug
- * Description:
- *   Check if the driver can be cleanly rebound to a device with a still open hot unbound driver
- *   instance
- * Run type: FULL
+ * Description: Check if the driver can be cleanly rebound to a device with a
+ *		still open hot unbound driver instance
  *
  * SUBTEST: hotrebind-lateclose
- * Category: Software building block
- * Sub-category: driver
- * Functionality: device hotplug
- * Description: Check if a hot unbound driver instance still open after hot rebind can be cleanly released
- * Run type: FULL
+ * Description: Check if a hot unbound driver instance still open after hot
+ *		rebind can be cleanly released
  *
  * SUBTEST: hotreplug
- * Category: Software building block
- * Sub-category: driver
- * Functionality: device hotplug
- * Description: Check if a hot unplugged and still open device can be cleanly restored
- * Run type: FULL
+ * Description: Check if a hot unplugged and still open device can be cleanly
+ *		restored
  *
  * SUBTEST: hotreplug-lateclose
- * Category: Software building block
- * Sub-category: driver
- * Functionality: device hotplug
- * Description: Check if an instance of a still open while hot replugged device can be cleanly released
- * Run type: FULL
+ * Description: Check if an instance of a still open while hot replugged device
+ *		can be cleanly released
  *
  * SUBTEST: hotunbind-rebind
- * Category: Software building block
- * Sub-category: driver
- * Functionality: device hotplug
- * Description: Check if the driver can be cleanly unbound from an open device, then released and rebound
- * Run type: FULL
+ * Description: Check if the driver can be cleanly unbound from an open device,
+ *		then released and rebound
  *
  * SUBTEST: hotunplug-rescan
- * Category: Software building block
- * Sub-category: driver
- * Functionality: device hotplug
- * Description: Check if an open device can be cleanly unplugged, then released and restored
- * Run type: FULL
+ * Description: Check if an open device can be cleanly unplugged, then released
+ *		and restored
  *
  * SUBTEST: unbind-rebind
- * Category: Software building block
- * Sub-category: driver
- * Functionality: device hotplug
- * Description: Check if the driver can be cleanly unbound from a device believed to be closed, then rebound
+ * Description: Check if the driver can be cleanly unbound from a device
+ *		believed to be closed, then rebound
  * Run type: BAT
  *
  * SUBTEST: unplug-rescan
- * Category: Software building block
- * Sub-category: driver
- * Functionality: device hotplug
- * Description: Check if a device believed to be closed can be cleanly unplugged, then restored
- * Run type: FULL
+ * Description: Check if a device believed to be closed can be cleanly
+ *		unplugged, then restored
  */
 
 IGT_TEST_DESCRIPTION("Examine behavior of a driver on device hot unplug");

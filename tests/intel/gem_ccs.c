@@ -19,11 +19,11 @@
 /**
  * TEST: gem ccs
  * Description: Exercise gen12 blitter with and without flatccs compression
+ * Feature: flat_ccs_mapping
  * Run type: FULL
  *
  * SUBTEST: block-copy-compressed
  * Description: Check block-copy flatccs compressed blit
- * Feature: flat_ccs_mapping
  *
  * SUBTEST: block-copy-uncompressed
  * Description: Check block-copy uncompressed blit
@@ -31,19 +31,16 @@
  *
  * SUBTEST: block-multicopy-compressed
  * Description: Check block-multicopy flatccs compressed blit
- * Feature: flat_ccs_mapping
  *
  * SUBTEST: block-multicopy-inplace
  * Description: Check block-multicopy flatccs inplace decompression blit
- * Feature: flat_ccs_mapping
  *
  * SUBTEST: ctrl-surf-copy
  * Description: Check flatccs data can be copied from/to surface
- * Feature: flat_ccs_mapping
  *
  * SUBTEST: ctrl-surf-copy-new-ctx
- * Description: Check flatccs data are physically tagged and visible in different contexts
- * Feature: flat_ccs_mapping
+ * Description: Check flatccs data are physically tagged and visible i
+ *		different contexts
  *
  * SUBTEST: suspend-resume
  * Description: Check flatccs data persists after suspend / resume (S0)

@@ -43,210 +43,72 @@
 #include "intel_blt.h"
 /**
  * TEST: api intel bb
- * Description: intel_bb API check.
+ * Category: Infrastructure
+ * Description: checking dummy buffer creation & submission
+ * Feature: igt_core
+ * Functionality: dummy buffer creation & submission
+ * Sub-category: IGT Lib
+ * Test category: GEM_Legacy
  * Run type: FULL
  *
  * SUBTEST: add-remove-objects
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: bb-with-allocator
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: blit-noreloc-keep-cache
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: blit-noreloc-purge-cache
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: blit-reloc-keep-cache
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: blit-reloc-purge-cache
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: crc32
  * Description: Compare cpu and gpu crc32 sums on input object
- * Feature: igt_core
- * Test category: GEM_Legacy
  *
  * SUBTEST: delta-check
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: destroy-bb
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: full-batch
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: intel-bb-blit-none
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: intel-bb-blit-x
- * Feature: igt_core
  *
  * SUBTEST: intel-bb-blit-y
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: lot-of-buffers
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: misplaced-blitter
- * Category: Infrastructure
- * Description:
- *   Execute intel_bb with set of engines provided by userspace
- *   checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
+ * Description: Execute intel_bb with set of engines provided by userspace
+ *		checking dummy buffer creation & submission
  *
  * SUBTEST: object-noreloc-keep-cache-simple
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: object-noreloc-purge-cache-simple
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: object-reloc-keep-cache
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: object-reloc-purge-cache
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: offset-control
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: purge-bb
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: render
- * Feature: igt_core
  *
  * SUBTEST: render-ccs
- * Feature: igt_core
  *
  * SUBTEST: reset-bb
- * Category: Infrastructure
- * Description:
- *   Ensure reset is possible on fresh bb
- *   checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
+ * Description: Ensure reset is possible on fresh bb checking dummy buffer
+ *		creation & submission
  *
  * SUBTEST: reset-flags
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: simple-bb
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  *
  * SUBTEST: simple-bb-ctx
- * Category: Infrastructure
- * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
- * Sub-category: IGT Lib
- * Test category: GEM_Legacy
  */
 
 #define PAGE_SIZE 4096

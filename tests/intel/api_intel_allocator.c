@@ -16,79 +16,49 @@
 /**
  * TEST: api intel allocator
  * Category: Infrastructure
- * Functionality: virtual address ranges
+ * Functionality: virtual address
+ * Description: checking the virtual address ranges
  * Run type: FULL
  * Sub-category: IGT Lib
  * Test category: GEM_Legacy
+ * Feature: igt_core
  *
  * SUBTEST: alloc-simple
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: default-alignment
- * Description:
- *   For simple allocator check does default alignment is properly handled in open and alloc
- *   functions
- *   checking the virtual address ranges
- * Feature: igt_core
+ * Description: For simple allocator check does default alignment is properly
+ *		handled in open and alloc functions checking the virtual
+ *		address ranges
  *
  * SUBTEST: execbuf-with-allocator
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: fork-simple-once
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: fork-simple-stress
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: fork-simple-stress-signal
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: gem-pool
- * Description:
- *   Verifies creating and executing bb from gem pool
- *   checking the virtual address ranges
- * Feature: igt_core
+ * Description: Verifies creating and executing bb from gem pool checking
+ *		the virtual address ranges
  *
  * SUBTEST: open-vm
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: reloc-allocator
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: reopen
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: reopen-fork
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: reserve-simple
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: simple-allocator
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: standalone
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: two-level-inception
- * Description: checking the virtual address ranges
- * Feature: igt_core
  *
  * SUBTEST: two-level-inception-interruptible
- * Description: checking the virtual address ranges
- * Feature: igt_core
  */
 
 #define OBJ_SIZE 1024

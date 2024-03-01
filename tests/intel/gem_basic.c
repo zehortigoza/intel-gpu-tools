@@ -44,33 +44,21 @@
 /**
  * TEST: gem basic
  * Description: Tests basic gem_create and gem_close IOCTLs
+ * Category: Infrastructure
+ * Feature: gem_core
+ * Functionality: driver handler
+ * Sub-category: uapi
+ * Test category: GEM_Legacy
+ * Run type: BAT
  *
  * SUBTEST: bad-close
- * Category: Infrastructure
  * Description: Verify that gem_close fails with bad params.
- * Feature: gem_core
- * Functionality: driver handler
- * Run type: BAT
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: create-close
- * Category: Infrastructure
  * Description: Verify basic functionality of gem_create and gem_close.
- * Feature: gem_core
- * Functionality: driver handler
- * Run type: BAT
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: create-fd-close
- * Category: Infrastructure
  * Description: Verify that closing drm driver is possible with opened gem object.
- * Feature: gem_core
- * Functionality: driver handler
- * Run type: BAT
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: multigpu-create-close
  * Description: Verify basic functionality of gem_create and gem_close on multi-GPU.

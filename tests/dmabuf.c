@@ -27,21 +27,18 @@
  * TEST: dmabuf
  * Description: Kernel selftests for the dmabuf API
  * Feature: mapping, prime
+ * Category: Infrastructure
+ * Description: drm_mm range manager SW validation
+ * Functionality: DRM
+ * Sub-category: Memory management
+ * Test category: GEM_Legacy
  * Run type: BAT
  *
  * SUBTEST: all-tests
  *
  * SUBTEST: all-tests@dma_fence
- * Category: Infrastructure
- * Description: drm_mm range manager SW validation
- * Functionality: DRM memory mangemnt
- * Test category: GEM_Legacy
  *
  * SUBTEST: all-tests@sanitycheck
- * Category: Infrastructure
- * Description: drm_mm range manager SW validation
- * Functionality: DRM memory mangemnt
- * Test category: GEM_Legacy
  */
 
 IGT_TEST_DESCRIPTION("Kernel selftests for the dmabuf API");
