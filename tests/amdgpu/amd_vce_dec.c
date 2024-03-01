@@ -552,6 +552,17 @@ amdgpu_cs_vce_destroy(amdgpu_device_handle device_handle, struct mmd_context *co
 	free_resource(&enc->fb[0]);
 }
 
+static void
+amdgpu_vce_enc_test(amdgpu_device_handle device, struct mmd_context *context,
+		struct amdgpu_vce_encode *enc, bool is_mv_supported)
+{
+	amdgpu_cs_vce_create(device, enc, context, is_mv_supported);
+	amdgpu_cs_vce_encode(device, context, enc, is_mv_supported);
+	if (is_mv_supported)
+		amdgpu_cs_vce_encode_mv(device, context, enc, is_mv_supported);
+	amdgpu_cs_vce_destroy(device, context, enc);
+}
+
 igt_main
 {
 	amdgpu_device_handle device;
@@ -574,24 +585,9 @@ igt_main
 		igt_skip_on(!is_vce_tests_enable(device, context.family_id, context.chip_id,
 				context.chip_rev, &is_mv_supported));
 	}
-	igt_describe("Test whether vce enc is created");
-	igt_subtest("amdgpu_cs_vce_create")
-	amdgpu_cs_vce_create(device, &enc, &context, is_mv_supported);
-
-	igt_describe("Test whether vce enc encodes");
-	igt_subtest("amdgpu_cs_vce_encode")
-	amdgpu_cs_vce_encode(device, &context, &enc,  is_mv_supported);
-
-	if (is_mv_supported) {
-		igt_describe("Test whether vce enc encodes mv");
-		igt_subtest("amdgpu_cs_vce_encode_mv")
-		amdgpu_cs_vce_encode_mv(device, &context, &enc, is_mv_supported);
-	}
-
-	igt_describe("Test whether vce enc is destroyed");
-	igt_subtest("amdgpu_cs_vce_destroy")
-	amdgpu_cs_vce_destroy(device, &context, &enc);
-
+	igt_describe("Test vce enc is created, encode, destroy");
+	igt_subtest("amdgpu_vce_encoder")
+		amdgpu_vce_enc_test(device, &context, &enc, is_mv_supported);
 
 	igt_fixture {
 		mmd_context_clean(device, &context);
