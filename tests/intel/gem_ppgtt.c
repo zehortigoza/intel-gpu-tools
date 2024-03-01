@@ -41,30 +41,24 @@
 #include "igt_debugfs.h"
 /**
  * TEST: gem ppgtt
- * Run type: FULL
- *
- * SUBTEST: blt-vs-render-ctx0
- * Feature: mapping
- *
- * SUBTEST: blt-vs-render-ctxN
- * Feature: mapping
- *
- * SUBTEST: flink-and-close-vma-leak
  * Category: Desktop client
  * Feature: mapping, xorg_dri2
  * Functionality: buffer management
- * Sub-category: i915
+ * Sub-category: Memory management
  * Test category: GEM_Legacy
+ * Run type: FULL
+ *
+ * SUBTEST: blt-vs-render-ctx0
+ *
+ * SUBTEST: blt-vs-render-ctxN
+ *
+ * SUBTEST: flink-and-close-vma-leak
  *
  * SUBTEST: shrink-vs-evict-any
  * Description: Regression test to verify GTT eviction can't randomly fail due to object lock contention
- * Feature: mapping
- * Test category: GEM_Legacy
  *
  * SUBTEST: shrink-vs-evict-pinned
  * Description: Regression test to verify GTT eviction can't randomly fail due to object lock contention
- * Feature: mapping
- * Test category: GEM_Legacy
  */
 
 #define WIDTH 512

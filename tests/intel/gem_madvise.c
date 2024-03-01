@@ -40,35 +40,30 @@
 #include "i915/gem_create.h"
 /**
  * TEST: gem madvise
+ * Category: Desktop client
  * Description: Checks that the kernel reports EFAULT when trying to use purged bo.
+ * Feature: caching, mapping
+ * Functionality: buffer management
+ * Sub-category: i915
+ * Test category: GEM_Legacy
  * Run type: FULL
  *
  * SUBTEST: dontneed-after-mmap
- * Category: Desktop client
- * Description:
- *   Check signal for Segmentation Fault and bus error after obtaining a purgeable object and
- *   calling for sighandler.
- * Feature: caching, mapping
- * Functionality: buffer management
- * Sub-category: i915
- * Test category: GEM_Legacy
+ * Description: Check signal for Segmentation Fault and bus error after
+ *		obtaining a purgeable object and calling for sighandler.
  *
  * SUBTEST: dontneed-before-exec
- * Description: Check if EXECBUFFER2 reports EFAULT when trying to submit purged bo for GPU.
+ * Description: Check if EXECBUFFER2 reports EFAULT when trying to submit
+ *		purged bo for GPU.
  * Feature: caching, gtt, mapping
  *
  * SUBTEST: dontneed-before-mmap
- * Category: Desktop client
- * Description:
- *   Check signal for Segmentation Fault and bus error before obtaining a purgeable object and
- *   calling for sighandler.
- * Feature: caching, mapping
- * Functionality: buffer management
- * Sub-category: i915
- * Test category: GEM_Legacy
+ * Description: Check signal for Segmentation Fault and bus error before
+ *		obtaining a purgeable object and calling for sighandler.
  *
  * SUBTEST: dontneed-before-pwrite
- * Description: Check if PWRITE reports EFAULT when trying to use purged bo for write operation.
+ * Description: Check if PWRITE reports EFAULT when trying to use purged bo
+ *		for write operation.
  * Feature: caching, gtt, mapping
  */
 

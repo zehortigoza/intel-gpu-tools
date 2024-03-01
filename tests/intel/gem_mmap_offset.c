@@ -40,90 +40,27 @@
 /**
  * TEST: gem mmap offset
  * Description: Basic MMAP_OFFSET IOCTL tests for mem regions
- * Run type: FULL
+ * Category: Infrastructure
+ * Feature: mapping
+ * Functionality: mapping
+ * Sub-category: Memory management
  * Test category: GEM_Legacy
+ * Run type: FULL
  *
  * SUBTEST: bad-extensions
- * Category: Infrastructure
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
- *
  * SUBTEST: bad-flags
- * Category: Infrastructure
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
- *
  * SUBTEST: bad-object
- * Category: Infrastructure
- * Description: Verify mapping to invalid gem objects won't be created
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
- *
  * SUBTEST: basic-uaf
- * Category: Infrastructure
- * Description: Check buffer object mapping persists after gem_close
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
- *
  * SUBTEST: blt-coherency
- * Category: Infrastructure
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
- *
  * SUBTEST: clear
- * Category: Infrastructure
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
- *
  * SUBTEST: close-race
- * Category: Infrastructure
- * Description: Check race between close and mmap offset between threads
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
- *
  * SUBTEST: isolation
- * Category: Infrastructure
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
- *
  * SUBTEST: oob-read
- * Category: Infrastructure
- * Description: Check for out-of-bound access in vm_access
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
- *
  * SUBTEST: open-flood
- * Category: Infrastructure
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
- *
  * SUBTEST: perf
- * Category: Infrastructure
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
- *
  * SUBTEST: pf-nonblock
- * Category: Infrastructure
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
- *
  * SUBTEST: ptrace
- * Category: Infrastructure
- * Feature: mapping
- * Functionality: memory management
- * Sub-category: i915
+ *
  */
 
 IGT_TEST_DESCRIPTION("Basic MMAP_OFFSET IOCTL tests for mem regions\n");

@@ -36,6 +36,10 @@
 /**
  * TEST: gem shrink
  * Feature: mapping
+ * Category: Desktop client
+ * Functionality: buffer management
+ * Sub-category: CMD submission
+ * Test category: GEM_Legacy
  * Run type: FULL
  *
  * SUBTEST: execbuf1
@@ -139,10 +143,6 @@
  * SUBTEST: pwrite-userptr-dirty
  *
  * SUBTEST: reclaim
- * Category: Desktop client
- * Functionality: buffer management
- * Sub-category: i915
- * Test category: GEM_Legacy
  */
 
 #ifndef MADV_FREE

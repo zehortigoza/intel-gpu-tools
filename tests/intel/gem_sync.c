@@ -34,43 +34,37 @@
 #include "igt_sysfs.h"
 /**
  * TEST: gem sync
+ * Category: Infrastructure
  * Description: Basic check of ring<->ring write synchronisation.
+ * Feature: synchronization
+ * Functionality: semaphore
+ * Sub-category: i915
+ * Test category: GEM_Legacy
+ * Run type: FULL
  *
  * SUBTEST: active
  * Description: Exercise waiting while keeping the GPU busy on each engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: active-each
  * Description: Exercise waiting while keeping the GPU busy.
  * Feature: multitile, synchronization
- * Run type: FULL
  *
  * SUBTEST: active-wakeup
  * Description: Measure wakeup latency while also scheduling the next batch on each engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: active-wakeup-each
  * Description: Measure wakeup latency while also scheduling the next batch.
  * Feature: multitile, synchronization
- * Run type: FULL
  *
  * SUBTEST: basic-all
- * Category: Infrastructure
  * Description: Basic test to wait upon a batch on all rings.
- * Feature: synchronization
- * Functionality: semaphore
  * Run type: BAT
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: basic-each
  * Description:
  *   Check synchronisation of ring.
  *   Exercise all physical engine selection and legacy rings
  * Feature: multitile, synchronization
- * Functionality: semaphore
  * Run type: BAT
  * Test category: MultiTile
  *
@@ -79,139 +73,91 @@
  *   Create race condition and see if we can catch interrupts.
  *   Basic check of ring to ring write synchronisation
  * Feature: multitile, synchronization
- * Run type: FULL
  * Test category: MultiTile
  *
  * SUBTEST: basic-store-all
- * Category: Infrastructure
  * Description: Basic version of store synchronisation test.
- * Feature: synchronization
- * Functionality: semaphore
- * Run type: FULL
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: basic-store-each
  * Description:
  *   Check that store synchronisation works.
  *   Basic check of ring to ring write, store synchronisation
  * Feature: multitile, synchronization
- * Run type: FULL
  * Test category: MultiTile
  *
  * SUBTEST: default
  * Description: Check synchronisation of rings on each engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: double-wakeup
  * Description: Double stress test for nop + sync on each engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: double-wakeup-each
  * Description: Double stress test for nop + sync.
  * Feature: multitile, synchronization
- * Run type: FULL
  *
  * SUBTEST: forked
  * Description: Check synchronisation of ring with parallel executions on each engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: forked-all
  * Description: Parallel execution of batch on all rings and then wait.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: forked-each
  * Description:
  *   Forked variant of sync_ring, which checks synchronisation of ring with parallel
  *   executions.
  * Feature: multitile, synchronization
- * Run type: FULL
  *
  * SUBTEST: forked-store
  * Description: Check store synchronisation works with parallel multiple executions on each engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: forked-store-all
  * Description: Parallel execution of store synchronisation.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: forked-store-each
  * Description: Forked variant of store_ring, check if parallel store synchronisation works.
  * Feature: multitile, synchronization
- * Run type: FULL
  *
  * SUBTEST: forked-switch
  * Description: Check sync after context switch parallelly on each engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: forked-switch-each
  * Description: Check sync after context switch parallelly.
  * Feature: multitile, synchronization
- * Run type: FULL
  *
  * SUBTEST: idle
  * Description: Exercise and measure idle requests on each engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: legacy-active
  * Description: Exercise waiting while keeping the GPU busy for each legacy engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: legacy-active-wakeup
  * Description: Measure wakeup latency while also scheduling the next batch for each legacy engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: legacy-default
  * Description: Check synchronisation of rings for each legacy engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: legacy-double-wakeup
  * Description: Double stress test for nop + sync for each legacy engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: legacy-forked
  * Description: Check synchronisation of ring with parallel executions for each legacy engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: legacy-forked-store
  * Description:
  *   Check store synchronisation works with parallel multiple executions for each legacy
  *   engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: legacy-forked-switch
  * Description: Check sync after context switch parallelly for each legacy engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: legacy-idle
  * Description: Exercise and measure idle requests for each legacy engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: legacy-many
  * Description: Create race condition and see if we can catch interrupts for each legacy engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: legacy-store
  * Description: Check that store synchronisation works for each legacy engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: legacy-switch
  * Description: Check sync after context switch for each legacy engine.
@@ -220,60 +166,40 @@
  *
  * SUBTEST: legacy-wakeup
  * Description: Stress for nop + sync for each legacy engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: many
  * Description: Create race condition and see if we can catch interrupts on each engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: preempt
  * Description: For each context engine check how priority of task are submitted when engine is already busy.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: preempt-all
  * Description:
  *   Check and measure how well we can submit a second high priority task when the engine is already
  *   busy with a low priority task on all engines.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: store
  * Description: Check that store synchronisation works on each engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: store-all
  * Description: Extended version of existing basic-store-all test.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: switch
  * Description: Check sync after context switch on each engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: switch-each
  * Description: Check sync after context switch.
  * Feature: multitile, synchronization
- * Run type: FULL
  *
  * SUBTEST: wait-all
  * Description: Extended version of existing basic-all test.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: wakeup
  * Description: Stress for nop + sync on each engine.
- * Feature: synchronization
- * Run type: FULL
  *
  * SUBTEST: wakeup-each
  * Description: Stress test for nop + sync.
  * Feature: multitile, synchronization
- * Run type: FULL
  */
 
 #define MAX_PRIO I915_CONTEXT_MAX_USER_PRIORITY

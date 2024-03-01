@@ -43,35 +43,34 @@
 #include <sys/ioctl.h>
 /**
  * TEST: gem ringfill
+ * Category: Infrastructure
  * Description:
  *   Exercise many tiny batchbuffer operations, in the hope of catching failure to manage the ring
  *   properly near full.
- *
- * SUBTEST: basic-all
- * Category: Infrastructure
- * Description: Basic check to fill the ring upto maximum on all engines simultaneously.
  * Feature: cmd_submission
  * Functionality: command submission
- * Run type: BAT
  * Sub-category: i915
  * Test category: GEM_Legacy
+ * Run type: FULL
+ *
+ * SUBTEST: basic-all
+ * Run type: BAT
+ * Description: Basic check to fill the ring up to maximum on all engines
+ *		simultaneously.
  *
  * SUBTEST: engines-S3
  * Description: Handle a full ring across suspend cycle.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: engines-S4
  * Description: Handle a full ring across hibernate cycle.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: engines-basic
  * Description:
  *   Basic check how the driver handles a full ring.
  *   Test spamming ring with contexts
  * Feature: cmd_submission, multitile
- * Run type: FULL
  * Test category: MultiTile
  *
  * SUBTEST: engines-bomb
@@ -79,51 +78,42 @@
  *   Fills the ring upto maximim parallely using fork with different fd's along with
  *   interruptions.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: engines-child
  * Description: Check to fill the ring parallely using fork.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: engines-fd
  * Description: Fills the ring upto maximim parallely using fork with different fd's.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: engines-forked
  * Description: Check to fill the ring parallely using fork.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: engines-hang
  * Description: Exercise many batchbuffer operations along with a hang batch until ring is full.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: engines-interruptible
  * Description:
  *   Exercise all potential injection sites by using igt_sigiter interface to repeat the
  *   ringfill testing.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: legacy-S3
  * Description: Handle a full ring across suspend cycle - on legacy ring.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: legacy-S4
  * Description: Handle a full ring across hibernate cycle - on legacy ring.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: legacy-basic
  * Description:
  *   Basic check how the driver handles a full ring - on legacy ring.
  *   Test spamming ring with contexts - legacy path
  * Feature: cmd_submission, multitile
- * Run type: FULL
  * Test category: MultiTile
  *
  * SUBTEST: legacy-bomb
@@ -131,36 +121,30 @@
  *   Fills the ring upto maximim parallely using fork with different fd's along with
  *   interruptions - on legacy ring.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: legacy-child
  * Description: Check to fill the ring parallely using fork - on legacy ring.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: legacy-fd
  * Description: Fills the ring upto maximim parallely using fork with different fd's - on legacy ring.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: legacy-forked
  * Description: Check to fill the ring parallely using fork - on legacy ring.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: legacy-hang
  * Description:
  *   Exercise many batchbuffer operations along with a hang batch until ring is full - on legacy
  *   ring.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  *
  * SUBTEST: legacy-interruptible
  * Description:
  *   Exercise all potential injection sites by using igt_sigiter interface to repeat the
  *   ringfill testing - on legacy ring.
  * Feature: cmd_submission, multitile
- * Run type: FULL
  */
 
 #define INTERRUPTIBLE 0x1

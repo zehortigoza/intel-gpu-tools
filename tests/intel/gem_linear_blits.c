@@ -51,34 +51,23 @@
 #include "intel_blt.h"
 /**
  * TEST: gem linear blits
+ * Category: Infrastructure
  * Description: Test doing many blits with a working set larger than the aperture size.
+ * Feature: blitter
+ * Functionality: blitter
+ * Sub-category: CMD submission
+ * Test category: GEM_Legacy
+ * Run type: FULL
  *
  * SUBTEST: basic
- * Category: Infrastructure
  * Description: Basic blitter functionality check with 2 buffers
- * Feature: blitter
- * Functionality: command submission
  * Run type: BAT
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: interruptible
- * Category: Infrastructure
  * Description: Test with interrupts in between the parent process
- * Feature: blitter
- * Functionality: command submission
- * Run type: FULL
- * Sub-category: i915
- * Test category: GEM_Legacy
  *
  * SUBTEST: normal
- * Category: Infrastructure
  * Description: The intent is to push beyond the working GTT size to force the driver to rebind the buffers
- * Feature: blitter
- * Functionality: command submission
- * Run type: FULL
- * Sub-category: i915
- * Test category: GEM_Legacy
  */
 
 IGT_TEST_DESCRIPTION("Test doing many blits with a working set larger than the"
