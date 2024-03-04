@@ -890,7 +890,7 @@ static void crtc_invalid_params_fence(data_t *data, igt_output_t *output)
 {
 	int timeline, fence_fd;
 	void *map;
-	const ptrdiff_t PAGE_SIZE = sysconf(_SC_PAGE_SIZE);
+	const ptrdiff_t page_size = sysconf(_SC_PAGE_SIZE);
 	uint64_t old_mode_id = data->pipe->values[IGT_CRTC_MODE_ID];
 
 	igt_require_sw_sync();
@@ -898,28 +898,28 @@ static void crtc_invalid_params_fence(data_t *data, igt_output_t *output)
 	timeline = sw_sync_timeline_create();
 
 	/* invalid out_fence_ptr */
-	map = mmap(NULL, PAGE_SIZE, PROT_READ, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	map = mmap(NULL, page_size, PROT_READ, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 	igt_assert(map != MAP_FAILED);
 
 	igt_pipe_obj_set_prop_value(data->pipe, IGT_CRTC_OUT_FENCE_PTR, (ptrdiff_t)map);
 	crtc_commit_atomic_err(data->pipe, data->primary, ATOMIC_RELAX_NONE, EFAULT);
-	munmap(map, PAGE_SIZE);
+	munmap(map, page_size);
 
 	/* invalid out_fence_ptr */
-	map = mmap(NULL, PAGE_SIZE, PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	map = mmap(NULL, page_size, PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 	igt_assert(map != MAP_FAILED);
 
 	igt_pipe_obj_set_prop_value(data->pipe, IGT_CRTC_OUT_FENCE_PTR, (ptrdiff_t)map);
 	crtc_commit_atomic_err(data->pipe, data->primary, ATOMIC_RELAX_NONE, EFAULT);
-	munmap(map, PAGE_SIZE);
+	munmap(map, page_size);
 
 	/* invalid out_fence_ptr */
-	map = mmap(NULL, PAGE_SIZE, PROT_NONE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	map = mmap(NULL, page_size, PROT_NONE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 	igt_assert(map != MAP_FAILED);
 
 	igt_pipe_obj_set_prop_value(data->pipe, IGT_CRTC_OUT_FENCE_PTR, (ptrdiff_t)map);
 	crtc_commit_atomic_err(data->pipe, data->primary, ATOMIC_RELAX_NONE, EFAULT);
-	munmap(map, PAGE_SIZE);
+	munmap(map, page_size);
 
 	/* valid in fence but not allowed prop on crtc */
 	fence_fd = sw_sync_timeline_create_fence(timeline, 1);
