@@ -194,7 +194,6 @@ gen9_fill_surface_state(struct intel_bb *ibb,
 	struct gen9_surface_state *ss;
 	uint32_t write_domain, read_domain, offset;
 	uint64_t address;
-	enum intel_buf_mocs mocs = intel_buf_get_mocs(buf);
 
 	if (is_dst) {
 		write_domain = read_domain = I915_GEM_DOMAIN_RENDER;
@@ -214,10 +213,7 @@ gen9_fill_surface_state(struct intel_bb *ibb,
 	ss->ss0.vertical_alignment = 1; /* align 4 */
 	ss->ss0.horizontal_alignment = 1; /* align 4 */
 
-	if (mocs == INTEL_BUF_MOCS_WB)
-		ss->ss1.mocs_index = intel_get_wb_mocs_index(ibb->fd);
-	else
-		ss->ss1.mocs_index = intel_get_uc_mocs_index(ibb->fd);
+	ss->ss1.mocs_index = buf->mocs_index;
 
 	if (buf->tiling == I915_TILING_X)
 		ss->ss0.tiled_mode = 2;
@@ -255,7 +251,6 @@ gen11_fill_surface_state(struct intel_bb *ibb,
 	struct gen9_surface_state *ss;
 	uint32_t write_domain, read_domain, offset;
 	uint64_t address;
-	enum intel_buf_mocs mocs = intel_buf_get_mocs(buf);
 
 	if (is_dst) {
 		write_domain = read_domain = I915_GEM_DOMAIN_RENDER;
@@ -275,10 +270,7 @@ gen11_fill_surface_state(struct intel_bb *ibb,
 	ss->ss0.vertical_alignment = vertical_alignment; /* align 4 */
 	ss->ss0.horizontal_alignment = horizontal_alignment; /* align 4 */
 
-	if (mocs == INTEL_BUF_MOCS_WB)
-		ss->ss1.mocs_index = intel_get_wb_mocs_index(ibb->fd);
-	else
-		ss->ss1.mocs_index = intel_get_uc_mocs_index(ibb->fd);
+	ss->ss1.mocs_index = buf->mocs_index;
 
 	if (buf->tiling == I915_TILING_X)
 		ss->ss0.tiled_mode = 2;
@@ -911,7 +903,6 @@ xehp_fill_surface_state(struct intel_bb *ibb,
 	struct xehp_surface_state *ss;
 	uint32_t write_domain, read_domain, offset;
 	uint64_t address;
-	enum intel_buf_mocs mocs = intel_buf_get_mocs(buf);
 
 	if (is_dst) {
 		write_domain = read_domain = I915_GEM_DOMAIN_RENDER;
@@ -931,10 +922,7 @@ xehp_fill_surface_state(struct intel_bb *ibb,
 	ss->ss0.vertical_alignment = 1; /* align 4 */
 	ss->ss0.horizontal_alignment = 1; /* align 4 */
 
-	if (mocs == INTEL_BUF_MOCS_WB)
-		ss->ss1.mocs_index = intel_get_wb_mocs_index(ibb->fd);
-	else
-		ss->ss1.mocs_index = intel_get_uc_mocs_index(ibb->fd);
+	ss->ss1.mocs_index = buf->mocs_index;
 
 	if (buf->tiling == I915_TILING_X)
 		ss->ss0.tiled_mode = 2;

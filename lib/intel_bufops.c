@@ -29,6 +29,7 @@
 #include "igt.h"
 #include "igt_x86.h"
 #include "intel_bufops.h"
+#include "intel_mocs.h"
 #include "intel_pat.h"
 #include "xe/xe_ioctl.h"
 #include "xe/xe_query.h"
@@ -877,8 +878,8 @@ static void __intel_buf_init(struct buf_ops *bops,
 	buf->bpp = bpp;
 	buf->compression = compression;
 	buf->addr.offset = INTEL_BUF_INVALID_ADDRESS;
-	buf->mocs = INTEL_BUF_MOCS_DEFAULT;
 	buf->pat_index = pat_index;
+	buf->mocs_index = intel_get_uc_mocs_index(bops->fd);
 	IGT_INIT_LIST_HEAD(&buf->link);
 
 	tile_width = __get_min_stride(width, bpp, tiling);

@@ -12,12 +12,6 @@ struct buf_ops;
 #define INTEL_BUF_NAME_MAXSIZE 32
 #define INVALID_ADDR(x) ((x) == INTEL_BUF_INVALID_ADDRESS)
 
-enum intel_buf_mocs {
-	INTEL_BUF_MOCS_DEFAULT,
-	INTEL_BUF_MOCS_UC,
-	INTEL_BUF_MOCS_WB,
-};
-
 struct intel_buf {
 	struct buf_ops *bops;
 
@@ -31,7 +25,6 @@ struct intel_buf {
 	uint32_t compression;
 	uint32_t swizzle_mode;
 	uint32_t yuv_semiplanar_bpp;
-	enum intel_buf_mocs mocs;
 	bool format_is_yuv;
 	bool format_is_yuv_semiplanar;
 	struct {
@@ -67,6 +60,9 @@ struct intel_buf {
 
 	/* pat_index to use for mapping this buf. Only used in Xe. */
 	uint8_t pat_index;
+
+	/* mocs_index to use for operations using this intel_buf, like render_copy  */
+	uint8_t mocs_index;
 
 	/* For debugging purposes */
 	char name[INTEL_BUF_NAME_MAXSIZE + 1];
@@ -226,18 +222,5 @@ void intel_buf_draw_pattern(struct buf_ops *bops, struct intel_buf *buf,
 			    int x, int y, int w, int h,
 			    int cx, int cy, int cw, int ch,
 			    bool use_alternate_colors);
-
-static inline enum intel_buf_mocs intel_buf_get_mocs(const struct intel_buf *buf)
-{
-	igt_assert(buf);
-	return buf->mocs;
-}
-
-static inline void intel_buf_set_mocs(struct intel_buf *buf,
-				      enum intel_buf_mocs mocs)
-{
-	igt_assert(buf);
-	buf->mocs = mocs;
-}
 
 #endif
