@@ -10,6 +10,8 @@
  * Functionality: pat_index
  */
 
+#include <fcntl.h>
+
 #include "igt.h"
 #include "igt_vgem.h"
 #include "intel_blt.h"
@@ -722,6 +724,122 @@ static void prime_external_import_coh(void)
 	drm_close_driver(fd2);
 }
 
+/**
+ * SUBTEST: display-vs-wb-transient
+ * Test category: functionality test
+ * Description: Scanout with dirty L3:XD
+ */
+static void display_vs_wb_transient(int fd)
+{
+	uint16_t pat_index_modes[] = {
+		3, /* UC (baseline) */
+		6, /* L3:XD (uncompressed) */
+	};
+	uint32_t devid = intel_get_drm_devid(fd);
+	igt_render_copyfunc_t render_copy = NULL;
+	igt_crc_t ref_crc = {}, crc = {};
+	igt_plane_t *primary;
+	igt_display_t display;
+	igt_output_t *output;
+	igt_pipe_crc_t *pipe_crc;
+	drmModeModeInfoPtr mode;
+	struct intel_bb *ibb;
+	struct buf_ops *bops;
+	struct igt_fb src_fb, dst_fb;
+	struct intel_buf src, dst;
+	enum pipe pipe;
+	int bpp = 32;
+	int i;
+
+	igt_require(intel_get_device_info(devid)->graphics_ver >= 20);
+
+	render_copy = igt_get_render_copyfunc(devid);
+	igt_require(render_copy);
+	igt_require(xe_has_engine_class(fd, DRM_XE_ENGINE_CLASS_RENDER));
+
+	igt_display_require(&display, fd);
+	igt_display_require_output(&display);
+	kmstest_set_vt_graphics_mode();
+
+	bops = buf_ops_create(fd);
+	ibb = intel_bb_create(fd, SZ_4K);
+
+	for_each_pipe_with_valid_output(&display, pipe, output) {
+		igt_display_reset(&display);
+
+		igt_output_set_pipe(output, pipe);
+		if (!intel_pipe_output_combo_valid(&display))
+			continue;
+
+		mode = igt_output_get_mode(output);
+		pipe_crc = igt_pipe_crc_new(fd, pipe, IGT_PIPE_CRC_SOURCE_AUTO);
+		break;
+	}
+
+	primary = igt_output_get_plane_type(output, DRM_PLANE_TYPE_PRIMARY);
+
+	igt_create_fb(fd, mode->hdisplay, mode->vdisplay,
+		      DRM_FORMAT_XRGB8888, DRM_FORMAT_MOD_LINEAR, &src_fb);
+	igt_draw_fill_fb(fd, &src_fb, 0xFF);
+
+	igt_plane_set_fb(primary, &src_fb);
+	igt_assert_eq(igt_display_commit2(&display, COMMIT_ATOMIC), 0);
+	igt_pipe_crc_collect_crc(pipe_crc, &ref_crc);
+
+	intel_buf_init_full(bops, src_fb.gem_handle, &src, src_fb.width,
+			    src_fb.height, bpp, 0, I915_TILING_NONE,
+			    I915_COMPRESSION_NONE, src_fb.size,
+			    src_fb.strides[0], 0, DEFAULT_PAT_INDEX,
+			    DEFAULT_MOCS_INDEX);
+
+	for (i = 0; i < ARRAY_SIZE(pat_index_modes); i++) {
+		int fw_handle;
+
+		igt_create_fb(fd, mode->hdisplay, mode->vdisplay,
+			      DRM_FORMAT_XRGB8888, DRM_FORMAT_MOD_LINEAR, &dst_fb);
+
+		intel_buf_init_full(bops, dst_fb.gem_handle, &dst,
+				    dst_fb.width, dst_fb.height, bpp, 0,
+				    I915_TILING_NONE, I915_COMPRESSION_NONE,
+				    dst_fb.size, dst_fb.strides[0], 0,
+				    pat_index_modes[i],
+				    intel_get_defer_to_pat_mocs_index(fd));
+
+		/* c0 -> c6 might flush caches */
+		fw_handle = igt_debugfs_open(fd, "forcewake_all", O_RDONLY);
+		igt_assert(fw_handle >= 0);
+
+		render_copy(ibb,
+			    &src,
+			    0, 0, dst_fb.width, dst_fb.height,
+			    &dst,
+			    0, 0);
+		intel_bb_sync(ibb);
+
+		/*
+		 * Display engine is not coherent with GPU/CPU caches, however
+		 * with new L3:XD caching mode, the GPU cache entries marked as
+		 * transient should be automatically flushed by the time we do
+		 * the flip.
+		 */
+
+		igt_plane_set_fb(primary, &dst_fb);
+		igt_assert_eq(igt_display_commit2(&display, COMMIT_ATOMIC), 0);
+		igt_pipe_crc_collect_crc(pipe_crc, &crc);
+
+		igt_assert_crc_equal(&crc, &ref_crc);
+
+		intel_bb_reset(ibb, false);
+
+		intel_buf_close(dst.bops, &dst);
+		igt_remove_fb(fd, &dst_fb);
+		close(fw_handle);
+	}
+
+	igt_remove_fb(fd, &src_fb);
+	intel_bb_destroy(ibb);
+}
+
 static uint8_t get_pat_idx_uc(int fd, bool *compressed)
 {
 	if (compressed)
@@ -1053,6 +1171,9 @@ igt_main_args("V", NULL, help_str, opt_handler, NULL)
 		subtest_pat_index_modes_with_regions(fd, xe2_pat_index_modes,
 						     ARRAY_SIZE(xe2_pat_index_modes));
 	}
+
+	igt_subtest("display-vs-wb-transient")
+		display_vs_wb_transient(fd);
 
 	igt_fixture
 		drm_close_driver(fd);
