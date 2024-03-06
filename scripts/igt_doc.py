@@ -98,6 +98,7 @@ class IgtTestList(TestList):
             tests_per_list[driver] = {}
 
         for subname, subtest in subtest_dict.items():
+            subname = subname.lower()
             run_types = subtest.get("Run type", "other").lower()
 
             run_type_dict = self._get_run_type_drivers(run_types)
