@@ -35,6 +35,7 @@
 #include "igt.h"
 #include "igt_sysfs.h"
 #include "igt_psr.h"
+#include "intel_mocs.h"
 #include "intel_pat.h"
 #include <errno.h>
 #include <stdbool.h>
@@ -421,7 +422,8 @@ static struct intel_buf *create_buf_from_fb(data_t *data,
 	handle = gem_open(data->drm_fd, name);
 	buf = intel_buf_create_full(data->bops, handle, width, height,
 				    bpp, 0, tiling, 0, size, stride, region,
-				    intel_get_pat_idx_uc(data->drm_fd));
+				    intel_get_pat_idx_uc(data->drm_fd),
+				    DEFAULT_MOCS_INDEX);
 	intel_buf_set_ownership(buf, true);
 
 	return buf;

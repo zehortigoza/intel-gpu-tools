@@ -158,7 +158,8 @@ void intel_buf_init_full(struct buf_ops *bops,
 			 uint64_t size,
 			 int stride,
 			 uint64_t region,
-			 uint8_t pat_index);
+			 uint8_t pat_index,
+			 uint8_t mocs_index);
 
 struct intel_buf *intel_buf_create(struct buf_ops *bops,
 				   int width, int height,
@@ -191,7 +192,8 @@ struct intel_buf *intel_buf_create_full(struct buf_ops *bops,
 					uint64_t size,
 					int stride,
 					uint64_t region,
-					uint8_t pat_index);
+					uint8_t pat_index,
+					uint8_t mocs_index);
 void intel_buf_destroy(struct intel_buf *buf);
 
 static inline void intel_buf_set_pxp(struct intel_buf *buf, bool new_pxp_state)

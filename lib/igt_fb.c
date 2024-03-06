@@ -2642,7 +2642,8 @@ igt_fb_create_intel_buf(int fd, struct buf_ops *bops,
 				    compression, fb->size,
 				    fb->strides[0],
 				    region,
-				    intel_get_pat_idx_uc(fd));
+				    intel_get_pat_idx_uc(fd),
+				    DEFAULT_MOCS_INDEX);
 	intel_buf_set_name(buf, name);
 
 	/* Make sure we close handle on destroy path */

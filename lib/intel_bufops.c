@@ -857,7 +857,8 @@ static void __intel_buf_init(struct buf_ops *bops,
 			     int width, int height, int bpp, int alignment,
 			     uint32_t req_tiling, uint32_t compression,
 			     uint64_t bo_size, int bo_stride,
-			     uint64_t region, uint8_t pat_index)
+			     uint64_t region, uint8_t pat_index,
+			     uint8_t mocs_index)
 {
 	uint32_t tiling = req_tiling;
 	uint64_t size;
@@ -879,7 +880,9 @@ static void __intel_buf_init(struct buf_ops *bops,
 	buf->compression = compression;
 	buf->addr.offset = INTEL_BUF_INVALID_ADDRESS;
 	buf->pat_index = pat_index;
-	buf->mocs_index = intel_get_uc_mocs_index(bops->fd);
+	if (mocs_index == DEFAULT_MOCS_INDEX)
+		mocs_index = intel_get_uc_mocs_index(bops->fd);
+	buf->mocs_index = mocs_index;
 	IGT_INIT_LIST_HEAD(&buf->link);
 
 	tile_width = __get_min_stride(width, bpp, tiling);
@@ -973,7 +976,8 @@ void intel_buf_init(struct buf_ops *bops,
 	region = bops->driver == INTEL_DRIVER_I915 ? I915_SYSTEM_MEMORY :
 						     system_memory(bops->fd);
 	__intel_buf_init(bops, 0, buf, width, height, bpp, alignment,
-			 tiling, compression, 0, 0, region, DEFAULT_PAT_INDEX);
+			 tiling, compression, 0, 0, region, DEFAULT_PAT_INDEX,
+			 DEFAULT_MOCS_INDEX);
 
 	intel_buf_set_ownership(buf, true);
 }
@@ -990,7 +994,8 @@ void intel_buf_init_in_region(struct buf_ops *bops,
 			      uint64_t region)
 {
 	__intel_buf_init(bops, 0, buf, width, height, bpp, alignment,
-			 tiling, compression, 0, 0, region, DEFAULT_PAT_INDEX);
+			 tiling, compression, 0, 0, region, DEFAULT_PAT_INDEX,
+			 DEFAULT_MOCS_INDEX);
 
 	intel_buf_set_ownership(buf, true);
 }
@@ -1053,7 +1058,8 @@ void intel_buf_init_using_handle_and_size(struct buf_ops *bops,
 	igt_assert(handle);
 	igt_assert(size);
 	__intel_buf_init(bops, handle, buf, width, height, bpp, alignment,
-			 req_tiling, compression, size, 0, -1, DEFAULT_PAT_INDEX);
+			 req_tiling, compression, size, 0, -1, DEFAULT_PAT_INDEX,
+			 DEFAULT_MOCS_INDEX);
 }
 
 /**
@@ -1071,6 +1077,8 @@ void intel_buf_init_using_handle_and_size(struct buf_ops *bops,
  * @stride: bo stride
  * @region: region
  * @pat_index: pat_index to use for the binding (only used on xe)
+ * @pat_index: mocs_index to use for operations using this intel_buf, like render
+ * copy.
  *
  * Function configures BO handle within intel_buf structure passed by the caller
  * (with all its metadata - width, height, ...). Useful if BO was created
@@ -1089,11 +1097,12 @@ void intel_buf_init_full(struct buf_ops *bops,
 			 uint64_t size,
 			 int stride,
 			 uint64_t region,
-			 uint8_t pat_index)
+			 uint8_t pat_index,
+			 uint8_t mocs_index)
 {
 	__intel_buf_init(bops, handle, buf, width, height, bpp, alignment,
 			 req_tiling, compression, size, stride, region,
-			 pat_index);
+			 pat_index, mocs_index);
 }
 
 /**
@@ -1155,7 +1164,7 @@ struct intel_buf *intel_buf_create_using_handle_and_size(struct buf_ops *bops,
 	igt_assert(size);
 	return intel_buf_create_full(bops, handle, width, height, bpp, alignment,
 				     req_tiling, compression, size, 0, -1,
-				     DEFAULT_PAT_INDEX);
+				     DEFAULT_PAT_INDEX, DEFAULT_MOCS_INDEX);
 }
 
 struct intel_buf *intel_buf_create_full(struct buf_ops *bops,
@@ -1167,7 +1176,8 @@ struct intel_buf *intel_buf_create_full(struct buf_ops *bops,
 					uint64_t size,
 					int stride,
 					uint64_t region,
-					uint8_t pat_index)
+					uint8_t pat_index,
+					uint8_t mocs_index)
 {
 	struct intel_buf *buf;
 
@@ -1178,7 +1188,7 @@ struct intel_buf *intel_buf_create_full(struct buf_ops *bops,
 
 	__intel_buf_init(bops, handle, buf, width, height, bpp, alignment,
 			 req_tiling, compression, size, stride, region,
-			 pat_index);
+			 pat_index, mocs_index);
 
 	return buf;
 }

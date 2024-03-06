@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "i915/gem_create.h"
+#include "intel_mocs.h"
 #include "intel_pat.h"
 #include "xe/xe_ioctl.h"
 #include "xe/xe_query.h"
@@ -206,7 +207,8 @@ static struct intel_buf *init_buf(data_t *data,
 	buf = intel_buf_create_full(data->bops, handle, width, height,
 				    bpp, 0, tiling, 0, size, 0,
 				    region,
-				    intel_get_pat_idx_uc(data->drm_fd));
+				    intel_get_pat_idx_uc(data->drm_fd),
+				    DEFAULT_MOCS_INDEX);
 
 	intel_buf_set_name(buf, buf_name);
 	intel_buf_set_ownership(buf, true);
