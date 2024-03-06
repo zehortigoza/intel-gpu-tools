@@ -2471,12 +2471,9 @@ static void dump_mipi_sequence(struct context *context,
 				fprintf(stderr, "Invalid sequence %u\n", seq_id);
 				return;
 			}
-		}
 
-		/* Dump the sequences. Corresponds to sequence execution in kernel. */
-		for (int j = 0; j < ARRAY_SIZE(sequence_ptrs); j++)
-			if (sequence_ptrs[j])
-				dump_sequence(sequence_ptrs[j], sequence->version);
+			dump_sequence(sequence_ptrs[seq_id], sequence->version);
+		}
 	}
 }
 
