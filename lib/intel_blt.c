@@ -522,6 +522,31 @@ static int __block_tiling(enum blt_tiling_type tiling)
 }
 
 /**
+ * blt_tile_to_fb_tile:
+ * @tiling: tiling id
+ *
+ * Returns:
+ * id of tiling introduced in i915 like I915_TILING_* used for example
+ * in render-copy code.
+ */
+int blt_tile_to_fb_tile(enum blt_tiling_type tiling)
+{
+	switch (tiling) {
+	case T_LINEAR: return I915_TILING_NONE;
+	case T_XMAJOR: return I915_TILING_X;
+	case T_YMAJOR: return I915_TILING_Y;
+	case T_TILE4:  return I915_TILING_4;
+	case T_TILE64: return I915_TILING_64;
+	case T_YFMAJOR: return I915_TILING_Yf;
+	default:
+		break;
+	}
+
+	igt_warn("invalid tiling passed: %d\n", tiling);
+	return 0;
+}
+
+/**
  * blt_get_min_stride
  * @width: width in pixels
  * @bpp: bits per pixel
