@@ -1378,9 +1378,21 @@ static void __intel_buf_raw_write_to_png(struct buf_ops *bops,
 	munmap(linear, buf->bo_size);
 }
 
-void intel_buf_raw_write_to_png(struct intel_buf *buf, const char *filename)
+__attribute__((format(printf, 2, 3)))
+void intel_buf_raw_write_to_png(struct intel_buf *buf, const char *namefmt, ...)
 {
+	char *filename;
+	int ret;
+	va_list ap;
+
+	va_start(ap, namefmt);
+	ret = vasprintf(&filename, namefmt, ap);
+	igt_assert(ret >= 0);
+	va_end(ap);
+
 	__intel_buf_raw_write_to_png(buf->bops, buf, filename);
+
+	free(filename);
 }
 
 static void *alloc_aligned(uint64_t size)
