@@ -187,18 +187,28 @@ gen9_bind_buf(struct intel_bb *ibb, const struct intel_buf *buf, int is_dst,
 		ss->ss5.mip_tail_start_lod = 1; /* needed with trmode */
 	}
 
-	if (buf->tiling == I915_TILING_X)
+	switch (buf->tiling) {
+	case I915_TILING_NONE:
+		ss->ss0.tiled_mode = 0;
+		break;
+	case I915_TILING_X:
 		ss->ss0.tiled_mode = 2;
-	else if (buf->tiling != I915_TILING_NONE)
+		break;
+	case I915_TILING_64:
+		ss->ss0.tiled_mode = 1;
+		ss->ss5.mip_tail_start_lod = 0xf;
+		break;
+	default:
 		ss->ss0.tiled_mode = 3;
+		if (buf->tiling == I915_TILING_Yf)
+			ss->ss5.trmode = 1;
+		else if (buf->tiling == I915_TILING_Ys)
+			ss->ss5.trmode = 2;
+		break;
+	}
 
 	if (intel_buf_pxp(buf))
 		ss->ss1.pxp = 1;
-
-	if (buf->tiling == I915_TILING_Yf)
-		ss->ss5.trmode = 1;
-	else if (buf->tiling == I915_TILING_Ys)
-		ss->ss5.trmode = 2;
 
 	address = intel_bb_offset_reloc(ibb, buf->handle,
 					read_domain, write_domain,
