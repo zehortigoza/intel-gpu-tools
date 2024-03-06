@@ -12,5 +12,6 @@
 
 uint8_t intel_get_wb_mocs_index(int fd);
 uint8_t intel_get_uc_mocs_index(int fd);
+uint8_t intel_get_defer_to_pat_mocs_index(int fd);
 
 #endif /* _INTEL_MOCS_H */

@@ -9,6 +9,7 @@
 struct drm_intel_mocs_index {
 	uint8_t uc_index;
 	uint8_t wb_index;
+	uint8_t defer_to_pat_index;
 };
 
 static void get_mocs_index(int fd, struct drm_intel_mocs_index *mocs)
@@ -25,6 +26,7 @@ static void get_mocs_index(int fd, struct drm_intel_mocs_index *mocs)
 	if (intel_graphics_ver(devid) >= IP_VER(20, 0)) {
 		mocs->uc_index = 3;
 		mocs->wb_index = 4;
+		mocs->defer_to_pat_index = 0;
 	} else if (IS_METEORLAKE(devid)) {
 		mocs->uc_index = 5;
 		mocs->wb_index = 10;
@@ -59,4 +61,16 @@ uint8_t intel_get_uc_mocs_index(int fd)
 	get_mocs_index(fd, &mocs);
 
 	return mocs.uc_index;
+}
+
+uint8_t intel_get_defer_to_pat_mocs_index(int fd)
+{
+	struct drm_intel_mocs_index mocs;
+	uint16_t dev_id = intel_get_drm_devid(fd);
+
+	igt_assert(AT_LEAST_GEN(dev_id, 20));
+
+	get_mocs_index(fd, &mocs);
+
+	return mocs.defer_to_pat_index;
 }
