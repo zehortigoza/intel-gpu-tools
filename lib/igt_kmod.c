@@ -1443,6 +1443,7 @@ void igt_kunit(const char *module_name, const char *suite, const char *opts)
 int igt_ktest_init(struct igt_ktest *tst,
 		   const char *module_name)
 {
+	struct kmod_list *l = NULL;
 	int err;
 
 	memset(tst, 0, sizeof(*tst));
@@ -1453,9 +1454,24 @@ int igt_ktest_init(struct igt_ktest *tst,
 
 	tst->kmsg = -1;
 
-	err = kmod_module_new_from_name(kmod_ctx(), module_name, &tst->kmod);
-	if (err)
+	err = kmod_module_new_from_lookup(kmod_ctx(), module_name, &l);
+
+	/*
+	 * Check for -ENOSYS to workaround bug in kmod_module_new_from_lookup()
+	 * from libkmod <= 29
+	 */
+	if (err < 0 && err != -ENOSYS)
 		return err;
+
+	/*
+	 * Lookup may not resolve to a module when used to just list subtests,
+	 * where module is not available. Fallback to _new_from_name().
+	 */
+	if (!l)
+		return kmod_module_new_from_name(kmod_ctx(), module_name, &tst->kmod);
+
+	tst->kmod = kmod_module_get_module(l);
+	kmod_module_unref_list(l);
 
 	return 0;
 }
