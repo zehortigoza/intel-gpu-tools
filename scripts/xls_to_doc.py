@@ -70,47 +70,6 @@ class FillTests(TestList):
 
         dic[field] = value
 
-    def read_testlist(self, filename):
-        if re.match("^xe", filename):
-            return
-        name = re.sub(r"(.*/)?(.*)\.testlist$", r"\2", filename)
-        if name == "fast-feedback":
-            name = "BAT"
-        elif name == "eu-debugger-fast-feedback":
-            name = "BAT eudebugger"
-        elif name == "fast-feedback-extras-for-simulator":
-            name = "BAT simulator"
-        elif name == "fast-feedback_suspend":
-            name = "suspend"
-
-        name = re.sub(r"eu-debugger", "eudebugger ", name)
-        name = re.sub(r"\bbat\b", "BAT", name)
-        name = re.sub(r"[._\-]", " ", name)
-
-        with open(filename, 'r', newline = '', encoding = 'utf8') as fp:
-            for line in fp:
-                match = re.match(r"^\s*(igt@[^\s\@]+)(\S*)\#?", line)
-                if match:
-                    testname = match.group(1)
-                    subtest = match.group(2)
-                    if testname not in self.tests:
-                        self.tests[testname] = {}
-                        self.tests[testname]["properties"] ={}
-                        self.tests[testname]["subtests"] = {}
-                    if subtest not in self.tests[testname]["subtests"]:
-                        self.tests[testname]["subtests"][subtest] = {}
-                    self.add_field(self.tests[testname]["subtests"][subtest], "Run type", name)
-
-    def get_testlists(self, path):
-        # Create a dictionary with filenames
-
-        regex = re.compile(r".*\.testlist")
-
-        for root,d_names,f_names in os.walk(path):          # pylint: disable=W0612
-            for filename in f_names:
-                if regex.match(filename):
-                    self.read_testlist(os.path.join(root, filename))
-
     def process_spreadsheet_sheet(self, sheet):
 
         column_list=[]
