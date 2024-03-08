@@ -40,8 +40,8 @@ class FillTests(TestList):
 
             subtest_array = self.expand_subtest(fname, name, test, True, True, True)
             for subtest_dict in subtest_array:
-                name = subtest_dict["Summary"]
-                del subtest_dict["Summary"]
+                name = subtest_dict["_summary_"]
+                del subtest_dict["_summary_"]
 
                 match = self.testname_regex.match(name)
                 if not match:
@@ -263,6 +263,7 @@ class FillTests(TestList):
 
                 if subtest_nr not in self.doc[test_nr]["subtest"]:
                     print(f"Error: missing subtest {subtest_nr} at {self.doc[test_nr]['subtest']}")
+                    continue
 
                 doc_content = self.doc[test_nr]["subtest"][subtest_nr]
 
