@@ -24,6 +24,7 @@ class FillTests(TestList):
     def __init__(self, config_path):
         self.tests = {}
         self.spreadsheet_data = {}
+        self.ignore_fields = []
 
         TestList.__init__(self, config_path)
 
@@ -61,6 +62,12 @@ class FillTests(TestList):
                     self.tests[testname]["File"] = fname
 
                 self.tests[testname]["subtests"][subtest] = subtest_dict
+
+        for field, item in self.props.items():
+            if "sublevel" in item["_properties_"]:
+                    update = self.props[field]["_properties_"].get("update-from-file")
+                    if update:
+                        self.ignore_fields.append(field)
 
     def add_field(self, dic, field, value):
         if field in dic and dic[field] != '':
@@ -198,7 +205,7 @@ class FillTests(TestList):
             for key, value in row.items():
                 self.tests[testname]["subtests"][subtest][key] = value
 
-    def update_test_file(self, testname):
+    def update_test_file(self, testname, args):
         try:
 #            print(f"Updating {testname}")
 
@@ -230,6 +237,11 @@ class FillTests(TestList):
                 for field, value in sorted(subtest_content.items()):
                     if field in [ 'line', 'subtest_nr' ]:
                         continue
+
+                    if args.ignore_lists:
+                        if field in  self.ignore_fields:
+                            continue
+
                     doc_value = doc_content.get(field)
                     if doc_value:
                         if self.key_has_wildcard.search(doc_value):
@@ -270,19 +282,20 @@ class FillTests(TestList):
         except EnvironmentError:
             print(f'Failed to write to {sourcename}')
 
-    def update_test_files(self):
+    def update_test_files(self, args):
 
         """ Populate documentation """
 
         for testname in self.tests:
-            self.update_test_file(testname)
+            self.update_test_file(testname, args)
 
 ######
 # Main
 ######
 
 parser = argparse.ArgumentParser(description=__doc__,
-                                    formatter_class = argparse.RawDescriptionHelpFormatter,
+                                    formatter_class = argparse.ArgumentDefaultsHelpFormatter,
+                                    argument_default = argparse.SUPPRESS,
                                     epilog = EPILOG)
 parser.add_argument("--config", required = True,
                     help="JSON file describing the test plan template")
@@ -290,10 +303,14 @@ parser.add_argument("--xls", required = True,
                     help="Input XLS file.")
 parser.add_argument("--sheets", nargs = "*",
                     help="Input only some specific sheets from the XLS file.")
+parser.add_argument('--ignore-lists',action='store_false', default=True, help='Ignore fields that are updated via test lists')
 
 parse_args = parser.parse_args()
 
 fill_test = FillTests(parse_args.config)
+
+if "sheets" not in parse_args:
+    parse_args.sheets = None
 
 fill_test.parse_spreadsheet(parse_args.xls, parse_args.sheets)
 
@@ -304,4 +321,4 @@ with open("doc.json", "w", encoding='utf8') as write_file:
     json.dump(fill_test.doc, write_file, indent = 4)
 
 
-fill_test.update_test_files()
+fill_test.update_test_files(parse_args)
