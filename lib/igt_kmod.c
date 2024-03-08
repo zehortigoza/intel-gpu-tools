@@ -323,6 +323,59 @@ static int igt_kmod_unload_r(struct kmod_module *kmod, unsigned int flags)
 	return err;
 }
 
+static void igt_drop_devcoredump(const char *driver)
+{
+	char sysfspath[PATH_MAX];
+	DIR *dir;
+	char *devcoredump;
+	FILE *data;
+	struct dirent *entry;
+	int len, ret;
+
+	len = snprintf(sysfspath, sizeof(sysfspath),
+		       "/sys/bus/pci/drivers/%s", driver);
+
+	igt_assert(len < sizeof(sysfspath));
+
+	 /* Not a PCI module */
+	if (access(sysfspath, F_OK))
+		return;
+
+	devcoredump = sysfspath + len;
+
+	dir = opendir(sysfspath);
+	igt_assert(dir);
+
+	while ((entry = readdir(dir)) != NULL) {
+		if (entry->d_type != DT_LNK ||
+		    strcmp(entry->d_name, ".") == 0 ||
+		    strcmp(entry->d_name, "..") == 0)
+			continue;
+
+		ret = snprintf(devcoredump, sizeof(sysfspath) - len,
+			       "/%s/devcoredump", entry->d_name);
+
+		igt_assert(ret < sizeof(sysfspath) - len);
+
+		if (access(sysfspath, F_OK) != -1) {
+			igt_info("Removing devcoredump before module unload: %s\n",
+				 sysfspath);
+
+			strcat(sysfspath, "/data");
+			data = fopen(sysfspath, "w");
+			igt_assert(data);
+
+			/*
+			 * Write anything to devcoredump/data to
+			 * force its deletion
+			 */
+			fprintf(data, "1\n");
+			fclose(data);
+		}
+	}
+	closedir(dir);
+}
+
 /**
  * igt_kmod_unload:
  * @mod_name: Module name.
@@ -340,6 +393,8 @@ igt_kmod_unload(const char *mod_name, unsigned int flags)
 	struct kmod_ctx *ctx = kmod_ctx();
 	struct kmod_module *kmod;
 	int err;
+
+	igt_drop_devcoredump(mod_name);
 
 	err = kmod_module_new_from_name(ctx, mod_name, &kmod);
 	if (err < 0) {
