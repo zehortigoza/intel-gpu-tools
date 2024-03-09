@@ -2759,8 +2759,8 @@ static bool dump_section(struct context *context, int section_id)
 		}
 	}
 
-	printf("BDB block %d (%d bytes) - %s%s:\n",
-	       block->id, block->size,
+	printf("BDB block %d (%d bytes, min %zu bytes) - %s%s:\n",
+	       block->id, block->size, block_min_size(context, block->id),
 	       dumper ? dumper->name : "Unknown",
 	       dumper && !dumper->dump ? ", no decoding available" : "");
 
