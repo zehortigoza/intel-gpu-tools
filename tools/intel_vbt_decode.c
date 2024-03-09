@@ -655,6 +655,8 @@ static void dump_backlight_info(struct context *context,
 		return;
 	}
 
+	printf("\tEntry size: %u\n", backlight->entry_size);
+
 	for (i = 0; i < ARRAY_SIZE(backlight->data); i++) {
 		if (!dump_panel(context, i))
 			continue;
