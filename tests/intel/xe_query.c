@@ -741,6 +741,64 @@ static void test_engine_cycles_invalid(int fd)
 	query_engine_cycles(fd, &ts);
 }
 
+static void
+test_query_uc_fw_version(int fd, uint32_t uc_type)
+{
+	struct drm_xe_query_uc_fw_version *uc_fw_version;
+	struct drm_xe_device_query query = {
+		.extensions = 0,
+		.query = DRM_XE_DEVICE_QUERY_UC_FW_VERSION,
+		.size = 0,
+		.data = 0,
+	};
+	int ret;
+
+	igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_DEVICE_QUERY, &query), 0);
+
+	uc_fw_version = malloc(query.size);
+	igt_assert(uc_fw_version);
+
+	memset(uc_fw_version, 0, sizeof(*uc_fw_version));
+	uc_fw_version->uc_type = uc_type;
+	query.data = to_user_pointer(uc_fw_version);
+
+	ret = igt_ioctl(fd, DRM_IOCTL_XE_DEVICE_QUERY, &query);
+
+	switch (uc_type) {
+	case XE_QUERY_UC_TYPE_GUC_SUBMISSION:
+		igt_assert_eq(ret, 0);
+		igt_info("XE_QUERY_UC_TYPE_GUC_SUBMISSION %u.%u.%u.%u\n",
+			 uc_fw_version->branch_ver,
+			 uc_fw_version->major_ver,
+			 uc_fw_version->minor_ver,
+			 uc_fw_version->patch_ver);
+		igt_assert(uc_fw_version->major_ver > 0 ||
+			   uc_fw_version->minor_ver > 0);
+		break;
+	case XE_QUERY_UC_TYPE_HUC:
+		if (ret == 0) {
+			igt_info("XE_QUERY_UC_TYPE_HUC %u.%u.%u.%u\n",
+				 uc_fw_version->branch_ver,
+				 uc_fw_version->major_ver,
+				 uc_fw_version->minor_ver,
+				 uc_fw_version->patch_ver);
+			igt_assert(uc_fw_version->major_ver > 0);
+		} else {
+			igt_assert_eq(errno, ENODEV);
+			/*
+			 * No HuC was found, either because it is not running
+			 * yet or there is no media IP.
+			 */
+			igt_info("XE_QUERY_UC_TYPE_HUC No HuC is running\n");
+		}
+		break;
+	default:
+		igt_assert(false);
+	}
+
+	free(uc_fw_version);
+}
+
 /**
  * SUBTEST: query-uc-fw-version-guc
  * Test category: functionality test
@@ -754,32 +812,7 @@ static void test_engine_cycles_invalid(int fd)
 static void
 test_query_uc_fw_version_guc(int fd)
 {
-	struct drm_xe_query_uc_fw_version *uc_fw_version;
-	struct drm_xe_device_query query = {
-		.extensions = 0,
-		.query = DRM_XE_DEVICE_QUERY_UC_FW_VERSION,
-		.size = 0,
-		.data = 0,
-	};
-
-	igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_DEVICE_QUERY, &query), 0);
-
-	uc_fw_version = malloc(query.size);
-	igt_assert(uc_fw_version);
-
-	memset(uc_fw_version, 0, sizeof(*uc_fw_version));
-	uc_fw_version->uc_type = XE_QUERY_UC_TYPE_GUC_SUBMISSION;
-	query.data = to_user_pointer(uc_fw_version);
-
-	igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_DEVICE_QUERY, &query), 0);
-	igt_info("XE_QUERY_UC_TYPE_GUC_SUBMISSION %u.%u.%u.%u\n",
-		 uc_fw_version->branch_ver,
-		 uc_fw_version->major_ver,
-		 uc_fw_version->minor_ver,
-		 uc_fw_version->patch_ver);
-	igt_assert(uc_fw_version->major_ver > 0 || uc_fw_version->minor_ver > 0);
-
-	free(uc_fw_version);
+	test_query_uc_fw_version(fd, XE_QUERY_UC_TYPE_GUC_SUBMISSION);
 }
 
 /**
@@ -831,6 +864,22 @@ test_query_uc_fw_version_invalid_mbz(int fd)
 	free(uc_fw_version);
 }
 
+/**
+ * SUBTEST: query-uc-fw-version-huc
+ * Test category: functionality test
+ * Description: Display the HuC firmware version
+ *
+ * SUBTEST: multigpu-query-uc-fw-version-huc
+ * Test category: functionality test
+ * Sub-category: MultiGPU
+ * Description: Display HuC firmware version for all Xe devices.
+ */
+static void
+test_query_uc_fw_version_huc(int fd)
+{
+	test_query_uc_fw_version(fd, XE_QUERY_UC_TYPE_HUC);
+}
+
 igt_main
 {
 	const struct {
@@ -845,6 +894,7 @@ igt_main
 		{ "query-topology", test_query_gt_topology },
 		{ "query-cs-cycles", test_query_engine_cycles },
 		{ "query-uc-fw-version-guc", test_query_uc_fw_version_guc },
+		{ "query-uc-fw-version-huc", test_query_uc_fw_version_huc },
 		{ "query-invalid-cs-cycles", test_engine_cycles_invalid },
 		{ "query-invalid-query", test_query_invalid_query },
 		{ "query-invalid-size", test_query_invalid_size },
