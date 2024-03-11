@@ -12,11 +12,11 @@
  * SUBTEST: priority-set-property
  * Description: tests basic priority property by setting invalid values and positive values.
  * SUBTEST: %s-property-min-max
- * Description: Test to check if %s arg[1] schedule parameter checks for min max values.
+ * Description: Test to check if %arg[1] schedule parameter checks for min max values.
  *
  * arg[1]:
  *
- * @timeslice_duration_us:	timeslice duration us
+ * @timeslice_duration_us:	timeslice duration
  */
 
 #include <dirent.h>
