@@ -10,7 +10,15 @@
 
 """Write the contents of the testplan documentation to a XLS file."""
 
-EPILOG="""
+import argparse
+
+from openpyxl.styles import Font
+from openpyxl.utils import get_column_letter
+from openpyxl import Workbook
+
+from test_list import TestList
+
+EPILOG = """
 Examples:
 
 1. Create a XLS file with a single worksheet with Xe driver documentation:
@@ -22,71 +30,83 @@ Examples:
    scripts/doc_to_xls.py --config tests/kms_*json tests/*/*.json --xls igt_test_documentation.xls
 """
 
-import argparse
 
-from openpyxl import Workbook
-from openpyxl.utils import get_column_letter
-from openpyxl.styles import Font
+def tests_to_xls(tests, fname):
+    """
+    Convert an array of IGT documentation tests into a XLS file
+    """
 
-from test_list import TestList
+    wb = Workbook()
+    ws = None
 
-parser = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class = argparse.RawDescriptionHelpFormatter,
-                                 epilog = EPILOG)
-parser.add_argument("--config", required = True,  nargs='+',
-                    help="JSON file describing the test plan template")
-parser.add_argument("--include-plan", action="store_true",
-                    help="Include test plans, if any.")
-parser.add_argument("--xls", required = True,
-                    help="Output XLS file.")
+    expand_fields = {
+        "GPU excluded platform": "blocklist "
+    }
 
-parse_args = parser.parse_args()
+    for row in range(len(tests)):
+        test = tests[row]
+        sheet_name = test.title
 
-tests = []
-for config_file in parse_args.config:
-    # Implemented tests
-    tests.append(TestList(config_file, parse_args.include_plan))
+        if not ws:
+            ws = wb.active
+            ws.title = sheet_name
+        else:
+            ws = wb.create_sheet(sheet_name)
 
-wb = Workbook()
-ws = None
+        sheet = test.get_spreadsheet(expand_fields)
 
-expand_fields = {
-    "GPU excluded platform": "blocklist "
-}
-
-for row in range(len(tests)):
-    test = tests[row]
-    sheet_name = test.title
-
-    if not ws:
-        ws = wb.active
-        ws.title = sheet_name
-    else:
-        ws = wb.create_sheet(sheet_name)
-
-    sheet = test.get_spreadsheet(expand_fields)
-
-    max_length = []
-    for col in range(len(sheet[row])):
-        max_length.append(0)
-
-    for row in range(len(sheet)):
+        max_length = []
         for col in range(len(sheet[row])):
-            c = ws.cell(row = row + 1, column = col + 1, value = sheet[row][col])
-            if row == 0:
-                c.font = Font(bold=True)
+            max_length.append(0)
 
-            if len(sheet[row][col]) > max_length[col]:
-                max_length[col] = len(sheet[row][col])
+        for row in range(len(sheet)):
+            for col in range(len(sheet[row])):
+                c = ws.cell(row=row + 1, column=col + 1, value=sheet[row][col])
+                if row == 0:
+                    c.font = Font(bold=True)
 
-    # Estimate column length
-    for col in range(len(sheet[0])):
-        column = get_column_letter(col + 1)
+                if len(sheet[row][col]) > max_length[col]:
+                    max_length[col] = len(sheet[row][col])
 
-        adjusted_width = (max_length[col] + 2) * 1.2
-        ws.column_dimensions[column].width = adjusted_width
+        # Estimate column length
+        for col in range(len(sheet[0])):
+            column = get_column_letter(col + 1)
 
-    # Turn on auto-filter
-    ws.auto_filter.ref = ws.dimensions
+            adjusted_width = (max_length[col] + 2) * 1.2
+            ws.column_dimensions[column].width = adjusted_width
 
-wb.save(parse_args.xls)
+        # Turn on auto-filter
+        ws.auto_filter.ref = ws.dimensions
+
+    wb.save(fname)
+
+######
+# Main
+######
+
+
+def main():
+    """Main program"""
+
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     epilog=EPILOG)
+    parser.add_argument("--config", required=True,  nargs='+',
+                        help="JSON file describing the test plan template")
+    parser.add_argument("--include-plan", action="store_true",
+                        help="Include test plans, if any.")
+    parser.add_argument("--xls", required=True,
+                        help="Output XLS file.")
+
+    parse_args = parser.parse_args()
+
+    tests = []
+    for config_file in parse_args.config:
+        # Implemented tests
+        tests.append(TestList(config_file, parse_args.include_plan))
+
+    tests_to_xls(tests, fname=parse_args.xls)
+
+
+if __name__ == '__main__':
+    main()
