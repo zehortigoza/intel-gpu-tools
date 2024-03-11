@@ -63,6 +63,7 @@ static struct param {
 	bool print_surface_info;
 	int width;
 	int height;
+	int incdim_width;
 } param = {
 	.compression_format = 0,
 	.tiling = -1,
@@ -71,6 +72,7 @@ static struct param {
 	.print_surface_info = false,
 	.width = 512,
 	.height = 512,
+	.incdim_width = 1,
 };
 
 struct test_config {
@@ -636,8 +638,8 @@ static void block_copy_test(int xe,
 						    param.width, param.height,
 						    tiling, copy_function);
 			} else {
-				for (int w = param.width;
-				     w < param.width + config->width_steps;
+				for (int w = param.incdim_width;
+				     w < param.incdim_width + config->width_steps;
 				     w += config->width_increment) {
 					snprintf(testname, sizeof(testname),
 						 "%s-%s-compfmt%d-%s%s-%dx%d",
@@ -735,8 +737,6 @@ igt_main_args("bf:pst:W:H:", NULL, help_str, opt_handler, NULL)
 	igt_subtest_with_dynamic("block-copy-uncompressed-inc-dimension") {
 		struct test_config config = { .width_increment = 15,
 					      .width_steps = 512 };
-		param.width = 1;
-		param.height = 1;
 
 		block_copy_test(xe, &config, set, BLOCK_COPY);
 	}
@@ -753,8 +753,6 @@ igt_main_args("bf:pst:W:H:", NULL, help_str, opt_handler, NULL)
 		struct test_config config = { .compression = true,
 					      .width_increment = 15,
 					      .width_steps = 512 };
-		param.width = 1;
-		param.height = 1;
 
 		block_copy_test(xe, &config, set, BLOCK_COPY);
 	}
