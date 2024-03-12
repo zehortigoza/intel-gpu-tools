@@ -198,7 +198,7 @@ static void init_device_fds(struct device_fds *dev)
 	 * a device file descriptor open for exit handler use.
 	 */
 	dev->fds.dev = __drm_open_driver(DRIVER_ANY);
-	igt_assert_fd(dev->fds.dev);
+	igt_require_fd(dev->fds.dev);
 	if (is_i915_device(dev->fds.dev))
 		igt_require_gem(dev->fds.dev);
 
