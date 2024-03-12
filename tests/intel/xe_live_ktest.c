@@ -31,16 +31,11 @@
  * Functionality: mocs
  */
 
-struct kunit_tests {
-	const char *kunit;
-	const char *name;
-};
-
-static const struct kunit_tests live_tests[] = {
-	{ "xe_bo_test",		"xe_bo" },
-	{ "xe_dma_buf_test",	"xe_dma_buf" },
-	{ "xe_migrate_test",	"xe_migrate" },
-	{ "xe_mocs_test",	"xe_mocs" },
+static const char *live_tests[] = {
+	"xe_bo",
+	"xe_dma_buf",
+	"xe_migrate",
+	"xe_mocs",
 };
 
 igt_main
@@ -48,5 +43,5 @@ igt_main
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(live_tests); i++)
-		igt_kunit(live_tests[i].kunit, live_tests[i].name, NULL);
+		igt_kunit("xe_live_test", live_tests[i], NULL);
 }
