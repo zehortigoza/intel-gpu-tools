@@ -277,6 +277,7 @@ test_query_mem_regions(int fd)
 static void
 test_query_gt_list(int fd)
 {
+	uint16_t dev_id = intel_get_drm_devid(fd);
 	struct drm_xe_query_gt_list *gt_list;
 	struct drm_xe_device_query query = {
 		.extensions = 0,
@@ -296,13 +297,40 @@ test_query_gt_list(int fd)
 	igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_DEVICE_QUERY, &query), 0);
 
 	for (i = 0; i < gt_list->num_gt; i++) {
+		int verx100 = 100 * gt_list->gt_list[i].ip_ver_major +
+			gt_list->gt_list[i].ip_ver_minor;
+
 		igt_info("type: %d\n", gt_list->gt_list[i].type);
 		igt_info("gt_id: %d\n", gt_list->gt_list[i].gt_id);
+		igt_info("IP version: %d.%02d, stepping %d\n",
+			 gt_list->gt_list[i].ip_ver_major,
+			 gt_list->gt_list[i].ip_ver_minor,
+			 gt_list->gt_list[i].ip_ver_rev);
 		igt_info("reference_clock: %u\n", gt_list->gt_list[i].reference_clock);
 		igt_info("near_mem_regions: 0x%016llx\n",
 		       gt_list->gt_list[i].near_mem_regions);
 		igt_info("far_mem_regions: 0x%016llx\n",
 		       gt_list->gt_list[i].far_mem_regions);
+
+		/* Sanity check IP version. */
+		if (verx100) {
+			/*
+			 * First GMD_ID platforms had graphics 12.70 and media
+			 * 13.00 so we should never see non-zero values lower
+			 * than those.
+			 */
+			if (gt_list->gt_list[i].type == DRM_XE_QUERY_GT_TYPE_MEDIA)
+				igt_assert_lte(1300, verx100);
+			else
+				igt_assert_lte(1270, verx100);
+
+			/*
+			 * Aside from MTL/ARL, all version numbers should be
+			 * 20.00 or higher.
+			 */
+			if (!IS_METEORLAKE(dev_id))
+				igt_assert_lte(20, gt_list->gt_list[i].ip_ver_major);
+		}
 	}
 }
 
