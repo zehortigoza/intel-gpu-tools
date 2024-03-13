@@ -258,7 +258,7 @@ out:
 	return err < 0 ? err : 0;
 }
 
-static int igt_kmod_unload_r(struct kmod_module *kmod, unsigned int flags)
+static int igt_kmod_unload_r(struct kmod_module *kmod)
 {
 #define MAX_TRIES	20
 #define SLEEP_DURATION	500000
@@ -272,7 +272,7 @@ static int igt_kmod_unload_r(struct kmod_module *kmod, unsigned int flags)
 	holders = kmod_module_get_holders(kmod);
 	kmod_list_foreach(pos, holders) {
 		struct kmod_module *it = kmod_module_get_module(pos);
-		err = igt_kmod_unload_r(it, flags);
+		err = igt_kmod_unload_r(it);
 		kmod_module_unref(it);
 		if (err < 0)
 			break;
@@ -292,7 +292,7 @@ static int igt_kmod_unload_r(struct kmod_module *kmod, unsigned int flags)
 	}
 
 	for (tries = 0; tries < MAX_TRIES; tries++) {
-		err = kmod_module_remove_module(kmod, flags);
+		err = kmod_module_remove_module(kmod, 0);
 
 		/* Only loop in the following cases */
 		if (err != -EBUSY && err != -EAGAIN)
@@ -379,16 +379,13 @@ static void igt_drop_devcoredump(const char *driver)
 /**
  * igt_kmod_unload:
  * @mod_name: Module name.
- * @flags: flags are passed directly to libkmod and can be:
- * KMOD_REMOVE_FORCE or KMOD_REMOVE_NOWAIT.
  *
  * Returns: 0 in case of success or -errno otherwise.
  *
  * Removes the module @mod_name.
- *
  */
 int
-igt_kmod_unload(const char *mod_name, unsigned int flags)
+igt_kmod_unload(const char *mod_name)
 {
 	struct kmod_ctx *ctx = kmod_ctx();
 	struct kmod_module *kmod;
@@ -403,7 +400,7 @@ igt_kmod_unload(const char *mod_name, unsigned int flags)
 		goto out;
 	}
 
-	err = igt_kmod_unload_r(kmod, flags);
+	err = igt_kmod_unload_r(kmod);
 	if (err < 0) {
 		igt_debug("Could not remove module %s (%s)\n", mod_name,
 			  strerror(-err));
@@ -580,7 +577,7 @@ static int igt_always_unload_audio_driver(char **who)
 			if (ret)
 				igt_warn("Failed to notify pipewire_pulse\n");
 			kick_snd_hda_intel();
-			ret = igt_kmod_unload(*m, 0);
+			ret = igt_kmod_unload(*m);
 			pipewire_pulse_stop_reserve();
 			if (ret) {
 				igt_warn("Could not unload audio driver %s\n", *m);
@@ -638,7 +635,7 @@ int __igt_intel_driver_unload(char **who, const char *driver)
 		if (!igt_kmod_is_loaded(*m))
 			continue;
 
-		ret = igt_kmod_unload(*m, 0);
+		ret = igt_kmod_unload(*m);
 		if (ret) {
 			if (who)
 				*who = strdup_realloc(*who, *m);
@@ -648,7 +645,7 @@ int __igt_intel_driver_unload(char **who, const char *driver)
 	}
 
 	if (igt_kmod_is_loaded(driver)) {
-		ret = igt_kmod_unload(driver, 0);
+		ret = igt_kmod_unload(driver);
 		if (ret) {
 			if (who)
 				*who = strdup_realloc(*who, driver);
@@ -684,10 +681,10 @@ igt_intel_driver_unload(const char *driver)
 	free(who);
 
 	if (igt_kmod_is_loaded("intel-gtt"))
-		igt_kmod_unload("intel-gtt", 0);
+		igt_kmod_unload("intel-gtt");
 
-	igt_kmod_unload("drm_kms_helper", 0);
-	igt_kmod_unload("drm", 0);
+	igt_kmod_unload("drm_kms_helper");
+	igt_kmod_unload("drm");
 
 	if (igt_kmod_is_loaded("driver")) {
 		igt_warn("%s.ko still loaded!\n", driver);
@@ -737,7 +734,7 @@ igt_amdgpu_driver_unload(void)
 	bind_fbcon(false);
 
 	if (igt_kmod_is_loaded("amdgpu")) {
-		if (igt_kmod_unload("amdgpu", 0)) {
+		if (igt_kmod_unload("amdgpu")) {
 			igt_warn("Could not unload amdgpu\n");
 			igt_kmod_list_loaded();
 			igt_lsof("/dev/dri");
@@ -745,8 +742,8 @@ igt_amdgpu_driver_unload(void)
 		}
 	}
 
-	igt_kmod_unload("drm_kms_helper", 0);
-	igt_kmod_unload("drm", 0);
+	igt_kmod_unload("drm_kms_helper");
+	igt_kmod_unload("drm");
 
 	if (igt_kmod_is_loaded("amdgpu")) {
 		igt_warn("amdgpu.ko still loaded!\n");
@@ -1255,7 +1252,7 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 		igt_require_f(r->code == IGT_EXIT_SKIP,
 			      "Unexpected non-SKIP result while listing test cases\n");
 
-	igt_skip_on(kmod_module_remove_module(tst->kmod, KMOD_REMOVE_FORCE));
+	igt_skip_on(kmod_module_remove_module(tst->kmod, 0));
 
 	return true;
 }
@@ -1538,7 +1535,7 @@ int igt_ktest_begin(struct igt_ktest *tst)
 	if (strcmp(tst->module_name, "i915") == 0)
 		igt_i915_driver_unload();
 
-	err = kmod_module_remove_module(tst->kmod, KMOD_REMOVE_FORCE);
+	err = kmod_module_remove_module(tst->kmod, 0);
 	igt_require(err == 0 || err == -ENOENT);
 
 	tst->kmsg = open("/dev/kmsg", O_RDONLY | O_NONBLOCK);
@@ -1586,7 +1583,7 @@ int igt_kselftest_execute(struct igt_ktest *tst,
 
 void igt_ktest_end(struct igt_ktest *tst)
 {
-	kmod_module_remove_module(tst->kmod, KMOD_REMOVE_FORCE);
+	kmod_module_remove_module(tst->kmod, 0);
 	close(tst->kmsg);
 }
 

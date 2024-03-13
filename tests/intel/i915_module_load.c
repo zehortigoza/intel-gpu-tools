@@ -205,7 +205,7 @@ static void unload_or_die(const char *module_name)
 
 	/* should be unloaded, so expect a no-op */
 	for (loop = 0;; loop++) {
-		err = igt_kmod_unload(module_name, 0);
+		err = igt_kmod_unload(module_name);
 		if (err == -ENOENT) /* -ENOENT == unloaded already */
 			err = 0;
 		if (!err || loop >= 10)
@@ -248,7 +248,7 @@ inject_fault(const char *module_name, const char *opt, int fault)
 	igt_debug("Loaded '%s %s', result=%d\n", module_name, buf, fault);
 
 	if (strcmp(module_name, "i915")) /* XXX better ideas! */
-		igt_kmod_unload(module_name, 0);
+		igt_kmod_unload(module_name);
 	else
 		igt_i915_driver_unload();
 

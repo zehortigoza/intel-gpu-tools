@@ -412,7 +412,7 @@ static void test_debugfs_read(int fd)
 
 static int module_unload(void)
 {
-	return igt_kmod_unload("vgem", 0);
+	return igt_kmod_unload("vgem");
 }
 
 static void test_unload(void)

@@ -396,7 +396,7 @@ static void test_content_protection_on_output(igt_output_t *output,
 	}
 
 	if (data.cp_tests & CP_MEI_RELOAD) {
-		igt_assert_f(!igt_kmod_unload("mei_hdcp", 0),
+		igt_assert_f(!igt_kmod_unload("mei_hdcp"),
 			     "mei_hdcp unload failed");
 
 		/* Expected to fail */

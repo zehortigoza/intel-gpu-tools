@@ -34,7 +34,7 @@ void igt_kmod_list_loaded(void);
 bool igt_kmod_has_param(const char *mod_name, const char *param);
 
 int igt_kmod_load(const char *mod_name, const char *opts);
-int igt_kmod_unload(const char *mod_name, unsigned int flags);
+int igt_kmod_unload(const char *mod_name);
 
 int igt_audio_driver_unload(char **whom);
 
