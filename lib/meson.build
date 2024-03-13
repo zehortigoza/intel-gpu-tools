@@ -59,6 +59,7 @@ lib_sources = [
 	'intel_bufops.c',
 	'intel_chipset.c',
 	'intel_cmds_info.c',
+	'intel_common.c',
 	'intel_compute.c',
 	'intel_compute_square_kernels.c',
 	'intel_ctx.c',
