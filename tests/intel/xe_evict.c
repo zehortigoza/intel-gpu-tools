@@ -754,6 +754,14 @@ igt_main
 		vram_size = xe_visible_vram_size(fd, 0);
 		igt_assert(vram_size);
 
+		/* Test requires SRAM to about as big as VRAM. For example, small-cm creates
+		 * (448 / 2) BOs with a size (1 / 128) of the total VRAM size. For
+		 * simplicity ensure the SRAM size >= VRAM before running this test.
+		 */
+		igt_skip_on_f(igt_get_avail_ram_mb() < (vram_size >> 20),
+			      "System memory %lu MiB is less than local memory %lu MiB\n",
+			      igt_get_avail_ram_mb(), vram_size >> 20);
+
 		xe_for_each_engine(fd, hwe)
 			if (hwe->engine_class != DRM_XE_ENGINE_CLASS_COPY)
 				break;
