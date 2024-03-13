@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=C0301,R0912,R0913,R0914,R0915
+# pylint: disable=C0301,R0912,R0913,R0914,R0915,R1702
 # SPDX-License-Identifier: (GPL-2.0 OR MIT)
 
 ## Copyright (C) 2023    Intel Corporation                 ##
@@ -28,11 +28,13 @@ class FillTests(TestList):
     Fill documentation source code test comments from a spreadsheet.
     """
 
-    def __init__(self, config_path):
+    def __init__(self, config_path, verbose):
         self.tests = {}
         self.spreadsheet_data = {}
         self.ignore_fields = []
+        self.verbose = verbose
 
+        # Read current documentation
         TestList.__init__(self, config_path)
 
         self.testname_regex = re.compile(r'^\s*(igt@[^\n\@]+)\@?(\S*)\s*')
@@ -236,7 +238,7 @@ class FillTests(TestList):
                 subtest = ''
 
             if testname not in self.tests:
-                print(f"Ignoring {test}, as test is not documented.")
+                print(f"Warning: {testname} file is not present at JSON config file.")
                 continue
 
             if subtest not in self.tests[testname]["subtests"]:
@@ -272,7 +274,10 @@ class FillTests(TestList):
                 subtest_nr = subtest_content['subtest_nr']
 
                 if subtest_nr not in self.doc[test_nr]["subtest"]:
-                    print(f"Error: missing subtest {subtest_nr} at {self.doc[test_nr]['subtest']}")
+                    if self.verbose:
+                        print(f"Error: missing subtest {subtest_nr} at {self.doc[test_nr]['subtest']}")
+                    else:
+                        print(f"Warning: test {testname}, subtest {subtest} is not documented.")
                     continue
 
                 doc_content = self.doc[test_nr]["subtest"][subtest_nr]
@@ -292,11 +297,13 @@ class FillTests(TestList):
                             print(f"Warning: {subtest} field {field} has wildcards.")
                             continue
                         if doc_value == value:
-                            print(f"{testname}@{subtest} field {field}: Value unchanged. Ignoring it")
+                            if self.verbose > 1:
+                                print(f"{testname}@{subtest} field {field}: Value unchanged. Ignoring it")
                             continue
 
-                    print(f"Update {testname}@{subtest} field {field} on line {line}:")
-                    print(f"  Change from {doc_value} to {value}")
+                    if self.verbose > 0:
+                        print(f"Update {testname}@{subtest} field {field} on line {line}:")
+                        print(f"  Change from {doc_value} to {value}")
 
                     # Just in case, handle continuation lines
                     value = re.sub(r"\n", "\n *   ", value)
@@ -320,7 +327,9 @@ class FillTests(TestList):
 
         # Write changes
         try:
-            print(f"Writing to {sourcename}")
+            if self.verbose:
+                print(f"Writing to {sourcename}")
+
             with open(sourcename, 'w', encoding='utf8') as out_fp:
                 out_fp.write("".join(content))
         except EnvironmentError:
@@ -330,6 +339,9 @@ class FillTests(TestList):
         """
         Populate all test files with the documentation from self.tests.
         """
+
+        if self.verbose == 0:
+            print("Update source files")
 
         for testname in self.tests:
             self.update_test_file(testname, args)
@@ -353,11 +365,11 @@ def main():
                         help='Ignore fields that are updated via test lists')
     parser.add_argument("--store-json", action="store_true",
                         help="Generate JSON files with documentation. Useful for debugging purposes.")
-
+    parser.add_argument('-v', '--verbose', action='count', default=0)
 
     parse_args = parser.parse_args()
 
-    fill_test = FillTests(parse_args.config)
+    fill_test = FillTests(parse_args.config, parse_args.verbose)
 
     fill_test.parse_spreadsheet(parse_args.xls, parse_args.sheets)
 
