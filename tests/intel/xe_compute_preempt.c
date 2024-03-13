@@ -27,11 +27,16 @@
  * Description:
  *      Exercise multiple walker mid thread preemption scenario
  * Functionality: compute openCL kernel
+ * SUBTEST: compute-threadgroup-preempt
+ * GPU requirement: LNL
+ * Description:
+ *      Exercise compute walker threadgroup preemption scenario
+ * Functionality: compute openCL kernel
  */
 static void
-test_compute_preempt(int fd, struct drm_xe_engine_class_instance *hwe)
+test_compute_preempt(int fd, struct drm_xe_engine_class_instance *hwe, bool threadgroup_preemption)
 {
-	igt_require_f(run_intel_compute_kernel_preempt(fd, hwe), "GPU not supported\n");
+	igt_require_f(run_intel_compute_kernel_preempt(fd, hwe, threadgroup_preemption), "GPU not supported\n");
 }
 
 igt_main
@@ -49,7 +54,7 @@ igt_main
 				continue;
 
 			igt_dynamic_f("engine-%s", xe_engine_class_string(hwe->engine_class))
-				test_compute_preempt(xe, hwe);
+				test_compute_preempt(xe, hwe, false);
 		}
 	}
 
@@ -61,9 +66,20 @@ igt_main
 
 			igt_dynamic_f("engine-%s", xe_engine_class_string(hwe->engine_class)) {
 				igt_fork(child, 100)
-					test_compute_preempt(xe, hwe);
+					test_compute_preempt(xe, hwe, false);
 				igt_waitchildren();
 			}
+		}
+	}
+
+	igt_subtest_with_dynamic("compute-threadgroup-preempt") {
+		xe_for_each_engine(xe, hwe) {
+			if (hwe->engine_class != DRM_XE_ENGINE_CLASS_COMPUTE &&
+			    hwe->engine_class != DRM_XE_ENGINE_CLASS_RENDER)
+				continue;
+
+			igt_dynamic_f("engine-%s", xe_engine_class_string(hwe->engine_class))
+			test_compute_preempt(xe, hwe, true);
 		}
 	}
 

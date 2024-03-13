@@ -43,6 +43,13 @@
 #define XE2_ADDR_STATE_CONTEXT_DATA_BASE	0x900000UL
 #define OFFSET_STATE_SIP			0xFFFF0000
 
+/*
+ * TGP  - ThreadGroup Preemption
+ * WMTP - Walker Mid Thread Preemption
+ */
+#define TGP_long_kernel_loop_count		10
+#define WMTP_long_kernel_loop_count		1000000
+
 struct bo_dict_entry {
 	uint64_t addr;
 	uint32_t size;
@@ -1162,7 +1169,8 @@ static void xe2lpg_compute_exec_compute(uint32_t *addr_bo_buffer_batch,
 					uint64_t addr_state_contect_data_base,
 					uint64_t offset_indirect_data_start,
 					uint64_t kernel_start_pointer,
-					uint64_t sip_start_pointer)
+					uint64_t sip_start_pointer,
+					bool	 threadgroup_preemption)
 {
 	int b = 0;
 
@@ -1236,7 +1244,12 @@ static void xe2lpg_compute_exec_compute(uint32_t *addr_bo_buffer_batch,
 	addr_bo_buffer_batch[b++] = 0xbe040000;
 	addr_bo_buffer_batch[b++] = 0xffffffff;
 	addr_bo_buffer_batch[b++] = 0x000003ff;
-	addr_bo_buffer_batch[b++] = 0x00000002;
+
+	if (threadgroup_preemption)
+		addr_bo_buffer_batch[b++] = 0x00200000; // Global workgroup size
+	else
+		addr_bo_buffer_batch[b++] = 0x00000002;
+
 	addr_bo_buffer_batch[b++] = 0x00000001;
 	addr_bo_buffer_batch[b++] = 0x00000001;
 	addr_bo_buffer_batch[b++] = 0x00000000;
@@ -1251,7 +1264,12 @@ static void xe2lpg_compute_exec_compute(uint32_t *addr_bo_buffer_batch,
 
 	addr_bo_buffer_batch[b++] = kernel_start_pointer;
 	addr_bo_buffer_batch[b++] = 0x00000000;
-	addr_bo_buffer_batch[b++] = 0x00100000; // Enable Thread Preemption BitField:20
+
+	if (threadgroup_preemption)
+		addr_bo_buffer_batch[b++] = 0x00000000;
+	else
+		addr_bo_buffer_batch[b++] = 0x00100000; // Enable Mid Thread Preemption BitField:20
+
 	addr_bo_buffer_batch[b++] = 0x00000000;
 	addr_bo_buffer_batch[b++] = 0x00000000;
 	addr_bo_buffer_batch[b++] = 0x0c000020;
@@ -1369,7 +1387,7 @@ static void xe2lpg_compute_exec(int fd, const unsigned char *kernel,
 				  ADDR_INSTRUCTION_STATE_BASE,
 				  XE2_ADDR_STATE_CONTEXT_DATA_BASE,
 				  OFFSET_INDIRECT_DATA_START,
-				  OFFSET_KERNEL, 0);
+				  OFFSET_KERNEL, 0, false);
 
 	bo_execenv_exec(&execenv, ADDR_BATCH);
 
@@ -1527,7 +1545,8 @@ static void xe2lpg_compute_preempt_exec(int fd, const unsigned char *long_kernel
 					unsigned int short_kernel_size,
 					const unsigned char *sip_kernel,
 					unsigned int sip_kernel_size,
-					struct drm_xe_engine_class_instance *eci)
+					struct drm_xe_engine_class_instance *eci,
+					bool threadgroup_preemption)
 {
 #define XE2_BO_PREEMPT_DICT_ENTRIES 11
 	struct bo_dict_entry bo_dict_long[XE2_BO_PREEMPT_DICT_ENTRIES] = {
@@ -1564,6 +1583,7 @@ static void xe2lpg_compute_preempt_exec(int fd, const unsigned char *long_kernel
 	struct bo_dict_entry bo_dict_short[XE2_BO_PREEMPT_DICT_ENTRIES];
 	struct bo_execenv execenv_short, execenv_long;
 	float *dinput;
+	unsigned int long_kernel_loop_count;
 	struct drm_xe_sync sync_long = {
 		.type = DRM_XE_SYNC_TYPE_SYNCOBJ,
 		.flags = DRM_XE_SYNC_FLAG_SIGNAL,
@@ -1574,7 +1594,11 @@ static void xe2lpg_compute_preempt_exec(int fd, const unsigned char *long_kernel
 		.flags = DRM_XE_SYNC_FLAG_SIGNAL,
 		.handle = syncobj_create(fd, 0),
 	};
-	unsigned int long_kernel_loop_count = 1000000;
+
+	if (threadgroup_preemption)
+		long_kernel_loop_count = TGP_long_kernel_loop_count;
+	else
+		long_kernel_loop_count = WMTP_long_kernel_loop_count;
 
 	for (int i = 0; i < XE2_BO_PREEMPT_DICT_ENTRIES; ++i)
 		bo_dict_short[i] = bo_dict_long[i];
@@ -1622,12 +1646,12 @@ static void xe2lpg_compute_preempt_exec(int fd, const unsigned char *long_kernel
 	xe2lpg_compute_exec_compute(bo_dict_long[8].data, ADDR_GENERAL_STATE_BASE,
 				    ADDR_SURFACE_STATE_BASE, ADDR_DYNAMIC_STATE_BASE,
 				    ADDR_INSTRUCTION_STATE_BASE, XE2_ADDR_STATE_CONTEXT_DATA_BASE,
-				    OFFSET_INDIRECT_DATA_START, OFFSET_KERNEL, OFFSET_STATE_SIP);
+				    OFFSET_INDIRECT_DATA_START, OFFSET_KERNEL, OFFSET_STATE_SIP, threadgroup_preemption);
 
 	xe2lpg_compute_exec_compute(bo_dict_short[8].data, ADDR_GENERAL_STATE_BASE,
 				    ADDR_SURFACE_STATE_BASE, ADDR_DYNAMIC_STATE_BASE,
 				    ADDR_INSTRUCTION_STATE_BASE, XE2_ADDR_STATE_CONTEXT_DATA_BASE,
-				    OFFSET_INDIRECT_DATA_START, OFFSET_KERNEL, OFFSET_STATE_SIP);
+				    OFFSET_INDIRECT_DATA_START, OFFSET_KERNEL, OFFSET_STATE_SIP, false);
 
 	xe_exec_sync(fd, execenv_long.exec_queue, ADDR_BATCH, &sync_long, 1);
 
@@ -1655,9 +1679,21 @@ static void xe2lpg_compute_preempt_exec(int fd, const unsigned char *long_kernel
 
 		f1 = ((float *) bo_dict_long[5].data)[i];
 
-		if (f1 != long_kernel_loop_count)
-			igt_debug("[%4d] f1: %f != %u\n", i, f1, long_kernel_loop_count);
-		igt_assert(f1 == long_kernel_loop_count);
+		if (threadgroup_preemption) {
+			if (f1 < long_kernel_loop_count)
+				igt_debug("[%4d] f1: %f != %u\n", i, f1, long_kernel_loop_count);
+
+			/* Final incremented value should be greater than loop count
+			 * as the kernel is ran by multiple threads and output variable
+			 * is shared among all threads. This enusres multiple threadgroup
+			 * workload execution
+			 */
+			igt_assert(f1 > long_kernel_loop_count);
+		} else {
+			if (f1 != long_kernel_loop_count)
+				igt_debug("[%4d] f1: %f != %u\n", i, f1, long_kernel_loop_count);
+			igt_assert(f1 == long_kernel_loop_count);
+		}
 	}
 
 	bo_execenv_unbind(&execenv_short, bo_dict_short, XE2_BO_PREEMPT_DICT_ENTRIES);
@@ -1675,7 +1711,8 @@ static const struct {
 			     unsigned int short_kernel_size,
 			     const unsigned char *sip_kernel,
 			     unsigned int sip_kernel_size,
-			     struct drm_xe_engine_class_instance *eci);
+			     struct drm_xe_engine_class_instance *eci,
+			     bool threadgroup_preemption);
 	uint32_t compat;
 } intel_compute_preempt_batches[] = {
 	{
@@ -1686,7 +1723,8 @@ static const struct {
 };
 
 static bool __run_intel_compute_kernel_preempt(int fd,
-		struct drm_xe_engine_class_instance *eci)
+		struct drm_xe_engine_class_instance *eci,
+		bool threadgroup_preemption)
 {
 	unsigned int ip_ver = intel_graphics_ver(intel_get_drm_devid(fd));
 	unsigned int batch;
@@ -1724,7 +1762,8 @@ static bool __run_intel_compute_kernel_preempt(int fd,
 							  kernels->kernel, kernels->size,
 							  kernels->sip_kernel,
 							  kernels->sip_kernel_size,
-							  eci);
+							  eci,
+							  threadgroup_preemption);
 
 	return true;
 }
@@ -1733,11 +1772,14 @@ static bool __run_intel_compute_kernel_preempt(int fd,
  * exercise preemption scenario.
  *
  * @fd: file descriptor of the opened DRM Xe device
+ * @eci: engine class instance
+ * @thread_preemption: enable/disable threadgroup preemption test
  *
  * Returns true on success, false otherwise.
  */
 bool run_intel_compute_kernel_preempt(int fd,
-		struct drm_xe_engine_class_instance *eci)
+		struct drm_xe_engine_class_instance *eci,
+		bool threadgroup_preemption)
 {
-	return __run_intel_compute_kernel_preempt(fd, eci);
+	return __run_intel_compute_kernel_preempt(fd, eci, threadgroup_preemption);
 }
