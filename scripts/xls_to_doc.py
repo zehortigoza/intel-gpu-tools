@@ -293,32 +293,35 @@ class FillTests(TestList):
 # Main
 ######
 
-parser = argparse.ArgumentParser(description=__doc__,
-                                    formatter_class = argparse.ArgumentDefaultsHelpFormatter,
-                                    argument_default = argparse.SUPPRESS,
-                                    epilog = EPILOG)
-parser.add_argument("--config", required = True,
-                    help="JSON file describing the test plan template")
-parser.add_argument("--xls", required = True,
-                    help="Input XLS file.")
-parser.add_argument("--sheets", nargs = "*",
-                    help="Input only some specific sheets from the XLS file.")
-parser.add_argument('--ignore-lists',action='store_false', default=True, help='Ignore fields that are updated via test lists')
+def main():
+    parser = argparse.ArgumentParser(description=__doc__,
+                                        formatter_class = argparse.ArgumentDefaultsHelpFormatter,
+                                        argument_default = argparse.SUPPRESS,
+                                        epilog = EPILOG)
+    parser.add_argument("--config", required = True,
+                        help="JSON file describing the test plan template")
+    parser.add_argument("--xls", required = True,
+                        help="Input XLS file.")
+    parser.add_argument("--sheets", nargs = "*",
+                        help="Input only some specific sheets from the XLS file.")
+    parser.add_argument('--ignore-lists',action='store_false', default=True, help='Ignore fields that are updated via test lists')
 
-parse_args = parser.parse_args()
+    parse_args = parser.parse_args()
 
-fill_test = FillTests(parse_args.config)
+    fill_test = FillTests(parse_args.config)
 
-if "sheets" not in parse_args:
-    parse_args.sheets = None
+    if "sheets" not in parse_args:
+        parse_args.sheets = None
 
-fill_test.parse_spreadsheet(parse_args.xls, parse_args.sheets)
+    fill_test.parse_spreadsheet(parse_args.xls, parse_args.sheets)
 
-## DEBUG: remove it later on
-with open("fill_test.json", "w", encoding='utf8') as write_file:
-    json.dump(fill_test.tests, write_file, indent = 4)
-with open("doc.json", "w", encoding='utf8') as write_file:
-    json.dump(fill_test.doc, write_file, indent = 4)
+    ## DEBUG: remove it later on
+    with open("fill_test.json", "w", encoding='utf8') as write_file:
+        json.dump(fill_test.tests, write_file, indent = 4)
+    with open("doc.json", "w", encoding='utf8') as write_file:
+        json.dump(fill_test.doc, write_file, indent = 4)
 
+    fill_test.update_test_files(parse_args)
 
-fill_test.update_test_files(parse_args)
+if __name__ == '__main__':
+    main()
