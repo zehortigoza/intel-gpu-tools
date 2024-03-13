@@ -294,7 +294,7 @@ class FillTests(TestList):
                     doc_value = doc_content.get(field)
                     if doc_value:
                         if self.key_has_wildcard.search(doc_value):
-                            print(f"Warning: {subtest} field {field} has wildcards.")
+                            print(f"Warning: {subtest} field {field} has wildcards. Skipping it.")
                             continue
                         if doc_value == value:
                             if self.verbose > 1:
