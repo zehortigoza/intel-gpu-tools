@@ -12,6 +12,7 @@
 #include "igt.h"
 #include "igt_syncobj.h"
 #include "intel_blt.h"
+#include "intel_common.h"
 #include "intel_mocs.h"
 #include "intel_pat.h"
 #include "xe/xe_ioctl.h"
@@ -618,8 +619,7 @@ static void block_copy_test(int xe,
 			region2 = igt_collection_get_value(regions, 1);
 
 			/* if not XE2, then Compressed surface must be in device memory */
-			if (config->compression && !(AT_LEAST_GEN((intel_get_drm_devid(xe)), 20)) &&
-									!XE_IS_VRAM_MEMORY_REGION(xe, region2))
+			if (config->compression && !is_intel_region_compressible(xe, region2))
 				continue;
 
 			regtxt = xe_memregion_dynamic_subtest_name(xe, regions);
