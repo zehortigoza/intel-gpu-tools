@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=C0301,R0912,R0913,R0914,R0915,C0116
+# pylint: disable=C0301,R0912,R0913,R0914,R0915
 # SPDX-License-Identifier: (GPL-2.0 OR MIT)
 
 ## Copyright (C) 2023    Intel Corporation                 ##
@@ -77,6 +77,10 @@ class FillTests(TestList):
                     self.ignore_fields.append(field)
 
     def add_field(self, dic, field, value):
+        """
+        Add a value to a field, alphabetically sorting it.
+        """
+
         if field in dic and dic[field] != '':
             fields = sorted(dic[field].split(", "))
             fields.append(value)
@@ -85,6 +89,13 @@ class FillTests(TestList):
         dic[field] = value
 
     def process_spreadsheet_sheet(self, sheet):
+
+        """
+        Convert a single sheet into a dictionary.
+
+        Please notice that an empty row means to ignore the rest of the
+        sheet.
+        """
 
         column_list = []
         for cell in sheet[1]:
@@ -117,6 +128,10 @@ class FillTests(TestList):
                 i += 1
 
     def read_spreadsheet_file(self, fname, sheets):
+        """
+        Read a XLS file, processing all sheets and returing a dict with
+        all lines from all sheets altogether.
+        """
 
         # Iterate the loop to read the cell values
         wb = load_workbook(filename=fname)
@@ -131,6 +146,9 @@ class FillTests(TestList):
         return self.spreadsheet_data
 
     def change_value(self, content, subtest, line, field, value):
+        """
+        Change the contents of a source file to update its documentation.
+        """
 
         current_field = None
         i = line
@@ -185,6 +203,21 @@ class FillTests(TestList):
         content.insert(i, f' * {field}: {value}\n')
 
     def parse_spreadsheet(self, fname, sheets=None):
+        """
+        Convert a spreadsheet file into a recursive dictionary.
+
+        It assumes that the first column at the parsed sheets will contain
+        an IGT test name in the format:
+
+            igt@<testname>@<subtest>
+
+        And the other columns will have the field name at the first line.
+
+        On success, it will return a dictionary with this format:
+
+           self.tests[testname]["subtests"][subtest][field] = value
+        """
+
         if not os.path.isfile(fname):
             print(f'Warning: {fname} not found. Skipping spreadsheet parser')
             return
@@ -213,6 +246,12 @@ class FillTests(TestList):
                 self.tests[testname]["subtests"][subtest][key] = value
 
     def update_test_file(self, testname, args):
+        """
+        Update a C source file using the contents of self.tests as
+        the source of data to be filled at the igt_doc documentation
+        comments.
+        """
+
         try:
             sourcename = self.tests[testname]["File"]
             with open(sourcename, 'r', encoding='utf8') as in_fp:
@@ -288,7 +327,9 @@ class FillTests(TestList):
             print(f'Failed to write to {sourcename}')
 
     def update_test_files(self, args):
-        """ Populate documentation """
+        """
+        Populate all test files with the documentation from self.tests.
+        """
 
         for testname in self.tests:
             self.update_test_file(testname, args)
@@ -299,6 +340,8 @@ class FillTests(TestList):
 
 
 def main():
+    """Main program"""
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True,
                         help="JSON file describing the test plan template")
