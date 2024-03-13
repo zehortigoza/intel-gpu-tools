@@ -17,6 +17,7 @@ from openpyxl import load_workbook
 
 from test_list import TestList
 
+
 #
 # FillTests class definition
 #
@@ -127,7 +128,7 @@ class FillTests(TestList):
 
             self.process_spreadsheet_sheet(sheet)
 
-        return dict(sorted(self.spreadsheet_data.items()))
+        return self.spreadsheet_data
 
     def change_value(self, content, subtest, line, field, value):
 
@@ -190,7 +191,7 @@ class FillTests(TestList):
 
         data = self.read_spreadsheet_file(fname, sheets)
 
-        for test, row in data.items():
+        for test, row in sorted(data.items()):
             match = self.testname_regex.match(test)
             if not match:
                 sys.exit(f"Error: can't parse {test}")
