@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-# pylint: disable=C0301,C0302,C0103,C0116,C0114,R0912,R0914,R0915,R1702,C0115,R0913
+# pylint: disable=C0301,R0912,R0913,R0914,R0915,C0116
 # SPDX-License-Identifier: (GPL-2.0 OR MIT)
 
 ## Copyright (C) 2023    Intel Corporation                 ##
 ## Author: Mauro Carvalho Chehab <mchehab@kernel.org>      ##
+
+"""Import contents of a XLS file into testplan documentation."""
 
 import argparse
 import json
@@ -15,12 +17,18 @@ from openpyxl import load_workbook
 
 from test_list import TestList
 
-EPILOG=""
+EPILOG = ""
 
 #
 # FillTests class definition
 #
+
+
 class FillTests(TestList):
+    """
+    Fill documentation source code test comments from a spreadsheet.
+    """
+
     def __init__(self, config_path):
         self.tests = {}
         self.spreadsheet_data = {}
@@ -65,9 +73,9 @@ class FillTests(TestList):
 
         for field, item in self.props.items():
             if "sublevel" in item["_properties_"]:
-                    update = self.props[field]["_properties_"].get("update-from-file")
-                    if update:
-                        self.ignore_fields.append(field)
+                update = item["_properties_"].get("update-from-file")
+                if update:
+                    self.ignore_fields.append(field)
 
     def add_field(self, dic, field, value):
         if field in dic and dic[field] != '':
@@ -79,7 +87,7 @@ class FillTests(TestList):
 
     def process_spreadsheet_sheet(self, sheet):
 
-        column_list=[]
+        column_list = []
         for cell in sheet[1]:
             column_list.append(cell.value)
 
@@ -112,7 +120,7 @@ class FillTests(TestList):
     def read_spreadsheet_file(self, fname, sheets):
 
         # Iterate the loop to read the cell values
-        wb = load_workbook(filename = fname)
+        wb = load_workbook(filename=fname)
 
         # Handle first "normal" sheets
         for sheet in wb:
@@ -127,7 +135,7 @@ class FillTests(TestList):
 
         current_field = None
         i = line
-        while 1:
+        while True:
             i += 1
             if i >= len(content):
                 break
@@ -177,7 +185,7 @@ class FillTests(TestList):
 
         content.insert(i, f' * {field}: {value}\n')
 
-    def parse_spreadsheet(self, fname, sheets = None):
+    def parse_spreadsheet(self, fname, sheets=None):
         if not os.path.isfile(fname):
             print(f'Warning: {fname} not found. Skipping spreadsheet parser')
             return
@@ -207,8 +215,6 @@ class FillTests(TestList):
 
     def update_test_file(self, testname, args):
         try:
-#            print(f"Updating {testname}")
-
             sourcename = self.tests[testname]["File"]
             with open(sourcename, 'r', encoding='utf8') as in_fp:
                 content = in_fp.read().splitlines(True)
@@ -235,11 +241,11 @@ class FillTests(TestList):
 
                 # Handling wildcards is not easy. Let's just skip those
                 for field, value in sorted(subtest_content.items()):
-                    if field in [ 'line', 'subtest_nr' ]:
+                    if field in ['line', 'subtest_nr']:
                         continue
 
                     if args.ignore_lists:
-                        if field in  self.ignore_fields:
+                        if field in self.ignore_fields:
                             continue
 
                     doc_value = doc_content.get(field)
@@ -283,7 +289,6 @@ class FillTests(TestList):
             print(f'Failed to write to {sourcename}')
 
     def update_test_files(self, args):
-
         """ Populate documentation """
 
         for testname in self.tests:
@@ -293,18 +298,20 @@ class FillTests(TestList):
 # Main
 ######
 
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
-                                        formatter_class = argparse.ArgumentDefaultsHelpFormatter,
-                                        argument_default = argparse.SUPPRESS,
-                                        epilog = EPILOG)
-    parser.add_argument("--config", required = True,
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                     argument_default=argparse.SUPPRESS,
+                                     epilog=EPILOG)
+    parser.add_argument("--config", required=True,
                         help="JSON file describing the test plan template")
-    parser.add_argument("--xls", required = True,
+    parser.add_argument("--xls", required=True,
                         help="Input XLS file.")
-    parser.add_argument("--sheets", nargs = "*",
+    parser.add_argument("--sheets", nargs="*",
                         help="Input only some specific sheets from the XLS file.")
-    parser.add_argument('--ignore-lists',action='store_false', default=True, help='Ignore fields that are updated via test lists')
+    parser.add_argument('--ignore-lists', action='store_false', default=True,
+                        help='Ignore fields that are updated via test lists')
 
     parse_args = parser.parse_args()
 
@@ -315,13 +322,14 @@ def main():
 
     fill_test.parse_spreadsheet(parse_args.xls, parse_args.sheets)
 
-    ## DEBUG: remove it later on
+    # DEBUG: remove it later on
     with open("fill_test.json", "w", encoding='utf8') as write_file:
-        json.dump(fill_test.tests, write_file, indent = 4)
+        json.dump(fill_test.tests, write_file, indent=4)
     with open("doc.json", "w", encoding='utf8') as write_file:
-        json.dump(fill_test.doc, write_file, indent = 4)
+        json.dump(fill_test.doc, write_file, indent=4)
 
     fill_test.update_test_files(parse_args)
+
 
 if __name__ == '__main__':
     main()
