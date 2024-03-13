@@ -17,8 +17,6 @@ from openpyxl import load_workbook
 
 from test_list import TestList
 
-EPILOG = ""
-
 #
 # FillTests class definition
 #
@@ -300,10 +298,7 @@ class FillTests(TestList):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                     argument_default=argparse.SUPPRESS,
-                                     epilog=EPILOG)
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True,
                         help="JSON file describing the test plan template")
     parser.add_argument("--xls", required=True,
@@ -312,21 +307,24 @@ def main():
                         help="Input only some specific sheets from the XLS file.")
     parser.add_argument('--ignore-lists', action='store_false', default=True,
                         help='Ignore fields that are updated via test lists')
+    parser.add_argument("--store-json", action="store_true",
+                        help="Generate JSON files with documentation. Useful for debugging purposes.")
+
 
     parse_args = parser.parse_args()
 
     fill_test = FillTests(parse_args.config)
 
-    if "sheets" not in parse_args:
-        parse_args.sheets = None
-
     fill_test.parse_spreadsheet(parse_args.xls, parse_args.sheets)
 
-    # DEBUG: remove it later on
-    with open("fill_test.json", "w", encoding='utf8') as write_file:
-        json.dump(fill_test.tests, write_file, indent=4)
-    with open("doc.json", "w", encoding='utf8') as write_file:
-        json.dump(fill_test.doc, write_file, indent=4)
+    if "store_json" in parse_args:
+        print("Generating fill_test.json debug file")
+        with open("fill_test.json", "w", encoding='utf8') as write_file:
+            json.dump(fill_test.tests, write_file, indent=4)
+
+        print("Generating doc.json debug file")
+        with open("doc.json", "w", encoding='utf8') as write_file:
+            json.dump(fill_test.doc, write_file, indent=4)
 
     fill_test.update_test_files(parse_args)
 
