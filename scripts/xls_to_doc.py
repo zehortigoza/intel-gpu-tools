@@ -205,6 +205,9 @@ class FillTests(TestList):
                     content[i] = ""
 
         if value != "":
+            if i > 2 and re.match(r'\s*\*\s*$', content[i - 1]):
+                i -= 1
+
             content.insert(i, f' * {field}: {value}\n')
 
     def parse_spreadsheet(self, fname, sheets=None):
