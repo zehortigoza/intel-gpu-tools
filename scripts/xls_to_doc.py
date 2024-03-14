@@ -8,6 +8,7 @@
 """Import contents of a XLS file into testplan documentation."""
 
 import argparse
+import copy
 import json
 import os
 import re
@@ -38,7 +39,7 @@ class FillTests(TestList):
         # Read current documentation
         TestList.__init__(self, config_path)
 
-        self.orig_doc = self.doc.copy()
+        self.orig_doc = copy.deepcopy(self.doc)
 
         self.testname_regex = re.compile(r'^\s*(igt@[^\n\@]+)\@?(\S*)\s*')
         self.key_has_wildcard = re.compile(r'\%?arg\[(\d+)\]')
@@ -152,10 +153,25 @@ class FillTests(TestList):
 
         return self.spreadsheet_data
 
-    def change_value(self, content, subtest, line, field, value):
+    def change_value(self, content, test, subtest, line, field, value):
         """
         Change the contents of a source file to update its documentation.
         """
+
+        if test:
+            line = 0
+            while True:
+                line += 1
+                if line >= len(content):
+                    break
+
+                file_line = content[line]
+
+                match = re.match(r'^\s*\* ?TEST:\s*(.*)', file_line)
+                if match:
+                    break
+
+            line += 1
 
         current_field = None
         found_line = None
@@ -173,11 +189,14 @@ class FillTests(TestList):
             file_line = re.sub(r'^\s*\* ?', '', file_line)
 
             match = re.match(r'^SUBTESTS?:\s*(.*)', file_line)
-            if match and match.group(1) != subtest:
-                break
+            if match:
+                if subtest and match.group(1) != subtest:
+                    break
+                if test:
+                    break
 
             match = re.match(r'^TEST:\s*(.*)', file_line)
-            if match and match.group(1) != subtest:
+            if match:
                 break
 
             match = re.match(r'arg\[(\d+)\]:\s*(.*)', file_line)
@@ -208,11 +227,22 @@ class FillTests(TestList):
 
                     content[i] = ""
 
-        if value != "":
-            if found_line:
-                content[found_line] = f' * {field}: {value}\n'
-                return
+        if i > len(content):
+            if test:
+                print(f"Warning: coun't find doc string for test {subtest}, field {field}")
+            else:
+                print(f"Warning: coun't find doc string for subtest {subtest}, field {field} on line {line}")
 
+            return
+
+        if found_line:
+            if value != "":
+                content[found_line] = f' * {field}: {value}\n'
+            else:
+                content[found_line] = ""
+            return
+
+        if value != "":
             if i > 2 and re.match(r'\s*\*\s*$', content[i - 1]):
                 i -= 1
 
@@ -261,6 +291,78 @@ class FillTests(TestList):
             for key, value in row.items():
                 self.tests[testname]["subtests"][subtest][key] = value
 
+    def simplify_doc_strings(self):
+        """
+        Group common properties at TEST level if all subtests have identical
+        values for such property.
+        """
+
+        print("Handling common information on test from subtests")
+
+        for testname in self.tests:
+            # Get common properties
+            common = {}
+            test_nr = self.tests[testname].get("Test")
+            for key, value in self.doc[test_nr].items():
+                # Ignore description when checking common fields
+                if key.lower() == "description":
+                    continue
+
+                if key in self.update_fields:
+                    common[key] = value
+
+            # Step 1: verify common items
+            first = True
+            for subtest in sorted(list(self.tests[testname]["subtests"].keys())):
+                if subtest.count("@") > 1:
+                    print(f"Warning: don't simplify dynamic subtest: {testname}{subtest}")
+                    continue
+
+                # Store common items
+                subtest_fields = sorted(self.tests[testname]["subtests"][subtest].keys())
+                for k in subtest_fields:
+                    # Ignore description when checking common fields
+                    if k.lower() == "description":
+                        continue
+
+                    # Ignore internal fields
+                    if k not in self.update_fields:
+                        continue
+
+                    val = self.tests[testname]["subtests"][subtest][k]
+                    val = val.strip()
+                    val = re.sub(r" +", " ", val)
+                    val = re.sub(r"([^\.])\s?\n\s*([A-Z])", r"\1.\n\2", val)
+                    self.tests[testname]["subtests"][subtest][k] = val
+
+                    if first and val != '':
+                        common[k] = val
+                    else:
+                        if k not in common:
+                            continue
+                        if common[k] != val:
+                            del common[k]
+
+                first = False
+
+                # Remove keys that aren't common to all subtests
+                for k in list(common.keys()):
+                    if k not in subtest_fields:
+                        del common[k]
+
+            # Step 2: drop common items from subtests
+            for subtest, fields in list(self.tests[testname]["subtests"].items()):
+                for k, val in list(fields.items()):
+                    if k not in common:
+                        continue
+
+                    if val == common[k]:
+                        self.tests[testname]["subtests"][subtest][k] = ""
+
+            # Step 3: store the modified common properties
+            for k, val in common.items():
+                self.doc[test_nr][k] = val
+
     def update_test_file(self, testname, args):
         """
         Update a C source file using the contents of self.tests as
@@ -293,6 +395,7 @@ class FillTests(TestList):
                 if doc_value == value:
                     continue
 
+                self.change_value(content, True, testname, 0, field, value)
 
             # Update subtest fields
             for subtest, subtest_content in sorted(self.tests[testname]["subtests"].items()):
@@ -300,7 +403,6 @@ class FillTests(TestList):
                     print(f"Warning: didn't find where {subtest} is documented.")
                     continue
 
-                line = subtest_content['line']
                 subtest_nr = subtest_content['subtest_nr']
 
                 if subtest_nr not in self.doc[test_nr]["subtest"]:
@@ -310,6 +412,7 @@ class FillTests(TestList):
                         print(f"Warning: test {testname}, subtest {subtest} is not documented.")
                     continue
 
+                line = self.doc[test_nr]["_subtest_line_"][subtest_nr]
                 doc_content = self.orig_doc[test_nr]["subtest"][subtest_nr]
 
                 fields = set(subtest_content.keys()) | set(doc_content.keys())
@@ -342,7 +445,7 @@ class FillTests(TestList):
                     # Just in case, handle continuation lines
                     value = re.sub(r"\n", "\n *   ", value)
 
-                    self.change_value(content, subtest, line, field, value)
+                    self.change_value(content, False, subtest, line, field, value)
 
                     # Update line numbers after insert
                     skip = True
@@ -391,7 +494,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True,
                         help="JSON file describing the test plan template")
-    parser.add_argument("--xls", required=True,
+    parser.add_argument("--xls",
                         help="Input XLS file.")
     parser.add_argument("--sheets", nargs="*",
                         help="Input only some specific sheets from the XLS file.")
@@ -399,13 +502,19 @@ def main():
                         help='Ignore fields that are updated via test lists')
     parser.add_argument("--store-json", action="store_true",
                         help="Generate JSON files with documentation. Useful for debugging purposes.")
+    parser.add_argument("--simplify", action="store_true",
+                        help="Run a simplify logic to cleanup TEST common fields.")
     parser.add_argument('-v', '--verbose', action='count', default=0)
 
     parse_args = parser.parse_args()
 
     fill_test = FillTests(parse_args.config, parse_args.verbose)
 
-    fill_test.parse_spreadsheet(parse_args.xls, parse_args.sheets)
+    if parse_args.xls:
+        fill_test.parse_spreadsheet(parse_args.xls, parse_args.sheets)
+
+    if parse_args.simplify:
+        fill_test.simplify_doc_strings()
 
     if "store_json" in parse_args:
         print("Generating fill_test.json debug file")
