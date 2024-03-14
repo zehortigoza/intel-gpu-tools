@@ -155,6 +155,7 @@ class FillTests(TestList):
         """
 
         current_field = None
+        found_line = None
         i = line
         while True:
             i += 1
@@ -193,7 +194,7 @@ class FillTests(TestList):
                 current_field = self.field_list[match.group(1).lower()]
                 if current_field != field:
                     continue
-                content[i] = ""
+                found_line = i
 
             # Handle continuation lines
             if current_field:
@@ -205,6 +206,10 @@ class FillTests(TestList):
                     content[i] = ""
 
         if value != "":
+            if found_line:
+                content[found_line] = f' * {field}: {value}\n'
+                return
+
             if i > 2 and re.match(r'\s*\*\s*$', content[i - 1]):
                 i -= 1
 
