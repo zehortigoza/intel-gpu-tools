@@ -298,7 +298,7 @@ class FillTests(TestList):
                             continue
                         if doc_value == value:
                             if self.verbose > 1:
-                                print(f"{testname}@{subtest} field {field}: Value unchanged. Ignoring it")
+                                print(f"{testname}@{subtest} field {field}: Value unchanged: {value}. Ignoring it")
                             continue
 
                     if self.verbose > 0:
