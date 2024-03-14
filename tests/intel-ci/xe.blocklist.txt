@@ -31,7 +31,6 @@ igt@kms_selftest.*
 ##################################################################
 # Exclude all other non-Xe tests
 ##################################################################
-igt@core_(?!hotunplug@unbind-rebind).*
 igt@debugfs.*
 igt@device_reset
 igt@drm_fdinfo
