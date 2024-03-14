@@ -37,6 +37,8 @@ class FillTests(TestList):
         # Read current documentation
         TestList.__init__(self, config_path)
 
+        self.orig_doc = self.doc.copy()
+
         self.testname_regex = re.compile(r'^\s*(igt@[^\n\@]+)\@?(\S*)\s*')
         self.key_has_wildcard = re.compile(r'\%?arg\[(\d+)\]')
         self.field_re = re.compile(r"(" + '|'.join(self.field_list.keys()) + r'):\s*(.*)', re.I)
@@ -202,7 +204,8 @@ class FillTests(TestList):
 
                     content[i] = ""
 
-        content.insert(i, f' * {field}: {value}\n')
+        if value != "":
+            content.insert(i, f' * {field}: {value}\n')
 
     def parse_spreadsheet(self, fname, sheets=None):
         """
@@ -265,6 +268,8 @@ class FillTests(TestList):
 
             test_nr = self.tests[testname]["Test"]
 
+            doc_content = self.orig_doc[test_nr]
+
             for subtest, subtest_content in sorted(self.tests[testname]["subtests"].items()):
                 if "line" not in subtest_content:
                     print(f"Warning: didn't find where {subtest} is documented.")
@@ -280,26 +285,29 @@ class FillTests(TestList):
                         print(f"Warning: test {testname}, subtest {subtest} is not documented.")
                     continue
 
-                doc_content = self.doc[test_nr]["subtest"][subtest_nr]
+                doc_content = self.orig_doc[test_nr]["subtest"][subtest_nr]
 
-                # Handling wildcards is not easy. Let's just skip those
-                for field, value in sorted(subtest_content.items()):
-                    if field in ['line', 'subtest_nr']:
+                fields = set(subtest_content.keys()) | set(doc_content.keys())
+
+                for field in sorted(fields):
+                    if field not in self.props:
                         continue
 
                     if args.ignore_lists:
                         if field in self.ignore_fields:
                             continue
 
-                    doc_value = doc_content.get(field)
-                    if doc_value:
-                        if self.key_has_wildcard.search(doc_value):
-                            print(f"Warning: {subtest} field {field} has wildcards. Skipping it.")
-                            continue
-                        if doc_value == value:
-                            if self.verbose > 1:
-                                print(f"{testname}@{subtest} field {field}: Value unchanged: {value}. Ignoring it")
-                            continue
+                    value = subtest_content.get(field, "")
+                    doc_value = doc_content.get(field, "")
+
+                    # Handling wildcards is not easy. Let's just skip those
+                    if self.key_has_wildcard.search(doc_value):
+                        print(f"Warning: {subtest} field {field} has wildcards. Skipping it.")
+                        continue
+                    if doc_value == value:
+                        if self.verbose > 1:
+                            print(f"{testname}@{subtest} field {field}: Value unchanged: {value}. Ignoring it")
+                        continue
 
                     if self.verbose > 0:
                         print(f"Update {testname}@{subtest} field {field} on line {line}:")
