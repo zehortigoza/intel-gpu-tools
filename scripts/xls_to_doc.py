@@ -348,7 +348,7 @@ class FillTests(TestList):
 
         # Write changes
         try:
-            if self.verbose:
+            if self.verbose > 1:
                 print(f"Writing to {sourcename}")
 
             with open(sourcename, 'w', encoding='utf8') as out_fp:
