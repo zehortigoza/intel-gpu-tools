@@ -317,6 +317,11 @@ class FillTests(TestList):
                             print(f"{testname}@{subtest} field {field}: Value unchanged: {value}. Ignoring it")
                         continue
 
+                    if value == self.doc[test_nr].get(field, ""):
+                        if self.verbose:
+                            print(f"{testname}@{subtest} field {field}: Value matches common field. Ignoring it")
+                            continue
+
                     if self.verbose > 0:
                         print(f"Update {testname}@{subtest} field {field} on line {line}:")
                         print(f"  Change from {doc_value} to {value}")
