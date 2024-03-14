@@ -31,8 +31,9 @@ class FillTests(TestList):
     def __init__(self, config_path, verbose):
         self.tests = {}
         self.spreadsheet_data = {}
-        self.ignore_fields = []
         self.verbose = verbose
+
+        self.update_fields = []
 
         # Read current documentation
         TestList.__init__(self, config_path)
@@ -78,7 +79,9 @@ class FillTests(TestList):
             if "sublevel" in item["_properties_"]:
                 update = item["_properties_"].get("update-from-file")
                 if update:
-                    self.ignore_fields.append(field)
+                    continue
+
+            self.update_fields.append(field)
 
     def add_field(self, dic, field, value):
         """
@@ -276,8 +279,22 @@ class FillTests(TestList):
 
             test_nr = self.tests[testname]["Test"]
 
+            # Update common fields
             doc_content = self.orig_doc[test_nr]
+            fields = set(self.doc[test_nr].keys()) | set(doc_content.keys())
 
+            for field in sorted(fields):
+                if field not in self.update_fields:
+                    continue
+
+                value = self.doc[test_nr].get(field, "")
+                doc_value = doc_content.get(field, "")
+
+                if doc_value == value:
+                    continue
+
+
+            # Update subtest fields
             for subtest, subtest_content in sorted(self.tests[testname]["subtests"].items()):
                 if "line" not in subtest_content:
                     print(f"Warning: didn't find where {subtest} is documented.")
@@ -298,11 +315,7 @@ class FillTests(TestList):
                 fields = set(subtest_content.keys()) | set(doc_content.keys())
 
                 for field in sorted(fields):
-                    if field not in self.props:
-                        continue
-
-                    if args.ignore_lists:
-                        if field in self.ignore_fields:
+                    if field not in self.update_fields:
                             continue
 
                     value = subtest_content.get(field, "")
