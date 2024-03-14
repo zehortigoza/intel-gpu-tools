@@ -103,7 +103,7 @@ class FillTests(TestList):
         for cell in sheet[1]:
             column_list.append(cell.value)
 
-        for row in range(2, sheet.max_row):
+        for row in range(2, sheet.max_row + 1):
             if sheet[row][0].value is None:
                 print(f"Ignoring sheet after A{row} row, as test name is empty")
                 return
