@@ -114,7 +114,7 @@ void xe_spin_init(struct xe_spin *spin, struct xe_spin_opts *opts)
 		spin->batch[b++] = MI_MATH_STOREINV(MI_MATH_REG(NOW_TS), MI_MATH_REG_ACCU);
 
 		/* Save delta for reading by COND_BBE */
-		spin->batch[b++] = MI_STORE_REGISTER_MEM | MI_SRM_CS_MMIO | 2;
+		spin->batch[b++] = MI_STORE_REGISTER_MEM_GEN8 | MI_SRM_CS_MMIO;
 		spin->batch[b++] = CS_GPR(NOW_TS);
 		spin->batch[b++] = ticks_delta_addr;
 		spin->batch[b++] = ticks_delta_addr >> 32;
