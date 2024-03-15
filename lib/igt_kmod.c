@@ -1208,10 +1208,10 @@ static void __igt_kunit_legacy(struct igt_ktest *tst,
 static bool kunit_get_tests(struct igt_list_head *tests,
 			    struct igt_ktest *tst,
 			    const char *suite,
-			    const char *opts)
+			    const char *opts,
+			    struct igt_ktap_results **ktap)
 {
 	struct igt_ktap_result *r, *rn;
-	struct igt_ktap_results *ktap;
 	unsigned long taints;
 	int flags, err;
 
@@ -1237,14 +1237,15 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 	igt_skip_on(modprobe(tst->kmod, opts));
 	igt_skip_on(igt_kernel_tainted(&taints));
 
-	ktap = igt_ktap_alloc(tests);
-	igt_require(ktap);
+	*ktap = igt_ktap_alloc(tests);
+	igt_require(*ktap);
 
 	do
-		err = kunit_kmsg_result_get(tests, NULL, tst->kmsg, ktap);
+		err = kunit_kmsg_result_get(tests, NULL, tst->kmsg, *ktap);
 	while (err == -EINPROGRESS);
 
-	igt_ktap_free(ktap);
+	igt_ktap_free(*ktap);
+	*ktap = NULL;
 
 	igt_skip_on_f(err,
 		      "KTAP parser failed while getting a list of test cases\n");
@@ -1262,12 +1263,12 @@ static void __igt_kunit(struct igt_ktest *tst,
 			const char *subtest,
 			const char *suite,
 			const char *opts,
-			struct igt_list_head *tests)
+			struct igt_list_head *tests,
+			struct igt_ktap_results **ktap)
 {
 	struct modprobe_data modprobe = { tst->kmod, opts, 0, pthread_self(), };
 	char *suite_name = NULL, *case_name = NULL;
 	struct igt_ktap_result *t, *r = NULL;
-	struct igt_ktap_results *ktap;
 	pthread_mutexattr_t attr;
 	IGT_LIST_HEAD(results);
 	int ret = -EINPROGRESS;
@@ -1275,8 +1276,8 @@ static void __igt_kunit(struct igt_ktest *tst,
 
 	igt_skip_on(lseek(tst->kmsg, 0, SEEK_END) < 0);
 
-	ktap = igt_ktap_alloc(&results);
-	igt_require(ktap);
+	*ktap = igt_ktap_alloc(&results);
+	igt_require(*ktap);
 
 	igt_list_for_each_entry(t, tests, link) {
 		igt_dynamic_f("%s%s%s",
@@ -1303,7 +1304,7 @@ static void __igt_kunit(struct igt_ktest *tst,
 				igt_assert(igt_list_empty(&results));
 				igt_assert_eq(ret, -EINPROGRESS);
 				ret = kunit_kmsg_result_get(&results, &modprobe,
-							    tst->kmsg, ktap);
+							    tst->kmsg, *ktap);
 				igt_fail_on(igt_list_empty(&results));
 
 				r = igt_list_first_entry(&results, r, link);
@@ -1325,7 +1326,7 @@ static void __igt_kunit(struct igt_ktest *tst,
 					ret = kunit_kmsg_result_get(&results,
 								    &modprobe,
 								    tst->kmsg,
-								    ktap);
+								    *ktap);
 					igt_fail_on(igt_list_empty(&results));
 				}
 
@@ -1405,7 +1406,8 @@ static void __igt_kunit(struct igt_ktest *tst,
 		}
 	}
 
-	igt_ktap_free(ktap);
+	igt_ktap_free(*ktap);
+	*ktap = NULL;
 
 	igt_skip_on(modprobe.err);
 	igt_skip_on(igt_kernel_tainted(&taints));
@@ -1428,6 +1430,7 @@ static void __igt_kunit(struct igt_ktest *tst,
 void igt_kunit(const char *module_name, const char *suite, const char *opts)
 {
 	struct igt_ktest tst = { .kmsg = -1, };
+	struct igt_ktap_results *ktap = NULL;
 	const char *subtest = suite;
 	IGT_LIST_HEAD(tests);
 
@@ -1476,14 +1479,16 @@ void igt_kunit(const char *module_name, const char *suite, const char *opts)
 		 *	 LTS kernels not capable of using KUnit filters for
 		 *	 listing test cases in KTAP format, with igt_require.
 		 */
-		if (!kunit_get_tests(&tests, &tst, suite, opts))
+		if (!kunit_get_tests(&tests, &tst, suite, opts, &ktap))
 			__igt_kunit_legacy(&tst, subtest, opts);
 		else
-			__igt_kunit(&tst, subtest, suite, opts, &tests);
+			__igt_kunit(&tst, subtest, suite, opts, &tests, &ktap);
 	}
 
 	igt_fixture {
 		char *suite_name = NULL, *case_name = NULL;
+
+		igt_ktap_free(ktap);
 
 		kunit_results_free(&tests, &suite_name, &case_name);
 
