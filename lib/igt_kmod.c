@@ -1205,12 +1205,19 @@ static void __igt_kunit_legacy(struct igt_ktest *tst,
 	igt_skip_on_f(ret, "KTAP parser failed\n");
 }
 
+static void kunit_get_tests_timeout(int signal)
+{
+	igt_skip("Timed out while trying to extract a list of KUnit test cases from /dev/kmsg\n");
+}
+
 static bool kunit_get_tests(struct igt_list_head *tests,
 			    struct igt_ktest *tst,
 			    const char *suite,
 			    const char *opts,
 			    struct igt_ktap_results **ktap)
 {
+	struct sigaction sigalrm = { .sa_handler = kunit_get_tests_timeout, },
+			 *saved;
 	struct igt_ktap_result *r, *rn;
 	unsigned long taints;
 	int flags, err;
@@ -1240,9 +1247,15 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 	*ktap = igt_ktap_alloc(tests);
 	igt_require(*ktap);
 
+	igt_skip_on(sigaction(SIGALRM, &sigalrm, saved));
+	alarm(10);
+
 	do
 		err = kunit_kmsg_result_get(tests, NULL, tst->kmsg, *ktap);
 	while (err == -EINPROGRESS);
+
+	alarm(0);
+	igt_debug_on(sigaction(SIGALRM, saved, NULL));
 
 	igt_ktap_free(ktap);
 
