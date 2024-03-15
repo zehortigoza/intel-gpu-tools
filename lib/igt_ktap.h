@@ -41,6 +41,6 @@ struct igt_ktap_results;
 
 struct igt_ktap_results *igt_ktap_alloc(struct igt_list_head *results);
 int igt_ktap_parse(const char *buf, struct igt_ktap_results *ktap);
-void igt_ktap_free(struct igt_ktap_results *ktap);
+void igt_ktap_free(struct igt_ktap_results **ktap);
 
 #endif /* IGT_KTAP_H */

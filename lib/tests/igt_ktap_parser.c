@@ -45,7 +45,7 @@ static void ktap_list(void)
 	igt_assert_eq(igt_ktap_parse("    ok 4 test_case_4 # SKIP\n", ktap), -EINPROGRESS);
 	igt_assert_eq(igt_ktap_parse("ok 3 test_suite_3\n", ktap), 0);
 
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 
 	igt_assert_eq(igt_list_length(&results), 8);
 
@@ -107,7 +107,7 @@ static void ktap_results(void)
 	igt_assert_eq(igt_ktap_parse("    ok 1 test_case\n", ktap), -EINPROGRESS);
 	igt_assert_eq(igt_ktap_parse("not ok 1 test_suite\n", ktap), 0);
 
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 
 	igt_assert_eq(igt_list_length(&results), 2);
 
@@ -162,7 +162,7 @@ static void ktap_success(void)
 	igt_assert_eq(igt_ktap_parse("not ok 1 test_suite\n", ktap), 0);
 	igt_assert_eq(igt_list_length(&results), 2);
 
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 
 	result = igt_list_last_entry(&results, result, link);
 	igt_list_del(&result->link);
@@ -186,48 +186,48 @@ static void ktap_top_version(void)
 	ktap = igt_ktap_alloc(&results);
 	igt_require(ktap);
 	igt_assert_eq(igt_ktap_parse("1..1\n", ktap), -EPROTO);
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 
 	ktap = igt_ktap_alloc(&results);
 	igt_require(ktap);
 	/* TODO: change to -EPROTO as soon as related workaround is dropped */
 	igt_assert_eq(igt_ktap_parse("    KTAP version 1\n", ktap), -EINPROGRESS);
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 
 	ktap = igt_ktap_alloc(&results);
 	igt_require(ktap);
 	igt_assert_eq(igt_ktap_parse("    # Subtest: test_suite\n", ktap), -EPROTO);
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 
 	ktap = igt_ktap_alloc(&results);
 	igt_require(ktap);
 	igt_assert_eq(igt_ktap_parse("    1..1\n", ktap), -EPROTO);
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 
 	ktap = igt_ktap_alloc(&results);
 	igt_require(ktap);
 	igt_assert_eq(igt_ktap_parse("        KTAP version 1\n", ktap), -EPROTO);
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 
 	ktap = igt_ktap_alloc(&results);
 	igt_require(ktap);
 	igt_assert_eq(igt_ktap_parse("        # Subtest: test_case\n", ktap), -EPROTO);
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 
 	ktap = igt_ktap_alloc(&results);
 	igt_require(ktap);
 	igt_assert_eq(igt_ktap_parse("        ok 1 parameter 1\n", ktap), -EPROTO);
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 
 	ktap = igt_ktap_alloc(&results);
 	igt_require(ktap);
 	igt_assert_eq(igt_ktap_parse("    ok 1 test_case\n", ktap), -EPROTO);
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 
 	ktap = igt_ktap_alloc(&results);
 	igt_require(ktap);
 	igt_assert_eq(igt_ktap_parse("ok 1 test_suite\n", ktap), -EPROTO);
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 }
 
 igt_main

@@ -310,7 +310,8 @@ struct igt_ktap_results *igt_ktap_alloc(struct igt_list_head *results)
 	return ktap;
 }
 
-void igt_ktap_free(struct igt_ktap_results *ktap)
+void igt_ktap_free(struct igt_ktap_results **ktap)
 {
-	free(ktap);
+	free(*ktap);
+	*ktap = NULL;
 }

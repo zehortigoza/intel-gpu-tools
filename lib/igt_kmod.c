@@ -1095,7 +1095,7 @@ static void __igt_kunit_legacy(struct igt_ktest *tst,
 
 	if (igt_debug_on(pthread_create(&modprobe.thread, NULL,
 					modprobe_task, &modprobe))) {
-		igt_ktap_free(ktap);
+		igt_ktap_free(&ktap);
 		igt_skip("Failed to create a modprobe thread\n");
 	}
 
@@ -1198,7 +1198,7 @@ static void __igt_kunit_legacy(struct igt_ktest *tst,
 		break;
 	}
 
-	igt_ktap_free(ktap);
+	igt_ktap_free(&ktap);
 
 	igt_skip_on(modprobe.err);
 	igt_skip_on(igt_kernel_tainted(&taints));
@@ -1244,8 +1244,7 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 		err = kunit_kmsg_result_get(tests, NULL, tst->kmsg, *ktap);
 	while (err == -EINPROGRESS);
 
-	igt_ktap_free(*ktap);
-	*ktap = NULL;
+	igt_ktap_free(ktap);
 
 	igt_skip_on_f(err,
 		      "KTAP parser failed while getting a list of test cases\n");
@@ -1406,8 +1405,7 @@ static void __igt_kunit(struct igt_ktest *tst,
 		}
 	}
 
-	igt_ktap_free(*ktap);
-	*ktap = NULL;
+	igt_ktap_free(ktap);
 
 	igt_skip_on(modprobe.err);
 	igt_skip_on(igt_kernel_tainted(&taints));
@@ -1488,7 +1486,7 @@ void igt_kunit(const char *module_name, const char *suite, const char *opts)
 	igt_fixture {
 		char *suite_name = NULL, *case_name = NULL;
 
-		igt_ktap_free(ktap);
+		igt_ktap_free(&ktap);
 
 		kunit_results_free(&tests, &suite_name, &case_name);
 
