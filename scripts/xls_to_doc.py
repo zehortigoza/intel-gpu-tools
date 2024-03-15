@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=C0301,R0912,R0913,R0914,R0915,R1702
+# pylint: disable=C0301,R0902,R0912,R0913,R0914,R0915,R1702
 # SPDX-License-Identifier: (GPL-2.0 OR MIT)
 
 ## Copyright (C) 2023    Intel Corporation                 ##
@@ -97,7 +97,6 @@ class FillTests(TestList):
         dic[field] = value
 
     def process_spreadsheet_sheet(self, sheet):
-
         """
         Convert a single sheet into a dictionary.
 
@@ -299,7 +298,7 @@ class FillTests(TestList):
 
         print("Handling common information on test from subtests")
 
-        for testname in self.tests:
+        for testname in self.tests:                  # pylint: disable=C0206
             # Get common properties
             common = {}
             test_nr = self.tests[testname].get("Test")
@@ -363,7 +362,7 @@ class FillTests(TestList):
             for k, val in common.items():
                 self.doc[test_nr][k] = val
 
-    def update_test_file(self, testname, args):
+    def update_test_file(self, testname):
         """
         Update a C source file using the contents of self.tests as
         the source of data to be filled at the igt_doc documentation
@@ -419,7 +418,7 @@ class FillTests(TestList):
 
                 for field in sorted(fields):
                     if field not in self.update_fields:
-                            continue
+                        continue
 
                     value = subtest_content.get(field, "")
                     doc_value = doc_content.get(field, "")
@@ -472,7 +471,7 @@ class FillTests(TestList):
         except EnvironmentError:
             print(f'Failed to write to {sourcename}')
 
-    def update_test_files(self, args):
+    def update_test_files(self):
         """
         Populate all test files with the documentation from self.tests.
         """
@@ -481,7 +480,7 @@ class FillTests(TestList):
             print("Update source files")
 
         for testname in self.tests:
-            self.update_test_file(testname, args)
+            self.update_test_file(testname)
 
 ######
 # Main
@@ -525,7 +524,7 @@ def main():
         with open("doc.json", "w", encoding='utf8') as write_file:
             json.dump(fill_test.doc, write_file, indent=4)
 
-    fill_test.update_test_files(parse_args)
+    fill_test.update_test_files()
 
 
 if __name__ == '__main__':
