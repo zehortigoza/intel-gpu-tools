@@ -1263,20 +1263,13 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 	igt_skip_on(modprobe(tst->kmod, opts));
 	igt_skip_on(igt_kernel_tainted(&taints));
 
-	*ktap = igt_ktap_alloc(tests);
-	igt_require(*ktap);
-
 	igt_skip_on(sigaction(SIGALRM, &sigalrm, saved));
 	alarm(10);
 
-	do
-		err = kunit_kmsg_result_get(tests, NULL, tst->kmsg, *ktap);
-	while (err == -EINPROGRESS);
+	err = kunit_get_results(tests, tst->kmsg, ktap);
 
 	alarm(0);
 	igt_debug_on(sigaction(SIGALRM, saved, NULL));
-
-	igt_ktap_free(ktap);
 
 	igt_skip_on_f(err,
 		      "KTAP parser failed while getting a list of test cases\n");
