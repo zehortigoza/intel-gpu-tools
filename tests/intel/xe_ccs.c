@@ -108,7 +108,7 @@ static void surf_copy(int xe,
 	const uint32_t bpp = 32;
 	uint32_t bb1, bb2, ccs, ccs2, *ccsmap, *ccsmap2;
 	uint64_t bb_size, ccssize = mid->size / CCS_RATIO(xe);
-	uint64_t ccs_bo_size = xe_get_default_alignment(xe);
+	uint64_t ccs_bo_size = ALIGN(ccssize, xe_get_default_alignment(xe));
 	uint32_t *ccscopy;
 	uint8_t uc_mocs = intel_get_uc_mocs_index(xe);
 	uint32_t sysmem = system_memory(xe);
