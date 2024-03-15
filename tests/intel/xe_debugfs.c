@@ -12,16 +12,17 @@
  * Description: Validate debugfs entries
  */
 
+#include <fcntl.h>
+#include <dirent.h>
+#include <limits.h>
+#include <string.h>
+#include <sys/types.h>
+
 #include "igt.h"
 #include "igt_sysfs.h"
 #include "xe_drm.h"
 #include "xe/xe_ioctl.h"
 #include "xe/xe_query.h"
-
-#include <fcntl.h>
-#include <string.h>
-#include <sys/types.h>
-#include <dirent.h>
 
 struct {
 	bool warn_on_not_hit;
