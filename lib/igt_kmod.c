@@ -1071,6 +1071,25 @@ static void kunit_results_free(struct igt_list_head *results,
 	free(*suite_name);
 }
 
+static int kunit_get_results(struct igt_list_head *results, int kmsg_fd,
+			     struct igt_ktap_results **ktap)
+{
+	int err;
+
+	*ktap = igt_ktap_alloc(results);
+	if (igt_debug_on(!*ktap))
+		return -ENOMEM;
+
+	do
+		igt_debug_on((err = kunit_kmsg_result_get(results, NULL, kmsg_fd, *ktap),
+			      err && err != -EINPROGRESS));
+	while (err == -EINPROGRESS);
+
+	igt_ktap_free(ktap);
+
+	return err;
+}
+
 static void __igt_kunit_legacy(struct igt_ktest *tst,
 			       const char *subtest,
 			       const char *opts)
@@ -1278,82 +1297,52 @@ static void __igt_kunit(struct igt_ktest *tst,
 			struct igt_list_head *tests,
 			struct igt_ktap_results **ktap)
 {
-	struct modprobe_data modprobe = { tst->kmod, opts, 0, pthread_self(), };
-	char *suite_name = NULL, *case_name = NULL;
-	struct igt_ktap_result *t, *r = NULL;
-	pthread_mutexattr_t attr;
-	IGT_LIST_HEAD(results);
-	int ret = -EINPROGRESS;
-	unsigned long taints;
-
-	igt_skip_on(lseek(tst->kmsg, 0, SEEK_END) < 0);
-
-	*ktap = igt_ktap_alloc(&results);
-	igt_require(*ktap);
+	struct igt_ktap_result *t;
 
 	igt_list_for_each_entry(t, tests, link) {
+		char *suite_name = NULL, *case_name = NULL;
+		IGT_LIST_HEAD(results);
+		unsigned long taints;
+
 		igt_dynamic_f("%s%s%s",
 			      strcmp(t->suite_name, subtest) ?  t->suite_name : "",
 			      strcmp(t->suite_name, subtest) ? "-" : "",
 			      t->case_name) {
+			struct igt_ktap_result *r = NULL;
+			char glob[1024];
+			int i;
 
-			if (!modprobe.thread) {
-				igt_require(kunit_set_filtering(suite, NULL, NULL));
+			igt_skip_on(igt_kernel_tainted(&taints));
 
-				igt_assert_eq(pthread_mutexattr_init(&attr), 0);
-				igt_assert_eq(pthread_mutexattr_setrobust(&attr,
-							  PTHREAD_MUTEX_ROBUST),
-					      0);
-				igt_assert_eq(pthread_mutex_init(&modprobe.lock,
-								 &attr), 0);
+			igt_fail_on(lseek(tst->kmsg, 0, SEEK_END) == -1 && errno);
 
-				modprobe.err = pthread_create(&modprobe.thread,
-							      NULL,
-							      modprobe_task,
-							      &modprobe);
-				igt_assert_eq(modprobe.err, 0);
+			igt_assert_lt(snprintf(glob, sizeof(glob), "%s.%s",
+					       t->suite_name, t->case_name),
+				      sizeof(glob));
+			igt_assert(kunit_set_filtering(glob, NULL, NULL));
 
-				igt_assert(igt_list_empty(&results));
-				igt_assert_eq(ret, -EINPROGRESS);
-				ret = kunit_kmsg_result_get(&results, &modprobe,
-							    tst->kmsg, *ktap);
+			igt_assert_eq(modprobe(tst->kmod, opts), 0);
+			igt_assert_eq(igt_kernel_tainted(&taints), 0);
+
+			igt_assert_eq(kunit_get_results(&results, tst->kmsg, ktap), 0);
+
+			for (i = 0; i < 2; i++) {
+				kunit_result_free(&r, &suite_name, &case_name);
 				igt_fail_on(igt_list_empty(&results));
 
 				r = igt_list_first_entry(&results, r, link);
-			}
 
-			while (igt_debug_on_f(strcmp(r->suite_name, t->suite_name),
+				igt_fail_on_f(strcmp(r->suite_name, t->suite_name),
 					      "suite_name expected: %s, got: %s\n",
-					      t->suite_name, r->suite_name) ||
-			       igt_debug_on_f(strcmp(r->case_name, t->case_name),
+					      t->suite_name, r->suite_name);
+				igt_fail_on_f(strcmp(r->case_name, t->case_name),
 					      "case_name expected: %s, got: %s\n",
-					      t->case_name, r->case_name) ||
-			       r->code == IGT_EXIT_INVALID) {
+					      t->case_name, r->case_name);
 
-				int code = r->code;
-
-				kunit_result_free(&r, &suite_name, &case_name);
-				if (igt_list_empty(&results)) {
-					igt_assert_eq(ret, -EINPROGRESS);
-					ret = kunit_kmsg_result_get(&results,
-								    &modprobe,
-								    tst->kmsg,
-								    *ktap);
-					igt_fail_on(igt_list_empty(&results));
-				}
-
-				r = igt_list_first_entry(&results, r, link);
-
-				if (code != IGT_EXIT_INVALID)
-					continue;
+				if (r->code != IGT_EXIT_INVALID)
+					break;
 
 				/* result from parametrized test case */
-				igt_fail_on_f(strcmp(r->suite_name, suite_name),
-					      "suite_name expected: %s, got: %s\n",
-					      suite_name, r->suite_name);
-				igt_fail_on_f(strcmp(r->case_name, case_name),
-					      "case_name expected: %s, got: %s\n",
-					      case_name, r->case_name);
 			}
 
 			igt_assert_neq(r->code, IGT_EXIT_INVALID);
@@ -1372,58 +1361,21 @@ static void __igt_kunit(struct igt_ktest *tst,
 					igt_fail(r->code);
 			}
 			igt_assert_eq(r->code, IGT_EXIT_SUCCESS);
-
-			switch (pthread_mutex_lock(&modprobe.lock)) {
-			case 0:
-				igt_debug_on(pthread_mutex_unlock(&modprobe.lock));
-				break;
-			case EOWNERDEAD:
-				/* leave the mutex unrecoverable */
-				igt_debug_on(pthread_mutex_unlock(&modprobe.lock));
-				__attribute__ ((fallthrough));
-			case ENOTRECOVERABLE:
-				igt_assert_eq(modprobe.err, 0);
-				break;
-			default:
-				igt_debug("pthread_mutex_lock() failed\n");
-				break;
-			}
-
-			igt_assert_eq(igt_kernel_tainted(&taints), 0);
 		}
 
-		if (igt_debug_on(ret != -EINPROGRESS))
-			break;
-	}
+		kunit_results_free(&results, &suite_name, &case_name);
 
-	kunit_results_free(&results, &suite_name, &case_name);
+		if (igt_debug_on(igt_kernel_tainted(&taints))) {
+			igt_info("Kernel tainted, not executing more selftests.\n");
+			break;
+		}
 
-	if (modprobe.thread) {
-		switch (pthread_mutex_lock(&modprobe.lock)) {
-		case 0:
-			igt_debug_on(pthread_cancel(modprobe.thread));
-			igt_debug_on(pthread_mutex_unlock(&modprobe.lock));
-			igt_debug_on(pthread_join(modprobe.thread, NULL));
-			break;
-		case EOWNERDEAD:
-			/* leave the mutex unrecoverable */
-			igt_debug_on(pthread_mutex_unlock(&modprobe.lock));
-			break;
-		case ENOTRECOVERABLE:
-			break;
-		default:
-			igt_debug("pthread_mutex_lock() failed\n");
-			igt_debug_on(pthread_join(modprobe.thread, NULL));
+		if (igt_debug_on(kmod_module_remove_module(tst->kmod,
+							   KMOD_REMOVE_FORCE))) {
+			igt_info("Unloading test module failed, not executing more selftests.\n");
 			break;
 		}
 	}
-
-	igt_ktap_free(ktap);
-
-	igt_skip_on(modprobe.err);
-	igt_skip_on(igt_kernel_tainted(&taints));
-	if (ret != -EINPROGRESS)
-		igt_skip_on_f(ret, "KTAP parser failed\n");
 }
 
 /**
