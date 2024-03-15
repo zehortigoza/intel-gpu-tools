@@ -5,6 +5,7 @@
 
 #include <dirent.h>
 #include <errno.h>
+#include <limits.h>
 #include <pciaccess.h>
 
 #include "drmtest.h"
