@@ -25,6 +25,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
