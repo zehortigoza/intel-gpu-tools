@@ -1601,8 +1601,14 @@ static void dump_driver_feature(struct context *context,
 
 	printf("\tPC Features field validity: %s\n",
 	       YESNO(feature->pc_feature_valid));
+	printf("\t\tHpd Wake: %s\n",
+	       YESNO(feature->hpd_wake));
+	printf("\t\tAssertive Display Technology (ADT): %s\n",
+	       YESNO(feature->adt_enabled));
 	printf("\tDynamic Media Refresh Rate Switching (DMRRS): %s\n",
 	       YESNO(feature->dmrrs_enabled));
+	printf("\tDynamic Frames Per Second (DFPS): %s\n",
+	       YESNO(feature->dfps_enabled));
 	printf("\tIntermediate Pixel Storage (IPS): %s\n",
 	       YESNO(feature->ips_enabled));
 	printf("\tPanel Self Refresh (PSR): %s\n",
