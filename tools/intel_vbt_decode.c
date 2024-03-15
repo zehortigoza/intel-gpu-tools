@@ -2652,6 +2652,8 @@ get_device_id(unsigned char *bios, int size)
 
 struct dumper {
 	uint8_t id;
+	uint16_t min_bdb_version;
+	uint16_t max_bdb_version;
 	const char *name;
 	void (*dump)(struct context *context,
 		     const struct bdb_block *block);
@@ -2777,6 +2779,14 @@ static bool dump_section(struct context *context, int section_id)
 		return false;
 
 	for (i = 0; i < ARRAY_SIZE(dumpers); i++) {
+		if (dumpers[i].min_bdb_version &&
+		    context->bdb->version < dumpers[i].min_bdb_version)
+			continue;
+
+		if (dumpers[i].max_bdb_version &&
+		    context->bdb->version > dumpers[i].max_bdb_version)
+			continue;
+
 		if (block->id == dumpers[i].id) {
 			dumper = &dumpers[i];
 			break;
