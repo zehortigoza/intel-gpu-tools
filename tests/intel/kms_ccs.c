@@ -365,6 +365,77 @@ static void check_all_ccs_planes(int drm_fd, igt_fb_t *fb, const float *cc_color
 	}
 }
 
+static void access_flat_ccs_surface(struct igt_fb *fb, bool verify_compression)
+{
+	uint64_t bb_size, ccssize = fb->size / CCS_RATIO(fb->fd);
+	uint64_t ccs_bo_size = ALIGN(ccssize, xe_get_default_alignment(fb->fd));
+	struct blt_ctrl_surf_copy_data surf = {};
+	uint32_t sysmem = system_memory(fb->fd);
+	uint32_t bb1, ccs, *ccsmap;
+	uint16_t cpu_caching = DRM_XE_GEM_CPU_CACHING_WC;
+	uint8_t uc_mocs = intel_get_uc_mocs_index(fb->fd);
+	uint8_t comp_pat_index = intel_get_pat_idx_wt(fb->fd);
+	uint32_t region = (AT_LEAST_GEN(intel_get_drm_devid(fb->fd), 20) &
+						xe_has_vram(fb->fd)) ? REGION_LMEM(0) : REGION_SMEM;
+
+	struct drm_xe_engine_class_instance inst = {
+		.engine_class = DRM_XE_ENGINE_CLASS_COPY,
+	};
+
+	uint64_t surf_ahnd;
+	uint32_t vm, exec_queue;
+	intel_ctx_t *surf_ctx;
+
+	vm = xe_vm_create(fb->fd, 0, 0);
+	exec_queue = xe_exec_queue_create(fb->fd, vm, &inst, 0);
+	surf_ctx = intel_ctx_xe(fb->fd, vm, exec_queue, 0, 0, 0);
+	surf_ahnd = intel_allocator_open(fb->fd, surf_ctx->vm,
+						INTEL_ALLOCATOR_RELOC);
+
+	ccs = xe_bo_create_caching(fb->fd, 0, ccs_bo_size, sysmem, 0, cpu_caching);
+
+	blt_ctrl_surf_copy_init(fb->fd, &surf);
+	blt_set_ctrl_surf_object(&surf.src, fb->gem_handle, region, fb->size,
+				 uc_mocs, comp_pat_index, BLT_INDIRECT_ACCESS);
+	blt_set_ctrl_surf_object(&surf.dst, ccs, sysmem, ccssize, uc_mocs,
+				 DEFAULT_PAT_INDEX, DIRECT_ACCESS);
+
+	bb_size = xe_bb_size(fb->fd, SZ_4K);
+	bb1 = xe_bo_create(fb->fd, 0, bb_size, sysmem, 0);
+	blt_set_batch(&surf.bb, bb1, bb_size, sysmem);
+	blt_ctrl_surf_copy(fb->fd, surf_ctx, NULL, surf_ahnd, &surf);
+	intel_ctx_xe_sync(surf_ctx, true);
+
+	ccsmap = xe_bo_map(fb->fd, ccs, surf.dst.size);
+
+	if (verify_compression) {
+		for (int i = 0; i < surf.dst.size / sizeof(uint32_t); i++) {
+			if (ccsmap[i] != 0)
+				goto ccs_verified;
+		}
+		igt_assert_f(false, "framebuffer was not compressed!\n");
+	} else {
+		for (int i = 0; i < surf.dst.size / sizeof(uint32_t); i++)
+			ccsmap[i] = rand();
+	}
+
+	blt_set_ctrl_surf_object(&surf.src, ccs, sysmem, ccssize,
+				 uc_mocs, DEFAULT_PAT_INDEX, DIRECT_ACCESS);
+	blt_set_ctrl_surf_object(&surf.dst, fb->gem_handle, region, fb->size,
+				 uc_mocs, comp_pat_index, INDIRECT_ACCESS);
+	blt_ctrl_surf_copy(fb->fd, surf_ctx, NULL, surf_ahnd, &surf);
+	intel_ctx_xe_sync(surf_ctx, true);
+
+ccs_verified:
+	munmap(ccsmap, ccssize);
+	gem_close(fb->fd, ccs);
+	gem_close(fb->fd, bb1);
+	xe_exec_queue_destroy(fb->fd, exec_queue);
+	xe_vm_destroy(fb->fd, vm);
+	free(surf_ctx);
+	put_ahnd(surf_ahnd);
+}
+
 static void fill_fb_random(int drm_fd, igt_fb_t *fb)
 {
 	void *map;
@@ -382,6 +453,10 @@ static void fill_fb_random(int drm_fd, igt_fb_t *fb)
 		p[i] = rand();
 
 	igt_assert(gem_munmap(map, fb->size) == 0);
+
+	/* randomize also ccs surface on Xe2 */
+	if (AT_LEAST_GEN(intel_get_drm_devid(drm_fd), 20))
+		access_flat_ccs_surface(fb, false);
 }
 
 static void test_bad_ccs_plane(data_t *data, int width, int height, int ccs_plane,
@@ -640,6 +715,8 @@ static void xe2_ccs_blit(data_t *data, struct igt_fb *fb, struct igt_fb *temp_fb
 	xe_exec_queue_destroy(dst_fb->fd, exec_queue);
 	xe_vm_destroy(dst_fb->fd, vm);
 	free(xe_ctx);
+
+	access_flat_ccs_surface(fb, true);
 }
 
 static void generate_fb(data_t *data, struct igt_fb *fb,
