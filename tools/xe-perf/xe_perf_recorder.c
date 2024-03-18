@@ -25,11 +25,14 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <i915_drm.h>
+#include <xe_drm.h>
 
 #include "igt_core.h"
 #include "intel_chipset.h"
-#include "i915/perf.h"
+#include "ioctl_wrappers.h"
+#include "linux_scaffold.h"
+#include "xe/xe_oa.h"
+#include "xe/xe_query.h"
 #include "i915/perf_data.h"
 
 #include "i915_perf_recorder_commands.h"
@@ -312,59 +315,18 @@ perf_ioctl(int fd, unsigned long request, void *arg)
 }
 
 static uint64_t
-get_device_cs_timestamp_frequency(const struct intel_device_info *devinfo, int drm_fd)
+get_device_cs_timestamp_frequency(int drm_fd)
 {
-	drm_i915_getparam_t gp;
-	int timestamp_frequency;
-
-	gp.param = I915_PARAM_CS_TIMESTAMP_FREQUENCY;
-	gp.value = &timestamp_frequency;
-	if (perf_ioctl(drm_fd, DRM_IOCTL_I915_GETPARAM, &gp) == 0)
-		return timestamp_frequency;
-
-	if (devinfo->graphics_ver > 9) {
-		fprintf(stderr, "Unable to query timestamp frequency from i915, please update kernel.\n");
-		return 0;
-	}
-
-	fprintf(stderr, "Warning: unable to query timestamp frequency from i915, guessing values...\n");
-
-	if (devinfo->graphics_ver <= 8)
-		return 12500000;
-	if (devinfo->is_broxton)
-		return 19200000;
-	return 12000000;
+	return xe_gt_list(drm_fd)->gt_list[0].reference_clock;
 }
 
 static uint64_t
-get_device_oa_timestamp_frequency(const struct intel_device_info *devinfo, int drm_fd)
+get_device_oa_timestamp_frequency(int drm_fd)
 {
-	drm_i915_getparam_t gp;
-	int timestamp_frequency;
+	struct drm_xe_query_oa_units *qoa = xe_oa_units(drm_fd);
+	struct drm_xe_oa_unit *oau = (struct drm_xe_oa_unit *)&qoa->oa_units[0];
 
-	gp.param = I915_PARAM_OA_TIMESTAMP_FREQUENCY;
-	gp.value = &timestamp_frequency;
-	if (perf_ioctl(drm_fd, DRM_IOCTL_I915_GETPARAM, &gp) == 0)
-		return timestamp_frequency;
-
-	gp.param = I915_PARAM_CS_TIMESTAMP_FREQUENCY;
-	gp.value = &timestamp_frequency;
-	if (perf_ioctl(drm_fd, DRM_IOCTL_I915_GETPARAM, &gp) == 0)
-		return timestamp_frequency;
-
-
-	if (devinfo->graphics_ver > 9) {
-		fprintf(stderr, "Unable to query timestamp frequency from i915, please update kernel.\n");
-		return 0;
-	}
-
-	fprintf(stderr, "Warning: unable to query timestamp frequency from i915, guessing values...\n");
-
-	if (devinfo->graphics_ver <= 8)
-		return 12500000;
-	if (devinfo->is_broxton)
-		return 19200000;
-	return 12000000;
+	return oau->oa_timestamp_freq;
 }
 
 struct recording_context {
@@ -391,65 +353,141 @@ struct recording_context {
 	const char *command_fifo;
 	int command_fifo_fd;
 
-	uint64_t poll_period;
-
-	struct i915_engine_class_instance engine;
 	int gt;
+	struct drm_xe_engine_class_instance eci;
+	struct drm_xe_engine_class_instance *hwe;
+	struct drm_xe_oa_unit *oa_unit;
 };
 
-static int
-perf_revision(int drm_fd)
+static void set_fd_flags(int fd, int flags)
 {
-	drm_i915_getparam_t gp;
-	int value = 1;
+	int old = fcntl(fd, F_GETFL, 0);
 
-	gp.param = I915_PARAM_PERF_REVISION;
-	gp.value = &value;
-	perf_ioctl(drm_fd, DRM_IOCTL_I915_GETPARAM, &gp);
-
-	return value;
+	igt_assert_lte(0, old);
+	igt_assert_eq(0, fcntl(fd, F_SETFL, old | flags));
 }
+
+enum xe_oa_report_header {
+	HDR_32_BIT = 0,
+	HDR_64_BIT,
+};
+
+/*To be kept in sync with the same enum in lib/xe/oa-configs/oa-metricset-codegen.py */
+enum xe_oa_format_name {
+	XE_OA_FORMAT_C4_B8 = 1,
+
+	/* Gen8+ */
+	XE_OA_FORMAT_A12,
+	XE_OA_FORMAT_A12_B8_C8,
+	XE_OA_FORMAT_A32u40_A4u32_B8_C8,
+
+	/* DG2 */
+	XE_OAR_FORMAT_A32u40_A4u32_B8_C8,
+	XE_OA_FORMAT_A24u40_A14u32_B8_C8,
+
+	/* DG2/MTL OAC */
+	XE_OAC_FORMAT_A24u64_B8_C8,
+	XE_OAC_FORMAT_A22u32_R2u32_B8_C8,
+
+	/* MTL OAM */
+	XE_OAM_FORMAT_MPEC8u64_B8_C8,
+	XE_OAM_FORMAT_MPEC8u32_B8_C8,
+
+	/* Xe2+ */
+	XE_OA_FORMAT_PEC64u64,
+	XE_OA_FORMAT_PEC64u64_B8_C8,
+	XE_OA_FORMAT_PEC64u32,
+	XE_OA_FORMAT_PEC32u64_G1,
+	XE_OA_FORMAT_PEC32u32_G1,
+	XE_OA_FORMAT_PEC32u64_G2,
+	XE_OA_FORMAT_PEC32u32_G2,
+	XE_OA_FORMAT_PEC36u64_G1_32_G2_4,
+	XE_OA_FORMAT_PEC36u64_G1_4_G2_32,
+
+	XE_OA_FORMAT_MAX,
+};
+
+struct xe_oa_format {
+	uint32_t counter_select;
+	int size;
+	int oa_type;
+	enum xe_oa_report_header header;
+	uint16_t counter_size;
+	uint16_t bc_report;
+};
+
+#define DRM_FMT(x) DRM_XE_OA_FMT_TYPE_##x
+
+static const struct xe_oa_format oa_formats[] = {
+	[XE_OA_FORMAT_C4_B8]			= { 7, 64,  DRM_FMT(OAG) },
+	[XE_OA_FORMAT_A12]			= { 0, 64,  DRM_FMT(OAG) },
+	[XE_OA_FORMAT_A12_B8_C8]		= { 2, 128, DRM_FMT(OAG) },
+	[XE_OA_FORMAT_A32u40_A4u32_B8_C8]	= { 5, 256, DRM_FMT(OAG) },
+	[XE_OAR_FORMAT_A32u40_A4u32_B8_C8]	= { 5, 256, DRM_FMT(OAR) },
+	[XE_OA_FORMAT_A24u40_A14u32_B8_C8]	= { 5, 256, DRM_FMT(OAG) },
+	[XE_OAC_FORMAT_A24u64_B8_C8]		= { 1, 320, DRM_FMT(OAC), HDR_64_BIT },
+	[XE_OAC_FORMAT_A22u32_R2u32_B8_C8]	= { 2, 192, DRM_FMT(OAC), HDR_64_BIT },
+	[XE_OAM_FORMAT_MPEC8u64_B8_C8]		= { 1, 192, DRM_FMT(OAM_MPEC), HDR_64_BIT },
+	[XE_OAM_FORMAT_MPEC8u32_B8_C8]		= { 2, 128, DRM_FMT(OAM_MPEC), HDR_64_BIT },
+	[XE_OA_FORMAT_PEC64u64]			= { 1, 576, DRM_FMT(PEC), HDR_64_BIT, 1, 0 },
+	[XE_OA_FORMAT_PEC64u64_B8_C8]		= { 1, 640, DRM_FMT(PEC), HDR_64_BIT, 1, 1 },
+	[XE_OA_FORMAT_PEC64u32]			= { 1, 320, DRM_FMT(PEC), HDR_64_BIT },
+	[XE_OA_FORMAT_PEC32u64_G1]		= { 5, 320, DRM_FMT(PEC), HDR_64_BIT, 1, 0 },
+	[XE_OA_FORMAT_PEC32u32_G1]		= { 5, 192, DRM_FMT(PEC), HDR_64_BIT },
+	[XE_OA_FORMAT_PEC32u64_G2]		= { 6, 320, DRM_FMT(PEC), HDR_64_BIT, 1, 0 },
+	[XE_OA_FORMAT_PEC32u32_G2]		= { 6, 192, DRM_FMT(PEC), HDR_64_BIT },
+	[XE_OA_FORMAT_PEC36u64_G1_32_G2_4]	= { 3, 320, DRM_FMT(PEC), HDR_64_BIT, 1, 0 },
+	[XE_OA_FORMAT_PEC36u64_G1_4_G2_32]	= { 4, 320, DRM_FMT(PEC), HDR_64_BIT, 1, 0 },
+};
+
+static uint64_t oa_format_fields(uint64_t name)
+{
+#define FIELD_PREP_ULL(_mask, _val) \
+	(((_val) << (__builtin_ffsll(_mask) - 1)) & (_mask))
+
+	struct xe_oa_format f = oa_formats[name];
+
+	/* 0 format name is invalid */
+	if (!name)
+		memset(&f, 0xff, sizeof(f));
+
+	return FIELD_PREP_ULL(DRM_XE_OA_FORMAT_MASK_FMT_TYPE, (u64)f.oa_type) |
+		FIELD_PREP_ULL(DRM_XE_OA_FORMAT_MASK_COUNTER_SEL, (u64)f.counter_select) |
+		FIELD_PREP_ULL(DRM_XE_OA_FORMAT_MASK_COUNTER_SIZE, (u64)f.counter_size) |
+		FIELD_PREP_ULL(DRM_XE_OA_FORMAT_MASK_BC_REPORT, (u64)f.bc_report);
+#undef FIELD_PREP_ULL
+}
+#define __ff oa_format_fields
 
 static int
 perf_open(struct recording_context *ctx)
 {
-	uint64_t properties[DRM_I915_PERF_PROP_MAX * 2];
-	struct drm_i915_perf_open_param param;
-	int p = 0, stream_fd, revision;
+	int stream_fd;
 
-	revision = perf_revision(ctx->drm_fd);
+	uint64_t properties[] = {
+		DRM_XE_OA_PROPERTY_OA_UNIT_ID, ctx->oa_unit->oa_unit_id,
 
-	properties[p++] = DRM_I915_PERF_PROP_SAMPLE_OA;
-	properties[p++] = true;
+		/* Include OA reports in samples */
+		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
 
-	properties[p++] = DRM_I915_PERF_PROP_OA_METRICS_SET;
-	properties[p++] = ctx->metric_set->perf_oa_metrics_set;
+		/* OA unit configuration */
+		DRM_XE_OA_PROPERTY_OA_METRIC_SET, ctx->metric_set->perf_oa_metrics_set,
+		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(ctx->metric_set->perf_oa_format),
+		DRM_XE_OA_PROPERTY_OA_EXPONENT, ctx->oa_exponent,
+	};
+	struct intel_xe_oa_open_prop param = {
+		.num_properties = ARRAY_SIZE(properties) / 2,
+		.properties_ptr = to_user_pointer(properties),
+	};
 
-	properties[p++] = DRM_I915_PERF_PROP_OA_FORMAT;
-	properties[p++] = ctx->metric_set->perf_oa_format;
-
-	properties[p++] = DRM_I915_PERF_PROP_OA_EXPONENT;
-	properties[p++] = ctx->oa_exponent;
-
-	if (revision >= 5) {
-		properties[p++] = DRM_I915_PERF_PROP_POLL_OA_PERIOD;
-		properties[p++] = ctx->poll_period;
+	stream_fd = xe_perf_ioctl(ctx->drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param);
+	if (stream_fd < 0) {
+		errno = 0;
+		goto exit;
 	}
 
-	if (revision >= 6 && ctx->engine.engine_class >= 0 && ctx->engine.engine_instance >= 0) {
-		properties[p++] = DRM_I915_PERF_PROP_OA_ENGINE_CLASS;
-		properties[p++] = ctx->engine.engine_class;
-		properties[p++] = DRM_I915_PERF_PROP_OA_ENGINE_INSTANCE;
-		properties[p++] = ctx->engine.engine_instance;
-	}
-
-	memset(&param, 0, sizeof(param));
-	param.flags = 0;
-	param.flags |= I915_PERF_FLAG_FD_CLOEXEC | I915_PERF_FLAG_FD_NONBLOCK;
-	param.properties_ptr = (uintptr_t)properties;
-	param.num_properties = p / 2;
-
-	stream_fd = perf_ioctl(ctx->drm_fd, DRM_IOCTL_I915_PERF_OPEN, &param);
+	set_fd_flags(stream_fd, O_CLOEXEC | O_NONBLOCK);
+exit:
 	return stream_fd;
 }
 
@@ -491,8 +529,8 @@ write_header(FILE *output, struct recording_context *ctx)
 		.gt_min_frequency = ctx->perf->devinfo.gt_min_freq,
 		.gt_max_frequency = ctx->perf->devinfo.gt_max_freq,
 		.oa_format = ctx->metric_set->perf_oa_format,
-		.engine_class = ctx->engine.engine_class,
-		.engine_instance = ctx->engine.engine_instance,
+		.engine_class = ctx->hwe->engine_class,
+		.engine_instance = ctx->hwe->engine_instance,
 	};
 	struct drm_i915_perf_record_header header = {
 		.type = INTEL_PERF_RECORD_TYPE_DEVICE_INFO,
@@ -513,33 +551,9 @@ write_header(FILE *output, struct recording_context *ctx)
 	return true;
 }
 
-static struct drm_i915_query_topology_info *
-get_topology(int drm_fd, uint32_t *topology_size)
+static struct drm_i915_query_topology_info *get_topology(struct recording_context *ctx)
 {
-	struct drm_i915_query query = {};
-	struct drm_i915_query_topology_info *topo_info;
-	struct drm_i915_query_item item = {
-		.query_id = DRM_I915_QUERY_TOPOLOGY_INFO,
-	};
-	int ret;
-
-	query.num_items = 1;
-	query.items_ptr = (uintptr_t) &item;
-
-	/* Maybe not be available on older kernels. */
-	ret = perf_ioctl(drm_fd, DRM_IOCTL_I915_QUERY, &query);
-	if (ret < 0)
-		return NULL;
-
-	assert(item.length > 0);
-	*topology_size = ALIGN(item.length, 8);
-	topo_info = calloc(1, *topology_size);
-	item.data_ptr = (uintptr_t) topo_info;
-
-	ret = perf_ioctl(drm_fd, DRM_IOCTL_I915_QUERY, &query);
-	assert(ret == 0);
-
-	return topo_info;
+	return xe_fill_i915_topology_info(ctx->drm_fd, ctx->devid, &ctx->topology_size);
 }
 
 static bool
@@ -559,25 +573,59 @@ write_topology(FILE *output, struct recording_context *ctx)
 	return true;
 }
 
-static bool
-write_i915_perf_data(FILE *output, int perf_fd)
+static int get_stream_status(int perf_fd, u32 *oa_status)
 {
-	ssize_t ret;
-	char data[4096];
+	struct drm_xe_oa_stream_status status;
+	int ret;
 
-	while ((ret = read(perf_fd, data, sizeof(data))) > 0 ||
-	       errno == EINTR) {
-		if (fwrite(data, ret, 1, output) != 1)
-			return false;
+	ret = perf_ioctl(perf_fd, DRM_XE_PERF_IOCTL_STATUS, &status);
+	if (ret)
+		return ret;
+
+	*oa_status = status.oa_status;
+	return 0;
+}
+
+static bool
+write_i915_perf_data(FILE *output, struct recording_context *ctx)
+{
+	ssize_t format_size = oa_formats[ctx->metric_set->perf_oa_format].size;
+	char data[4096];
+	u32 oa_status;
+	ssize_t ret;
+
+	while ((ret = read(ctx->perf_fd, data, sizeof(data))) > 0 || errno == EINTR) {
+		assert(!(ret % format_size));
+
+		for (int i = 0; i < ret / format_size; i++) {
+			struct drm_i915_perf_record_header header = {
+				.type = DRM_I915_PERF_RECORD_SAMPLE,
+				.size = sizeof(header) + format_size,
+			};
+
+			if (fwrite(&header, sizeof(header), 1, output) != 1)
+				return false;
+
+			if (fwrite(data, format_size, 1, output) != 1)
+				return false;
+		}
+
+		if (!get_stream_status(ctx->perf_fd, &oa_status)) {
+			struct drm_i915_perf_record_header header = { .size = sizeof(header) };
+
+			if (oa_status & DRM_XE_OASTATUS_REPORT_LOST)
+				header.type = DRM_I915_PERF_RECORD_OA_REPORT_LOST;
+			else if (oa_status & DRM_XE_OASTATUS_BUFFER_OVERFLOW)
+				header.type = DRM_I915_PERF_RECORD_OA_BUFFER_LOST;
+			else
+				continue;
+
+			if (fwrite(&header, sizeof(header), 1, output) != 1)
+				return false;
+		}
 	}
 
 	return true;
-}
-
-static uint64_t timespec_diff(struct timespec *begin,
-			      struct timespec *end)
-{
-	return 1000000000ull * (end->tv_sec - begin->tv_sec) + end->tv_nsec - begin->tv_nsec;
 }
 
 static clock_t correlation_clock_id = CLOCK_MONOTONIC;
@@ -585,54 +633,39 @@ static clock_t correlation_clock_id = CLOCK_MONOTONIC;
 static const char *
 get_correlation_clock_name(clock_t clock_id)
 {
-  switch (clock_id) {
-  case CLOCK_BOOTTIME:      return "bootime";
-  case CLOCK_MONOTONIC:     return "monotonic";
-  case CLOCK_MONOTONIC_RAW: return "monotonic_raw";
-  default:                  return "*unknown*";
-  }
+	switch (clock_id) {
+	case CLOCK_BOOTTIME:      return "bootime";
+	case CLOCK_MONOTONIC:     return "monotonic";
+	case CLOCK_MONOTONIC_RAW: return "monotonic_raw";
+	default:                  return "*unknown*";
+	}
 }
 
-static bool
-get_correlation_timestamps(struct intel_perf_record_timestamp_correlation *corr, int drm_fd)
+static int query_engine_cycles(int fd, struct drm_xe_query_engine_cycles *ts)
 {
-	struct drm_i915_reg_read reg_read;
-	struct {
-		struct timespec cpu_ts_begin;
-		struct timespec cpu_ts_end;
-		uint64_t gpu_ts;
-	} attempts[3];
-	uint32_t best = 0;
+	struct drm_xe_device_query query = {
+		.extensions = 0,
+		.query = DRM_XE_DEVICE_QUERY_ENGINE_CYCLES,
+		.size = sizeof(*ts),
+		.data = (uintptr_t)ts,
+	};
 
-#define RENDER_RING_TIMESTAMP 0x2358
+	return perf_ioctl(fd, DRM_IOCTL_XE_DEVICE_QUERY, &query);
+}
 
-        reg_read.offset = RENDER_RING_TIMESTAMP | I915_REG_READ_8B_WA;
+static bool get_correlation_timestamps(struct recording_context *ctx,
+				       struct intel_perf_record_timestamp_correlation *corr)
+{
+	struct drm_xe_query_engine_cycles ts = {};
 
-	/* Gather 3 correlations. */
-	for (uint32_t i = 0; i < ARRAY_SIZE(attempts); i++) {
-		clock_gettime(correlation_clock_id, &attempts[i].cpu_ts_begin);
-		if (perf_ioctl(drm_fd, DRM_IOCTL_I915_REG_READ, &reg_read) < 0)
-			return false;
-		clock_gettime(correlation_clock_id, &attempts[i].cpu_ts_end);
+	ts.eci = *ctx->hwe;
+	ts.clockid = correlation_clock_id;
 
-		attempts[i].gpu_ts = reg_read.val;
-	}
+	if (query_engine_cycles(ctx->drm_fd, &ts))
+		return false;
 
-	/* Now select the best. */
-	for (uint32_t i = 1; i < ARRAY_SIZE(attempts); i++) {
-		if (timespec_diff(&attempts[i].cpu_ts_begin,
-				  &attempts[i].cpu_ts_end) <
-		    timespec_diff(&attempts[best].cpu_ts_begin,
-				  &attempts[best].cpu_ts_end))
-			best = i;
-	}
-
-	corr->cpu_timestamp =
-		(attempts[best].cpu_ts_begin.tv_sec * 1000000000ull +
-		 attempts[best].cpu_ts_begin.tv_nsec) +
-		timespec_diff(&attempts[best].cpu_ts_begin,
-			      &attempts[best].cpu_ts_end) / 2;
-	corr->gpu_timestamp = attempts[best].gpu_ts;
+	corr->cpu_timestamp = ts.cpu_timestamp + ts.cpu_delta / 2;
+	corr->gpu_timestamp = ts.engine_cycles;
 
 	return true;
 }
@@ -656,11 +689,11 @@ write_saved_correlation_timestamps(FILE *output,
 }
 
 static bool
-write_correlation_timestamps(FILE *output, int drm_fd)
+write_correlation_timestamps(struct recording_context *ctx, FILE *output)
 {
 	struct intel_perf_record_timestamp_correlation corr;
 
-	if (!get_correlation_timestamps(&corr, drm_fd))
+	if (!get_correlation_timestamps(ctx, &corr))
 		return false;
 
 	return write_saved_correlation_timestamps(output, &corr);
@@ -705,7 +738,7 @@ read_command_file(struct recording_context *ctx)
 			    fwrite(chunks[0].data, chunks[0].len, 1, file) != 1 ||
 			    (chunks[1].len > 0 &&
 			     fwrite(chunks[1].data, chunks[1].len, 1, file) != 1) ||
-			    !write_correlation_timestamps(file, ctx->drm_fd)) {
+			    !write_correlation_timestamps(ctx, file)) {
 				fprintf(stderr, "Unable to write circular buffer data in file '%s'\n",
 					dump);
 			}
@@ -797,9 +830,6 @@ usage(const char *name)
 		"     --output,             -o <path>   Output file (default = i915_perf.record)\n"
 		"     --cpu-clock,          -k <path>   Cpu clock to use for correlations\n"
 		"                                       Values: boot, mono, mono_raw (default = mono)\n"
-		"     --poll-period         -P <value>  Polling interval in microseconds used by a timer in the driver to query\n"
-		"                                       for OA reports periodically\n"
-		"                                       (default = 5000), Minimum = 100.\n"
 		"     --engine-class        -e <value>  Engine class used for the OA capture.\n"
 		"     --engine-instance     -i <value>  Engine instance used for the OA capture.\n",
 		name);
@@ -830,29 +860,27 @@ teardown_recording_context(struct recording_context *ctx)
 		close(ctx->drm_fd);
 }
 
-static int
-mtl_engine_to_gt(const struct i915_engine_class_instance *engine)
+static int assign_oa_unit(int fd, struct recording_context *ctx)
 {
-        switch (engine->engine_class) {
-        case I915_ENGINE_CLASS_RENDER:
-                return 0;
-        case I915_ENGINE_CLASS_VIDEO:
-        case I915_ENGINE_CLASS_VIDEO_ENHANCE:
-                return 1;
-        default:
-                return -1;
-        }
-}
+	struct drm_xe_query_oa_units *qoa = xe_oa_units(fd);
+	struct drm_xe_oa_unit *oau;
+	uint8_t *poau;
 
-/* static mapping as in igt core library until a different way is available */
-static int
-engine_to_gt(struct recording_context *ctx)
-{
-	if (ctx->devinfo->is_meteorlake)
-		return mtl_engine_to_gt(&ctx->engine);
-	else if (ctx->engine.engine_class == I915_ENGINE_CLASS_RENDER &&
-		 ctx->engine.engine_instance == 0)
-		return 0;
+	poau = (uint8_t *)&qoa->oa_units[0];
+	for (int i = 0; i < qoa->num_oa_units; i++) {
+		oau = (struct drm_xe_oa_unit *)poau;
+
+		for (int j = 0; j < oau->num_engines; j++) {
+			if (oau->eci[j].engine_class == ctx->eci.engine_class &&
+			    oau->eci[j].engine_instance == ctx->eci.engine_instance) {
+				ctx->hwe = &oau->eci[j];
+				ctx->oa_unit = oau;
+				return 0;
+			}
+		}
+
+		poau += sizeof(*oau) + oau->num_engines * sizeof(oau->eci[0]);
+	}
 
 	return -1;
 }
@@ -871,7 +899,6 @@ main(int argc, char *argv[])
 		{"size",		required_argument, 0, 's'},
 		{"command-fifo",	required_argument, 0, 'f'},
 		{"cpu-clock",		required_argument, 0, 'k'},
-		{"poll-period",		required_argument, 0, 'P'},
 		{"engine-class",	required_argument, 0, 'e'},
 		{"engine-instance",	required_argument, 0, 'i'},
 		{0, 0, 0, 0}
@@ -901,9 +928,7 @@ main(int argc, char *argv[])
 		.command_fifo = I915_PERF_RECORD_FIFO_PATH,
 		.command_fifo_fd = -1,
 
-		/* 5 ms poll period */
-		.poll_period = 5 * 1000 * 1000,
-		.engine = { USHRT_MAX, USHRT_MAX },
+		.eci = { DRM_XE_ENGINE_CLASS_RENDER, 0 },
 	};
 
 	while ((opt = getopt_long(argc, argv, "hc:d:p:m:Co:s:f:k:P:e:i:", long_options, NULL)) != -1) {
@@ -954,14 +979,11 @@ main(int argc, char *argv[])
 			}
 			break;
 		}
-		case 'P':
-			ctx.poll_period = MAX(100, atol(optarg)) * 1000;
-			break;
 		case 'e':
-			ctx.engine.engine_class = atoi(optarg);
+			ctx.eci.engine_class = atoi(optarg);
 			break;
 		case 'i':
-			ctx.engine.engine_instance = atoi(optarg);
+			ctx.eci.engine_instance = atoi(optarg);
 			break;
 		default:
 			fprintf(stderr, "Internal error: "
@@ -976,17 +998,13 @@ main(int argc, char *argv[])
 		return EXIT_SUCCESS;
 	}
 
-	if (ctx.engine.engine_class == USHRT_MAX ||
-	    ctx.engine.engine_instance == USHRT_MAX) {
-		ctx.engine.engine_class = I915_ENGINE_CLASS_RENDER;
-		ctx.engine.engine_instance = 0;
-	}
-
 	ctx.drm_fd = open_render_node(&ctx.devid, dev_node_id);
 	if (ctx.drm_fd < 0) {
 		fprintf(stderr, "Unable to open device.\n");
 		return EXIT_FAILURE;
 	}
+
+	xe_device_get(ctx.drm_fd);
 
 	ctx.devinfo = intel_get_device_info(ctx.devid);
 	if (!ctx.devinfo) {
@@ -994,23 +1012,22 @@ main(int argc, char *argv[])
 		goto fail;
 	}
 
-	ctx.gt = engine_to_gt(&ctx);
-	if (ctx.gt < 0) {
-		fprintf(stderr, "Unsupported engine class:instance %d:%d.\n",
-			ctx.engine.engine_class, ctx.engine.engine_instance);
+	if (assign_oa_unit(ctx.drm_fd, &ctx) < 0) {
+		fprintf(stderr, "assign_oa_unit failed\n");
 		goto fail;
 	}
 
-	fprintf(stdout, "Device name=%s gen=%i gt=%i id=0x%x\n",
-		ctx.devinfo->codename, ctx.devinfo->graphics_ver, ctx.devinfo->gt, ctx.devid);
+	fprintf(stdout, "Device name=%s gen=%i id=0x%x oa_unit=%i gt=%i\n",
+		ctx.devinfo->codename, ctx.devinfo->graphics_ver, ctx.devid,
+		ctx.oa_unit->oa_unit_id, ctx.hwe->gt_id);
 
-	ctx.topology = get_topology(ctx.drm_fd, &ctx.topology_size);
+	ctx.topology = get_topology(&ctx);
 	if (!ctx.topology) {
 		fprintf(stderr, "Unable to retrieve GPU topology (requires kernel 4.17+).\n");
 		goto fail;
 	}
 
-	ctx.perf = intel_perf_for_fd(ctx.drm_fd, ctx.gt);
+	ctx.perf = intel_perf_for_fd(ctx.drm_fd, ctx.hwe->gt_id);
 	if (!ctx.perf) {
 		fprintf(stderr, "No perf data found.\n");
 		goto fail;
@@ -1052,8 +1069,8 @@ main(int argc, char *argv[])
 
 	intel_perf_load_perf_configs(ctx.perf, ctx.drm_fd);
 
-	ctx.oa_timestamp_frequency = get_device_oa_timestamp_frequency(ctx.devinfo, ctx.drm_fd);
-	ctx.cs_timestamp_frequency = get_device_cs_timestamp_frequency(ctx.devinfo, ctx.drm_fd);
+	ctx.oa_timestamp_frequency = get_device_oa_timestamp_frequency(ctx.drm_fd);
+	ctx.cs_timestamp_frequency = get_device_cs_timestamp_frequency(ctx.drm_fd);
 
 	signal(SIGINT, sigint_handler);
 
@@ -1088,12 +1105,12 @@ main(int argc, char *argv[])
 			goto fail;
 		}
 
-		if (!get_correlation_timestamps(&initial_correlation, ctx.drm_fd)) {
+		if (!get_correlation_timestamps(&ctx, &initial_correlation)) {
 			fprintf(stderr, "Unable to correlation timestamps\n");
 			goto fail;
 		}
 
-		write_correlation_timestamps(ctx.output_stream, ctx.drm_fd);
+		write_correlation_timestamps(&ctx, ctx.output_stream);
 		fprintf(stdout,
 			"Recoding in internal circular buffer.\n"
 			"Use i915-perf-control to snapshot into file.\n");
@@ -1108,7 +1125,7 @@ main(int argc, char *argv[])
 		if (!write_version(output, &ctx) ||
 		    !write_header(output, &ctx) ||
 		    !write_topology(output, &ctx) ||
-		    !write_correlation_timestamps(output, ctx.drm_fd)) {
+		    !write_correlation_timestamps(&ctx, output)) {
 			fprintf(stderr, "Unable to write header in file '%s'\n",
 				output_file);
 			goto fail;
@@ -1161,7 +1178,7 @@ main(int argc, char *argv[])
 
 		if (ret > 0) {
 			if (pollfd[0].revents & POLLIN) {
-				if (!write_i915_perf_data(ctx.output_stream, ctx.perf_fd)) {
+				if (!write_i915_perf_data(ctx.output_stream, &ctx)) {
 					fprintf(stderr, "Failed to write i915-perf data: %s\n",
 						strerror(errno));
 					break;
@@ -1176,7 +1193,7 @@ main(int argc, char *argv[])
 		elapsed_ns = igt_nsec_elapsed(&now);
 		if (elapsed_ns > poll_time_ns) {
 			poll_time_ns = corr_period_ns;
-			if (!write_correlation_timestamps(ctx.output_stream, ctx.drm_fd)) {
+			if (!write_correlation_timestamps(&ctx, ctx.output_stream)) {
 				fprintf(stderr,
 					"Failed to write i915 timestamp correlation data: %s\n",
 					strerror(errno));
@@ -1189,12 +1206,12 @@ main(int argc, char *argv[])
 
 	fprintf(stdout, "Exiting...\n");
 
-	if (!write_i915_perf_data(ctx.output_stream, ctx.perf_fd)) {
+	if (!write_i915_perf_data(ctx.output_stream, &ctx)) {
 		fprintf(stderr, "Failed to write i915-perf data: %s\n",
 			strerror(errno));
 	}
 
-	if (!write_correlation_timestamps(ctx.output_stream, ctx.drm_fd)) {
+	if (!write_correlation_timestamps(&ctx, ctx.output_stream)) {
 		fprintf(stderr,
 			"Failed to write final i915 timestamp correlation data: %s\n",
 			strerror(errno));
