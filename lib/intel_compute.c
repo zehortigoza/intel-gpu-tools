@@ -1243,15 +1243,19 @@ static void xe2lpg_compute_exec_compute(uint32_t *addr_bo_buffer_batch,
 	addr_bo_buffer_batch[b++] = offset_indirect_data_start;
 	addr_bo_buffer_batch[b++] = 0xbe040000;
 	addr_bo_buffer_batch[b++] = 0xffffffff;
-	addr_bo_buffer_batch[b++] = 0x000003ff;
+	addr_bo_buffer_batch[b++] = 0x000003ff; // Local X/Y/Z Dimension
 
 	if (threadgroup_preemption)
-		addr_bo_buffer_batch[b++] = 0x00200000; // Global workgroup size
+		/*
+		 * Create multiple threadgroups using higher gloabl workgroup size
+		 * Global Workgroup size = Local X * Thread Group X +  Local Y * Thread Group Y + Local Z * Thread Group Z
+		 */
+		addr_bo_buffer_batch[b++] = 0x00200000; // Thread Group ID X Dimension
 	else
 		addr_bo_buffer_batch[b++] = 0x00000002;
 
-	addr_bo_buffer_batch[b++] = 0x00000001;
-	addr_bo_buffer_batch[b++] = 0x00000001;
+	addr_bo_buffer_batch[b++] = 0x00000001; // Thread Group ID Y Dimension
+	addr_bo_buffer_batch[b++] = 0x00000001; // Thread Group ID Z Dimension
 	addr_bo_buffer_batch[b++] = 0x00000000;
 	addr_bo_buffer_batch[b++] = 0x00000000;
 	addr_bo_buffer_batch[b++] = 0x00000000;
