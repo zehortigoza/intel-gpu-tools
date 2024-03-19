@@ -469,12 +469,13 @@ static void query_hwconfig(int fd, struct drm_i915_query_topology_info *topinfo)
 	free(hwconfig);
 }
 
-struct drm_i915_query_topology_info *xe_fill_i915_topology_info(int drm_fd)
+struct drm_i915_query_topology_info *
+xe_fill_i915_topology_info(int drm_fd, uint32_t *topology_size)
 {
 	struct drm_i915_query_topology_info i915_topinfo = {};
 	struct drm_i915_query_topology_info *i915_topo;
 	struct drm_xe_query_topology_mask *xe_topo;
-	int total_size, pos = 0;
+	int pos = 0;
 	u8 *ptr;
 	struct drm_xe_device_query query = {
 		.extensions = 0,
@@ -491,9 +492,10 @@ struct drm_i915_query_topology_info *xe_fill_i915_topology_info(int drm_fd)
 	i915_topinfo.eu_stride = DIV_ROUND_UP(i915_topinfo.max_eus_per_subslice, 8);
 
 	/* Allocate and start filling the struct to return */
-	total_size = sizeof(i915_topinfo) + i915_topinfo.eu_offset +
-			i915_topinfo.max_subslices * i915_topinfo.eu_stride;
-	i915_topo = malloc(total_size);
+	*topology_size = sizeof(i915_topinfo) + i915_topinfo.eu_offset +
+		i915_topinfo.max_subslices * i915_topinfo.eu_stride;
+	*topology_size = ALIGN(*topology_size, 8);
+	i915_topo = malloc(*topology_size);
 	igt_assert(i915_topo);
 
 	memcpy(i915_topo, &i915_topinfo, sizeof(i915_topinfo));
@@ -563,6 +565,7 @@ xe_perf_for_fd(int drm_fd, int gt)
 	uint32_t device_id;
 	uint32_t device_revision = 0;
 	uint32_t timestamp_frequency;
+	uint32_t topology_size;
 	uint64_t gt_min_freq = 0;
 	uint64_t gt_max_freq = 0;
 	struct drm_i915_query_topology_info *topology;
@@ -594,7 +597,7 @@ xe_perf_for_fd(int drm_fd, int gt)
 	device_id = intel_get_drm_devid(drm_fd);
 	timestamp_frequency = xe_oa_units(drm_fd)->oa_units[0].oa_timestamp_freq;
 
-	topology = xe_fill_i915_topology_info(drm_fd);
+	topology = xe_fill_i915_topology_info(drm_fd, &topology_size);
 	if (!topology) {
 		igt_warn("xe_fill_i915_topology_info failed\n");
 		return NULL;
