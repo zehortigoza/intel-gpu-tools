@@ -293,7 +293,7 @@ intel_perf_devinfo_eu_available(const struct intel_perf_devinfo *devinfo,
 }
 
 struct drm_i915_query_topology_info *
-xe_fill_i915_topology_info(int drm_fd, uint32_t *topology_size);
+xe_fill_i915_topology_info(int drm_fd, uint32_t device_id, uint32_t *topology_size);
 
 struct intel_perf *intel_perf_for_fd(int drm_fd, int gt);
 struct intel_perf *intel_perf_for_devinfo(uint32_t device_id,
