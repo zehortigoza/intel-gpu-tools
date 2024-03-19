@@ -233,6 +233,28 @@ static void test_init_fbs(data_t *data)
 	igt_plane_set_size(data->plane, width, height);
 }
 
+static bool async_flip_needs_extra_frame(data_t *data)
+{
+	uint32_t devid;
+
+	if (!is_intel_device(data->drm_fd))
+		return false;
+
+	devid = intel_get_drm_devid(data->drm_fd);
+
+	/*
+	 * On BDW-GLK async address update bit is double buffered
+	 * on vblank. So the first async flip will in fact be
+	 * performed as a sync flip by the hardware.
+	 *
+	 * In order to allow the first async flip to change the modifier
+	 * on SKL+ (needed by Xorg/modesetting), and to optimize
+	 * watermarks/ddb for faster response on ADL+, we convert the
+	 * first async flip to a sync flip.
+	 */
+	return intel_display_ver(devid) >= 9 || IS_BROADWELL(devid);
+}
+
 static void test_async_flip(data_t *data)
 {
 	int ret, frame;
@@ -259,26 +281,14 @@ static void test_async_flip(data_t *data)
 
 			flags |= DRM_MODE_PAGE_FLIP_ASYNC;
 
-			/*
-			 * In older platforms (<= Gen10), async address update bit is double buffered.
-			 * So flip timestamp can be verified only from the second flip.
-			 * The first async flip just enables the async address update.
-			 * In platforms greater than DISPLAY13 the first async flip will be discarded
-			 * in order to change the watermark levels as per the optimization. Hence the
-			 * subsequent async flips will actually do the asynchronous flips.
-			 */
-			if (is_intel_device(data->drm_fd)) {
-				uint32_t devid = intel_get_drm_devid(data->drm_fd);
+			if (async_flip_needs_extra_frame(data)) {
+				ret = drmModePageFlip(data->drm_fd, data->crtc_id,
+						      data->bufs[frame % NUM_FBS].fb_id,
+						      flags, data);
 
-				if (IS_GEN9(devid) || IS_GEN10(devid) || AT_LEAST_GEN(devid, 12)) {
-					ret = drmModePageFlip(data->drm_fd, data->crtc_id,
-							      data->bufs[frame % NUM_FBS].fb_id,
-							      flags, data);
+				igt_assert(ret == 0);
 
-					igt_assert(ret == 0);
-
-					wait_flip_event(data);
-				}
+				wait_flip_event(data);
 			}
 		}
 
