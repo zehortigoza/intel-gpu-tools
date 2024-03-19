@@ -470,8 +470,9 @@ static void query_hwconfig(int fd, struct drm_i915_query_topology_info *topinfo)
 }
 
 struct drm_i915_query_topology_info *
-xe_fill_i915_topology_info(int drm_fd, uint32_t *topology_size)
+xe_fill_i915_topology_info(int drm_fd, uint32_t device_id, uint32_t *topology_size)
 {
+	const struct intel_device_info *devinfo = intel_get_device_info(device_id);
 	struct drm_i915_query_topology_info i915_topinfo = {};
 	struct drm_i915_query_topology_info *i915_topo;
 	struct drm_xe_query_topology_mask *xe_topo;
@@ -484,7 +485,14 @@ xe_fill_i915_topology_info(int drm_fd, uint32_t *topology_size)
 		.data = 0,
 	};
 
-	query_hwconfig(drm_fd, &i915_topinfo);
+	/* Only ADL-P, DG2 and newer ip support hwconfig, use hardcoded values for previous */
+	if (intel_graphics_ver(device_id) >= IP_VER(12, 55) || devinfo->is_alderlake_p) {
+		query_hwconfig(drm_fd, &i915_topinfo);
+	} else {
+		i915_topinfo.max_slices = 1;
+		i915_topinfo.max_subslices = 6;
+		i915_topinfo.max_eus_per_subslice = 16;
+	}
 
 	i915_topinfo.subslice_offset = 1;		/* always 1 */
 	i915_topinfo.subslice_stride = DIV_ROUND_UP(i915_topinfo.max_subslices, 8);
@@ -597,7 +605,7 @@ xe_perf_for_fd(int drm_fd, int gt)
 	device_id = intel_get_drm_devid(drm_fd);
 	timestamp_frequency = xe_oa_units(drm_fd)->oa_units[0].oa_timestamp_freq;
 
-	topology = xe_fill_i915_topology_info(drm_fd, &topology_size);
+	topology = xe_fill_i915_topology_info(drm_fd, device_id, &topology_size);
 	if (!topology) {
 		igt_warn("xe_fill_i915_topology_info failed\n");
 		return NULL;
