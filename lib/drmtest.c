@@ -241,6 +241,35 @@ static void modulename_to_chipset(const char *name, unsigned int *chip)
 	}
 }
 
+static const char *chipset_to_str(int chipset)
+{
+	switch (chipset) {
+	case DRIVER_INTEL:
+		return "intel";
+	case DRIVER_V3D:
+		return "v3d";
+	case DRIVER_VC4:
+		return "vc4";
+	case DRIVER_VGEM:
+		return "vgem";
+	case DRIVER_AMDGPU:
+		return "amdgpu";
+	case DRIVER_PANFROST:
+		return "panfrost";
+	case DRIVER_MSM:
+		return "msm";
+	case DRIVER_XE:
+		return "xe";
+	case DRIVER_VMWGFX:
+		return "vmwgfx";
+	case DRIVER_ANY:
+		return "any";
+	default:
+		return "other";
+	}
+}
+
+
 /*
  * Logs path of opened device. Device path opened for the first time is logged at info level,
  * subsequent opens (if any) are logged at debug level.
@@ -564,6 +593,27 @@ int __drm_open_driver_another(int idx, int chipset)
 }
 
 /**
+ * drm_open_driver_another:
+ * @idx: index of the device you are opening
+ * @chipset: OR'd flags for each chipset to search, eg. #DRIVER_INTEL
+ *
+ * A wrapper for __drm_open_driver with skip on fail.
+ *
+ * Returns:
+ * An open DRM fd or skips
+ */
+int drm_open_driver_another(int idx, int chipset)
+{
+	int fd = __drm_open_driver_another(idx, chipset);
+
+	igt_skip_on_f(fd < 0, "No known gpu found for chipset flags %d (%s)\n",
+		      chipset, chipset_to_str(chipset));
+
+	/* TODO: for i915 and idx > 0 add atomic reset before test */
+	return fd;
+}
+
+/**
  * __drm_open_driver:
  * @chipset: OR'd flags for each chipset to search, eg. #DRIVER_INTEL
  *
@@ -643,34 +693,6 @@ static void cancel_work_at_exit_render(int sig)
 	at_exit_drm_render_fd = -1;
 }
 
-static const char *chipset_to_str(int chipset)
-{
-	switch (chipset) {
-	case DRIVER_INTEL:
-		return "intel";
-	case DRIVER_V3D:
-		return "v3d";
-	case DRIVER_VC4:
-		return "vc4";
-	case DRIVER_VGEM:
-		return "vgem";
-	case DRIVER_AMDGPU:
-		return "amdgpu";
-	case DRIVER_PANFROST:
-		return "panfrost";
-	case DRIVER_MSM:
-		return "msm";
-	case DRIVER_XE:
-		return "xe";
-	case DRIVER_VMWGFX:
-		return "vmwgfx";
-	case DRIVER_ANY:
-		return "any";
-	default:
-		return "other";
-	}
-}
-
 static const char *chipset_to_vendor_str(int chipset)
 {
 	return chipset == DRIVER_XE ? chipset_to_str(DRIVER_INTEL) : chipset_to_str(chipset);
@@ -734,11 +756,32 @@ static bool is_valid_fd(int fd)
 }
 
 /**
+ * __drm_close_driver:
+ * @fd: a drm file descriptor
+ *
+ * Check the given drm file descriptor @fd is valid and if not,
+ * return -1. For valid fd close it and make cleanups.
+ *
+ * Returns: 0 on success or -1 on error.
+ */
+int __drm_close_driver(int fd)
+{
+	if (!is_valid_fd(fd))
+		return -1;
+
+	/* Remove xe_device from cache. */
+	if (is_xe_device(fd))
+		xe_device_put(fd);
+
+	return close(fd);
+}
+
+/**
  * drm_close_driver:
  * @fd: a drm file descriptor
  *
- * Check the given drm file descriptor @fd is valid & Close if it is
- * an valid drm fd.
+ * Check the given drm file descriptor @fd is valid and if not issue warning.
+ * For valid fd close it and make cleanups.
  *
  * Returns: 0 on success or -1 on error.
  */
@@ -750,11 +793,7 @@ int drm_close_driver(int fd)
 		return -1;
 	}
 
-	/* Remove xe_device from cache. */
-	if (is_xe_device(fd))
-		xe_device_put(fd);
-
-	return close(fd);
+	return __drm_close_driver(fd);
 }
 
 /**
