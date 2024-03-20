@@ -380,6 +380,9 @@ xe_oa_files = [
 ]
 
 xe_oa_hardware = [
+  'tglgt1', 'tglgt2',
+  'dg1',
+  'rkl',
   'adl',
   'acmgt1', 'acmgt2', 'acmgt3',
   'mtlgt2', 'mtlgt3',
