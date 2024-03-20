@@ -11,6 +11,7 @@
  */
 
 #include "igt.h"
+#include "igt_multigpu.h"
 #include "lib/igt_syncobj.h"
 #include "lib/intel_reg.h"
 #include "xe_drm.h"
@@ -52,6 +53,18 @@
  *
  * SUBTEST: no-exec-%s
  * Description: Run no-exec %arg[1] test
+ * Test category: functionality test
+ *
+ * SUBTEST: multigpu-once-%s
+ * Description: Run %arg[1] test only once on multiGPU
+ * Test category: functionality test
+ *
+ * SUBTEST: multigpu-many-execqueues-many-vm-%s
+ * Description: Run %arg[1] test on many exec_queues and many VMs on multiGPU
+ * Test category: stress test
+ *
+ * SUBTEST: multigpu-no-exec-%s
+ * Description: Run no-exec %arg[1] test on multiGPU
  * Test category: functionality test
  *
  * arg[1]:
@@ -368,4 +381,27 @@ igt_main
 
 	igt_fixture
 		drm_close_driver(fd);
+
+	for (const struct section *s = sections; s->name; s++) {
+		igt_subtest_f("multigpu-once-%s", s->name) {
+			igt_multi_fork_foreach_multigpu(gpu_fd, gpu_idx, DRIVER_XE)
+				xe_for_each_engine(gpu_fd, hwe)
+					test_exec(gpu_fd, hwe, 1, 1, 1, s->flags);
+			igt_waitchildren();
+		}
+
+		igt_subtest_f("multigpu-many-execqueues-many-vm-%s", s->name) {
+			igt_multi_fork_foreach_multigpu(gpu_fd, gpu_idx, DRIVER_XE)
+				xe_for_each_engine(gpu_fd, hwe)
+					test_exec(gpu_fd, hwe, 16, 32, 16, s->flags);
+			igt_waitchildren();
+		}
+
+		igt_subtest_f("multigpu-no-exec-%s", s->name) {
+			igt_multi_fork_foreach_multigpu(gpu_fd, gpu_idx, DRIVER_XE)
+				xe_for_each_engine(gpu_fd, hwe)
+					test_exec(gpu_fd, hwe, 1, 0, 1, s->flags);
+			igt_waitchildren();
+		}
+	}
 }
