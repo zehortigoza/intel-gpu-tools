@@ -1081,6 +1081,7 @@ static void threads(int fd, int flags)
 						threads_data[i].fd = 0;
 					else
 						threads_data[i].fd = fd;
+					threads_data[i].gt = gt;
 					threads_data[i].vm_legacy_mode =
 						vm_legacy_mode;
 					threads_data[i].class = class;
