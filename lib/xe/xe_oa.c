@@ -27,6 +27,10 @@
 #include "xe_oa.h"
 #include "xe_query.h"
 
+#include "xe_oa_metrics_tglgt1.h"
+#include "xe_oa_metrics_tglgt2.h"
+#include "xe_oa_metrics_rkl.h"
+#include "xe_oa_metrics_dg1.h"
 #include "xe_oa_metrics_adl.h"
 #include "xe_oa_metrics_acmgt1.h"
 #include "xe_oa_metrics_acmgt2.h"
@@ -293,7 +297,22 @@ intel_perf_for_devinfo(uint32_t device_id,
 	perf->devinfo.oa_timestamp_mask = 0xffffffff;
 	perf->devinfo.oa_timestamp_shift = 0;
 
-	if (devinfo->is_alderlake_s || devinfo->is_alderlake_p ||
+	if (devinfo->is_tigerlake) {
+		switch (devinfo->gt) {
+		case 1:
+			intel_perf_load_metrics_tglgt1(perf);
+			break;
+		case 2:
+			intel_perf_load_metrics_tglgt2(perf);
+			break;
+		default:
+			return unsupported_xe_oa_platform(perf);
+		}
+	} else if (devinfo->is_rocketlake) {
+		intel_perf_load_metrics_rkl(perf);
+	} else if (devinfo->is_dg1) {
+		intel_perf_load_metrics_dg1(perf);
+	} else if (devinfo->is_alderlake_s || devinfo->is_alderlake_p ||
 		   devinfo->is_raptorlake_s || devinfo->is_alderlake_n) {
 		intel_perf_load_metrics_adl(perf);
 	} else if (devinfo->is_dg2) {
