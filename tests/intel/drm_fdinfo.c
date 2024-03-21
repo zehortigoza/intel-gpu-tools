@@ -36,7 +36,10 @@
 /**
  * TEST: drm fdinfo
  * Description: Test the i915 drm fdinfo data
- * Feature: client_busyness
+ * Feature: client busyness
+ * Functionality: client_busyness
+ * Sub-category: FDinfo
+ * Category: Desktop client
  * Run type: FULL
  *
  * SUBTEST: all-busy-check-all
