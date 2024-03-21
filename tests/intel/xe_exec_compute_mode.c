@@ -400,6 +400,84 @@ static void non_block(int fd, int expect)
 	xe_vm_destroy(fd, vm);
 }
 
+#define LR_SPINNER_TIME 30
+/**
+ * SUBTEST: lr-mode-workload
+ * Description: Stress LR mode workload for 30s.
+ * Test category: functionality test
+ */
+static void lr_mode_workload(int fd)
+{
+	struct drm_xe_sync sync = {
+		.type = DRM_XE_SYNC_TYPE_USER_FENCE,
+		.flags = DRM_XE_SYNC_FLAG_SIGNAL,
+		.timeline_value = USER_FENCE_VALUE,
+	};
+	struct drm_xe_exec exec = {
+		.num_batch_buffer = 1,
+		.num_syncs = 1,
+		.syncs = to_user_pointer(&sync),
+	};
+	struct xe_spin *spin;
+	struct drm_xe_engine *engine;
+	uint64_t vm_sync;
+	size_t bo_size;
+	uint32_t vm;
+	uint32_t exec_queue;
+	uint64_t spin_addr;
+	uint64_t ahnd;
+	uint32_t bo;
+	uint32_t ts_1, ts_2;
+
+	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_LR_MODE, 0);
+	ahnd = intel_allocator_open(fd, 0, INTEL_ALLOCATOR_RELOC);
+	bo_size = xe_bb_size(fd, sizeof(*spin));
+	engine = xe_engine(fd, 1);
+	bo = xe_bo_create(fd, vm, bo_size, vram_if_possible(fd, engine->instance.gt_id), 0);
+	spin = xe_bo_map(fd, bo, bo_size);
+
+	exec_queue = xe_exec_queue_create(fd, vm, &engine->instance, 0);
+	spin_addr = intel_allocator_alloc_with_strategy(ahnd, bo, bo_size, 0,
+							ALLOC_STRATEGY_LOW_TO_HIGH);
+
+	sync.addr = to_user_pointer(&vm_sync);
+	xe_vm_bind_async(fd, vm, engine->instance.gt_id, bo, 0, spin_addr, bo_size, &sync, 1);
+	xe_wait_ufence(fd, &vm_sync, USER_FENCE_VALUE, 0, ONE_SEC);
+
+	xe_spin_init_opts(spin, .addr = spin_addr, .write_timestamp = true);
+	sync.addr = spin_addr + (char *)&spin->exec_sync - (char *)spin;
+	exec.exec_queue_id = exec_queue;
+	exec.address = spin_addr;
+	xe_exec(fd, &exec);
+	xe_spin_wait_started(spin);
+
+	/* Collect and check timestamps before stopping the spinner */
+	sleep(LR_SPINNER_TIME);
+	ts_1 = spin->timestamp;
+	sleep(1);
+	ts_2 = spin->timestamp;
+	igt_assert(ts_1 != ts_2);
+
+	xe_spin_end(spin);
+	xe_wait_ufence(fd, &spin->exec_sync, USER_FENCE_VALUE, 0, ONE_SEC);
+
+	/* Check timestamps to make sure spinner is stopped */
+	ts_1 = spin->timestamp;
+	sleep(1);
+	ts_2 = spin->timestamp;
+	igt_assert(ts_1 == ts_2);
+
+	sync.addr = to_user_pointer(&vm_sync);
+	xe_vm_unbind_async(fd, vm, 0, 0, spin_addr, bo_size, &sync, 1);
+	xe_wait_ufence(fd, &vm_sync, USER_FENCE_VALUE, 0, ONE_SEC);
+	munmap(spin, bo_size);
+	gem_close(fd, bo);
+
+	xe_exec_queue_destroy(fd, exec_queue);
+	xe_vm_destroy(fd, vm);
+	put_ahnd(ahnd);
+}
+
 igt_main
 {
 	struct drm_xe_engine_class_instance *hwe;
@@ -459,6 +537,9 @@ igt_main
 
 	igt_subtest("non-blocking")
 		non_block(fd, EWOULDBLOCK);
+
+	igt_subtest("lr-mode-workload")
+		lr_mode_workload(fd);
 
 
 	igt_fixture
