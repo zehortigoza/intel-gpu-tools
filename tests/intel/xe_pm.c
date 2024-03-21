@@ -612,6 +612,45 @@ static void test_mmap(device_t device, uint32_t placement, uint32_t flags)
 	close(fw_handle);
 }
 
+/**
+ * SUBTEST: mocs_suspend_resume
+ * Description:
+ *     Validate mocs register contents over suspend resume
+ *
+ * Functionality: mocs
+ * Run type: FULL
+ */
+static void test_mocs_suspend_resume(device_t device)
+{
+	int gt;
+
+	xe_for_each_gt(device.fd_xe, gt) {
+		char path[256];
+
+		// Mocs debugfs contents before and after suspend-resume
+		char mocs_content_pre[4096], mocs_contents_post[4096];
+
+		sprintf(path, "gt%d/mocs", gt);
+		igt_assert(igt_debugfs_exists(device.fd_xe, path, O_RDONLY));
+		igt_debugfs_dump(device.fd_xe, path);
+		igt_debugfs_read(device.fd_xe, path, mocs_content_pre);
+
+		fw_handle = igt_debugfs_open(device.fd_xe, "forcewake_all", O_RDONLY);
+		igt_assert(fw_handle >= 0);
+		igt_assert(igt_get_runtime_pm_status() == IGT_RUNTIME_PM_STATUS_ACTIVE);
+
+		/* Runtime suspend  */
+		close(fw_handle);
+		igt_assert(igt_wait_for_pm_status(IGT_RUNTIME_PM_STATUS_SUSPENDED));
+
+		igt_assert(igt_debugfs_exists(device.fd_xe, path, O_RDONLY));
+		igt_debugfs_dump(device.fd_xe, path);
+		igt_debugfs_read(device.fd_xe, path, mocs_contents_post);
+
+		igt_assert(strcmp(mocs_content_pre, mocs_contents_post) == 0);
+	}
+}
+
 igt_main
 {
 	struct drm_xe_engine_class_instance *hwe;
@@ -774,6 +813,10 @@ igt_main
 			dpms_on_off(device, DRM_MODE_DPMS_ON);
 			igt_pm_set_autosuspend_delay(device.pci_xe, delay_ms);
 		}
+
+		igt_subtest("mocs_suspend_resume")
+			test_mocs_suspend_resume(device);
+
 	}
 
 	igt_fixture {
