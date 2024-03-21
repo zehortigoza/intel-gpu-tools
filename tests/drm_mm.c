@@ -28,7 +28,7 @@
  * Description: Basic sanity check of DRM's range manager (struct drm_mm)
  * Feature: mapping
  * Category: Infrastructure
- * Functionality: DRM memory mangemnt
+ * Functionality: DRM
  * Sub-category: Memory management
  * Test category: GEM_Legacy
  * Run type: FULL

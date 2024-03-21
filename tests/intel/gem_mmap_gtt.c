@@ -50,6 +50,9 @@
  * TEST: gem mmap gtt
  * Description: Ensure that all operations around MMAP_GTT ioctl works.
  * Feature: gtt
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: map gtt
  * Run type: FULL
  *
  * SUBTEST: bad-object

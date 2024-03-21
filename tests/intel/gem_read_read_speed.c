@@ -45,6 +45,9 @@
 /**
  * TEST: gem read read speed
  * Description: Test speed of concurrent reads between engines.
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: read/write memory
  * Run type: FULL
  *
  * SUBTEST: read-read-1024x1024

@@ -43,6 +43,9 @@
  * TEST: gem tiling max stride
  * Description: Check that max fence stride works.
  * Feature: gtt, mapping
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: fences
  * Run type: FULL
  *
  * SUBTEST:

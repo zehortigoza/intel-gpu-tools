@@ -33,7 +33,7 @@
  * Feature: prime
  * Functionality: buffer management
  * Run type: FULL
- * Sub-category: DRM
+ * Sub-category: Memory management
  * Test category: GEM_Legacy
  *
  * SUBTEST: after

@@ -52,6 +52,9 @@
  * TEST: gem tiled pread basic
  * Description: Test pread behavior on tiled objects with respect to the reported swizzling value.
  * Feature: gtt, mapping
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: tiled pread/pwrite
  * Run type: BAT
  *
  * SUBTEST:

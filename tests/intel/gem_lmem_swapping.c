@@ -30,7 +30,7 @@
  * Description: Exercise local memory swapping.
  * Feature: local_memory
  * Functionality: buffer management
- * Sub-category: i915
+ * Sub-category: Memory management
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic

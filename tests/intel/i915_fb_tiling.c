@@ -27,6 +27,9 @@
  * TEST: i915 fb tiling
  * Description: Object tiling must be fixed after framebuffer creation.
  * Feature: mapping
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: tiling
  * Run type: FULL
  *
  * SUBTEST:

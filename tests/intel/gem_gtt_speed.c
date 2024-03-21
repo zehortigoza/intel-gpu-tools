@@ -44,6 +44,9 @@
 #include "i915/gem_create.h"
 /**
  * TEST: gem gtt speed
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: gtt
  * Run type: FULL
  *
  * SUBTEST:

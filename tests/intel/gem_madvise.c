@@ -44,7 +44,7 @@
  * Description: Checks that the kernel reports EFAULT when trying to use purged bo.
  * Feature: caching, mapping
  * Functionality: buffer management
- * Sub-category: i915
+ * Sub-category: Memory management
  * Test category: GEM_Legacy
  * Run type: FULL
  *

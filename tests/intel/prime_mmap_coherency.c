@@ -38,9 +38,9 @@
  *   Test dma-buf mmap on !llc platforms mostly and provoke coherency bugs so we know for sure where
  *   we need the sync ioctls.
  * Feature: prime
- * Functionality: memory management
+ * Functionality: prime mmap
  * Run type: FULL
- * Sub-category: DRM
+ * Sub-category: Memory management
  * Test category: GEM_Legacy
  *
  * SUBTEST: ioctl-errors

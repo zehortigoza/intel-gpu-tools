@@ -54,9 +54,9 @@
  * TEST: prime mmap
  * Category: Infrastructure
  * Feature: prime
- * Functionality: memory management
+ * Functionality: prime mmap
  * Run type: FULL
- * Sub-category: DRM
+ * Sub-category: Memory management
  * Test category: GEM_Legacy
  *
  * SUBTEST: test_aperture_limit

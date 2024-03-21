@@ -57,9 +57,9 @@
  * Category: Infrastructure
  * Description: Check whether we correctly invalidate the cs tlb.
  * Feature: mapping
- * Functionality: command submission
+ * Functionality: tlb
  * Run type: FULL
- * Sub-category: i915
+ * Sub-category: Memory management
  * Test category: GEM_Legacy
  *
  * SUBTEST: engines

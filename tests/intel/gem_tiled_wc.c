@@ -48,6 +48,9 @@
 /**
  * TEST: gem tiled wc
  * Feature: caching, gtt
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: cache
  * Run type: FULL
  *
  * SUBTEST:

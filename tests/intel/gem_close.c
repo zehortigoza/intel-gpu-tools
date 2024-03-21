@@ -31,7 +31,7 @@
  * Feature: mapping
  * Functionality: driver handler
  * Run type: FULL
- * Sub-category: i915
+ * Sub-category: Memory management
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic

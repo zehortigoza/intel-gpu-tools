@@ -42,6 +42,9 @@
  * TEST: gem mmap
  * Description: Basic MMAP IOCTL tests for memory regions.
  * Feature: mapping
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: mmap
  * Run type: FULL
  *
  * SUBTEST: bad-object

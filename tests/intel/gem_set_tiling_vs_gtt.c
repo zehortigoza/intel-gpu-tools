@@ -42,6 +42,9 @@
  * TEST: gem set tiling vs gtt
  * Description: Check set_tiling vs gtt mmap coherency.
  * Feature: gtt
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: tiling vs gtt coherency
  * Run type: FULL
  *
  * SUBTEST:

@@ -42,6 +42,9 @@
  * TEST: gem set tiling vs pwrite
  * Description: Check set_tiling vs pwrite coherency.
  * Feature: gtt
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: tiling vs pwrite coherency
  * Run type: FULL
  *
  * SUBTEST:

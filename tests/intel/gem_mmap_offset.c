@@ -42,7 +42,7 @@
  * Description: Basic MMAP_OFFSET IOCTL tests for mem regions
  * Category: Infrastructure
  * Feature: mapping
- * Functionality: mapping
+ * Functionality: mmap
  * Sub-category: Memory management
  * Test category: GEM_Legacy
  * Run type: FULL

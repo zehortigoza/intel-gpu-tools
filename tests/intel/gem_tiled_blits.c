@@ -58,6 +58,9 @@
  * TEST: gem tiled blits
  * Description: Test doing many tiled blits, with a working set larger than the aperture size.
  * Feature: gtt, mapping
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: tiled blits
  * Run type: FULL
  *
  * SUBTEST: basic

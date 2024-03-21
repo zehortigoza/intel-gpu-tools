@@ -42,6 +42,9 @@
  * TEST: gem tiled partial pwrite pread
  * Description: Test pwrite/pread consistency when touching partial cachelines.
  * Feature: gtt, mapping
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: tiled pread/pwrite
  * Run type: FULL
  *
  * SUBTEST: reads

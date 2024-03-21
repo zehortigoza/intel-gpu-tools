@@ -62,6 +62,9 @@
  * TEST: gem tiled swapping
  * Description: Exercise swizzle code for swapping.
  * Feature: gtt, mapping
+ * Sub-category: Memory management
+ * Category: Desktop client
+ * Functionality: swapping
  * Run type: FULL
  *
  * SUBTEST: non-threaded
