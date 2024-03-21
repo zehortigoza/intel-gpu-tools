@@ -46,7 +46,7 @@
  * Description: Tests for hang detection and recovery
  * Feature: reset
  * Functionality: error handling
- * Sub-category: debugger
+ * Sub-category: Debugging
  * Test category: GEM_Legacy
  *
  * SUBTEST: detector

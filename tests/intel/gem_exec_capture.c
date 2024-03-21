@@ -38,7 +38,7 @@
  * Feature: cmd_submission
  * Category: Server
  * Functionality: offline debugging
- * Sub-category: Debugger
+ * Sub-category: Debugging
  * Test category: GEM_Legacy
  * Run type: FULL
  *
