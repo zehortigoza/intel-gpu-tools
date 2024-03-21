@@ -35,7 +35,10 @@
 #include "sw_sync.h"
 /**
  * TEST: gen9 exec parse
- * Feature: blitter, command_parser
+ * Feature: blitter feature, command_parser
+ * Sub-category: Blitter
+ * Functionality: command parser
+ * Category: Desktop client
  * Run type: FULL
  *
  * SUBTEST: allowed-all

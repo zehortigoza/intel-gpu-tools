@@ -13,19 +13,19 @@
 /**
  * TEST: gem exercise blt
  * Description: Exercise blitter commands
- * Feature: blitter
- * Run type: FULL
+ * Feature: blitter feature
+ * Sub-category: Blitter
+ * Category: Desktop client
+ * Functionality: fast-copy
  * Test category: GEM_Legacy
+ * Run type: FULL
  *
  * SUBTEST: fast-copy
- * Description:
- *   Check fast-copy blit
- *   blitter
+ * Description: Check fast-copy blit blitter
  *
  * SUBTEST: fast-copy-emit
- * Description:
- *   Check multiple fast-copy in one batch
- *   blitter
+ * Description: Check multiple fast-copy in one batch blitter
+ *
  */
 
 IGT_TEST_DESCRIPTION("Exercise blitter commands");

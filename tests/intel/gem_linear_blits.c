@@ -53,9 +53,9 @@
  * TEST: gem linear blits
  * Category: Infrastructure
  * Description: Test doing many blits with a working set larger than the aperture size.
- * Feature: blitter
- * Functionality: blitter
- * Sub-category: CMD submission
+ * Feature: blitter feature
+ * Functionality: linear blits
+ * Sub-category: Blitter
  * Test category: GEM_Legacy
  * Run type: FULL
  *
