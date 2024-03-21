@@ -799,6 +799,9 @@ int igt_amd_trigger_hotplug(int drm_fd, char *connector_name)
         int wr_len;
         const char *enable_hpd = "1";
 
+	if (!igt_amd_output_has_hpd(drm_fd, connector_name))
+		return 0;
+
         fd = igt_debugfs_connector_dir(drm_fd, connector_name, O_RDONLY);
         igt_assert(fd >= 0);
         hpd_fd = openat(fd, DEBUGFS_HPD_TRIGGER, O_WRONLY);
