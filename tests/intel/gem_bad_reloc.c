@@ -43,16 +43,18 @@
 #include "igt.h"
 /**
  * TEST: gem bad reloc
- * Description:
- *   Simulates SNA behaviour using negative self-relocations for STATE_BASE_ADDRESS command
- *   packets.
+ * Description: Simulates SNA behaviour using negative self-relocations for
+ *		STATE_BASE_ADDRESS command packets.
  * Feature: cmd_submission
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: relocations
  * Run type: FULL
  *
  * SUBTEST: negative-reloc
- * Description:
- *   SNA behaviour is compressing batch buffer which leads to negative relocation deltas.
- *   Negative self-relocation happening with real offset 0.
+ * Description: SNA behaviour is compressing batch buffer which leads to
+ *		negative relocation deltas. Negative self-relocation happening
+ *		with real offset 0.
  *
  * SUBTEST: negative-reloc-bltcopy
  * Description: Exercising blitter operation with negative reloc.

@@ -55,6 +55,9 @@
  *   objects using render engine with various working set sizes and compares
  *   outputs with expected ones.
  * Feature: mapping
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: render blits
  * Run type: FULL
  *
  * SUBTEST: aperture-shrink

@@ -48,8 +48,8 @@
  *   Exercise many tiny batchbuffer operations, in the hope of catching failure to manage the ring
  *   properly near full.
  * Feature: cmd_submission
- * Functionality: command submission
- * Sub-category: i915
+ * Functionality: execbuf
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
  * Run type: FULL
  *

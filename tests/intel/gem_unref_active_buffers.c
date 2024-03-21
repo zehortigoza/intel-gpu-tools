@@ -48,7 +48,7 @@
  * Feature: cmd_submission
  * Functionality: buffer management
  * Run type: FULL
- * Sub-category: i915
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *
  * SUBTEST:

@@ -41,6 +41,9 @@
  * TEST: gem pwrite snooped
  * Description: pwrite to a snooped bo then make it uncached and check that the GPU sees the data.
  * Feature: gtt, mapping
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: pwrite
  * Run type: FULL
  *
  * SUBTEST:

@@ -50,9 +50,9 @@
  * Category: Desktop client
  * Description: Exercises the basic execbuffer using object alignments
  * Feature: cmd_submission
- * Functionality: command submission
+ * Functionality: execbuf
  * Run type: FULL
- * Sub-category: i915
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: forked

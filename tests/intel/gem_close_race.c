@@ -52,7 +52,7 @@
  * TEST: gem close race
  * Description: Test try to race gem_close against workload submission.
  * Category: Infrastructure
- * Feature: synchronization
+ * Feature: synchronization feature
  * Functionality: driver handler
  * Sub-category: CMD submission
  * Test category: GEM_Legacy

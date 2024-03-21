@@ -42,6 +42,9 @@
 /**
  * TEST: gem lut handle
  * Description: Exercises the basic execbuffer using the handle LUT interface.
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: execbuf
  * Run type: FULL
  *
  * SUBTEST:

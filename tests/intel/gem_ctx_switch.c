@@ -47,7 +47,10 @@
 #include "igt.h"
 /**
  * TEST: gem ctx switch
- * Feature: context
+ * Feature: context feature
+ * Category: Desktop client
+ * Sub-category: CMD Submission
+ * Functionality: context switching
  * Run type: FULL
  *
  * SUBTEST: all-heavy

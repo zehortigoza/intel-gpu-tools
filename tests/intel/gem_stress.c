@@ -64,6 +64,9 @@
 /**
  * TEST: gem stress
  * Description: General gem coherency test.
+ * Category: Desktop client
+ * Sub-category: CMD submission
+ * Functionality: coherency
  * Run type: FULL
  *
  * SUBTEST:

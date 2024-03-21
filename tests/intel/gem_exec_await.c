@@ -47,9 +47,9 @@
  * TEST: gem exec await
  * Category: Infrastructure
  * Feature: cmd_submission
- * Functionality: command submission
+ * Functionality: requests
  * Run type: FULL
- * Sub-category: i915
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: wide-all

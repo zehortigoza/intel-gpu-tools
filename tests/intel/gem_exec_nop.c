@@ -52,8 +52,8 @@
  * TEST: gem exec nop
  * Category: Infrastructure
  * Feature: cmd_submission
- * Functionality: command submission
- * Sub-category: i915
+ * Functionality: execbuf
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
  * Run type: FULL
  *

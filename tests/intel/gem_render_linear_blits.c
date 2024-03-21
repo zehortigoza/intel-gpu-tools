@@ -52,6 +52,9 @@
 /**
  * TEST: gem render linear blits
  * Feature: mapping
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: render blits
  * Run type: FULL
  *
  * SUBTEST: aperture-shrink

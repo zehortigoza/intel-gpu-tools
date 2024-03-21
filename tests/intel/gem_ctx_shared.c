@@ -51,9 +51,9 @@
  * TEST: gem ctx shared
  * Description: Test shared contexts.
  * Category: Desktop client
- * Feature: context
+ * Feature: context feature
  * Functionality: shared contex
- * Sub-category: Context
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
  * Run type: FULL
  *

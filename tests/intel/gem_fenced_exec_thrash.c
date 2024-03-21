@@ -36,7 +36,10 @@
 /**
  * TEST: gem fenced exec thrash
  * Description: Test execbuf fence accounting.
- * Feature: gtt, synchronization
+ * Feature: gtt, synchronization feature
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: synchronization
  * Run type: FULL
  *
  * SUBTEST: 2-spare-fences

@@ -54,10 +54,10 @@
  * Category: Infrastructure
  * Description: Collection of tests targeting request retirement code paths.
  * Feature: cmd_submission
- * Functionality: command submission
- * Run type: FULL
- * Sub-category: i915
+ * Functionality: requests
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
+ * Run type: FULL
  *
  * SUBTEST: retire-vma-not-inactive
  */

@@ -48,6 +48,9 @@
 /**
  * TEST: gem pread
  * Feature: mapping
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: pread
  * Run type: FULL
  *
  * SUBTEST: bench

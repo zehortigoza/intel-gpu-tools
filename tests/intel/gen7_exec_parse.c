@@ -37,6 +37,9 @@
 /**
  * TEST: gen7 exec parse
  * Feature: cmd_submission, command_parser
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: command parser
  * Run type: FULL
  *
  * SUBTEST: basic-allocation

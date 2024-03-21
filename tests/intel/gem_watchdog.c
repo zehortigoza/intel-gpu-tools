@@ -38,6 +38,9 @@
 /**
  * TEST: gem watchdog
  * Feature: gem_core
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: fences
  * Run type: FULL
  *
  * SUBTEST: default-physical

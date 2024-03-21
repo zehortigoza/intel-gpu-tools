@@ -51,6 +51,9 @@
 /**
  * TEST: gem evict everything
  * Description: Run a couple of big batches to force the eviction code.
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: eviction
  * Run type: FULL
  *
  * SUBTEST: forked-interruptible

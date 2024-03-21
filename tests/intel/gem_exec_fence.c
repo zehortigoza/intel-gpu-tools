@@ -39,7 +39,7 @@
  * TEST: gem exec fence
  * Description: Check that execbuf waits for explicit fences
  * Category: Infrastructure
- * Feature: cmd_submission, synchronization
+ * Feature: cmd_submission, synchronization feature
  * Functionality: semaphore
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
@@ -56,19 +56,19 @@
  *
  * SUBTEST: basic-busy
  * Description: Basic check for explicit fence on each busy engine.
- * Feature: cmd_submission, multitile, synchronization
+ * Feature: cmd_submission, multitile, synchronization feature
  * Run type: BAT
  * Test category: MultiTile
  *
  * SUBTEST: basic-busy-all
  * Description: Basic check for composite fence on all busy engines.
- * Feature: cmd_submission, multitile, synchronization
+ * Feature: cmd_submission, multitile, synchronization feature
  * Test category: MultiTile
  *
  * SUBTEST: basic-wait
  * Description: Basic check for explicit fence with additional wait time on
  *		each busy engine.
- * Feature: cmd_submission, multitile, synchronization
+ * Feature: cmd_submission, multitile, synchronization feature
  * Run type: BAT
  * Test category: MultiTile
  *
@@ -77,7 +77,7 @@
  *		busy engines. Execute the same batch on each engine and check
  *		that the composite fence across all engines completes only
  *		after the batch is completed on every engine.
- * Feature: cmd_submission, multitile, synchronization
+ * Feature: cmd_submission, multitile, synchronization feature
  * Test category: MultiTile
  *
  * SUBTEST: busy-hang
@@ -104,7 +104,7 @@
  *
  * SUBTEST: keep-in-fence
  * Description: Check in-fence is not overwritten with out-fence on each engine.
- * Feature: cmd_submission, multitile, synchronization
+ * Feature: cmd_submission, multitile, synchronization feature
  * Test category: MultiTile
  *
  * SUBTEST: long-history
@@ -112,19 +112,19 @@
  *
  * SUBTEST: nb-await
  * Description: Check for explicit fence with non-blocking wait on each engine.
- * Feature: cmd_submission, multitile, synchronization
+ * Feature: cmd_submission, multitile, synchronization feature
  * Run type: BAT
  * Test category: MultiTile
  *
  * SUBTEST: nb-await-hang
  * Description: Check for explicit fence with non-blocking async wait on each
  *		engine with a pending gpu hang.
- * Feature: cmd_submission, multitile, synchronization
+ * Feature: cmd_submission, multitile, synchronization feature
  *
  * SUBTEST: parallel
  * Description: Check for EXEC_FENCE_SUBMIT in parallel execution scenarios
  *		on each engine.
- * Feature: cmd_submission, multitile, synchronization
+ * Feature: cmd_submission, multitile, synchronization feature
  * Test category: MultiTile
  *
  * SUBTEST: submit

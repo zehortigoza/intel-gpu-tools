@@ -40,24 +40,26 @@
  * Description: Exercise store dword functionality using execbuf-ioctl
  * Feature: cmd_submission
  * Functionality: coherency
- * Sub-category: HW
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
+ * Run type: FULL
  *
  * SUBTEST: basic
- * Description: Verify that all capable engines can store dwords to a common buffer object
+ * Description: Verify that all capable engines can store dwords to a common
+ *		buffer object
  * Run type: BAT
  *
  * SUBTEST: cachelines
- * Description: Verify that each capable engine can store a dword to different cachelines of a buffer object
- * Run type: FULL
+ * Description: Verify that each capable engine can store a dword to different
+ *		cachelines of a buffer object
  *
  * SUBTEST: dword
- * Description: Verify that each capable engine can store a dword to a buffer object
- * Run type: FULL
+ * Description: Verify that each capable engine can store a dword to a buffer
+ *		object
  *
  * SUBTEST: pages
- * Description: Verify that each capable engine can store a dword to various page-sized buffer objects
- * Run type: FULL
+ * Description: Verify that each capable engine can store a dword to various
+ *		page-sized buffer objects
  */
 
 IGT_TEST_DESCRIPTION("Exercise store dword functionality using execbuf-ioctl");

@@ -45,7 +45,10 @@
 #include "igt_x86.h"
 /**
  * TEST: gem fence thrash
- * Feature: gtt, synchronization
+ * Feature: gtt, synchronization feature
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: synchronization
  * Run type: FULL
  *
  * SUBTEST: bo-copy

@@ -41,8 +41,8 @@
  * TEST: gem exec whisper
  * Feature: cmd_submission
  * Category: Infrastructure
- * Functionality: command submission
- * Sub-category: i915
+ * Functionality: execbuf
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
  * Run type: FULL
  *

@@ -46,10 +46,10 @@
 /**
  * TEST: gem ctx engines
  * Category: Infrastructure
- * Feature: context
- * Functionality: context management
+ * Feature: cmd_submission
+ * Functionality: context
  * Run type: FULL
- * Sub-category: i915
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: execute-allforone

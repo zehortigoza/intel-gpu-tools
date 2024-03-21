@@ -31,6 +31,9 @@
 /**
  * TEST: gem exec flush
  * Description: Basic check of flushing after batches
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: execbuf
  * Run type: FULL
  *
  * SUBTEST: basic-batch-kernel-default-cmd

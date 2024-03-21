@@ -51,9 +51,9 @@
  * TEST: gem ctx exec
  * Description: Test context batch buffer execution.
  * Category: Infrastructure
- * Feature: context
- * Functionality: execbuf
- * Sub-category: Context
+ * Feature: cmd_submission
+ * Functionality: context
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
  * Run type: FULL
  *

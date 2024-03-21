@@ -50,6 +50,9 @@
 /**
  * TEST: gem evict alignment
  * Description: Run a couple of big batches to force the unbind on misalignment code.
+ * Sub-category: CMD submission
+ * Category: Desktop client
+ * Functionality: misalignment
  * Run type: FULL
  *
  * SUBTEST: major-hang

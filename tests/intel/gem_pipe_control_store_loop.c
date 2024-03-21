@@ -48,9 +48,9 @@
  * Category: Desktop client
  * Description: Test (TLB-)Coherency of pipe_control QW writes.
  * Feature: cmd_submission
- * Functionality: command submission
+ * Functionality: coherency
  * Run type: FULL
- * Sub-category: i915
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: fresh-buffer

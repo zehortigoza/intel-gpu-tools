@@ -34,10 +34,10 @@
  * TEST: gem exec endless
  * Category: Server
  * Feature: cmd_submission
- * Functionality: command submission
+ * Functionality: compute
  * Run type: FULL
- * Sub-category: Compute
- * Test category: GEM_Legacy
+ * Sub-category: CMD submission
+ * Test category: Compute
  *
  * SUBTEST: dispatch
  */

@@ -29,9 +29,9 @@
  * Category: Infrastructure
  * Description: Check that we can issue concurrent writes across the engines.
  * Feature: cmd_submission
- * Functionality: command submission
+ * Functionality: concurent writes
  * Run type: FULL
- * Sub-category: i915
+ * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: concurrent-writes
