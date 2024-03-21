@@ -37,15 +37,12 @@
  * Functionality: debugfs
  * Sub-category: uapi
  * Test category: uapi
- * Run type: FULL
  *
  * SUBTEST: basic-hwmon
  * Description: Read all entries from hwmon path validating debugfs entries
- * Run type: BAT
  *
  * SUBTEST: read_all_entries
  * Description: Read all entries from debugfs path validating debugfs entries
- * Run type: BAT
  *
  * SUBTEST: read_all_entries_display_off
  * Description: Read all debugfs entries with display on/off.

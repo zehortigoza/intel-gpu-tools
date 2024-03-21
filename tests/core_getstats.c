@@ -38,7 +38,6 @@
  * Description: Tests the DRM_IOCTL_GET_STATS ioctl.
  * Feature: core
  * Functionality: DRM memory management
- * Run type: FULL
  * Sub-category: uapi
  * Test category: GEM_Legacy
  *

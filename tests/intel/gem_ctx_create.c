@@ -43,7 +43,6 @@
  * Functionality: context
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: active
  * Description: For each engine calculate the average performance of context
@@ -55,11 +54,9 @@
  *
  * SUBTEST: basic
  * Description: Test random context creation
- * Run type: BAT
  *
  * SUBTEST: basic-files
  * Description: Exercise implicit per-fd context creation
- * Run type: BAT
  *
  * SUBTEST: ext-param
  * Description: Verify valid and invalid context extensions

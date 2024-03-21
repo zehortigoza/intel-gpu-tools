@@ -55,7 +55,6 @@
  * Sub-category: Render copy
  * Category: Desktop client
  * Functionality: render_copy
- * Run type: FULL
  *
  * SUBTEST: linear
  * Description: Test render_copy() from a mixed-tiled to a linear buffer.

@@ -55,14 +55,12 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: render blits
- * Run type: FULL
  *
  * SUBTEST: aperture-shrink
  *
  * SUBTEST: aperture-thrash
  *
  * SUBTEST: basic
- * Run type: BAT
  *
  * SUBTEST: swap-thrash
  */

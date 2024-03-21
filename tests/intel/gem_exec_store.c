@@ -42,12 +42,10 @@
  * Functionality: coherency
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: basic
  * Description: Verify that all capable engines can store dwords to a common
  *		buffer object
- * Run type: BAT
  *
  * SUBTEST: cachelines
  * Description: Verify that each capable engine can store a dword to different

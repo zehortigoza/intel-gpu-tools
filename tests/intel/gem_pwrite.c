@@ -52,7 +52,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: pwrite
- * Run type: FULL
  *
  * SUBTEST: basic-exhaustion
  *

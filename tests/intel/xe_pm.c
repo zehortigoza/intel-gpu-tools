@@ -498,7 +498,6 @@ static void test_vram_d3cold_threshold(device_t device, int sysfs_fd)
  * @system:	system region
  *
  * Functionality: pm-d3
- * Run type: FULL
  */
 static void test_mmap(device_t device, uint32_t placement, uint32_t flags)
 {

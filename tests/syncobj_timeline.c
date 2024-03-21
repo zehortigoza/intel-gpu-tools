@@ -34,7 +34,6 @@
  * TEST: syncobj timeline
  * Category: Infrastructure
  * Description: Tests for the drm timeline sync object API
- * Run type: FULL
  * Feature: synchronization feature
  * Functionality: sync_object
  * Sub-category: uapi

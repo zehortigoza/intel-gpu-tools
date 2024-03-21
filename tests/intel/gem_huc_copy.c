@@ -42,7 +42,6 @@
  * Sub-category: Firmware
  * Category: Desktop client
  * Functionality: huc copy
- * Run type: BAT
  *
  * SUBTEST: huc-copy
  * Description:

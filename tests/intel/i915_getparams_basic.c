@@ -36,7 +36,6 @@
  * Description: Tests the export of parameters via DRM_IOCTL_I915_GETPARAM
  * Feature: gem_core
  * Functionality: device topology
- * Run type: BAT
  * Sub-category: uapi
  * Test category: GEM_Legacy
  *

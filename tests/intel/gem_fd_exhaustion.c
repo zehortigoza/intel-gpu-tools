@@ -39,7 +39,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: fd exhaustion
- * Run type: FULL
  *
  * SUBTEST:
  */

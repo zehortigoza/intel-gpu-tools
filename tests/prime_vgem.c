@@ -38,7 +38,6 @@
  * Functionality: mock device
  * Sub-category: DRM
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: basic-blt
  * Description: Examine blitter access path.
@@ -48,32 +47,26 @@
  *
  * SUBTEST: basic-fence-flip
  * Description: Examine vgem bo front/back flip fencing.
- * Run type: BAT
  *
  * SUBTEST: basic-fence-mmap
  * Description: Examine GTT access path fencing.
  * Feature: gtt, prime
- * Run type: BAT
  *
  * SUBTEST: basic-fence-read
  * Description: Examine read access path fencing.
  * Feature: gtt, prime
- * Run type: BAT
  *
  * SUBTEST: basic-gtt
  * Description: Examine access path through GTT.
  * Feature: gtt, prime
- * Run type: BAT
  *
  * SUBTEST: basic-read
  * Description: Examine read access path.
  * Feature: gtt, prime
- * Run type: BAT
  *
  * SUBTEST: basic-write
  * Description: Examine write access path.
  * Feature: gtt, prime
- * Run type: BAT
  *
  * SUBTEST: busy
  * Description: Examine busy check of polling for vgem fence.

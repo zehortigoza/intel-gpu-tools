@@ -19,7 +19,6 @@
  * Category: Software building block
  * Sub-category: driver
  * Functionality: Per client memory statistics
- * Run type: FULL
  * Test category: SysMan
  *
  * SUBTEST: basic

@@ -227,12 +227,10 @@ static void preempter(int fd, struct drm_xe_engine_class_instance *hwe)
 /**
  * SUBTEST: spin-fixed-duration
  * Description: Basic test which validates the functionality of xe_spin with fixed duration.
- * Run type: FULL
  */
 /**
  * SUBTEST: spin-fixed-duration-with-preempter
  * Description: Basic test which validates the functionality of xe_spin preemption which gets preempted with a short duration high-priority task.
- * Run type: FULL
  */
 static void xe_spin_fixed_duration(int fd, int gt, int class, int flags)
 {

@@ -32,7 +32,6 @@
  * Description: Basic check of polling for prime fences.
  * Feature: prime
  * Functionality: buffer management
- * Run type: FULL
  * Sub-category: Memory management
  * Test category: GEM_Legacy
  *

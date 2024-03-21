@@ -55,7 +55,6 @@
  * Sub-category: GPGPU
  * Test category: GEM_Legacy
  * Feature: compute
- * Run type: FULL
  *
  * SUBTEST: basic
  */

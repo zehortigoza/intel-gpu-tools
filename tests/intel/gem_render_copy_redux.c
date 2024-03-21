@@ -54,7 +54,6 @@
  * Sub-category: Render copy
  * Category: Desktop client
  * Functionality: render_copy
- * Run type: FULL
  *
  * SUBTEST: flink
  * Feature: mapping, xorg_dri2

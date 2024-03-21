@@ -58,7 +58,6 @@
  * Description: Check whether we correctly invalidate the cs tlb.
  * Feature: mapping
  * Functionality: tlb
- * Run type: FULL
  * Sub-category: Memory management
  * Test category: GEM_Legacy
  *

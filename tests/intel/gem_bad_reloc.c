@@ -49,7 +49,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: relocations
- * Run type: FULL
  *
  * SUBTEST: negative-reloc
  * Description: SNA behaviour is compressing batch buffer which leads to

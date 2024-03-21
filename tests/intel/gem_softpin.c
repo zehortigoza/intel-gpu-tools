@@ -41,18 +41,15 @@
  * Functionality: softpin
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: 32b-excludes-last-page
  * Description: Check the last 32b page is excluded.
  *
  * SUBTEST: allocator-basic
  * Description: Check that we can place objects at start/end of the GTT using the allocator.
- * Run type: BAT
  *
  * SUBTEST: allocator-basic-reserve
  * Description: Check that if we can reserve a space for an object starting from a given offset.
- * Run type: BAT
  *
  * SUBTEST: allocator-evict
  * Description: Exercise eviction with softpinning.

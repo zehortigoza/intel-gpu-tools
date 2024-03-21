@@ -51,7 +51,6 @@
  * Description: Exercises the basic execbuffer using object alignments
  * Feature: cmd_submission
  * Functionality: execbuf
- * Run type: FULL
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *

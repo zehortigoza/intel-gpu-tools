@@ -35,7 +35,6 @@
  *
  * SUBTEST: basic
  * Description: Exercise local memory swapping to system memory
- * Run type: BAT
  *
  * SUBTEST: heavy-multi
  * Description: Exercise local memory swapping to system memory
@@ -69,7 +68,6 @@
  *
  * SUBTEST: parallel-random-engines
  * Description: Exercise local memory swapping to system memory
- * Run type: BAT
  *
  * SUBTEST: parallel-random-verify
  * Description: Exercise local memory swapping to system memory
@@ -82,7 +80,6 @@
  *
  * SUBTEST: random-engines
  * Description: Exercise local memory swapping to system memory
- * Run type: BAT
  *
  * SUBTEST: smem-oom
  * Description: Exercise local memory swapping during exhausting system memory
@@ -95,7 +92,6 @@
  *
  * SUBTEST: verify-random
  * Description: Exercise local memory swapping to system memory
- * Run type: BAT
  *
  * SUBTEST: verify-random-ccs
  * Description: Exercise local memory swapping to system memory

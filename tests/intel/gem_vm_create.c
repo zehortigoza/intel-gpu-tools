@@ -34,7 +34,6 @@
  * Sub-category: Compute
  * Feature: mapping
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: create-ext
  * Feature: mapping

@@ -74,7 +74,6 @@
  * Functionality: buffer management
  * Sub-category: Compute
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: access-control
  * SUBTEST: coherency-sync

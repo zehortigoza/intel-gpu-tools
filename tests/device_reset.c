@@ -23,7 +23,6 @@
  * Functionality: sysfs reset
  * Sub-category: Reset
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: cold-reset-bound
  * Description: Cold Resets device with bound driver

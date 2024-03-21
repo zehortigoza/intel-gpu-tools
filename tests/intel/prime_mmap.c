@@ -55,7 +55,6 @@
  * Category: Infrastructure
  * Feature: prime
  * Functionality: prime mmap
- * Run type: FULL
  * Sub-category: Memory management
  * Test category: GEM_Legacy
  *

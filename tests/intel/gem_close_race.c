@@ -56,16 +56,13 @@
  * Functionality: driver handler
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: basic-process
  * Description: Basic workload submission.
- * Run type: BAT
  *
  * SUBTEST: basic-threads
  * Description: Share buffer handle across different drm fd's and trying to
  *		race gem_close against continuous workload with minimum timeout.
- * Run type: BAT
  *
  * SUBTEST: contexts
  * Description: Share buffer handle across different drm fd's and trying to

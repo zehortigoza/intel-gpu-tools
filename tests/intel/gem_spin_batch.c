@@ -32,7 +32,6 @@
  * Feature: context, igt_core
  * Functionality: dummy workload
  * Sub-category: IGT Lib
- * Run type: FULL
  *
  * SUBTEST: engines
  * SUBTEST: legacy

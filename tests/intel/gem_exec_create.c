@@ -54,12 +54,10 @@
  *		some of the symptoms this test look for include mysterious hangs.
  * Feature: cmd_submission
  * Functionality: buffer management
- * Run type: FULL
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic
- * Run type: BAT
  * Description: Check if we kill system by overloading it with active objects
  *		iterating over all engines.
  *

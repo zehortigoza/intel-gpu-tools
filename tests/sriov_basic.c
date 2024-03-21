@@ -22,7 +22,6 @@ IGT_TEST_DESCRIPTION("Basic tests for enabling SR-IOV Virtual Functions");
  * SUBTEST: enable-vfs-autoprobe-off
  * Description:
  *   Verify VFs enabling without probing VF driver
- * Run type: BAT
  */
 static void enable_vfs_autoprobe_off(int pf_fd, unsigned int num_vfs)
 {
@@ -39,7 +38,6 @@ static void enable_vfs_autoprobe_off(int pf_fd, unsigned int num_vfs)
  * SUBTEST: enable-vfs-autoprobe-on
  * Description:
  *   Verify VFs enabling and auto-probing VF driver
- * Run type: FULL
  */
 static void enable_vfs_autoprobe_on(int pf_fd, unsigned int num_vfs)
 {
@@ -65,7 +63,6 @@ static void enable_vfs_autoprobe_on(int pf_fd, unsigned int num_vfs)
  * SUBTEST: enable-vfs-bind-unbind-each
  * Description:
  *   Verify VFs enabling with binding and unbinding the driver one be one to each of them
- * Run type: BAT
  */
 static void enable_vfs_bind_unbind_each(int pf_fd, unsigned int num_vfs)
 {
@@ -94,7 +91,6 @@ static void enable_vfs_bind_unbind_each(int pf_fd, unsigned int num_vfs)
  * SUBTEST: bind-unbind-vf
  * Description:
  *   Verify binding and unbinding the driver to specific VF
- * Run type: BAT
  */
 static void bind_unbind_vf(int pf_fd, unsigned int vf_num)
 {

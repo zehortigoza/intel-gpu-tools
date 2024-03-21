@@ -39,7 +39,6 @@
  * Sub-category: Core
  * Test category: GEM_Legacy
  * Feature: vgem
- * Run type: FULL
  *
  * SUBTEST: bad-fence
  * Description: Make sure a non-existent fence cannot be signaled.
@@ -58,51 +57,40 @@
  *
  * SUBTEST: create
  * Description: Check the basic working of vgem_create ioctl.
- * Run type: BAT
  *
  * SUBTEST: debugfs
  * Description: Check the basic access to debugfs and also try to read entries in the directory.
- * Run type: BAT
  *
  * SUBTEST: dmabuf-export
  * Description: Check whether it can export/import the vgem handle using prime.
  * Feature: prime, vgem
- * Run type: BAT
  *
  * SUBTEST: dmabuf-fence
  * Description: Check the working of dma-buf fence interop.
  * Feature: prime, vgem
- * Run type: BAT
  *
  * SUBTEST: dmabuf-fence-before
  * Description: Attach a fence before exporting a vgem handle and check the working of fence.
  * Feature: prime, vgem
- * Run type: BAT
  *
  * SUBTEST: dmabuf-mmap
  * Description: Export the vgem handle along with RDWR capabilities using prime and check if it can be mmaped.
  * Feature: prime, vgem
- * Run type: BAT
  *
  * SUBTEST: mmap
  * Description: Create a vgem handle and check if it can be mmaped.
- * Run type: BAT
  *
  * SUBTEST: second-client
  * Description: Check whether it can open multiple clients.
- * Run type: BAT
  *
  * SUBTEST: setversion
  * Description: Check the working of SET_VERSION ioctl.
- * Run type: BAT
  *
  * SUBTEST: sysfs
  * Description: Check the basic access to sysfs and also try to read entries in the directory.
- * Run type: BAT
  *
  * SUBTEST: unload
  * Description: Basic test for handling of module unload.
- * Run type: BAT
  */
 
 IGT_TEST_DESCRIPTION("Basic sanity check of Virtual GEM module (vGEM).");

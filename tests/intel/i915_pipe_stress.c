@@ -28,7 +28,6 @@
  * Mega feature: General Display Features
  * Sub-category: Display
  * Test category: stress test
- * Run type: FULL
  *
  * SUBTEST: stress-xrgb8888-untiled
  * Description:

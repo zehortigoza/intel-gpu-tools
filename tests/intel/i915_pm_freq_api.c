@@ -14,7 +14,6 @@
  * Category: Infrastructure
  * Sub-category: uapi
  * Functionality: slpc
- * Run type: FULL
  *
  * SUBTEST: freq-basic-api
  * Description: Test basic API for controlling min/max GT frequency

@@ -51,7 +51,6 @@
  * Category: Desktop client
  * Sub-category: CMD Submission
  * Functionality: context switching
- * Run type: FULL
  *
  * SUBTEST: all-heavy
  *

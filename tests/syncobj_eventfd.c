@@ -17,7 +17,6 @@
  * Description: Tests for the drm sync object eventfd API
  * Feature: synchronization
  * Functionality: semaphore
- * Run type: FULL
  * Sub-category: DRM
  * Test category: GEM_Legacy
  */

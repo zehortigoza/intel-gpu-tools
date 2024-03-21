@@ -48,7 +48,6 @@
  * Category: Infrastructure
  * Feature: cmd_submission
  * Functionality: requests
- * Run type: FULL
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *

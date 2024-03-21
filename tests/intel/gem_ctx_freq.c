@@ -42,7 +42,6 @@
  * Category: Server
  * Feature: context feature
  * Functionality: frequency management
- * Run type: FULL
  * Sub-category: Performance
  * Test category: GEM_Legacy
  *

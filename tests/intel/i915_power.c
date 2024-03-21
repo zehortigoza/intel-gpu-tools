@@ -11,7 +11,6 @@
  * TEST: i915 power
  * Description: i915 power measurement tests
  * Feature: hwmon
- * Run type: FULL
  * Test category: GEM_Legacy
  * Sub-category: Power management
  * Category: Desktop client

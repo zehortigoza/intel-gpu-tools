@@ -24,7 +24,6 @@
  * Category: Desktop client
  * Sub-category: CMD submission
  * Functionality: barrier
- * Run type: FULL
  * Test category: GEM_Legacy
  *
  * SUBTEST: remote-request

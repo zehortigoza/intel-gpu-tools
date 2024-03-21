@@ -18,7 +18,6 @@
  * Category: Desktop client
  * Functionality: fast-copy
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: fast-copy
  * Description: Check fast-copy blit blitter

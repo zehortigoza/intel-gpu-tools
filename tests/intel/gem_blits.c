@@ -33,7 +33,6 @@
  * Category: Infrastructure
  * Feature: blitter
  * Functionality: command streamer
- * Run type: FULL
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *

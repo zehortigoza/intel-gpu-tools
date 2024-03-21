@@ -65,7 +65,6 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: swapping
- * Run type: FULL
  *
  * SUBTEST: non-threaded
  *

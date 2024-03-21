@@ -39,7 +39,6 @@
  * Sub-category: Blitter
  * Functionality: command parser
  * Category: Desktop client
- * Run type: FULL
  *
  * SUBTEST: allowed-all
  *

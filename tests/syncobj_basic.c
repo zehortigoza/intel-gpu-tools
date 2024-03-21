@@ -32,7 +32,6 @@
  * Description: Basic check for drm sync objects.
  * Feature: semaphore
  * Functionality: drm sync object
- * Run type: FULL
  * Sub-category: Synchronization
  * Test category: GEM_Legacy
  *

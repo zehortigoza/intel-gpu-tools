@@ -46,7 +46,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: synchronization
- * Run type: FULL
  *
  * SUBTEST: performance
  *

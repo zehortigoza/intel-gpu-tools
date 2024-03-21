@@ -54,7 +54,6 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: cache
- * Run type: FULL
  *
  * SUBTEST:
  */

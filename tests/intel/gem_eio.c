@@ -61,7 +61,6 @@
  * Functionality: reset
  * Sub-category: uapi
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: banned
  *

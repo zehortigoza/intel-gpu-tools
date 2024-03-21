@@ -40,7 +40,6 @@
  * Description: Negative test cases for destroy contexts.
  * Feature: cmd_submission
  * Functionality: context
- * Run type: FULL
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *

@@ -40,7 +40,6 @@
  * Functionality: offline debugging
  * Sub-category: Debugging
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: capture
  *

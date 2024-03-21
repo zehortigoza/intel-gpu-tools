@@ -14,7 +14,6 @@
  * Functionality: pxp
  * Sub-category: Power management
  * Category: Desktop client
- * Run type: FULL
  *
  * SUBTEST: create-protected-buffer
  *

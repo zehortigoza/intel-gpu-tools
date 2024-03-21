@@ -18,7 +18,6 @@
  * Category: Infrastructure
  * Functionality: virtual address
  * Description: checking the virtual address ranges
- * Run type: FULL
  * Sub-category: IGT Lib
  * Test category: GEM_Legacy
  * Feature: igt_core

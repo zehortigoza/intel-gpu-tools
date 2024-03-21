@@ -56,7 +56,6 @@ IGT_TEST_DESCRIPTION("Call read(drm) and see if it behaves.");
  * Category: Infrastructure
  * Functionality: DRM memory managemnt
  * Sub-category: uapi
- * Run type: FULL
  *
  * SUBTEST: invalid-buffer
  * SUBTEST: fault-buffer

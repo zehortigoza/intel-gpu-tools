@@ -47,7 +47,6 @@
  * Sub-category: Power management
  * Category: Desktop client
  * Test category: pm_rpm
- * Run type: FULL
  *
  * SUBTEST: debugfs-forcewake-user
  * SUBTEST: debugfs-read

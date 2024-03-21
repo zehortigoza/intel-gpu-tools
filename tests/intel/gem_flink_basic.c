@@ -46,7 +46,6 @@
  * Functionality: buffer management
  * Sub-category: DRM
  * Test category: GEM_Legacy
- * Run type: BAT
  *
  * SUBTEST: bad-flink
  * Description: Verify that GEM_FLINK ioctl with invalid gem object fails.

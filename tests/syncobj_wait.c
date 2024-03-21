@@ -36,7 +36,6 @@
  * Description: Tests for the drm sync object wait API
  * Feature: synchronization feature
  * Functionality: object wait
- * Run type: FULL
  * Sub-category: uapi
  * Test category: GEM_Legacy
  *

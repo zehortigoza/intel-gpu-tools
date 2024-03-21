@@ -57,11 +57,9 @@
  *
  * SUBTEST: basic
  * Description: Check basic functionality.
- * Run type: BAT
  *
  * SUBTEST: normal
  * Description: Check with parallel execution.
- * Run type: FULL
  */
 
 IGT_TEST_DESCRIPTION("Tests fence management problems related to tiled blits by performing "

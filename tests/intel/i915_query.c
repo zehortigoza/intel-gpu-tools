@@ -35,7 +35,6 @@
  * Functionality: device topology
  * Sub-category: uapi
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: engine-info
  * Description: Positive tests for DRM_I915_QUERY_ENGINE_INFO

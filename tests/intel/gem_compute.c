@@ -8,7 +8,6 @@
  * Category: Hardware building block
  * Sub-category: Compute
  * Test category: functionality test
- * Run type: BAT
  */
 
 #include <string.h>

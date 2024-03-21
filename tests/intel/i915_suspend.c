@@ -52,7 +52,6 @@
  * Functionality: suspend
  * Sub-category: Power management
  * Category: Desktop client
- * Run type: FULL
  *
  * SUBTEST: basic-s2idle-without-i915
  * Description: Validate suspend-to-idle without i915 module
@@ -61,7 +60,6 @@
  * Description:
  *   Validate S3 without i915 module.
  *   Validate S3 state without i915 module
- * Run type: BAT
  *
  * SUBTEST: debugfs-reader
  * Description: Test debugfs behavior during suspend to idle

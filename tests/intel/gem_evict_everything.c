@@ -54,7 +54,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: eviction
- * Run type: FULL
  *
  * SUBTEST: forked-interruptible
  *

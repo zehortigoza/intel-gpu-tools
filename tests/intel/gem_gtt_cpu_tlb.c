@@ -50,7 +50,6 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: mmap
- * Run type: FULL
  *
  * SUBTEST:
  */

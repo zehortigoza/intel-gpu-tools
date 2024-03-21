@@ -38,7 +38,6 @@
  * Sub-category: uapi
  * Test category: GEM_Legacy
  * Feature: cmd_submission
- * Run type: FULL
  *
  * SUBTEST: busy
  * Description: Basic test to check busyness of each engine.
@@ -46,7 +45,6 @@
  * SUBTEST: busy@all
  *
  * SUBTEST: busy@all-engines
- * Run type: BAT
  *
  * SUBTEST: close-race
  * Description: Test to check race condition by randomly closing the handle

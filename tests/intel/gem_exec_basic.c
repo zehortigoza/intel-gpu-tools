@@ -31,7 +31,6 @@
  * Category: Infrastructure
  * Feature: cmd_submission
  * Functionality: execbuf
- * Run type: BAT
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *

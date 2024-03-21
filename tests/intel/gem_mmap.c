@@ -45,7 +45,6 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: mmap
- * Run type: FULL
  *
  * SUBTEST: bad-object
  * Description: Verify mapping to invalid gem objects won't be created.
@@ -60,7 +59,6 @@
  * Description:
  *   Test basics of newly mapped gem object like default content, write and read
  *   coherency, mapping existence after gem_close and unmapping.
- * Run type: BAT
  *
  * SUBTEST: basic-small-bo
  * Description:

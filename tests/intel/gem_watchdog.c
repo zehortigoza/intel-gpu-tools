@@ -41,7 +41,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: fences
- * Run type: FULL
  *
  * SUBTEST: default-physical
  *

@@ -53,7 +53,6 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: map gtt
- * Run type: FULL
  *
  * SUBTEST: bad-object
  * Description: Verify mapping to invalid gem objects fails.

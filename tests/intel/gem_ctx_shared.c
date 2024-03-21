@@ -55,7 +55,6 @@
  * Functionality: shared contex
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: Q-in-order
  *

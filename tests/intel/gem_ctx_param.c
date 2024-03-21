@@ -38,7 +38,6 @@
  * Functionality: context
  * Sub-category: uapi
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: basic
  * Description: Basic test for context get/set param ioctls using valid context

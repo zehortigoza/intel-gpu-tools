@@ -44,7 +44,6 @@
  * Description: Check that Drop/SetMaster behaves correctly wrt root/user access
  * Feature: core
  * Functionality: permission management for clients
- * Run type: FULL
  * Sub-category: DRM
  * Test category: GEM_Legacy
  *

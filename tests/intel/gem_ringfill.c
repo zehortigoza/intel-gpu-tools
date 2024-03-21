@@ -51,10 +51,8 @@
  * Functionality: execbuf
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: basic-all
- * Run type: BAT
  * Description: Basic check to fill the ring up to maximum on all engines
  *		simultaneously.
  *

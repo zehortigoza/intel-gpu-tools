@@ -33,7 +33,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: multi-client systems
- * Run type: FULL
  *
  * SUBTEST: basic-deadline
  *

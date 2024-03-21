@@ -34,7 +34,6 @@
  * Description: Check that igt/i915 know about this PCI-ID
  * Feature: core
  * Functionality: device management
- * Run type: BAT
  * Sub-category: Core
  * Test category: GEM_Legacy
  *

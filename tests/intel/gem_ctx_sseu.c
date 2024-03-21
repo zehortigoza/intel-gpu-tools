@@ -51,7 +51,6 @@
  * Sub-category: uapi
  * Category: Desktop client
  * Functionality: sseu
- * Run type: FULL
  *
  * SUBTEST: engines
  *

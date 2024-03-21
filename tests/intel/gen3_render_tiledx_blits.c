@@ -54,7 +54,6 @@
  * Sub-category: Obsolete_gen3
  * Category: Obsolete
  * Functionality: obsolete_test
- * Run type: FULL
  *
  * SUBTEST:
  */

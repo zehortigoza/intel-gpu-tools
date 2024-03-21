@@ -46,7 +46,6 @@
  * Functionality: load balancing
  * Sub-category: CMD submission
  * Test category: Media & Compute
- * Run type: FULL
  *
  * SUBTEST: bonded-chain
  *

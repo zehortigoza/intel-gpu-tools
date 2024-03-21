@@ -32,7 +32,6 @@
  * Sub-category: Selftest
  * Category: Selftest
  * Functionality: live selftest
- * Run type: BAT
  *
  * SUBTEST: live@active
  * Category: Selftest
@@ -373,7 +372,6 @@
  * Feature: gem_core
  * Sub-category: Selftest
  * Functionality: mock selftest
- * Run type: FULL
  *
  * SUBTEST: mock@buddy
  * Category: Selftest
@@ -527,7 +525,6 @@
  * Feature: i915 perf selftests
  * Functionality: oa
  * Sub-category: Performance
- * Run type: FULL
  *
  * SUBTEST: perf@blt
  * Category: Selftest

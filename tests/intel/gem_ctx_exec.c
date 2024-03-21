@@ -55,11 +55,9 @@
  * Functionality: context
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: basic
  * Description: Check the basic context batch buffer execution.
- * Run type: BAT
  *
  * SUBTEST: basic-close-race
  * Description: Race the execution and interrupt handlers along a context,

@@ -41,7 +41,6 @@
  * Description: Check for flink/open vs. gem close races.
  * Feature: xorg_dri2
  * Functionality: buffer management
- * Run type: FULL
  * Sub-category: DRM
  * Test category: GEM_Legacy
  *

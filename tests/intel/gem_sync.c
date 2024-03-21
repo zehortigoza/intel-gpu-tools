@@ -40,7 +40,6 @@
  * Functionality: semaphore
  * Sub-category: Synchronization
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: active
  * Description: Exercise waiting while keeping the GPU busy on each engine.
@@ -58,14 +57,12 @@
  *
  * SUBTEST: basic-all
  * Description: Basic test to wait upon a batch on all rings.
- * Run type: BAT
  *
  * SUBTEST: basic-each
  * Description:
  *   Check synchronisation of ring.
  *   Exercise all physical engine selection and legacy rings
  * Feature: multitile, synchronization feature
- * Run type: BAT
  * Test category: MultiTile
  *
  * SUBTEST: basic-many-each
@@ -162,7 +159,6 @@
  * SUBTEST: legacy-switch
  * Description: Check sync after context switch for each legacy engine.
  * Feature: synchronization feature
- * Run type: FULL
  *
  * SUBTEST: legacy-wakeup
  * Description: Stress for nop + sync for each legacy engine.

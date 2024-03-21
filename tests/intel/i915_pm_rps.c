@@ -52,10 +52,8 @@
  * Functionality: rps
  * Sub-category: Power management
  * Category: Desktop client
- * Run type: FULL
  *
  * SUBTEST: basic-api
- * Run type: BAT
  *
  * SUBTEST: engine-order
  * Description:

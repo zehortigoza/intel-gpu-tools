@@ -46,7 +46,6 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: barrier
- * Run type: FULL
  *
  * SUBTEST: batch-cpu
  *

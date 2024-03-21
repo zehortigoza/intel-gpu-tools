@@ -42,7 +42,6 @@
  * Sub-category: Power management
  * Category: Desktop client
  * Functionality: sseu
- * Run type: FULL
  *
  * SUBTEST: full-enable
  */

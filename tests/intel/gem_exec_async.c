@@ -30,7 +30,6 @@
  * Description: Check that we can issue concurrent writes across the engines.
  * Feature: cmd_submission
  * Functionality: concurent writes
- * Run type: FULL
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *

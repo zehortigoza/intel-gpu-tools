@@ -55,7 +55,6 @@
  * Description: This is a test for the generic dumb buffer interface.
  * Feature: prime
  * Functionality: ioctl
- * Run type: FULL
  * Sub-category: uapi
  * Test category: Compositor
  *

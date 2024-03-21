@@ -47,7 +47,6 @@
  * Functionality: rc6
  * Sub-category: Power management
  * Category: Desktop client
- * Run type: FULL
  *
  * SUBTEST: media-rc6-accuracy
  * Feature: pm_rc6

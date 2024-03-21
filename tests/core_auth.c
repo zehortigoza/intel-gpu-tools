@@ -53,19 +53,15 @@
  *
  * SUBTEST: basic-auth
  * Description: Test magic numbers for master and slave.
- * Run type: BAT
  *
  * SUBTEST: getclient-master-drop
  * Description: Use 2 clients, check second is authenticated even when first dropped.
- * Run type: FULL
  *
  * SUBTEST: getclient-simple
  * Description: Check drm client is always authenticated.
- * Run type: FULL
  *
  * SUBTEST: many-magics
  * Description: Test authentication and magic numbers uniqness for rlimit slaves.
- * Run type: FULL
  */
 
 #ifndef __linux__

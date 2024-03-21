@@ -61,11 +61,9 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: tiled blits
- * Run type: FULL
  *
  * SUBTEST: basic
  * Description: Check basic functionality.
- * Run type: BAT
  *
  * SUBTEST: interruptible
  * Description: Check with interrupts in parallel execution.

@@ -47,7 +47,6 @@
  * Description: Test unreferencing of active buffers.
  * Feature: cmd_submission
  * Functionality: buffer management
- * Run type: FULL
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *

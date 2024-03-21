@@ -57,7 +57,6 @@
  * Sub-category: Performance
  * Category: Desktop client
  * Functionality: pmu
- * Run type: FULL
  *
  * SUBTEST: all-busy-check-all
  * Description: Test the i915 pmu perf interface

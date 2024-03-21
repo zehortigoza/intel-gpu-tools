@@ -48,7 +48,6 @@
  * Sub-category: SysMan
  * Category: Desktop \ Server
  * Functionality: sysfs heartbeat
- * Run type: FULL
  *
  * SUBTEST: idempotent
  * Description: Test to check whether the heartbeat parameter reports the values set.

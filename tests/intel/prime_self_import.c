@@ -53,7 +53,6 @@
  * Functionality: buffer management
  * Sub-category: Memory management
  * Test category: GEM_Legacy
- * Run type: BAT
  *
  * SUBTEST: basic-llseek-bad
  * Description: Check dmabuf llseek support with invalid values.
@@ -75,11 +74,9 @@
  *
  * SUBTEST: export-vs-gem_close-race
  * Description: Check race of gem close against prime export.
- * Run type: FULL
  *
  * SUBTEST: reimport-vs-gem_close-race
  * Description: Check race of gem close against reimport.
- * Run type: FULL
  */
 
 IGT_TEST_DESCRIPTION("Check whether prime import/export works on the same"

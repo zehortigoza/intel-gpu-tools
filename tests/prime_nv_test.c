@@ -18,7 +18,6 @@
  * Description: Basic set of prime tests between intel and nouveau
  * Sub-category: intel-nouveau
  * Functionality: buffer management
- * Run type: FULL
  *
  * SUBTEST: i915_nv_sharing
  * SUBTEST: nv_i915_sharing

@@ -52,7 +52,6 @@
  * Functionality: context
  * Sub-category: Compute
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: engines-cleanup
  *

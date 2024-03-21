@@ -53,7 +53,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: pread
- * Run type: FULL
  *
  * SUBTEST: default-hang
  *

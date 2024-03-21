@@ -33,7 +33,6 @@
  * Functionality: priv/non-priv registers
  * Sub-category: Security
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: clean
  *

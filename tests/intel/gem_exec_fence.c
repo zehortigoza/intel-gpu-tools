@@ -43,7 +43,6 @@
  * Functionality: semaphore
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: await-hang
  * Description: Check for explicit fence with async wait on each engine with a
@@ -51,13 +50,11 @@
  *
  * SUBTEST: basic-await
  * Description: Basic check for explicit fence with async wait on each engine.
- * Run type: BAT
  * Test category: MultiTile
  *
  * SUBTEST: basic-busy
  * Description: Basic check for explicit fence on each busy engine.
  * Feature: cmd_submission, multitile, synchronization feature
- * Run type: BAT
  * Test category: MultiTile
  *
  * SUBTEST: basic-busy-all
@@ -69,7 +66,6 @@
  * Description: Basic check for explicit fence with additional wait time on
  *		each busy engine.
  * Feature: cmd_submission, multitile, synchronization feature
- * Run type: BAT
  * Test category: MultiTile
  *
  * SUBTEST: basic-wait-all
@@ -113,7 +109,6 @@
  * SUBTEST: nb-await
  * Description: Check for explicit fence with non-blocking wait on each engine.
  * Feature: cmd_submission, multitile, synchronization feature
- * Run type: BAT
  * Test category: MultiTile
  *
  * SUBTEST: nb-await-hang

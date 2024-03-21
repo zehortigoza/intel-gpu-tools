@@ -50,7 +50,6 @@
  * Functionality: timeslise sysfs
  * Sub-category: SysMan
  * Category: Desktop \ Server
- * Run type: FULL
  *
  * SUBTEST: duration
  * Description: Test to measure the timeslice duration by watching the

@@ -35,7 +35,6 @@
  * Category: Server
  * Feature: cmd_submission
  * Functionality: compute
- * Run type: FULL
  * Sub-category: CMD submission
  * Test category: Compute
  *

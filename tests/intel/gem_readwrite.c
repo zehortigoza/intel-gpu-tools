@@ -44,7 +44,6 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: read/write memory
- * Run type: FULL
  *
  * SUBTEST: beyond-EOB
  *

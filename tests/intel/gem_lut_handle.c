@@ -45,7 +45,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: execbuf
- * Run type: FULL
  *
  * SUBTEST:
  */

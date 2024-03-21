@@ -14,7 +14,6 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: local memory eviction
- * Run type: FULL
  * Test category: GEM_Legacy
  *
  * SUBTEST: dontneed-evict-race

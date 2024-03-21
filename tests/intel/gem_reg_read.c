@@ -38,7 +38,6 @@
  * Sub-category: uapi
  * Category: Desktop client
  * Functionality: ioctl
- * Run type: FULL
  *
  * SUBTEST: bad-register
  *

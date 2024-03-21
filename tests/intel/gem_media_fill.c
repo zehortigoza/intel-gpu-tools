@@ -52,7 +52,6 @@
  * Sub-category: Media
  * Category: Desktop client
  * Functionality: fill media
- * Run type: FULL
  *
  * SUBTEST: media-fill
  */

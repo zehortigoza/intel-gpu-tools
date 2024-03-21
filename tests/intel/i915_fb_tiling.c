@@ -30,7 +30,6 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: tiling
- * Run type: FULL
  *
  * SUBTEST:
  */

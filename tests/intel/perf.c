@@ -53,7 +53,6 @@
  * Functionality: oa
  * Sub-category: Performance
  * Category: Desktop client
- * Run type: FULL
  *
  * SUBTEST: blocking
  * Description: Test blocking read with default hrtimer frequency

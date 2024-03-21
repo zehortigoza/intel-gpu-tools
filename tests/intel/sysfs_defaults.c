@@ -40,7 +40,6 @@
  * Functionality: sysfs
  * Sub-category: uapi
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: readonly
  */

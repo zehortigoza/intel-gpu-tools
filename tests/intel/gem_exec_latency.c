@@ -53,7 +53,6 @@
  * Sub-category: CMD submission
  * Functionality: execbuf
  * Category: Desktop client
- * Run type: FULL
  *
  * SUBTEST: context-preempt
  *

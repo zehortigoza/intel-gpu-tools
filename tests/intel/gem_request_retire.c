@@ -57,7 +57,6 @@
  * Functionality: requests
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: retire-vma-not-inactive
  */

@@ -45,7 +45,6 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: tiling vs pwrite coherency
- * Run type: FULL
  *
  * SUBTEST:
  */

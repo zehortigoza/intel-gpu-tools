@@ -23,7 +23,6 @@
  * Sub-category: Flat-ccs
  * Category: Desktop \ Server
  * Functionality: block-copy
- * Run type: FULL
  *
  * SUBTEST: block-copy-compressed
  * Description: Check block-copy flatccs compressed blit

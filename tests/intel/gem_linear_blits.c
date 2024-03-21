@@ -57,11 +57,9 @@
  * Functionality: linear blits
  * Sub-category: Blitter
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: basic
  * Description: Basic blitter functionality check with 2 buffers
- * Run type: BAT
  *
  * SUBTEST: interruptible
  * Description: Test with interrupts in between the parent process

@@ -65,7 +65,6 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: tiled pread/pwrite
- * Run type: FULL
  *
  * SUBTEST:
  */

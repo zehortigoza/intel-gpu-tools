@@ -52,7 +52,6 @@
  * Functionality: execution order
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: deep
  * SUBTEST: fairslice

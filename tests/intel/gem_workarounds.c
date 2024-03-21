@@ -39,7 +39,6 @@
  * Functionality: context
  * Sub-category: Workarounds
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: basic-read
  * SUBTEST: basic-read-context

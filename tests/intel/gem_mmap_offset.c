@@ -45,7 +45,6 @@
  * Functionality: mmap
  * Sub-category: Memory management
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: bad-extensions
  * SUBTEST: bad-flags

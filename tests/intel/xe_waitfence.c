@@ -142,7 +142,6 @@ waitfence(int fd, enum waittype wt)
  * Category: Software building block
  * Sub-category: waitfence
  * Functionality: waitfence
- * Run type: FULL
  * Test category: negative test
  *
  * SUBTEST: invalid-flag

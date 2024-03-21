@@ -14,7 +14,6 @@
  * Category: Software Building Block
  * Sub-category: RAS
  * Functionality: hwmon
- * Run type: FULL
  * Test category: functionality
  *
  * SUBTEST: hwmon-read

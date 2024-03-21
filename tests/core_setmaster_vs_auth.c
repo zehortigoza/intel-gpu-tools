@@ -46,7 +46,6 @@
  * Description: Check that drop/setMaster correctly transfer master state
  * Feature: core
  * Functionality: permission management for clients
- * Run type: FULL
  * Sub-category: DRM
  * Test category: GEM_Legacy
  *

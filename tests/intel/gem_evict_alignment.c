@@ -53,7 +53,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: misalignment
- * Run type: FULL
  *
  * SUBTEST: major-hang
  *

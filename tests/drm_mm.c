@@ -31,7 +31,6 @@
  * Functionality: DRM
  * Sub-category: Memory management
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: drm_mm
  *

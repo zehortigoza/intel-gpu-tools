@@ -31,16 +31,13 @@
  * Functionality: driver handler
  * Sub-category: driver
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: load
  * Description: Check if i915 and friends are not yet loaded, then load them.
- * Run type: BAT
  *
  * SUBTEST: reload
  * Description: Verify the basic functionality of i915 driver after it's reloaded.
  * Feature: core, sriov-core
- * Run type: BAT
  *
  * SUBTEST: reload-no-display
  * Description: Verify that i915 driver can be successfully loaded with disabled display.

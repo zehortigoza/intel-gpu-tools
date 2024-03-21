@@ -42,7 +42,6 @@ IGT_TEST_DESCRIPTION(
  * Category: Infrastructure
  * Feature: prime
  * Functionality: memory management
- * Run type: FULL
  * Sub-category: DRM
  * Test category: GEM_Legacy
  *

@@ -16,7 +16,6 @@ IGT_TEST_DESCRIPTION("Tests for sync_file support in dma-buf");
  * Description: Tests for sync_file support in dma-buf
  * Functionality: dmabuf
  * Sub-category: Core
- * Run type: FULL
  *
  * SUBTEST: export-basic
  * SUBTEST: export-before-signal

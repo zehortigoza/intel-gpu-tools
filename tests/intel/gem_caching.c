@@ -46,7 +46,6 @@
  * Description: Test snoop consistency when touching partial cachelines.
  * Feature: caching feature
  * Functionality: coherency
- * Run type: FULL
  * Sub-category: Memory management
  * Test category: GEM_Legacy
  *

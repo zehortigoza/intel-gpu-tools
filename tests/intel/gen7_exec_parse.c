@@ -40,7 +40,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: command parser
- * Run type: FULL
  *
  * SUBTEST: basic-allocation
  *

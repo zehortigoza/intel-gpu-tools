@@ -18,7 +18,6 @@
  * Description: Basic set of prime tests between intel and nouveau
  * Sub-category: intel-nouveau
  * Functionality: buffer management
- * Run type: FULL
  *
  * SUBTEST: test1_macro
  * SUBTEST: test1_micro

@@ -42,14 +42,12 @@
  * Functionality: parallel clients
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: basic
  *
  * SUBTEST: contexts
  *
  * SUBTEST: engines
- * Run type: BAT
  *
  * SUBTEST: fds
  *

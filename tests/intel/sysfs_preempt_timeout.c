@@ -47,7 +47,6 @@
  * Sub-category: SysMan
  * Category: Desktop \ Server
  * Functionality: sysfs preempt timeout
- * Run type: FULL
  *
  * SUBTEST: idempotent
  * Description: Test to check whether the preempt_timeout parameter reports the

@@ -59,7 +59,6 @@
  * Sub-category: Memory management
  * Category: Desktop client
  * Functionality: fences
- * Run type: FULL
  *
  * SUBTEST:
  */

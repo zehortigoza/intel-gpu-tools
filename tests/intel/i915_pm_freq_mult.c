@@ -18,7 +18,6 @@
  * Functionality: freq multipliers
  * Test category: i915
  * Sub-category: Power management
- * Run type: FULL
  *
  * SUBTEST: media-freq
  * Description: Tests for media frequency factor sysfs

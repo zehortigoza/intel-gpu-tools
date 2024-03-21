@@ -54,7 +54,6 @@ enum test_type {
  * SUBTEST: idle-residency-on-exec
  * Description: Validate idle residency measured when a background
  *		load is only active for ~1% of the time
- * Run type: FULL
  *
  * SUBTEST: gt-c6-freeze
  * Description: Validate idle residency measured over suspend(s2idle)

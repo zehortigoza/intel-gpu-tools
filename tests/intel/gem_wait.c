@@ -39,7 +39,6 @@
  * Functionality: GEM_WAIT ioctl
  * Sub-category: uapi
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: await
  * Description: Verify GEM_WAIT functionality in await mode.
@@ -50,7 +49,6 @@
  * SUBTEST: busy@all
  *
  * SUBTEST: busy@all-engines
- * Run type: BAT
  *
  * SUBTEST: hang-busy
  * Description: Verify GEM_WAIT functionality in busy mode, when hang is allowed.
@@ -76,7 +74,6 @@
  * SUBTEST: wait@all
  *
  * SUBTEST: wait@all-engines
- * Run type: BAT
  *
  * SUBTEST: write-busy
  * Description: Verify GEM_WAIT functionality in write-busy mode.

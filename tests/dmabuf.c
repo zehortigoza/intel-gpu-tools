@@ -32,7 +32,6 @@
  * Functionality: DRM
  * Sub-category: Memory management
  * Test category: GEM_Legacy
- * Run type: BAT
  *
  * SUBTEST: all-tests
  *

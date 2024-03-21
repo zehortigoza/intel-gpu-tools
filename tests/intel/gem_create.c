@@ -71,7 +71,6 @@
  * Functionality: buffer management
  * Sub-category: uapi
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: busy-create
  * Description: Create buffer objects while GPU is busy.

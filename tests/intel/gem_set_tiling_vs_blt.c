@@ -64,7 +64,6 @@
  * Functionality: tiling
  * Sub-category: Blitter
  * Category: Desktop client
- * Run type: FULL
  *
  * SUBTEST: tiled-to-tiled
  * Description: Check for proper synchronization of tiled->tiled transition.

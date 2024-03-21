@@ -42,7 +42,6 @@
  * Sub-category: Media
  * Category: Desktop client
  * Functionality: vme media block
- * Run type: FULL
  *
  * SUBTEST:
  */

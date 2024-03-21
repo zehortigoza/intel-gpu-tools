@@ -49,7 +49,6 @@
  * Functionality: driver handler
  * Sub-category: uapi
  * Test category: GEM_Legacy
- * Run type: BAT
  *
  * SUBTEST: bad-close
  * Description: Verify that gem_close fails with bad params.
@@ -63,7 +62,6 @@
  * SUBTEST: multigpu-create-close
  * Description: Verify basic functionality of gem_create and gem_close on multi-GPU.
  * Feature: gem_core, multigpu
- * Run type: FULL
  * Test category: MultiGPU
  */
 

@@ -34,14 +34,12 @@
  * Functionality: execbuf
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: all-engines
  * Description: Stress test check behaviour/correctness of handling batches to fill gtt
  *
  * SUBTEST: basic
  * Description: Checks if it can handle enough batches to fill gtt
- * Run type: BAT
  *
  * SUBTEST: engines
  * Description: Checks the correctness of handling enough batches to fill gtt for each engine

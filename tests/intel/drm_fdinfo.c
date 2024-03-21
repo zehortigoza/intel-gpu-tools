@@ -40,7 +40,6 @@
  * Functionality: client_busyness
  * Sub-category: FDinfo
  * Category: Desktop client
- * Run type: FULL
  *
  * SUBTEST: all-busy-check-all
  *

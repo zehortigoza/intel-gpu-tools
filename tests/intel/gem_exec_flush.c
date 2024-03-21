@@ -34,7 +34,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: execbuf
- * Run type: FULL
  *
  * SUBTEST: basic-batch-kernel-default-cmd
  * Feature: cmd_submission, command_parser

@@ -45,7 +45,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: pread/pwrite
- * Run type: FULL
  *
  * SUBTEST: reads
  * Description:

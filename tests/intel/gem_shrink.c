@@ -40,7 +40,6 @@
  * Functionality: buffer management
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: execbuf1
  *

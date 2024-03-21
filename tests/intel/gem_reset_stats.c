@@ -52,7 +52,6 @@
  * Sub-category: uapi
  * Category: Desktop client
  * Functionality: reset
- * Run type: FULL
  *
  * SUBTEST: ban-blt
  *

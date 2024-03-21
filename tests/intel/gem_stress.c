@@ -67,7 +67,6 @@
  * Category: Desktop client
  * Sub-category: CMD submission
  * Functionality: coherency
- * Run type: FULL
  *
  * SUBTEST:
  */

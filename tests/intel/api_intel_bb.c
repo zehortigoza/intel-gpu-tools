@@ -49,7 +49,6 @@
  * Functionality: dummy buffer creation & submission
  * Sub-category: IGT Lib
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: add-remove-objects
  *

@@ -47,7 +47,6 @@
  * Category: Software building block
  * Sub-category: driver
  * Functionality: device hotplug
- * Run type: FULL
  *
  * SUBTEST: hotrebind
  * Description: Check if the driver can be cleanly rebound to a device with a
@@ -76,7 +75,6 @@
  * SUBTEST: unbind-rebind
  * Description: Check if the driver can be cleanly unbound from a device
  *		believed to be closed, then rebound
- * Run type: BAT
  *
  * SUBTEST: unplug-rescan
  * Description: Check if a device believed to be closed can be cleanly

@@ -43,7 +43,6 @@
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: suspend
- * Run type: FULL
  *
  * SUBTEST: basic
  * Description: Check basic functionality without any suspend/resume cycle.

@@ -55,7 +55,6 @@
  * Functionality: execbuf
  * Sub-category: CMD submission
  * Test category: GEM_Legacy
- * Run type: FULL
  *
  * SUBTEST: basic-parallel
  *
