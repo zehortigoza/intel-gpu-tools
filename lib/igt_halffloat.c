@@ -194,6 +194,10 @@ static void half_to_float(const uint16_t *h, float *f, unsigned int num)
 		f[i] = _half_to_float(h[i]);
 }
 
+/* The PLT is not initialized when ifunc resolvers run, so all external
+ * functions must be inlined with __attribute__((flatten)).
+ */
+__attribute__((flatten))
 static void (*resolve_float_to_half(void))(const float *f, uint16_t *h, unsigned int num)
 {
 	if (igt_x86_features() & F16C)
@@ -205,6 +209,10 @@ static void (*resolve_float_to_half(void))(const float *f, uint16_t *h, unsigned
 void igt_float_to_half(const float *f, uint16_t *h, unsigned int num)
 	__attribute__((ifunc("resolve_float_to_half")));
 
+/* The PLT is not initialized when ifunc resolvers run, so all external
+ * functions must be inlined with __attribute__((flatten)).
+ */
+__attribute__((flatten))
 static void (*resolve_half_to_float(void))(const uint16_t *h, float *f, unsigned int num)
 {
 	if (igt_x86_features() & F16C)

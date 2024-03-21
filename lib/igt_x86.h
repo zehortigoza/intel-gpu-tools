@@ -30,6 +30,14 @@
 #ifndef IGT_X86_H
 #define IGT_X86_H
 
+#ifdef HAVE_CPUID_H
+#include <cpuid.h>
+#else
+#define __get_cpuid_max(x, y) 0
+#define __cpuid(level, a, b, c, d) a = b = c = d = 0
+#define __cpuid_count(level, count, a, b, c, d) a = b = c = d = 0
+#endif
+
 #define MMX	0x1
 #define SSE	0x2
 #define SSE2	0x4
@@ -42,7 +50,115 @@
 #define F16C	0x200
 
 #if defined(__x86_64__) || defined(__i386__)
-unsigned igt_x86_features(void);
+
+#define BASIC_CPUID 0x0
+#define EXTENDED_CPUID 0x80000000
+
+#ifndef bit_MMX
+#define bit_MMX		(1 << 23)
+#endif
+
+#ifndef bit_SSE
+#define bit_SSE		(1 << 25)
+#endif
+
+#ifndef bit_SSE2
+#define bit_SSE2	(1 << 26)
+#endif
+
+#ifndef bit_SSE3
+#define bit_SSE3	(1 << 0)
+#endif
+
+#ifndef bit_SSSE3
+#define bit_SSSE3	(1 << 9)
+#endif
+
+#ifndef bit_SSE4_1
+#define bit_SSE4_1	(1 << 19)
+#endif
+
+#ifndef bit_SSE4_2
+#define bit_SSE4_2	(1 << 20)
+#endif
+
+#ifndef bit_OSXSAVE
+#define bit_OSXSAVE	(1 << 27)
+#endif
+
+#ifndef bit_AVX
+#define bit_AVX		(1 << 28)
+#endif
+
+#ifndef bit_F16C
+#define bit_F16C	(1 << 29)
+#endif
+
+#ifndef bit_AVX2
+#define bit_AVX2	(1<<5)
+#endif
+
+#define xgetbv(index, eax, edx) \
+	__asm__ ("xgetbv" : "=a"(eax), "=d"(edx) : "c" (index))
+
+#define has_YMM 0x1
+
+static inline unsigned igt_x86_features(void)
+{
+	unsigned max = __get_cpuid_max(BASIC_CPUID, 0);
+	unsigned eax, ebx, ecx, edx;
+	unsigned features = 0;
+	unsigned extra = 0;
+
+	if (max >= 1) {
+		__cpuid(1, eax, ebx, ecx, edx);
+
+		if (ecx & bit_SSE3)
+			features |= SSE3;
+
+		if (ecx & bit_SSSE3)
+			features |= SSSE3;
+
+		if (ecx & bit_SSE4_1)
+			features |= SSE4_1;
+
+		if (ecx & bit_SSE4_2)
+			features |= SSE4_2;
+
+		if (ecx & bit_OSXSAVE) {
+			unsigned int bv_eax, bv_ecx;
+
+			xgetbv(0, bv_eax, bv_ecx);
+			if ((bv_eax & 6) == 6)
+				extra |= has_YMM;
+		}
+
+		if ((extra & has_YMM) && (ecx & bit_AVX))
+			features |= AVX;
+
+		if (edx & bit_MMX)
+			features |= MMX;
+
+		if (edx & bit_SSE)
+			features |= SSE;
+
+		if (edx & bit_SSE2)
+			features |= SSE2;
+
+		if (ecx & bit_F16C)
+			features |= F16C;
+	}
+
+	if (max >= 7) {
+		__cpuid_count(7, 0, eax, ebx, ecx, edx);
+
+		if ((extra & has_YMM) && (ebx & bit_AVX2))
+			features |= AVX2;
+	}
+
+	return features;
+}
+
 char *igt_x86_features_to_string(unsigned features, char *line);
 #else
 static inline unsigned igt_x86_features(void)
