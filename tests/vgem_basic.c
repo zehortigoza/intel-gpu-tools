@@ -36,6 +36,7 @@
  * Category: Infrastructure
  * Description: Basic sanity check of Virtual GEM module (vGEM).
  * Functionality: mock device
+ * Sub-category: Core
  * Test category: GEM_Legacy
  * Feature: vgem
  * Run type: FULL

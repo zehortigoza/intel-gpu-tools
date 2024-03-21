@@ -10,6 +10,24 @@
 
 IGT_TEST_DESCRIPTION("Tests for sync_file support in dma-buf");
 
+/**
+ * TEST: dmabuf_sync_file
+ * Category: Infrastructure
+ * Description: Tests for sync_file support in dma-buf
+ * Functionality: dmabuf
+ * Sub-category: Core
+ * Run type: FULL
+ *
+ * SUBTEST: export-basic
+ * SUBTEST: export-before-signal
+ * SUBTEST: export-multiwait
+ * SUBTEST: export-wait-after-attach
+ * SUBTEST: import-basic
+ * SUBTEST: import-multiple-read-only
+ * SUBTEST: import-multiple-read-write
+ *
+ */
+
 static void test_export_basic(int fd)
 {
 	struct vgem_bo bo;

@@ -35,7 +35,7 @@
  * Feature: core
  * Functionality: device management
  * Run type: BAT
- * Sub-category: i915
+ * Sub-category: Core
  * Test category: GEM_Legacy
  *
  * SUBTEST:
