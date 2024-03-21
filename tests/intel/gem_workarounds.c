@@ -35,9 +35,9 @@
 /**
  * TEST: gem workarounds
  * Category: Infrastructure
- * Feature: workarounds
- * Functionality: workarounds
- * Sub-category: Context
+ * Feature: workaround
+ * Functionality: context
+ * Sub-category: Workarounds
  * Test category: GEM_Legacy
  * Run type: FULL
  *
@@ -45,11 +45,14 @@
  * SUBTEST: basic-read-context
  * SUBTEST: basic-read-fd
  * SUBTEST: hibernate-resume
- * Feature: hibernate, workarounds
+ * Feature: hibernate, workaround
+ *
  * SUBTEST: hibernate-resume-context
- * Feature: hibernate, workarounds
+ * Feature: hibernate, workaround
+ *
  * SUBTEST: hibernate-resume-fd
- * Feature: hibernate, workarounds
+ * Feature: hibernate, workaround
+ *
  * SUBTEST: reset
  * SUBTEST: reset-context
  * SUBTEST: reset-fd
@@ -59,12 +62,12 @@
  *
  * SUBTEST: suspend-resume-context
  * Description: Test to verify gem WA registers during suspend-resume
- * Feature: suspend, workarounds
+ * Feature: suspend, workaround
  * Test category: suspend
  *
  * SUBTEST: suspend-resume-fd
  * Description: Test to verify gem WA registers during suspend-resume
- * Feature: suspend, workarounds
+ * Feature: suspend, workaround
  * Test category: suspend
  */
 
