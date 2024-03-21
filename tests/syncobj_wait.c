@@ -34,10 +34,10 @@
  * TEST: syncobj wait
  * Category: Infrastructure
  * Description: Tests for the drm sync object wait API
- * Feature: synchronization
- * Functionality: semaphore
+ * Feature: synchronization feature
+ * Functionality: object wait
  * Run type: FULL
- * Sub-category: DRM
+ * Sub-category: uapi
  * Test category: GEM_Legacy
  *
  * SUBTEST: invalid-multi-wait-all-unsubmitted

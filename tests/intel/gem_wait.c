@@ -35,9 +35,9 @@
  * TEST: gem wait
  * Category: Infrastructure
  * Description: Tests the GEM_WAIT ioctl
- * Feature: synchronization
- * Functionality: semaphore
- * Sub-category: i915
+ * Feature: synchronization feature
+ * Functionality: GEM_WAIT ioctl
+ * Sub-category: uapi
  * Test category: GEM_Legacy
  * Run type: FULL
  *

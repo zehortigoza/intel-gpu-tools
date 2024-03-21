@@ -50,6 +50,23 @@
 
 IGT_TEST_DESCRIPTION("Call read(drm) and see if it behaves.");
 
+/**
+ * TEST: drm read
+ * Description: boundary testing of read(drm_fd)
+ * Category: Infrastructure
+ * Functionality: DRM memory managemnt
+ * Sub-category: uapi
+ * Run type: FULL
+ *
+ * SUBTEST: invalid-buffer
+ * SUBTEST: fault-buffer
+ * SUBTEST: empty-block
+ * SUBTEST: empty-nonblock
+ * SUBTEST: short-buffer-block
+ * SUBTEST: short-buffer-nonblock
+ * SUBTEST: short-buffer-wakeup
+ */
+
 static void sighandler(int sig, siginfo_t * info, void *context)
 {
 }

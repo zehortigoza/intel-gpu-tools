@@ -37,7 +37,7 @@
  * Feature: gem_core
  * Functionality: device topology
  * Run type: BAT
- * Sub-category: i915
+ * Sub-category: uapi
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic-eu-total

@@ -34,10 +34,10 @@
  * TEST: syncobj timeline
  * Category: Infrastructure
  * Description: Tests for the drm timeline sync object API
- * Feature: synchronization
- * Functionality: semaphore
  * Run type: FULL
- * Sub-category: DRM
+ * Feature: synchronization feature
+ * Functionality: sync_object
+ * Sub-category: uapi
  * Test category: GEM_Legacy
  *
  * SUBTEST: 32bits-limit

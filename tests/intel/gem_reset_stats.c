@@ -49,6 +49,9 @@
 #include "sw_sync.h"
 /**
  * TEST: gem reset stats
+ * Sub-category: uapi
+ * Category: Desktop client
+ * Functionality: reset
  * Run type: FULL
  *
  * SUBTEST: ban-blt

@@ -34,7 +34,7 @@
  * TEST: gem ctx param
  * Description: Basic test for context set/get param input validation.
  * Category: Infrastructure
- * Feature: context
+ * Feature: context feature
  * Functionality: context
  * Sub-category: uapi
  * Test category: GEM_Legacy

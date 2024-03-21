@@ -35,6 +35,9 @@
 /**
  * TEST: gem reg read
  * Feature: gem_core
+ * Sub-category: uapi
+ * Category: Desktop client
+ * Functionality: ioctl
  * Run type: FULL
  *
  * SUBTEST: bad-register

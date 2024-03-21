@@ -54,10 +54,10 @@
  * Category: Desktop client
  * Description: This is a test for the generic dumb buffer interface.
  * Feature: prime
- * Functionality: IOCTL check for buffer management
+ * Functionality: ioctl
  * Run type: FULL
- * Sub-category: Compositor
- * Test category: GEM_Legacy
+ * Sub-category: uapi
+ * Test category: Compositor
  *
  * SUBTEST: create-clear
  *

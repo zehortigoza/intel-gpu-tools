@@ -48,6 +48,9 @@
  * TEST: gem ctx sseu
  * Description: Test context render powergating programming.
  * Feature: pm_sseu
+ * Sub-category: uapi
+ * Category: Desktop client
+ * Functionality: sseu
  * Run type: FULL
  *
  * SUBTEST: engines

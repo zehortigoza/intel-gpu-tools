@@ -37,10 +37,10 @@
  * TEST: sysfs defaults
  * Category: Infrastructure
  * Feature: gem_core
- * Functionality: driver handler
- * Run type: FULL
- * Sub-category: i915
+ * Functionality: sysfs
+ * Sub-category: uapi
  * Test category: GEM_Legacy
+ * Run type: FULL
  *
  * SUBTEST: readonly
  */

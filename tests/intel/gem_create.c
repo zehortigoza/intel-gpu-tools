@@ -98,6 +98,9 @@
  * SUBTEST: create-ext-placement-sanity-check
  * Description: Exercise create_ext placements extension.
  *
+ * SUBTEST: create-ext-set-pat
+ * Description:  Create GEM object with specific PAT index
+ *
  * SUBTEST: create-invalid-size
  * Description: Try to create a gem object of invalid size 0 and check if
  *		ioctl returns error.
@@ -594,18 +597,6 @@ static void create_ext_placement_each(int fd)
 	free(regions);
 }
 
-/**
-  * TEST: GEM create uAPI
-  * Category: Infrastructure
-  * Description: Tests the DRM_IOCTL_I915_GEM_CREATE_EXT ioctl.
-  * Feature: core
-  * Functionality: Create GEM object with specific PAT index
-  * Run type: BAT
-  * Sub-category: i915
-  * Test category: GEM_Legacy
-  *
-  * SUBTEST: create-ext-set-pat
-  */
 static void create_ext_set_pat(int fd)
 {
 	struct drm_i915_gem_create_ext_set_pat setparam_pat = {

@@ -11,6 +11,9 @@
 /**
  * TEST: i915 pm freq api
  * Description: Test SLPC freq API
+ * Category: Infrastructure
+ * Sub-category: uapi
+ * Functionality: slpc
  * Run type: FULL
  *
  * SUBTEST: freq-basic-api

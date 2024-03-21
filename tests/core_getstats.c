@@ -37,9 +37,9 @@
  * Category: Desktop client
  * Description: Tests the DRM_IOCTL_GET_STATS ioctl.
  * Feature: core
- * Functionality: permission management for clients
+ * Functionality: DRM memory management
  * Run type: FULL
- * Sub-category: DRM
+ * Sub-category: uapi
  * Test category: GEM_Legacy
  *
  * SUBTEST:
