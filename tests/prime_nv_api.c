@@ -8,6 +8,28 @@
    test4 - export handle twice from intel, import into nouveau twice, check handle is the same
 */
 
+/**
+ * TEST: prime_nv_api
+ * Description: Basic api tests between intel and nouveau
+ * Sub-category: uapi
+ * Functionality: intel-nouveau
+ * Run type: FULL
+ *
+ * SUBTEST: i915_nv_import_twice
+ * SUBTEST: i915_nv_import_twice_check_flink_name
+ * SUBTEST: i915_nv_reimport_twice_check_flink_name
+ * SUBTEST: nv_i915_import_twice_check_flink_name
+ * SUBTEST: nv_i915_reimport_twice_check_flink_name
+ * SUBTEST: i915_nv_import_vs_close
+ * SUBTEST: i915_nv_double_import
+ * SUBTEST: i915_nv_double_export
+ * SUBTEST: i915_self_import
+ * SUBTEST: nv_self_import
+ * SUBTEST: i915_self_import_to_different_fd
+ * SUBTEST: nv_self_import_to_different_fd
+ *
+ */
+
 #include "igt.h"
 #include <stdio.h>
 #include <stdlib.h>

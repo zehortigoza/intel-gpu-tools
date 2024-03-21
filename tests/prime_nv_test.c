@@ -13,6 +13,23 @@
    TODO add some nouveau rendering tests
 */
 
+/**
+ * TEST: prime_nv_test
+ * Description: Basic set of prime tests between intel and nouveau
+ * Sub-category: intel-nouveau
+ * Functionality: buffer management
+ * Run type: FULL
+ *
+ * SUBTEST: i915_nv_sharing
+ * SUBTEST: nv_i915_sharing
+ * SUBTEST: nv_write_i915_cpu_mmap_read
+ * SUBTEST: nv_write_i915_gtt_mmap_read
+ * SUBTEST: i915_import_cpu_mmap
+ * SUBTEST: i915_import_gtt_mmap
+ * SUBTEST: i915_import_pread_pwrite
+ * SUBTEST: i915_blt_fill_nv_read
+ *
+ */
 
 #include "igt.h"
 #include <stdio.h>

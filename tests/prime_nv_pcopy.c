@@ -13,6 +13,24 @@
    TODO add some nouveau rendering tests
 */
 
+/**
+ * TEST: prime_nv_pcopy
+ * Description: Basic set of prime tests between intel and nouveau
+ * Sub-category: intel-nouveau
+ * Functionality: buffer management
+ * Run type: FULL
+ *
+ * SUBTEST: test1_macro
+ * SUBTEST: test1_micro
+ * SUBTEST: test2
+ * SUBTEST: test3_1
+ * SUBTEST: test3_2
+ * SUBTEST: test3_3
+ * SUBTEST: test3_4
+ * SUBTEST: test3_5
+ * SUBTEST: test_semaphore
+ *
+ */
 
 #include "igt.h"
 #include <inttypes.h>
