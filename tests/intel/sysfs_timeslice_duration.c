@@ -47,6 +47,9 @@
  * TEST: sysfs timeslice duration
  * Feature: SMI, cmd_submission
  * Test category: SysMan
+ * Functionality: timeslise sysfs
+ * Sub-category: SysMan
+ * Category: Desktop \ Server
  * Run type: FULL
  *
  * SUBTEST: duration

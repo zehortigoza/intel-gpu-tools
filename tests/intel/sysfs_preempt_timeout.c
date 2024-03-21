@@ -44,6 +44,9 @@
  * TEST: sysfs preempt timeout
  * Feature: SMI, context
  * Test category: SysMan
+ * Sub-category: SysMan
+ * Category: Desktop \ Server
+ * Functionality: sysfs preempt timeout
  * Run type: FULL
  *
  * SUBTEST: idempotent

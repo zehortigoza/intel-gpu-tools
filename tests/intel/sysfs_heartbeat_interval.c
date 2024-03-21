@@ -45,6 +45,9 @@
  * TEST: sysfs heartbeat interval
  * Feature: SMI, cmd_submission
  * Test category: SysMan
+ * Sub-category: SysMan
+ * Category: Desktop \ Server
+ * Functionality: sysfs heartbeat
  * Run type: FULL
  *
  * SUBTEST: idempotent
