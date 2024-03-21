@@ -186,7 +186,7 @@ static void run_test_linear_tiling(data_t *data, int pipe, const drmModeModeInfo
 	 * not give the numver of valid crtcs and always return IGT_MAX_PIPES */
 	for_each_pipe(display, p) num_pipes++;
 
-	igt_skip_on_f(pipe > num_pipes,
+	igt_skip_on_f(pipe >= num_pipes,
                       "ASIC does not have %d pipes\n", pipe);
 
 	test_init(data);
