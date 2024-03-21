@@ -30,10 +30,11 @@
 /**
  * TEST: gem vm create
  * Category: Server
- * Functionality: context management
- * Run type: FULL
+ * Functionality: context
  * Sub-category: Compute
+ * Feature: mapping
  * Test category: GEM_Legacy
+ * Run type: FULL
  *
  * SUBTEST: create-ext
  * Feature: mapping
@@ -48,7 +49,7 @@
  * Feature: mapping
  *
  * SUBTEST: isolation
- * Feature: context, mapping
+ * Feature: context feature, mapping
  */
 
 static int vm_create_ioctl(int i915, struct drm_i915_gem_vm_control *ctl)
