@@ -208,7 +208,6 @@ static int find_test_edid_index(uint32_t connector_type)
 		}
 	}
 
-	igt_assert_f(0, "should not reach here");
 	return -1;
 }
 
@@ -268,6 +267,8 @@ static void test_freesync_parsing_base(data_t *data, uint32_t test_flags)
 	for_each_connected_output(display, output) {
 		/* find a test EDID */
 		j = find_test_edid_index(output->config.connector->connector_type);
+		if (j == -1)
+			continue;
 
 		edid = (const struct edid *)edid_database[j].edid;
 		expected_range = edid_database[j].range;
