@@ -38,6 +38,7 @@ struct xe_spin {
 	uint32_t start;
 	uint32_t end;
 	uint32_t ticks_delta;
+	uint64_t exec_sync;
 };
 
 igt_spin_t *xe_spin_create(int fd, const struct igt_spin_factory *opt);
