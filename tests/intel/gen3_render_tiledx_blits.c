@@ -25,7 +25,7 @@
  *
  */
 
-/** @file gen3_linear_render_blits.c
+/** @file gen3_render_tiledx_blits.c
  *
  * This is a test of doing many blits, with a working set
  * larger than the aperture size.
@@ -51,6 +51,9 @@
 /**
  * TEST: gen3 render tiledx blits
  * Feature: obsolete
+ * Sub-category: Obsolete_gen3
+ * Category: Obsolete
+ * Functionality: obsolete_test
  * Run type: FULL
  *
  * SUBTEST:

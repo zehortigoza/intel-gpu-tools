@@ -51,6 +51,9 @@
 /**
  * TEST: gen3 render mixed blits
  * Feature: obsolete
+ * Sub-category: Obsolete_gen3
+ * Functionality: obsolete_test
+ * Category: Obsolete
  * Run type: FULL
  *
  * SUBTEST:
