@@ -13,6 +13,9 @@
  * Feature: hwmon
  * Run type: FULL
  * Test category: GEM_Legacy
+ * Sub-category: Power management
+ * Category: Desktop client
+ * Functionality: hwmon
  *
  * SUBTEST: sanity
  * Description: Sanity check gpu power measurement

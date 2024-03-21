@@ -44,6 +44,8 @@
  * TEST: i915 pm rpm
  * Feature: pm_rpm
  * Functionality: D3 state entry-exit
+ * Sub-category: Power management
+ * Category: Desktop client
  * Test category: pm_rpm
  * Run type: FULL
  *

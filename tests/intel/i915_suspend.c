@@ -46,9 +46,12 @@
 #include "igt_device_scan.h"
 /**
  * TEST: i915 suspend
- * Feature: suspend
+ * Feature: suspend feature
  * Functionality: s2idle w/o i915
  * Test category: suspend
+ * Functionality: suspend
+ * Sub-category: Power management
+ * Category: Desktop client
  * Run type: FULL
  *
  * SUBTEST: basic-s2idle-without-i915
@@ -66,16 +69,16 @@
  * SUBTEST: debugfs-reader-hibernate
  *
  * SUBTEST: fence-restore-tiled2untiled
- * Feature: gtt, suspend, synchronization
+ * Feature: gtt, suspend feature, synchronization
  *
  * SUBTEST: fence-restore-tiled2untiled-hibernate
- * Feature: gtt, suspend, synchronization
+ * Feature: gtt, suspend feature, synchronization
  *
  * SUBTEST: fence-restore-untiled
- * Feature: gtt, suspend, synchronization
+ * Feature: gtt, suspend feature, synchronization
  *
  * SUBTEST: fence-restore-untiled-hibernate
- * Feature: gtt, suspend, synchronization
+ * Feature: gtt, suspend feature, synchronization
  *
  * SUBTEST: forcewake
  * Description: Test to prevent GT from suspend by opening forcewake handle

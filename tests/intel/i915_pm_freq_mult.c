@@ -12,9 +12,12 @@
 #include "igt_sysfs.h"
 /**
  * TEST: i915 pm freq mult
- * Description:
- *   Tests for sysfs controls (or multipliers) for IP blocks which run at frequencies different
- *   from the main GT frequency.
+ * Description: Tests for sysfs controls (or multipliers) for IP blocks which
+ *		run at frequencies different from the main GT frequency.
+ * Category: Firmware building block
+ * Functionality: freq multipliers
+ * Test category: i915
+ * Sub-category: Power management
  * Run type: FULL
  *
  * SUBTEST: media-freq

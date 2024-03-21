@@ -49,6 +49,9 @@
  * Description: Render P-States tests - verify GPU frequency changes
  * Feature: pm_rps
  * Test category: pm_rps
+ * Functionality: rps
+ * Sub-category: Power management
+ * Category: Desktop client
  * Run type: FULL
  *
  * SUBTEST: basic-api
@@ -63,7 +66,7 @@
  * Description:
  *   Check if the order of fences does not affect waitboosting.
  *   Render P-States tests - verify GPU frequency changes
- * Feature: pm_rps, synchronization
+ * Feature: pm_rps, synchronization feature
  *
  * SUBTEST: min-max-config-idle
  * SUBTEST: min-max-config-loaded

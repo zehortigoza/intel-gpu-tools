@@ -46,6 +46,7 @@
  * Feature: GuCRC, pm_rc6
  * Functionality: rc6
  * Sub-category: Power management
+ * Category: Desktop client
  * Run type: FULL
  *
  * SUBTEST: media-rc6-accuracy

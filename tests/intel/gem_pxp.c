@@ -10,9 +10,10 @@
 /**
  * TEST: gem pxp
  * Description: Test PXP that manages protected content through arbitrated HW-PXP-session
- * Feature: PXP
+ * Feature: Protected Xe Path
  * Functionality: pxp
  * Sub-category: Power management
+ * Category: Desktop client
  * Run type: FULL
  *
  * SUBTEST: create-protected-buffer
