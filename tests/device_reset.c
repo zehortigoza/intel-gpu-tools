@@ -20,7 +20,7 @@
  * Description: Examine behavior of a driver on device sysfs reset
  * Category: Server
  * Feature: reset
- * Functionality: reset
+ * Functionality: sysfs reset
  * Sub-category: Reset
  * Test category: GEM_Legacy
  * Run type: FULL
