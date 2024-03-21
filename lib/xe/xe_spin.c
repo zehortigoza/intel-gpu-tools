@@ -72,6 +72,7 @@ void xe_spin_init(struct xe_spin *spin, struct xe_spin_opts *opts)
 	uint64_t end_addr = opts->addr + offsetof(struct xe_spin, end);
 	uint64_t ticks_delta_addr = opts->addr + offsetof(struct xe_spin, ticks_delta);
 	uint64_t pad_addr = opts->addr + offsetof(struct xe_spin, pad);
+	uint64_t timestamp_addr = opts->addr + offsetof(struct xe_spin, timestamp);
 	int b = 0;
 
 	spin->start = 0;
@@ -97,6 +98,17 @@ void xe_spin_init(struct xe_spin *spin, struct xe_spin_opts *opts)
 
 	if (opts->preempt)
 		spin->batch[b++] = (0x5 << 23);
+
+	if (opts->write_timestamp) {
+		spin->batch[b++] = MI_LOAD_REGISTER_REG | MI_LRR_DST_CS_MMIO | MI_LRR_SRC_CS_MMIO;
+		spin->batch[b++] = CTX_TIMESTAMP;
+		spin->batch[b++] = CS_GPR(NOW_TS);
+
+		spin->batch[b++] = MI_STORE_REGISTER_MEM_GEN8 | MI_SRM_CS_MMIO;
+		spin->batch[b++] = CS_GPR(NOW_TS);
+		spin->batch[b++] = timestamp_addr;
+		spin->batch[b++] = timestamp_addr >> 32;
+	}
 
 	if (opts->ctx_ticks) {
 		spin->batch[b++] = MI_LOAD_REGISTER_IMM(1) | MI_LRI_CS_MMIO;

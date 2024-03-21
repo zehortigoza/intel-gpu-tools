@@ -29,6 +29,7 @@ struct xe_spin_opts {
 	uint64_t addr;
 	bool preempt;
 	uint32_t ctx_ticks;
+	bool write_timestamp;
 };
 
 /* Mapped GPU object */
@@ -39,6 +40,7 @@ struct xe_spin {
 	uint32_t end;
 	uint32_t ticks_delta;
 	uint64_t exec_sync;
+	uint32_t timestamp;
 };
 
 igt_spin_t *xe_spin_create(int fd, const struct igt_spin_factory *opt);
