@@ -36,9 +36,9 @@
  * TEST: gem sync
  * Category: Infrastructure
  * Description: Basic check of ring<->ring write synchronisation.
- * Feature: synchronization
+ * Feature: synchronization feature
  * Functionality: semaphore
- * Sub-category: i915
+ * Sub-category: Synchronization
  * Test category: GEM_Legacy
  * Run type: FULL
  *
@@ -47,14 +47,14 @@
  *
  * SUBTEST: active-each
  * Description: Exercise waiting while keeping the GPU busy.
- * Feature: multitile, synchronization
+ * Feature: multitile, synchronization feature
  *
  * SUBTEST: active-wakeup
  * Description: Measure wakeup latency while also scheduling the next batch on each engine.
  *
  * SUBTEST: active-wakeup-each
  * Description: Measure wakeup latency while also scheduling the next batch.
- * Feature: multitile, synchronization
+ * Feature: multitile, synchronization feature
  *
  * SUBTEST: basic-all
  * Description: Basic test to wait upon a batch on all rings.
@@ -64,7 +64,7 @@
  * Description:
  *   Check synchronisation of ring.
  *   Exercise all physical engine selection and legacy rings
- * Feature: multitile, synchronization
+ * Feature: multitile, synchronization feature
  * Run type: BAT
  * Test category: MultiTile
  *
@@ -72,7 +72,7 @@
  * Description:
  *   Create race condition and see if we can catch interrupts.
  *   Basic check of ring to ring write synchronisation
- * Feature: multitile, synchronization
+ * Feature: multitile, synchronization feature
  * Test category: MultiTile
  *
  * SUBTEST: basic-store-all
@@ -82,7 +82,7 @@
  * Description:
  *   Check that store synchronisation works.
  *   Basic check of ring to ring write, store synchronisation
- * Feature: multitile, synchronization
+ * Feature: multitile, synchronization feature
  * Test category: MultiTile
  *
  * SUBTEST: default
@@ -93,7 +93,7 @@
  *
  * SUBTEST: double-wakeup-each
  * Description: Double stress test for nop + sync.
- * Feature: multitile, synchronization
+ * Feature: multitile, synchronization feature
  *
  * SUBTEST: forked
  * Description: Check synchronisation of ring with parallel executions on each engine.
@@ -105,7 +105,7 @@
  * Description:
  *   Forked variant of sync_ring, which checks synchronisation of ring with parallel
  *   executions.
- * Feature: multitile, synchronization
+ * Feature: multitile, synchronization feature
  *
  * SUBTEST: forked-store
  * Description: Check store synchronisation works with parallel multiple executions on each engine.
@@ -115,14 +115,14 @@
  *
  * SUBTEST: forked-store-each
  * Description: Forked variant of store_ring, check if parallel store synchronisation works.
- * Feature: multitile, synchronization
+ * Feature: multitile, synchronization feature
  *
  * SUBTEST: forked-switch
  * Description: Check sync after context switch parallelly on each engine.
  *
  * SUBTEST: forked-switch-each
  * Description: Check sync after context switch parallelly.
- * Feature: multitile, synchronization
+ * Feature: multitile, synchronization feature
  *
  * SUBTEST: idle
  * Description: Exercise and measure idle requests on each engine.
@@ -161,7 +161,7 @@
  *
  * SUBTEST: legacy-switch
  * Description: Check sync after context switch for each legacy engine.
- * Feature: synchronization
+ * Feature: synchronization feature
  * Run type: FULL
  *
  * SUBTEST: legacy-wakeup
@@ -189,7 +189,7 @@
  *
  * SUBTEST: switch-each
  * Description: Check sync after context switch.
- * Feature: multitile, synchronization
+ * Feature: multitile, synchronization feature
  *
  * SUBTEST: wait-all
  * Description: Extended version of existing basic-all test.
@@ -199,7 +199,7 @@
  *
  * SUBTEST: wakeup-each
  * Description: Stress test for nop + sync.
- * Feature: multitile, synchronization
+ * Feature: multitile, synchronization feature
  */
 
 #define MAX_PRIO I915_CONTEXT_MAX_USER_PRIORITY

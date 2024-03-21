@@ -30,10 +30,10 @@
  * TEST: syncobj basic
  * Category: Infrastructure
  * Description: Basic check for drm sync objects.
- * Feature: synchronization
- * Functionality: semaphore
+ * Feature: semaphore
+ * Functionality: drm sync object
  * Run type: FULL
- * Sub-category: DRM
+ * Sub-category: Synchronization
  * Test category: GEM_Legacy
  *
  * SUBTEST: bad-create-flags

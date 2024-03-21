@@ -44,6 +44,7 @@
  * Description: Test SW Sync Framework
  * Feature: semaphore
  * Functionality: sw sync framework
+ * Run type: FULL
  * Sub-category: uapi
  * Test category: GEM_Legacy
  *
