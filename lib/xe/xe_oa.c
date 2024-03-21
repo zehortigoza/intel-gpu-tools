@@ -806,7 +806,7 @@ intel_perf_load_perf_configs(struct intel_perf *perf, int drm_fd)
 	}
 }
 
-static void xe_oa_prop_to_ext(struct drm_xe_oa_open_prop *properties,
+static void xe_oa_prop_to_ext(struct intel_xe_oa_open_prop *properties,
 			      struct drm_xe_ext_set_property *extn)
 {
 	__u64 *prop = (__u64 *)properties->properties_ptr;
@@ -841,7 +841,7 @@ int xe_perf_ioctl(int fd, enum drm_xe_perf_op op, void *arg)
 	};
 
 	if (op == DRM_XE_PERF_OP_STREAM_OPEN) {
-		struct drm_xe_oa_open_prop *oprop = (struct drm_xe_oa_open_prop *)arg;
+		struct intel_xe_oa_open_prop *oprop = (struct intel_xe_oa_open_prop *)arg;
 
 		igt_assert_lte(oprop->num_properties, XE_OA_MAX_SET_PROPERTIES);
 		xe_oa_prop_to_ext(oprop, ext);

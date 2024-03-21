@@ -314,7 +314,7 @@ void intel_perf_add_metric_set(struct intel_perf *perf,
 void intel_perf_load_perf_configs(struct intel_perf *perf, int drm_fd);
 
 
-struct drm_xe_oa_open_prop {
+struct intel_xe_oa_open_prop {
 	uint32_t num_properties;
 	uint32_t reserved;
 	uint64_t properties_ptr;

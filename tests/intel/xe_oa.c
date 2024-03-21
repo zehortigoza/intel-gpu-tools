@@ -519,7 +519,7 @@ __perf_close(int fd)
 }
 
 static int
-__perf_open(int fd, struct drm_xe_oa_open_prop *param, bool prevent_pm)
+__perf_open(int fd, struct intel_xe_oa_open_prop *param, bool prevent_pm)
 {
 	int ret;
 	int32_t pm_value = 0;
@@ -1140,7 +1140,7 @@ static void test_system_wide_paranoid(void)
 			DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 			DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 		};
-		struct drm_xe_oa_open_prop param = {
+		struct intel_xe_oa_open_prop param = {
 			.num_properties = ARRAY_SIZE(properties) / 2,
 			.properties_ptr = to_user_pointer(properties),
 		};
@@ -1166,7 +1166,7 @@ static void test_system_wide_paranoid(void)
 			DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 			DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 		};
-		struct drm_xe_oa_open_prop param = {
+		struct intel_xe_oa_open_prop param = {
 			.num_properties = ARRAY_SIZE(properties) / 2,
 			.properties_ptr = to_user_pointer(properties),
 		};
@@ -1201,7 +1201,7 @@ static void test_invalid_oa_metric_set_id(void)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, UINT64_MAX,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -1238,7 +1238,7 @@ static void test_invalid_oa_format_id(void)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, UINT64_MAX, /* No __ff() here */
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -1273,7 +1273,7 @@ static void test_missing_sample_flags(void)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -1408,7 +1408,7 @@ open_and_read_2_oa_reports(int format_id,
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -1803,7 +1803,7 @@ static void test_oa_exponents(const struct drm_xe_engine_class_instance *hwe)
 			DRM_XE_OA_PROPERTY_OA_EXPONENT, exponent,
 			DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 		};
-		struct drm_xe_oa_open_prop param = {
+		struct intel_xe_oa_open_prop param = {
 			.num_properties = ARRAY_SIZE(properties) / 2,
 			.properties_ptr = to_user_pointer(properties),
 		};
@@ -1926,7 +1926,7 @@ static void test_invalid_oa_exponent(void)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, 31, /* maximum exponent expected
 						       to be accepted */
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -1983,7 +1983,7 @@ static void test_blocking(uint64_t requested_oa_period,
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
 	uint64_t props[DRM_XE_OA_PROPERTY_MAX * 2];
 	uint64_t *idx = props;
-	struct drm_xe_oa_open_prop param;
+	struct intel_xe_oa_open_prop param;
 	uint8_t buf[1024 * 1024];
 	struct tms start_times;
 	struct tms end_times;
@@ -2128,7 +2128,7 @@ static void test_polling(uint64_t requested_oa_period,
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
 	uint64_t props[DRM_XE_OA_PROPERTY_MAX * 2];
 	uint64_t *idx = props;
-	struct drm_xe_oa_open_prop param;
+	struct intel_xe_oa_open_prop param;
 	uint8_t buf[1024 * 1024];
 	struct tms start_times;
 	struct tms end_times;
@@ -2326,7 +2326,7 @@ static void test_polling_small_buf(void)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
 		DRM_XE_OA_PROPERTY_OA_DISABLED, true,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -2370,7 +2370,7 @@ static void test_polling_small_buf(void)
 }
 
 static int
-num_valid_reports_captured(struct drm_xe_oa_open_prop *param,
+num_valid_reports_captured(struct intel_xe_oa_open_prop *param,
 			   int64_t *duration_ns, int fmt)
 {
 	uint8_t buf[1024 * 1024];
@@ -2428,7 +2428,7 @@ test_oa_tlb_invalidate(const struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_DISABLED, true,
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -2479,7 +2479,7 @@ test_buffer_fill(const struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -2620,7 +2620,7 @@ test_non_zero_reason(const struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -2700,7 +2700,7 @@ test_enable_disable(const struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_DISABLED, true,
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -2840,7 +2840,7 @@ test_short_reads(void)
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -2942,7 +2942,7 @@ test_non_sampling_read_error(void)
 
 		/* XXX: no sampling exponent */
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -2982,7 +2982,7 @@ test_disabled_read_error(void)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
 		DRM_XE_OA_PROPERTY_OA_DISABLED, true,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -3063,7 +3063,7 @@ test_mi_rpc(struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -3185,7 +3185,7 @@ static void single_ctx_helper(struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(fmt),
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -3536,7 +3536,7 @@ test_rc6_disable(void)
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -3594,7 +3594,7 @@ test_stress_open_close(const struct drm_xe_engine_class_instance *hwe)
 			DRM_XE_OA_PROPERTY_OA_DISABLED, true,
 			DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 		};
-		struct drm_xe_oa_open_prop param = {
+		struct intel_xe_oa_open_prop param = {
 			.num_properties = ARRAY_SIZE(properties) / 2,
 			.properties_ptr = to_user_pointer(properties),
 		};
@@ -3766,7 +3766,7 @@ test_create_destroy_userspace_config(void)
 		DRM_XE_OA_PROPERTY_OA_DISABLED, true,
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -4064,7 +4064,7 @@ static void test_oa_regs_whitelist(const struct drm_xe_engine_class_instance *hw
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(test_set->perf_oa_format),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = sizeof(properties) / 16,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -4113,7 +4113,7 @@ __test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exponent,
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = sizeof(properties) / 16,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -4251,7 +4251,7 @@ test_xe_ref_count(void)
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(0), /* update below */
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, 0, /* update below */
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -4345,7 +4345,7 @@ test_oa_unit_exclusive_stream(bool exponent)
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, 0,
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -4613,7 +4613,7 @@ static void closed_fd_and_unmapped_access(const struct drm_xe_engine_class_insta
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(default_test_set->perf_oa_format),
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
@@ -4662,7 +4662,7 @@ static void test_mapped_oa_buffer(map_oa_buffer_test_t test_with_fd_open,
 		DRM_XE_OA_PROPERTY_OA_EXPONENT, oa_exp_1_millisec,
 		DRM_XE_OA_PROPERTY_OA_ENGINE_INSTANCE, hwe->engine_instance,
 	};
-	struct drm_xe_oa_open_prop param = {
+	struct intel_xe_oa_open_prop param = {
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
