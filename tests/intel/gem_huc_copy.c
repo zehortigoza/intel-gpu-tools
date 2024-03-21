@@ -38,7 +38,10 @@
 /**
  * TEST: gem huc copy
  * Description: A very simple workload for the HuC.
- * Feature: huc
+ * Feature: firmware feature
+ * Sub-category: Firmware
+ * Category: Desktop client
+ * Functionality: huc copy
  * Run type: BAT
  *
  * SUBTEST: huc-copy

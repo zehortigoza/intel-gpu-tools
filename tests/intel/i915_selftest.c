@@ -192,25 +192,29 @@
  * SUBTEST: live@guc
  * Category: Selftest
  * Feature: GuC
- * Functionality: Guc specific selftests
+ * Sub-category: Firmware
+ * Functionality: GUC
  * Test category: GuC
  *
  * SUBTEST: live@guc_doorbells
  * Category: Selftest
  * Feature: GuC
- * Functionality: Guc specific selftests
+ * Sub-category: Firmware
+ * Functionality: GUC
  * Test category: GuC
  *
  * SUBTEST: live@guc_hang
  * Category: Selftest
  * Feature: GuC
- * Functionality: Guc specific selftests
+ * Sub-category: Firmware
+ * Functionality: GUC
  * Test category: GuC
  *
  * SUBTEST: live@guc_multi_lrc
  * Category: Selftest
  * Feature: GuC
- * Functionality: Guc specific selftests
+ * Sub-category: Firmware
+ * Functionality: GUC
  * Test category: GuC
  *
  * SUBTEST: live@hangcheck
