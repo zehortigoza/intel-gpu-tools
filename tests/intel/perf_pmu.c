@@ -52,9 +52,10 @@
 /**
  * TEST: perf pmu
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu
+ * Feature: i915 pmu perf interface, pmu feature
  * Test category: Perf
  * Sub-category: Performance
+ * Category: Desktop client
  * Functionality: pmu
  * Run type: FULL
  *
@@ -107,10 +108,10 @@
  * Description: Test the i915 pmu perf interface
  *
  * SUBTEST: event-wait
- * Feature: obsolete, pmu
+ * Feature: obsolete, pmu feature
  *
  * SUBTEST: faulting-read
- * Feature: pmu
+ * Feature: pmu feature
  *
  * SUBTEST: frequency
  * Description: Read requested freq and actual frequency via PMU within specified time interval for any given workload changes
@@ -159,22 +160,22 @@
  *
  * SUBTEST: pmu-read
  * Description: Verify i915 pmu dir exists and read all events
- * Feature: pmu
+ * Feature: pmu feature
  *
  * SUBTEST: rc6
- * Feature: pmu
+ * Feature: pmu feature
  *
  * SUBTEST: rc6-all-gts
- * Feature: pmu
+ * Feature: pmu feature
  *
  * SUBTEST: rc6-suspend
- * Feature: pmu
+ * Feature: pmu feature
  *
  * SUBTEST: render-node-busy
- * Feature: pmu
+ * Feature: pmu feature
  *
  * SUBTEST: render-node-busy-idle
- * Feature: pmu
+ * Feature: pmu feature
  *
  * SUBTEST: semaphore-busy
  * Description: Test the i915 pmu perf interface

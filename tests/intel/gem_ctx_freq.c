@@ -40,7 +40,7 @@
 /**
  * TEST: gem ctx freq
  * Category: Server
- * Feature: context
+ * Feature: context feature
  * Functionality: frequency management
  * Run type: FULL
  * Sub-category: Performance
