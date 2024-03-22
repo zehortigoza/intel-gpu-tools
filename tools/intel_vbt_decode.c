@@ -79,7 +79,7 @@ struct context {
 	int size;
 
 	uint32_t devid;
-	int panel_type;
+	int panel_type, panel_type2;
 	bool dump_all_panel_types;
 	bool hexdump;
 };
@@ -87,12 +87,23 @@ struct context {
 static bool dump_panel(const struct context *context, int panel_type)
 {
 	return panel_type == context->panel_type ||
+		panel_type == context->panel_type2 ||
 		context->dump_all_panel_types;
 }
 
 static const char *panel_str(const struct context *context, int panel_type)
 {
-	return panel_type == context->panel_type ? " (1)" : "";
+	if (panel_type == context->panel_type &&
+	    panel_type == context->panel_type2)
+		return " (1)(2)";
+
+	if (panel_type == context->panel_type)
+		return " (1)";
+
+	if (panel_type == context->panel_type2)
+		return " (2)";
+
+	return "";
 }
 
 /* Get BDB block size given a pointer to Block ID. */
@@ -2503,18 +2514,21 @@ static void dump_compression_parameters(struct context *context,
 }
 
 /* get panel type from lvds options block, or -1 if block not found */
-static int get_panel_type(struct context *context)
+static int get_panel_type(struct context *context, bool is_panel_type2)
 {
 	struct bdb_block *block;
 	const struct bdb_lvds_options *options;
-	int panel_type;
+	int panel_type = -1;
 
 	block = find_section(context, BDB_LVDS_OPTIONS);
 	if (!block)
 		return -1;
 
 	options = block_data(block);
-	panel_type = options->panel_type;
+	if (!is_panel_type2)
+		panel_type = options->panel_type;
+	else if (context->bdb->version >= 212)
+		panel_type = options->panel_type2;
 
 	free(block);
 
@@ -2776,6 +2790,7 @@ enum opt {
 	OPT_FILE,
 	OPT_DEVID,
 	OPT_PANEL_TYPE,
+	OPT_PANEL_TYPE2,
 	OPT_ALL_PANELS,
 	OPT_HEXDUMP,
 	OPT_BLOCK,
@@ -2790,6 +2805,7 @@ static void usage(const char *toolname)
 	fprintf(stderr, " --file=<rom_file>"
 			" [--devid=<device_id>]"
 			" [--panel-type=<panel_type>]"
+			" [--panel-type2=<panel_type>]"
 			" [--all-panels]"
 			" [--hexdump]"
 			" [--block=<block_no>]"
@@ -2812,6 +2828,7 @@ int main(int argc, char **argv)
 	int size;
 	struct context context = {
 		.panel_type = -1,
+		.panel_type2 = -1,
 	};
 	char *endp;
 	int block_number = -1;
@@ -2821,6 +2838,7 @@ int main(int argc, char **argv)
 		{ "file",	required_argument,	NULL,	OPT_FILE },
 		{ "devid",	required_argument,	NULL,	OPT_DEVID },
 		{ "panel-type",	required_argument,	NULL,	OPT_PANEL_TYPE },
+		{ "panel-type2",	required_argument,	NULL,	OPT_PANEL_TYPE2 },
 		{ "all-panels",	no_argument,		NULL,	OPT_ALL_PANELS },
 		{ "hexdump",	no_argument,		NULL,	OPT_HEXDUMP },
 		{ "block",	required_argument,	NULL,	OPT_BLOCK },
@@ -2848,6 +2866,14 @@ int main(int argc, char **argv)
 			context.panel_type = strtoul(optarg, &endp, 0);
 			if (*endp || context.panel_type > 15) {
 				fprintf(stderr, "invalid panel type '%s'\n",
+					optarg);
+				return EXIT_FAILURE;
+			}
+			break;
+		case OPT_PANEL_TYPE2:
+			context.panel_type2 = strtoul(optarg, &endp, 0);
+			if (*endp || context.panel_type2 > 15) {
+				fprintf(stderr, "invalid panel type2 '%s'\n",
 					optarg);
 				return EXIT_FAILURE;
 			}
@@ -2969,10 +2995,18 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Warning: could not find PCI device ID!\n");
 
 	if (context.panel_type == -1)
-		context.panel_type = get_panel_type(&context);
+		context.panel_type = get_panel_type(&context, false);
 	if (context.panel_type == -1) {
 		fprintf(stderr, "Warning: panel type not set, using 0\n");
 		context.panel_type = 0;
+	}
+
+	if (context.panel_type2 == -1)
+		context.panel_type2 = get_panel_type(&context, true);
+	if (context.panel_type2 != -1 && context.bdb->version < 212) {
+		fprintf(stderr, "Warning: panel type2 not valid for BDB version %d\n",
+			context.bdb->version);
+		context.panel_type2 = -1;
 	}
 
 	if (describe) {
