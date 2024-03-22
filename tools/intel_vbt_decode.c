@@ -84,6 +84,12 @@ struct context {
 	bool hexdump;
 };
 
+struct edid {
+	uint8_t header[8];
+	struct lvds_pnp_id pnpid;
+	/* ... */
+} __packed;
+
 static bool dump_panel(const struct context *context, int panel_type)
 {
 	return panel_type == context->panel_type ||
@@ -2513,6 +2519,66 @@ static void dump_compression_parameters(struct context *context,
 	}
 }
 
+static int get_panel_type_pnpid(const struct context *context,
+				const char *edid_file)
+{
+	struct bdb_block *ptrs_block, *data_block;
+	const struct bdb_lvds_lfp_data *data;
+	const struct bdb_lvds_lfp_data_ptrs *ptrs;
+	struct lvds_pnp_id edid_id, edid_id_nodate;
+	const struct edid *edid;
+	int fd, best = -1;
+
+	fd = open(edid_file, O_RDONLY);
+	if (fd < 0) {
+		fprintf(stderr, "Unable to open EDID file %s\n", edid_file);
+		return -1;
+	}
+
+	edid = mmap(NULL, sizeof(*edid), PROT_READ, MAP_SHARED, fd, 0);
+	close(fd);
+	if (edid == MAP_FAILED) {
+		fprintf(stderr, "Unable to read EDID file %s\n", edid_file);
+		return -1;
+	}
+	edid_id = edid->pnpid;
+	munmap((void*)edid, sizeof(*edid));
+
+	edid_id_nodate = edid_id;
+	edid_id_nodate.mfg_week = 0;
+	edid_id_nodate.mfg_year = 0;
+
+	ptrs_block = find_section(context, BDB_LVDS_LFP_DATA_PTRS);
+	if (!ptrs_block)
+		return -1;
+
+	data_block = find_section(context, BDB_LVDS_LFP_DATA);
+	if (!data_block)
+		return -1;
+
+	ptrs = block_data(ptrs_block);
+	data = block_data(data_block);
+
+	for (int i = 0; i < 16; i++) {
+		const struct lvds_pnp_id *vbt_id =
+			(const void*)data + ptrs->ptr[i].panel_pnp_id.offset;
+
+		/* full match? */
+		if (!memcmp(vbt_id, &edid_id, sizeof(*vbt_id)))
+			return i;
+
+		/*
+		 * Accept a match w/o date if no full match is found,
+		 * and the VBT entry does not specify a date.
+		 */
+		if (best < 0 &&
+		    !memcmp(vbt_id, &edid_id_nodate, sizeof(*vbt_id)))
+			best = i;
+	}
+
+	return best;
+}
+
 /* get panel type from lvds options block, or -1 if block not found */
 static int get_panel_type(struct context *context, bool is_panel_type2)
 {
@@ -2791,6 +2857,8 @@ enum opt {
 	OPT_DEVID,
 	OPT_PANEL_TYPE,
 	OPT_PANEL_TYPE2,
+	OPT_PANEL_EDID,
+	OPT_PANEL_EDID2,
 	OPT_ALL_PANELS,
 	OPT_HEXDUMP,
 	OPT_BLOCK,
@@ -2806,6 +2874,8 @@ static void usage(const char *toolname)
 			" [--devid=<device_id>]"
 			" [--panel-type=<panel_type>]"
 			" [--panel-type2=<panel_type>]"
+			" [--panel-edid=<edid_file>]"
+			" [--panel-edid2=<edid_file>]"
 			" [--all-panels]"
 			" [--hexdump]"
 			" [--block=<block_no>]"
@@ -2830,6 +2900,7 @@ int main(int argc, char **argv)
 		.panel_type = -1,
 		.panel_type2 = -1,
 	};
+	const char *panel_edid = NULL, *panel_edid2 = NULL;
 	char *endp;
 	int block_number = -1;
 	bool header_only = false, describe = false;
@@ -2838,7 +2909,9 @@ int main(int argc, char **argv)
 		{ "file",	required_argument,	NULL,	OPT_FILE },
 		{ "devid",	required_argument,	NULL,	OPT_DEVID },
 		{ "panel-type",	required_argument,	NULL,	OPT_PANEL_TYPE },
+		{ "panel-edid",	required_argument,	NULL,	OPT_PANEL_EDID },
 		{ "panel-type2",	required_argument,	NULL,	OPT_PANEL_TYPE2 },
+		{ "panel-edid2",	required_argument,	NULL,	OPT_PANEL_EDID2 },
 		{ "all-panels",	no_argument,		NULL,	OPT_ALL_PANELS },
 		{ "hexdump",	no_argument,		NULL,	OPT_HEXDUMP },
 		{ "block",	required_argument,	NULL,	OPT_BLOCK },
@@ -2877,6 +2950,12 @@ int main(int argc, char **argv)
 					optarg);
 				return EXIT_FAILURE;
 			}
+			break;
+		case OPT_PANEL_EDID:
+			panel_edid = optarg;
+			break;
+		case OPT_PANEL_EDID2:
+			panel_edid2 = optarg;
 			break;
 		case OPT_ALL_PANELS:
 			context.dump_all_panel_types = true;
@@ -2996,6 +3075,12 @@ int main(int argc, char **argv)
 
 	if (context.panel_type == -1)
 		context.panel_type = get_panel_type(&context, false);
+	if (context.panel_type == 255 && !panel_edid) {
+		fprintf(stderr, "Warning: panel type depends on EDID (use --panel-edid), ignoring\n");
+		context.panel_type = -1;
+	} else if (context.panel_type == 255) {
+		context.panel_type = get_panel_type_pnpid(&context, panel_edid);
+	}
 	if (context.panel_type == -1) {
 		fprintf(stderr, "Warning: panel type not set, using 0\n");
 		context.panel_type = 0;
@@ -3003,6 +3088,12 @@ int main(int argc, char **argv)
 
 	if (context.panel_type2 == -1)
 		context.panel_type2 = get_panel_type(&context, true);
+	if (context.panel_type2 == 255 && !panel_edid2) {
+		fprintf(stderr, "Warning: panel type2 depends on EDID (use --panel-edid2), ignoring\n");
+		context.panel_type2 = -1;
+	} else if (context.panel_type2 == 255) {
+		context.panel_type2 = get_panel_type_pnpid(&context, panel_edid2);
+	}
 	if (context.panel_type2 != -1 && context.bdb->version < 212) {
 		fprintf(stderr, "Warning: panel type2 not valid for BDB version %d\n",
 			context.bdb->version);
