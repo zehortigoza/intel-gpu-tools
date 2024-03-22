@@ -1160,6 +1160,9 @@ static void dump_child_device(struct context *context,
 	if (context->bdb->version >= 216)
 		dump_dp_max_link_rate(context->bdb->version,
 				      child->dp_max_link_rate);
+
+	if (context->bdb->version >= 256)
+		printf("\t\tEFP panel index: %d\n", child->efp_index);
 }
 
 static void dump_child_devices(struct context *context, const uint8_t *devices,
