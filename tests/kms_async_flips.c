@@ -438,10 +438,8 @@ static void test_cursor(data_t *data)
 
 static void test_invalid(data_t *data)
 {
-	int flags = DRM_MODE_PAGE_FLIP_ASYNC | DRM_MODE_PAGE_FLIP_EVENT;
-	int ret;
-	uint32_t width, height;
-	struct igt_fb fb;
+	int ret, width, height;
+	struct igt_fb fb[2];
 	drmModeModeInfo *mode;
 
 	igt_display_commit2(&data->display, data->display.is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY);
@@ -451,17 +449,28 @@ static void test_invalid(data_t *data)
 	height = mode->vdisplay;
 
 	igt_create_fb(data->drm_fd, width, height, DRM_FORMAT_XRGB8888,
-		      I915_FORMAT_MOD_Y_TILED, &fb);
+		      I915_FORMAT_MOD_X_TILED, &fb[0]);
+	igt_create_fb(data->drm_fd, width, height, DRM_FORMAT_XRGB8888,
+		      I915_FORMAT_MOD_Y_TILED, &fb[1]);
 
-	/* Flip with a different fb modifier which is expected to be rejected */
-	ret = drmModePageFlip(data->drm_fd, data->crtc_id,
-			      fb.fb_id, flags, data);
+	igt_plane_set_fb(data->plane, &fb[0]);
+	igt_display_commit2(&data->display, data->display.is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY);
 
+	/* first async flip is expected to allow modifier changes */
+	ret = drmModePageFlip(data->drm_fd, data->crtc_id, fb[1].fb_id,
+			      DRM_MODE_PAGE_FLIP_ASYNC | DRM_MODE_PAGE_FLIP_EVENT, data);
+	igt_assert(ret == 0);
+	wait_flip_event(data);
+
+	/* subsequent async flips should reject modifier changes */
+	ret = drmModePageFlip(data->drm_fd, data->crtc_id, fb[0].fb_id,
+			      DRM_MODE_PAGE_FLIP_ASYNC | DRM_MODE_PAGE_FLIP_EVENT, data);
 	igt_assert(ret == -EINVAL);
 
 	/* TODO: Add verification for changes in stride, pixel format */
 
-	igt_remove_fb(data->drm_fd, &fb);
+	igt_remove_fb(data->drm_fd, &fb[1]);
+	igt_remove_fb(data->drm_fd, &fb[0]);
 }
 
 static void queue_vblank(data_t *data)
@@ -725,6 +734,8 @@ igt_main
 	igt_subtest_with_dynamic("invalid-async-flip") {
 		/* TODO: support more vendors */
 		igt_require(is_intel_device(data.drm_fd));
+		igt_require(igt_display_has_format_mod(&data.display, DRM_FORMAT_XRGB8888,
+						       I915_FORMAT_MOD_X_TILED));
 		igt_require(igt_display_has_format_mod(&data.display, DRM_FORMAT_XRGB8888,
 						       I915_FORMAT_MOD_Y_TILED));
 
