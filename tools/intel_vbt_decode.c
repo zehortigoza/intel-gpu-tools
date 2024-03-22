@@ -92,7 +92,7 @@ static bool dump_panel(const struct context *context, int panel_type)
 
 static const char *panel_str(const struct context *context, int panel_type)
 {
-	return panel_type == context->panel_type ? " *" : "";
+	return panel_type == context->panel_type ? " (1)" : "";
 }
 
 /* Get BDB block size given a pointer to Block ID. */
