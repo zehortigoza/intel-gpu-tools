@@ -184,10 +184,10 @@ static void update_display(data_t *data, uint32_t test_type)
 	igt_skip_on(!igt_plane_has_format_mod(primary, data->plane_format,
 		    DRM_FORMAT_MOD_LINEAR));
 
+	mode = get_highres_mode(output);
+
 	do {
-		if (data->output_format == DSC_FORMAT_RGB)
-			mode = get_highres_mode(output);
-		else
+		if (data->output_format != DSC_FORMAT_RGB && index > 0)
 			mode = get_next_mode(output, index++);
 
 		if (mode == NULL)
