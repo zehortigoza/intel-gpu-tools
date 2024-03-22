@@ -84,6 +84,12 @@ struct context {
 	bool hexdump;
 };
 
+static bool dump_panel(const struct context *context, int panel_type)
+{
+	return panel_type == context->panel_type ||
+		context->dump_all_panel_types;
+}
+
 /* Get BDB block size given a pointer to Block ID. */
 static uint32_t _get_blocksize(const uint8_t *block_base)
 {
@@ -607,7 +613,7 @@ static void dump_backlight_info(struct context *context,
 	}
 
 	for (i = 0; i < ARRAY_SIZE(backlight->data); i++) {
-		if (i != context->panel_type && !context->dump_all_panel_types)
+		if (!dump_panel(context, i))
 			continue;
 
 		printf("\tPanel %d%s\n", i,
@@ -1222,7 +1228,7 @@ static void dump_lvds_options(struct context *context,
 	for (int i = 0; i < 16; i++) {
 		unsigned int val;
 
-		if (i != context->panel_type && !context->dump_all_panel_types)
+		if (!dump_panel(context, i))
 			continue;
 
 		printf("\tPanel %d%s\n", i, context->panel_type == i ? " *" : "");
@@ -1289,7 +1295,7 @@ static void dump_lvds_ptr_data(struct context *context,
 	printf("\tNumber of entries: %d\n", ptrs->lvds_entries);
 
 	for (int i = 0; i < 16; i++) {
-		if (i != context->panel_type && !context->dump_all_panel_types)
+		if (!dump_panel(context, i))
 			continue;
 
 		printf("\tPanel %d%s\n", i, context->panel_type == i ? " *" : "");
@@ -1361,7 +1367,7 @@ static void dump_lvds_data(struct context *context,
 			block_data(block) + ptrs->panel_name.offset;
 		char mfg[4];
 
-		if (i != context->panel_type && !context->dump_all_panel_types)
+		if (!dump_panel(context, i))
 			continue;
 
 		hdisplay = _H_ACTIVE(timing_data);
@@ -1571,7 +1577,7 @@ static void dump_edp(struct context *context,
 	int i;
 
 	for (i = 0; i < 16; i++) {
-		if (i != context->panel_type && !context->dump_all_panel_types)
+		if (!dump_panel(context, i))
 			continue;
 
 		printf("\tPanel %d%s\n", i, context->panel_type == i ? " *" : "");
@@ -1714,7 +1720,7 @@ static void dump_psr(struct context *context,
 	for (i = 0; i < 16; i++) {
 		const struct psr_table *psr = &psr_block->psr_table[i];
 
-		if (i != context->panel_type && !context->dump_all_panel_types)
+		if (!dump_panel(context, i))
 			continue;
 
 		printf("\tPanel %d%s\n", i, context->panel_type == i ? " *" : "");
@@ -1791,7 +1797,7 @@ static void dump_lfp_power(struct context *context,
 		return;
 
 	for (i = 0; i < 16; i++) {
-		if (i != context->panel_type && !context->dump_all_panel_types)
+		if (!dump_panel(context, i))
 			continue;
 
 		printf("\tPanel %d%s\n", i, context->panel_type == i ? " *" : "");
@@ -1923,7 +1929,7 @@ static void dump_mipi_config(struct context *context,
 		const struct edp_pwm_delays *pwm_delays =
 			&start->pwm_delays[context->panel_type];
 
-		if (i != context->panel_type && !context->dump_all_panel_types)
+		if (!dump_panel(context, i))
 			continue;
 
 		printf("\tPanel %d%s\n", i,
@@ -2372,7 +2378,7 @@ static void dump_mipi_sequence(struct context *context,
 		uint32_t seq_size;
 		int index = 0;
 
-		if (i != context->panel_type && !context->dump_all_panel_types)
+		if (!dump_panel(context, i))
 			continue;
 
 		data = find_panel_sequence_block(sequence, i,
@@ -2467,7 +2473,7 @@ static void dump_compression_parameters(struct context *context,
 		/* FIXME: need to handle sizeof(*data) != dsc->entry_size */
 		data = &dsc->data[i];
 
-		if (i != context->panel_type && !context->dump_all_panel_types)
+		if (!dump_panel(context, i))
 			continue;
 
 		printf("\tDSC block %d%s\n", i,
