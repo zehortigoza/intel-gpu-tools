@@ -90,6 +90,11 @@ static bool dump_panel(const struct context *context, int panel_type)
 		context->dump_all_panel_types;
 }
 
+static const char *panel_str(const struct context *context, int panel_type)
+{
+	return panel_type == context->panel_type ? " *" : "";
+}
+
 /* Get BDB block size given a pointer to Block ID. */
 static uint32_t _get_blocksize(const uint8_t *block_base)
 {
@@ -616,8 +621,7 @@ static void dump_backlight_info(struct context *context,
 		if (!dump_panel(context, i))
 			continue;
 
-		printf("\tPanel %d%s\n", i,
-		       context->panel_type == i ? " *" : "");
+		printf("\tPanel %d%s\n", i, panel_str(context, i));
 
 		blc = &backlight->data[i];
 
@@ -1231,7 +1235,7 @@ static void dump_lvds_options(struct context *context,
 		if (!dump_panel(context, i))
 			continue;
 
-		printf("\tPanel %d%s\n", i, context->panel_type == i ? " *" : "");
+		printf("\tPanel %d%s\n", i, panel_str(context, i));
 
 		val = panel_bits(options->lvds_panel_channel_bits, i, 2);
 		printf("\t\tChannel type: %s (0x%x)\n",
@@ -1298,7 +1302,7 @@ static void dump_lvds_ptr_data(struct context *context,
 		if (!dump_panel(context, i))
 			continue;
 
-		printf("\tPanel %d%s\n", i, context->panel_type == i ? " *" : "");
+		printf("\tPanel %d%s\n", i, panel_str(context, i));
 
 		if (ptrs->lvds_entries >= 1) {
 			printf("\t\tFP timing offset: %d\n",
@@ -1381,7 +1385,7 @@ static void dump_lvds_data(struct context *context,
 		vtotal = vdisplay + _V_BLANK(timing_data);
 		clock = _PIXEL_CLOCK(timing_data) / 1000;
 
-		printf("\tPanel %d%s\n", i, context->panel_type == i ? " *" : "");
+		printf("\tPanel %d%s\n", i, panel_str(context, i));
 		printf("\t\t%dx%d clock %d\n",
 		       fp_timing->x_res, fp_timing->y_res,
 		       _PIXEL_CLOCK(timing_data));
@@ -1580,7 +1584,7 @@ static void dump_edp(struct context *context,
 		if (!dump_panel(context, i))
 			continue;
 
-		printf("\tPanel %d%s\n", i, context->panel_type == i ? " *" : "");
+		printf("\tPanel %d%s\n", i, panel_str(context, i));
 
 		printf("\t\tPower Sequence: T3 %d T7 %d T9 %d T10 %d T12 %d\n",
 		       edp->power_seqs[i].t3,
@@ -1723,7 +1727,7 @@ static void dump_psr(struct context *context,
 		if (!dump_panel(context, i))
 			continue;
 
-		printf("\tPanel %d%s\n", i, context->panel_type == i ? " *" : "");
+		printf("\tPanel %d%s\n", i, panel_str(context, i));
 
 		printf("\t\tFull link: %s\n", YESNO(psr->full_link));
 		printf("\t\tRequire AUX to wakeup: %s\n", YESNO(psr->require_aux_to_wakeup));
@@ -1800,7 +1804,7 @@ static void dump_lfp_power(struct context *context,
 		if (!dump_panel(context, i))
 			continue;
 
-		printf("\tPanel %d%s\n", i, context->panel_type == i ? " *" : "");
+		printf("\tPanel %d%s\n", i, panel_str(context, i));
 
 		printf("\t\tDisplay Power Saving Technology (DPST): %s\n",
 		       YESNO(panel_bool(lfp_block->dpst, i)));
@@ -1932,8 +1936,7 @@ static void dump_mipi_config(struct context *context,
 		if (!dump_panel(context, i))
 			continue;
 
-		printf("\tPanel %d%s\n", i,
-		       context->panel_type == i ? " *" : "");
+		printf("\tPanel %d%s\n", i, panel_str(context, i));
 
 		printf("\t\tGeneral Param\n");
 		printf("\t\t\t BTA disable: %s\n", config->bta ? "Disabled" : "Enabled");
@@ -2386,8 +2389,7 @@ static void dump_mipi_sequence(struct context *context,
 		if (!data)
 			return;
 
-		printf("\tPanel %d%s\n", i,
-		       context->panel_type == i ? " *" : "");
+		printf("\tPanel %d%s\n", i, panel_str(context, i));
 
 		/* Parse the sequences. Corresponds to VBT parsing in the kernel. */
 		for (;;) {
@@ -2476,8 +2478,7 @@ static void dump_compression_parameters(struct context *context,
 		if (!dump_panel(context, i))
 			continue;
 
-		printf("\tDSC block %d%s\n", i,
-		       i == context->panel_type ? " *" : "");
+		printf("\tDSC block %d%s\n", i, panel_str(context, i));
 		printf("\t\tDSC version: %u.%u\n", data->version_major,
 		       data->version_minor);
 		printf("\t\tActual buffer size: %d\n",
