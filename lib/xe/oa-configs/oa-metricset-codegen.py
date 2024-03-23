@@ -82,7 +82,7 @@ def generate_metric_sets(args, gen):
 #include <assert.h>
 
 enum xe_oa_format_name {
-	XE_OA_FORMAT_C4_B8 = 1,
+	XE_OA_FORMAT_C4_B8 = 7,
 
 	/* Gen8+ */
 	XE_OA_FORMAT_A12,
