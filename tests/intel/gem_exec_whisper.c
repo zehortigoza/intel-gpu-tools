@@ -293,6 +293,7 @@ static void whisper(int fd, const intel_ctx_t *ctx,
 {
 	const uint32_t bbe = MI_BATCH_BUFFER_END;
 	const unsigned int gen = intel_gen(intel_get_drm_devid(fd));
+	const unsigned int ncpus = sysconf(_SC_NPROCESSORS_ONLN);
 	struct drm_i915_gem_exec_object2 batches[QLEN];
 	struct drm_i915_gem_relocation_entry inter[QLEN];
 	struct drm_i915_gem_relocation_entry reloc;
@@ -305,18 +306,19 @@ static void whisper(int fd, const intel_ctx_t *ctx,
 	int fds[64];
 	intel_ctx_cfg_t local_cfg;
 	const intel_ctx_t *contexts[64];
-	unsigned nengine;
 	uint32_t batch[16];
 	unsigned int relocations = 0;
 	unsigned int reloc_migrations = 0;
 	unsigned int reloc_interruptions = 0;
 	unsigned int eb_migrations = 0;
 	struct power_sample sample[2];
+	unsigned int nengine;
+	unsigned int nchild;
+	unsigned int qlen;
 	struct igt_power gpu;
 	uint64_t old_offset;
 	int i, n, loc;
 	int debugfs;
-	int nchild;
 	bool has_relocs = gem_has_relocations(fd);
 
 	if (flags & PRIORITY) {
@@ -355,9 +357,13 @@ static void whisper(int fd, const intel_ctx_t *ctx,
 
 	nchild = 1;
 	if (flags & FORKED)
-		nchild *= sysconf(_SC_NPROCESSORS_ONLN);
+		nchild *= ncpus;
 	if (flags & ALL)
 		nchild *= nengine;
+	nchild = min(nchild, 2 * max(ncpus, nengine));
+	qlen = max(2u, QLEN * nengine / (nchild + nengine - 1));
+	igt_info("Using nchild:%d (out of ncpus:%d and nengine:%d), with a qlen:%d\n",
+		 nchild, ncpus, nengine, qlen);
 
 	intel_detect_and_clear_missed_interrupts(fd);
 	igt_power_get_energy(&gpu, &sample[0]);
@@ -447,19 +453,19 @@ static void whisper(int fd, const intel_ctx_t *ctx,
 		}
 
 		memset(batches, 0, sizeof(batches));
-		for (n = 0; n < QLEN; n++) {
+		for (n = 0; n < qlen; n++) {
 			batches[n].handle = gem_create(fd, 4096);
 			gem_write(fd, batches[n].handle, 0, &bbe, sizeof(bbe));
 		}
 		execbuf.buffers_ptr = to_user_pointer(batches);
-		execbuf.buffer_count = QLEN;
+		execbuf.buffer_count = qlen;
 		gem_execbuf(fd, &execbuf);
 
 		execbuf.buffers_ptr = to_user_pointer(tmp);
 		execbuf.buffer_count = 2;
 
 		old_offset = store.offset;
-		for (n = 0; n < QLEN; n++) {
+		for (n = 0; n < qlen; n++) {
 			if (gen >= 8) {
 				batch[1] = old_offset + loc;
 				batch[2] = (old_offset + loc) >> 32;
@@ -524,8 +530,8 @@ static void whisper(int fd, const intel_ctx_t *ctx,
 					gem_sync(fd, tmp[0].handle);
 				scratch = tmp[0];
 
-				gem_write(fd, batches[QLEN-1].handle, loc, &pass, sizeof(pass));
-				for (n = QLEN; --n >= 1; ) {
+				gem_write(fd, batches[qlen-1].handle, loc, &pass, sizeof(pass));
+				for (n = qlen; --n >= 1; ) {
 					uint32_t handle[2] = {};
 					int this_fd = fd;
 
@@ -647,7 +653,7 @@ static void whisper(int fd, const intel_ctx_t *ctx,
 				gem_vm_destroy(fd, local_cfg.vm);
 			}
 		}
-		for (n = 0; n < QLEN; n++)
+		for (n = 0; n < qlen; n++)
 			gem_close(fd, batches[n].handle);
 		if (flags & FDS) {
 			for (n = 0; n < 64; n++)
