@@ -32,10 +32,15 @@
 #define PREFETCH	(0x1 << 5)
 #define INVALID_FAULT	(0x1 << 6)
 #define INVALID_VA	(0x1 << 7)
+#define ENABLE_SCRATCH  (0x1 << 8)
 
 /**
  * SUBTEST: invalid-va
  * Description: Access invalid va and check for EIO through user fence.
+ * Test category: functionality test
+ *
+ * SUBTEST: invalid-va-scratch-nopagefault
+ * Description: Access invalid va without pageafault with scratch page enabled.
  * Test category: functionality test
  *
  * SUBTEST: once-%s
@@ -120,8 +125,12 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 
 	igt_assert(n_exec_queues <= MAX_N_EXEC_QUEUES);
 
-	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_LR_MODE |
-			  DRM_XE_VM_CREATE_FLAG_FAULT_MODE, 0);
+	if (flags & ENABLE_SCRATCH)
+		vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_LR_MODE |
+				  DRM_XE_VM_CREATE_FLAG_SCRATCH_PAGE, 0);
+	else
+		vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_LR_MODE |
+				  DRM_XE_VM_CREATE_FLAG_FAULT_MODE, 0);
 	bo_size = sizeof(*data) * n_execs;
 	bo_size = xe_bb_size(fd, bo_size);
 
@@ -269,7 +278,7 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 		j = flags & INVALIDATE ? n_execs - 1 : 0;
 
 		for (i = j; i < n_execs; i++) {
-			if (flags & INVALID_VA)
+			if (flags & INVALID_VA && !(flags & ENABLE_SCRATCH))
 				igt_assert_eq(__xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE,
 							       exec_queues[i % n_exec_queues], &timeout), -EIO);
 			else
@@ -384,6 +393,10 @@ igt_main
 			       continue;	
 			test_exec(fd, hwe, 1, 1, INVALID_VA);
 		}
+
+	igt_subtest("invalid-va-scratch-nopagefault")
+		xe_for_each_engine(fd, hwe)
+			test_exec(fd, hwe, 1, 1, ENABLE_SCRATCH | INVALID_VA);
 
 	igt_fixture {
 		drm_close_driver(fd);
