@@ -31,8 +31,13 @@
 #define BIND_EXEC_QUEUE	(0x1 << 4)
 #define PREFETCH	(0x1 << 5)
 #define INVALID_FAULT	(0x1 << 6)
+#define INVALID_VA	(0x1 << 7)
 
 /**
+ * SUBTEST: invalid-va
+ * Description: Access invalid va and check for EIO through user fence.
+ * Test category: functionality test
+ *
  * SUBTEST: once-%s
  * Description: Run %arg[1] fault mode test only once
  * Test category: functionality test
@@ -157,13 +162,11 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 
 	sync[0].addr = to_user_pointer(&data[0].vm_sync);
 	if (bo)
-		xe_vm_bind_async(fd, vm, bind_exec_queues[0], bo, 0, addr,
-				 bo_size, sync, 1);
+		xe_vm_bind_async(fd, vm, bind_exec_queues[0], bo, 0, addr, bo_size, sync, 1);
 	else
 		xe_vm_bind_userptr_async(fd, vm, bind_exec_queues[0],
 					 to_user_pointer(data), addr,
 					 bo_size, sync, 1);
-
 #define ONE_SEC	MS_TO_NS(1000)
 	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE,
 		       bind_exec_queues[0], ONE_SEC);
@@ -186,6 +189,9 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 		int e = i % n_exec_queues;
 
 		b = 0;
+		if (flags & INVALID_VA)
+			sdi_addr = 0x1fffffffffff000;
+
 		data[i].batch[b++] = MI_STORE_DWORD_IMM_GEN4;
 		data[i].batch[b++] = sdi_addr;
 		data[i].batch[b++] = sdi_addr >> 32;
@@ -257,23 +263,29 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 			igt_assert(data != MAP_FAILED);
 		}
 	}
-
 	if (!(flags & INVALID_FAULT)) {
-		j = flags & INVALIDATE ? n_execs - 1 : 0;
-		for (i = j; i < n_execs; i++)
-			xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE,
-				       exec_queues[i % n_exec_queues], ONE_SEC);
-	}
+		int64_t timeout = ONE_SEC;
 
+		j = flags & INVALIDATE ? n_execs - 1 : 0;
+
+		for (i = j; i < n_execs; i++) {
+			if (flags & INVALID_VA)
+				igt_assert_eq(__xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE,
+							       exec_queues[i % n_exec_queues], &timeout), -EIO);
+			else
+				igt_assert_eq(__xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE,
+							       exec_queues[i % n_exec_queues], &timeout), 0);
+		}
+	}
 	sync[0].addr = to_user_pointer(&data[0].vm_sync);
 	xe_vm_unbind_async(fd, vm, bind_exec_queues[0], 0, addr, bo_size,
 			   sync, 1);
 	xe_wait_ufence(fd, &data[0].vm_sync, USER_FENCE_VALUE,
 		       bind_exec_queues[0], ONE_SEC);
 
-	if (!(flags & INVALID_FAULT)) {
+	if (!(flags & INVALID_FAULT) && !(flags & INVALID_VA)) {
 		for (i = j; i < n_execs; i++)
-			igt_assert_eq(data[i].data, 0xc0ffee);
+				igt_assert_eq(data[i].data, 0xc0ffee);
 	}
 
 	for (i = 0; i < n_exec_queues; i++) {
@@ -366,6 +378,14 @@ igt_main
 					  s->flags);
 	}
 
-	igt_fixture
+	igt_subtest("invalid-va")
+		xe_for_each_engine(fd, hwe) {
+			if (hwe->engine_class == DRM_XE_ENGINE_CLASS_COPY)
+			       continue;	
+			test_exec(fd, hwe, 1, 1, INVALID_VA);
+		}
+
+	igt_fixture {
 		drm_close_driver(fd);
+	}
 }
