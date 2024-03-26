@@ -399,6 +399,7 @@ static void test_dc_state_psr(data_t *data, int dc_flag)
 	dc_counter_before_psr = read_dc_counter(data->debugfs_fd, dc_flag);
 	setup_output(data);
 	setup_primary(data);
+	igt_require(!psr_disabled_check(data->debugfs_fd));
 	igt_assert(psr_wait_entry(data->debugfs_fd, data->op_psr_mode, NULL));
 	check_dc_counter(data, dc_flag, dc_counter_before_psr);
 	cleanup_dc_psr(data);
@@ -605,6 +606,7 @@ static void test_pkgc_state_psr(data_t *data)
 	prev_value = read_pkgc_counter(data->debugfs_root_fd);
 	setup_output(data);
 	setup_primary(data);
+	igt_require(!psr_disabled_check(data->debugfs_fd));
 	igt_assert(psr_wait_entry(data->debugfs_fd, data->op_psr_mode, NULL));
 	psr_dpms(data, DRM_MODE_DPMS_OFF);
 	igt_wait((cur_value = read_pkgc_counter(data->debugfs_root_fd)) > prev_value,
