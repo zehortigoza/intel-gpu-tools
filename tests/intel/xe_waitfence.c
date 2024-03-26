@@ -16,7 +16,7 @@
 /**
  * TEST: Check if waitfences work
  * Category: Software building block
- * Sub-category: waitfence
+ * Sub-category: Synchronization
  * Functionality: waitfence
  * Test category: functionality test
  * Description: Test waitfences functionality
@@ -140,7 +140,6 @@ waitfence(int fd, enum waittype wt)
 /**
  * TEST: Negative test for wait ufence ioctl
  * Category: Software building block
- * Sub-category: waitfence
  * Functionality: waitfence
  * Test category: negative test
  *
