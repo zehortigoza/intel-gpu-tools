@@ -6,8 +6,8 @@
 /**
  * TEST: Test HuC copy firmware.
  * Category: Firmware building block
- * Sub-category: HuC
- * Functionality: HuC copy
+ * Sub-category: Firmware
+ * Functionality: huc copy
  * Test category: functionality test
  * TODO: make the test more generic, getting rid of the PCI ID list
  * GPU requirements: This test currently requires TGL, and runs only if the
