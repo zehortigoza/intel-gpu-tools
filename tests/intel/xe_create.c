@@ -273,7 +273,7 @@ static void create_massive_size(int fd)
 
 /**
  * SUBTEST: create-big-vram
- * Functionality: BO creation
+ * Functionality: bo
  * Test category: functionality test
  * Description: Verifies the creation of substantial BO within VRAM,
  *		constituting all available CPU-visible VRAM.
