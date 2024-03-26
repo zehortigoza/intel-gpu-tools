@@ -6,7 +6,7 @@
 /**
  * TEST: Basic tests to check exec_queue set/get property functionality
  * Category: Software building block
- * Sub-category: exec queue property
+ * Sub-category: uapi
  * Functionality: exec queue set property
  * Test category: functionality test
  * SUBTEST: priority-set-property
