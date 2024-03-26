@@ -7,6 +7,7 @@
  * TEST: Check compute-related preemption functionality
  * Category: Hardware building block
  * Sub-category: Compute
+ * Functionality: OpenCL kernel
  * Test category: functionality test
  */
 
@@ -21,17 +22,16 @@
  * GPU requirement: LNL
  * Description:
  *      Exercise compute walker mid thread preemption scenario
- * Functionality: compute openCL kernel
+ *
  * SUBTEST: compute-preempt-many
  * GPU requirement: LNL
  * Description:
  *      Exercise multiple walker mid thread preemption scenario
- * Functionality: compute openCL kernel
+ *
  * SUBTEST: compute-threadgroup-preempt
  * GPU requirement: LNL
  * Description:
  *      Exercise compute walker threadgroup preemption scenario
- * Functionality: compute openCL kernel
  */
 static void
 test_compute_preempt(int fd, struct drm_xe_engine_class_instance *hwe, bool threadgroup_preemption)

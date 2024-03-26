@@ -44,7 +44,7 @@ static bool get_num_cslices(u32 gt, u32 *num_slices)
  * SUBTEST: ccs-mode-basic
  * GPU requirement: PVC
  * Description: Validate 'ccs_mode' sysfs uapi
- * Functionality: ccs_mode user interface
+ * Functionality: ccs mode
  */
 static void
 test_ccs_mode(int num_gt)
@@ -111,7 +111,7 @@ test_ccs_mode(int num_gt)
  * SUBTEST: ccs-mode-compute-kernel
  * GPU requirement: PVC
  * Description: Validate 'ccs_mode' by running compute kernel
- * Functionality: CCS mode funtionality
+ * Functionality: ccs mode
  */
 static void
 test_compute_kernel_with_ccs_mode(int num_gt)
@@ -158,7 +158,7 @@ test_compute_kernel_with_ccs_mode(int num_gt)
  * Description:
  *	Run an openCL Kernel that returns output[i] = input[i] * input[i],
  *	for an input dataset..
- * Functionality: compute openCL kernel
+ * Functionality: OpenCL kernel
  */
 static void
 test_compute_square(int fd)
