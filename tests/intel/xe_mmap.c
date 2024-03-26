@@ -6,7 +6,7 @@
 /**
  * TEST: Test if the driver is capable of doing mmap on different memory regions
  * Category: Software building block
- * Sub-category: VMA
+ * Sub-category: Memory management
  * Functionality: mmap
  */
 
