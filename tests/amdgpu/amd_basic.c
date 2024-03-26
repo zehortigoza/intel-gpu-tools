@@ -358,15 +358,25 @@ amdgpu_bo_eviction_test(amdgpu_device_handle device_handle)
 				   0, &vram_info);
 	igt_assert_eq(r, 0);
 
+	r = amdgpu_query_heap_info(device_handle, AMDGPU_GEM_DOMAIN_GTT,
+				   0, &gtt_info);
+	igt_assert_eq(r, 0);
+
+	/* For smaller gtt memory sizes, reduce gtt usage on initialization
+	 * to satisfy eviction vram requirements. Example:
+	 * gtt_info.heap_size 3036569600, gtt_info.max_allocation 2114244608  gtt_info.heap_usage 12845056
+	 * gtt_info.heap_size 2895 mb, gtt_info.max_allocation 2016 mb gtt_info.heap_usage 12 mb
+	 * vram_info.heap_size 2114244608, vram_info.max_allocation 2114244608 vram_info.heap_usage 26951680
+	 * vram_info.heap_size 2016 mb, vram_info.max_allocation 2016 mb vram_info.heap_usage 25 mb
+	 */
+	if (gtt_info.heap_size - gtt_info.max_allocation < vram_info.max_allocation)
+		gtt_info.max_allocation /=3;
+
 	r = amdgpu_bo_alloc_wrap(device_handle, vram_info.max_allocation, 4096,
 				 AMDGPU_GEM_DOMAIN_VRAM, 0, &ring_context->boa_vram[0]);
 	igt_assert_eq(r, 0);
 	r = amdgpu_bo_alloc_wrap(device_handle, vram_info.max_allocation, 4096,
 				 AMDGPU_GEM_DOMAIN_VRAM, 0, &ring_context->boa_vram[1]);
-	igt_assert_eq(r, 0);
-
-	r = amdgpu_query_heap_info(device_handle, AMDGPU_GEM_DOMAIN_GTT,
-				   0, &gtt_info);
 	igt_assert_eq(r, 0);
 
 	r = amdgpu_bo_alloc_wrap(device_handle, gtt_info.max_allocation, 4096,
