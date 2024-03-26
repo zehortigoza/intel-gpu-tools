@@ -9,7 +9,7 @@
 /**
  * TEST: Tests for spin batch submissons.
  * Category: Software building block
- * Sub-category: spin
+ * Sub-category: IGT Lib
  * Functionality: parallel execution
  * Test category: functionality test
  */
