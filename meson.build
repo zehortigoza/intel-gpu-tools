@@ -57,8 +57,10 @@ cc_args = [
 
 	'-Werror=address',
 	'-Werror=array-bounds',
+	'-Werror=dangling-pointer',
 	'-Werror=implicit',
 	'-Werror=init-self',
+	'-Werror=int-conversion',
 	'-Werror=int-to-pointer-cast',
 	'-Werror=main',
 	'-Werror=missing-braces',
