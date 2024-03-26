@@ -22,8 +22,8 @@
 /**
  * TEST: Test to validate copy commands on xe
  * Category: Software building block
- * Sub-category: Copy
- * Functionality: blitter
+ * Sub-category: Blitter
+ * Functionality: copy
  */
 
 /**
