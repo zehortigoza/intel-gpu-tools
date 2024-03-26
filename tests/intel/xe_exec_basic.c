@@ -6,7 +6,7 @@
 /**
  * TEST: Basic tests for execbuf functionality
  * Category: Hardware building block
- * Sub-category: execbuf
+ * Sub-category: CMD submission
  * Functionality: exec_queues
  */
 

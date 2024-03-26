@@ -6,7 +6,7 @@
 /**
  * TEST: Basic tests for execbuf compute machine functionality
  * Category: Hardware building block
- * Sub-category: execbuf
+ * Sub-category: CMD submission
  * Functionality: compute machine
  */
 

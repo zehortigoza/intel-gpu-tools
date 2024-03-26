@@ -15,7 +15,7 @@
 /**
  * TEST: Tests to verify store dword functionality.
  * Category: Software building block
- * Sub-category: HW
+ * Sub-category: CMD submission
  * Functionality: intel-bb
  * Test category: functionality test
  */
