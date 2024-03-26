@@ -151,6 +151,7 @@ static void check_feature(data_t *data)
 			     "FBC still disabled\n");
 		break;
 	case FEATURE_PSR:
+		igt_require(!psr_disabled_check(data->debugfs_fd));
 		igt_assert_f(psr_wait_entry(data->debugfs_fd, PSR_MODE_1, NULL),
 			     "PSR still disabled\n");
 		break;
