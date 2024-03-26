@@ -6,7 +6,7 @@
 /**
  * TEST: xe sysfs scheduler
  * Category: Infrastructure
- * Sub-category: sysman
+ * Sub-category: SysMan
  * Functionality: scheduler control interface
  *
  * SUBTEST: %s-invalid

@@ -7,7 +7,7 @@
  * TEST: Check VMA eviction
  * Category: Software building block
  * Sub-category: VMA
- * Functionality: evict
+ * Functionality: eviction
  * GPU requirements: GPU needs to have dedicated VRAM
  */
 

@@ -6,7 +6,7 @@
 /**
  * TEST: Check Power Management functionality
  * Category: Software building block
- * Sub-category: power management
+ * Sub-category: Power management
  * Test category: functionality test
  */
 

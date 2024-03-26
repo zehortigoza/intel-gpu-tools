@@ -6,8 +6,8 @@
 /**
  * TEST: Basic tests for gpgpu functionality
  * Category: Software building block
- * Sub-category: gpgpu
- * Functionality: gpgpu
+ * Sub-category: GPGPU
+ * Functionality: gpgpu_fill
  * Test category: functionality test
  */
 
