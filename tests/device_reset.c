@@ -39,7 +39,6 @@
  *   validating device resets
  * Category: Infrastructure
  * Sub-category: SysMan
- * Functionality: reset
  * Feature: reset, sriov-reset
  */
 

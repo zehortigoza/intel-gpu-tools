@@ -58,7 +58,7 @@
  * Description: Test that specific ioctls report a wedged GPU (EIO).
  * Category: Infrastructure
  * Feature: reset uapi
- * Functionality: reset
+ * Functionality: sysfs reset
  * Sub-category: uapi
  * Test category: GEM_Legacy
  *

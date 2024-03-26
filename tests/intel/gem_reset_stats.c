@@ -51,7 +51,7 @@
  * TEST: gem reset stats
  * Sub-category: uapi
  * Category: Desktop client
- * Functionality: reset
+ * Functionality: sysfs reset
  *
  * SUBTEST: ban-blt
  *
