@@ -2025,6 +2025,14 @@ static bool fbc_mode_too_large(void)
 	return strstr(buf, "FBC disabled: mode too large for compression\n");
 }
 
+static bool fbc_psr_not_possible(void)
+{
+	char buf[128];
+
+	debugfs_read_crtc("i915_fbc_status", buf);
+	return strstr(buf, "FBC disabled: PSR1 enabled (Wa_14016291713)");
+}
+
 static bool fbc_enable_per_plane(int plane_index, enum pipe pipe)
 {
 	char buf[PATH_MAX];
@@ -2699,6 +2707,7 @@ static void do_status_assertions(int flags)
 		igt_require(!fbc_not_enough_stolen());
 		igt_require(!fbc_stride_not_supported());
 		igt_require(!fbc_mode_too_large());
+		igt_require(!fbc_psr_not_possible());
 		if (!intel_fbc_wait_until_enabled(drm.fd, prim_mode_params.pipe)) {
 			igt_assert_f(intel_fbc_is_enabled(drm.fd,
 						    prim_mode_params.pipe,
