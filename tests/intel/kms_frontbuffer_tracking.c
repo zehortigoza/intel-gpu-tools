@@ -2925,13 +2925,6 @@ static void check_test_requirements(const struct test_mode *t)
 
 	if (opt.only_pipes != PIPE_COUNT)
 		igt_require(t->pipes == opt.only_pipes);
-
-	/* Kernel disables fbc for display versions 12 and 13 if psr is enabled. */
-	if (drm.display_ver >= 12 && drm.display_ver <= 13)
-		igt_require_f(!((t->feature & FEATURE_PSR) &&
-				(t->feature & FEATURE_FBC)),
-			      "Can't test PSR and FBC together\n");
-
 }
 
 static void set_crtc_fbs(const struct test_mode *t)
