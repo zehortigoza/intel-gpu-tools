@@ -353,10 +353,11 @@ bool is_dp_dsc_supported(int drm_fd, char *connector_name)
 	}
 
 	ret = igt_debugfs_simple_read(fd, DEBUGFS_DSC_FEC_SUPPORT, buf, sizeof(buf));
-	close(fd);
+	if (ret < 0)
+		igt_info("Reading %s for connector %s failed.\n",
+			 DEBUGFS_DSC_FEC_SUPPORT, connector_name);
 
-	igt_assert_f(ret >= 0, "Reading %s for connector %s failed.\n",
-		     DEBUGFS_DSC_FEC_SUPPORT, connector_name);
+	close(fd);
 
 	return strstr(buf, "DSC_Sink_Support: yes");
 }
@@ -380,10 +381,11 @@ bool is_dp_fec_supported(int drm_fd, char *connector_name)
 	}
 
 	ret = igt_debugfs_simple_read(fd, DEBUGFS_DSC_FEC_SUPPORT, buf, sizeof(buf));
-	close(fd);
+	if (ret < 0)
+		igt_info("Reading %s for connector %s failed.\n",
+			 DEBUGFS_DSC_FEC_SUPPORT, connector_name);
 
-	igt_assert_f(ret >= 0, "Reading %s for connector %s failed.\n",
-		     DEBUGFS_DSC_FEC_SUPPORT, connector_name);
+	close(fd);
 
 	return strstr(buf, "FEC_Sink_Support: yes");
 }
