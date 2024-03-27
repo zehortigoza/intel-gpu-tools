@@ -1789,6 +1789,7 @@ static void bind_flag_invalid(int fd)
 	bind.bind.range = bo_size;
 	bind.bind.addr = addr;
 	bind.bind.op = DRM_XE_VM_BIND_OP_MAP;
+	bind.bind.pat_index = intel_get_pat_idx_wb(fd);
 	bind.num_syncs = 1;
 	bind.syncs = (uintptr_t)sync;
 
