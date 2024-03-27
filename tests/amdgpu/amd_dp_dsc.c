@@ -99,6 +99,15 @@ static void test_init(data_t *data)
 	igt_display_reset(display);
 }
 
+static bool is_dsc_capable(drmModeModeInfo *mode)
+{
+	/* mode is not set in test_init() if it is dsc capable */
+	if (mode->hdisplay == 0 || mode->vdisplay == 0)
+		return false;
+
+	return true;
+}
+
 static void test_dsc_enable(data_t *data)
 {
 	bool dsc_on, dsc_after, dsc_before;
@@ -113,7 +122,7 @@ static void test_dsc_enable(data_t *data)
 	for_each_pipe(&data->display, i) {
 		/* Setup the output */
 		output = data->output[i];
-		if (!output || !igt_output_is_connected(output))
+		if (!output || !igt_output_is_connected(output) || !is_dsc_capable(&data->mode[i]))
 			continue;
 
 		igt_create_pattern_fb(data->fd,
@@ -259,7 +268,7 @@ static void test_dsc_slice_dimensions_change(data_t *data)
 	for_each_pipe(&data->display, i) {
 		/* Setup the output */
 		output = data->output[i];
-		if (!output || !igt_output_is_connected(output))
+		if (!output || !igt_output_is_connected(output) || !is_dsc_capable(&data->mode[i]))
 			continue;
 
 		igt_create_pattern_fb(data->fd,
@@ -349,7 +358,7 @@ static void test_dsc_link_settings(data_t *data)
 	/* Setup all outputs */
 	for_each_pipe(&data->display, i) {
 		output = data->output[i];
-		if (!output || !igt_output_is_connected(output))
+		if (!output || !igt_output_is_connected(output) || !is_dsc_capable(&data->mode[i]))
 			continue;
 
 		igt_create_pattern_fb(data->fd,
@@ -366,7 +375,7 @@ static void test_dsc_link_settings(data_t *data)
 	/* Collect reference CRCs */
 	for_each_pipe(&data->display, i) {
 		output = data->output[i];
-		if (!output || !igt_output_is_connected(output))
+		if (!output || !igt_output_is_connected(output) || !is_dsc_capable(&data->mode[i]))
 			continue;
 
 		igt_pipe_crc_collect_crc(data->pipe_crc[i], &ref_crc[i]);
@@ -377,7 +386,8 @@ static void test_dsc_link_settings(data_t *data)
 			/* Write new link_settings */
 			for_each_pipe(&data->display, i) {
 				output = data->output[i];
-				if (!output || !igt_output_is_connected(output))
+				if (!output || !igt_output_is_connected(output) ||
+				    !is_dsc_capable(&data->mode[i]))
 					continue;
 
 				/* Write lower link settings */
@@ -395,7 +405,8 @@ static void test_dsc_link_settings(data_t *data)
 
 			for_each_pipe(&data->display, i) {
 				output = data->output[i];
-				if (!output || !igt_output_is_connected(output))
+				if (!output || !igt_output_is_connected(output) ||
+				    !is_dsc_capable(&data->mode[i]))
 					continue;
 
 				/* Verify lower link settings */
@@ -425,8 +436,9 @@ static void test_dsc_link_settings(data_t *data)
 	/* Cleanup all fbs */
 	for_each_pipe(&data->display, i) {
 		output = data->output[i];
-		if (!output || !igt_output_is_connected(output))
+		if (!output || !igt_output_is_connected(output) || !is_dsc_capable(&data->mode[i]))
 			continue;
+
 		igt_remove_fb(data->fd, &ref_fb[i]);
 	}
 
