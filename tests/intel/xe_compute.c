@@ -51,11 +51,13 @@ test_ccs_mode(int num_gt)
 {
 	struct drm_xe_engine_class_instance *hwe;
 	u32 gt, m, ccs_mode, vm, q, num_slices;
-	int fd, gt_fd;
+	int fd, gt_fd, num_gt_with_ccs_mode = 0;
 
 	for (gt = 0; gt < num_gt; gt++) {
-		igt_require(get_num_cslices(gt, &num_slices));
+		if (!get_num_cslices(gt, &num_slices))
+			continue;
 
+		num_gt_with_ccs_mode++;
 		gt_fd = gt_sysfs_open(gt);
 		igt_assert(igt_sysfs_printf(gt_fd, "ccs_mode", "%u", 0) < 0);
 		for (m = 1; m <= num_slices; m++) {
@@ -105,6 +107,8 @@ test_ccs_mode(int num_gt)
 
 		close(gt_fd);
 	}
+
+	igt_require(num_gt_with_ccs_mode > 0);
 }
 
 /**
@@ -118,11 +122,13 @@ test_compute_kernel_with_ccs_mode(int num_gt)
 {
 	struct drm_xe_engine_class_instance *hwe;
 	u32 gt, m, num_slices;
-	int fd, gt_fd;
+	int fd, gt_fd, num_gt_with_ccs_mode = 0;
 
 	for (gt = 0; gt < num_gt; gt++) {
-		igt_require(get_num_cslices(gt, &num_slices));
+		if (!get_num_cslices(gt, &num_slices))
+			continue;
 
+		num_gt_with_ccs_mode++;
 		gt_fd = gt_sysfs_open(gt);
 		for (m = 1; m <= num_slices; m++) {
 			if (num_slices % m)
@@ -150,6 +156,8 @@ test_compute_kernel_with_ccs_mode(int num_gt)
 
 		close(gt_fd);
 	}
+
+	igt_require(num_gt_with_ccs_mode > 0);
 }
 
 /**
