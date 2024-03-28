@@ -44,9 +44,17 @@
  * SUBTEST: basic
  * Description: Verify the basic modeset on big joiner mode on all pipes
  *
+ * SUBTEST: invalid-modeset-force-joiner
+ * Description: Verify if modeset on adjacent pipe is declined when force joiner modeset is active.
+ *		Force joiner applies bigjoiner functionality to non-bigjoiner outputs,
+ *		so test exclusively targets non-bigjoiner outputs.
+ *
+ * SUBTEST: basic-force-joiner
+ * Description: Verify basic modeset in force joiner mode across all pipes.
+ *		Force joiner applies bigjoiner functionality to non-bigjoiner outputs thus,
+ *		the test exclusively targets non-bigjoiner outputs.
  */
-
-IGT_TEST_DESCRIPTION("Test big joiner");
+IGT_TEST_DESCRIPTION("Test big joiner / force joiner");
 
 #define INVALID_TEST_OUTPUT 2
 
@@ -79,6 +87,19 @@ static void set_all_master_pipes_for_platform(data_t *data)
 	}
 }
 
+static void toggle_force_joiner_on_all_non_big_joiner_outputs(data_t *data, bool toggle)
+{
+	bool status;
+	igt_output_t *output;
+	int i;
+
+	for (i = 0; i < data->non_big_joiner_output_count; i++) {
+		output = data->non_big_joiner_output[i];
+		status = igt_force_and_check_bigjoiner_status(data->drm_fd, output->name, toggle);
+		igt_assert_f(status, "Failed to toggle force joiner\n");
+	}
+}
+
 static enum pipe get_next_master_pipe(data_t *data, uint32_t available_pipe_mask)
 {
 	if ((data->master_pipes & available_pipe_mask) == 0)
@@ -105,7 +126,7 @@ static enum pipe setup_pipe(data_t *data, igt_output_t *output, enum pipe pipe, 
 	return master_pipe;
 }
 
-static void test_single_joiner(data_t *data, int output_count)
+static void test_single_joiner(data_t *data, int output_count, bool force_joiner)
 {
 	int i;
 	enum pipe pipe, master_pipe;
@@ -116,12 +137,13 @@ static void test_single_joiner(data_t *data, int output_count)
 	igt_fb_t fb;
 	drmModeModeInfo *mode;
 
-	outputs = data->big_joiner_output;
+	outputs = force_joiner ? data->non_big_joiner_output : data->big_joiner_output;
+	igt_display_reset(&data->display);
+	igt_display_commit2(&data->display, COMMIT_ATOMIC);
 
 	for (i = 0; i < output_count; i++) {
 		output = outputs[i];
 		for (pipe = 0; pipe < data->n_pipes - 1; pipe++) {
-			igt_display_reset(&data->display);
 			master_pipe = setup_pipe(data, output, pipe, available_pipe_mask);
 			if (master_pipe == PIPE_NONE)
 				continue;
@@ -131,13 +153,14 @@ static void test_single_joiner(data_t *data, int output_count)
 					      DRM_FORMAT_MOD_LINEAR, &fb);
 			igt_plane_set_fb(primary, &fb);
 			igt_display_commit2(&data->display, COMMIT_ATOMIC);
+			igt_display_reset(&data->display);
 			igt_plane_set_fb(primary, NULL);
 			igt_remove_fb(data->drm_fd, &fb);
 		}
 	}
 }
 
-static void test_multi_joiner(data_t *data, int output_count)
+static void test_multi_joiner(data_t *data, int output_count, bool force_joiner)
 {
 	int i;
 	uint32_t available_pipe_mask;
@@ -149,9 +172,11 @@ static void test_multi_joiner(data_t *data, int output_count)
 	drmModeModeInfo *mode;
 
 	available_pipe_mask = BIT(data->n_pipes) - 1;
-	outputs = data->big_joiner_output;
+	outputs = force_joiner ? data->non_big_joiner_output : data->big_joiner_output;
 
 	igt_display_reset(&data->display);
+	igt_display_commit2(&data->display, COMMIT_ATOMIC);
+
 	for (i = 0; i < output_count; i++) {
 		output = outputs[i];
 		for (pipe = 0; pipe < data->n_pipes; pipe++) {
@@ -177,7 +202,7 @@ static void test_multi_joiner(data_t *data, int output_count)
 }
 
 static void test_invalid_modeset_two_joiner(data_t *data,
-					    bool mixed)
+					    bool mixed, bool force_joiner)
 {
 	int i, j, ret;
 	uint32_t available_pipe_mask;
@@ -190,10 +215,12 @@ static void test_invalid_modeset_two_joiner(data_t *data,
 	drmModeModeInfo *mode;
 
 	available_pipe_mask = BIT(data->n_pipes) - 1;
-	outputs = mixed ? data->mixed_output : data->big_joiner_output;
+	outputs = force_joiner ? data->non_big_joiner_output :
+		  mixed ? data->mixed_output : data->big_joiner_output;
+	igt_display_reset(&data->display);
+	igt_display_commit2(&data->display, COMMIT_ATOMIC);
 
 	for (i = 0; i < data->n_pipes - 1; i++) {
-		igt_display_reset(&data->display);
 		attempt_mask = BIT(data->pipe_seq[i]);
 		master_pipe = get_next_master_pipe(data, available_pipe_mask & attempt_mask);
 
@@ -215,6 +242,7 @@ static void test_invalid_modeset_two_joiner(data_t *data,
 			igt_plane_set_fb(primary[j], &fb[j]);
 		}
 		ret = igt_display_try_commit2(&data->display, COMMIT_ATOMIC);
+		igt_display_reset(&data->display);
 		for (j = 0; j < INVALID_TEST_OUTPUT; j++) {
 			igt_plane_set_fb(primary[j], NULL);
 			igt_remove_fb(data->drm_fd, &fb[j]);
@@ -223,7 +251,7 @@ static void test_invalid_modeset_two_joiner(data_t *data,
 	}
 }
 
-static void test_big_joiner_on_last_pipe(data_t *data)
+static void test_joiner_on_last_pipe(data_t *data, bool force_joiner)
 {
 	int i, len, ret;
 	igt_output_t **outputs;
@@ -232,8 +260,8 @@ static void test_big_joiner_on_last_pipe(data_t *data)
 	igt_fb_t fb;
 	drmModeModeInfo *mode;
 
-	len = data->big_joiner_output_count;
-	outputs = data->big_joiner_output;
+	len = force_joiner ? data->non_big_joiner_output_count : data->big_joiner_output_count;
+	outputs = force_joiner ? data->non_big_joiner_output : data->big_joiner_output;
 
 	for (i = 0; i < len; i++) {
 		igt_display_reset(&data->display);
@@ -257,12 +285,14 @@ static void test_big_joiner_on_last_pipe(data_t *data)
 
 igt_main
 {
+	bool force_joiner_supported;
 	int i, j;
 	igt_output_t *output;
 	drmModeModeInfo mode;
 	data_t data;
 
 	igt_fixture {
+		force_joiner_supported = false;
 		data.big_joiner_output_count = 0;
 		data.non_big_joiner_output_count = 0;
 		data.mixed_output_count = 0;
@@ -290,7 +320,10 @@ igt_main
 				data.big_joiner_output[data.big_joiner_output_count++] = output;
 				igt_output_override_mode(output, &mode);
 			} else {
-				data.non_big_joiner_output[data.non_big_joiner_output_count++] = output;
+				if (igt_has_force_joiner_debugfs(data.drm_fd, output)) {
+					force_joiner_supported = true;
+					data.non_big_joiner_output[data.non_big_joiner_output_count++] = output;
+				}
 			}
 			data.output_count++;
 		}
@@ -316,10 +349,10 @@ igt_main
 			igt_require_f(data.n_pipes > 1,
 				      "Minimum 2 pipes required\n");
 			igt_dynamic_f("single-joiner")
-				test_single_joiner(&data, data.big_joiner_output_count);
+				test_single_joiner(&data, data.big_joiner_output_count, false);
 			if (data.big_joiner_output_count > 1)
 				igt_dynamic_f("multi-joiner")
-					test_multi_joiner(&data, data.big_joiner_output_count);
+					test_multi_joiner(&data, data.big_joiner_output_count, false);
 	}
 
 	igt_describe("Verify if the modeset on the adjoining pipe is rejected "
@@ -329,13 +362,58 @@ igt_main
 		igt_require_f(data.n_pipes > 1, "Minimum of 2 pipes are required\n");
 		if (data.big_joiner_output_count >= 1)
 			igt_dynamic_f("big_joiner_on_last_pipe")
-				test_big_joiner_on_last_pipe(&data);
+				test_joiner_on_last_pipe(&data, false);
 		if (data.big_joiner_output_count > 1)
 			igt_dynamic_f("invalid_combinations")
-				test_invalid_modeset_two_joiner(&data, false);
+				test_invalid_modeset_two_joiner(&data, false, false);
 		if (data.mixed_output_count)
 			igt_dynamic_f("mixed_output")
-				test_invalid_modeset_two_joiner(&data, true);
+				test_invalid_modeset_two_joiner(&data, true, false);
+	}
+
+	igt_describe("Verify the basic modeset on big joiner mode on all pipes");
+	igt_subtest_with_dynamic("basic-force-joiner") {
+		igt_require_f(force_joiner_supported,
+			      "force joiner not supported on this platform or none of the connected output supports it\n");
+		igt_require_f(data.non_big_joiner_output_count > 0,
+			      "No non big joiner output found\n");
+		igt_require_f(data.n_pipes > 1,
+			      "Minimum 2 pipes required\n");
+		igt_dynamic_f("single") {
+			toggle_force_joiner_on_all_non_big_joiner_outputs(&data, true);
+			test_single_joiner(&data, data.non_big_joiner_output_count, true);
+			toggle_force_joiner_on_all_non_big_joiner_outputs(&data, false);
+		}
+		if (data.non_big_joiner_output_count > 1) {
+			igt_dynamic_f("multi") {
+				toggle_force_joiner_on_all_non_big_joiner_outputs(&data, true);
+				test_multi_joiner(&data, data.non_big_joiner_output_count, true);
+				toggle_force_joiner_on_all_non_big_joiner_outputs(&data, false);
+			}
+		}
+	}
+
+	igt_subtest_with_dynamic("invalid-modeset-force-joiner") {
+		igt_require_f(force_joiner_supported,
+			      "force joiner not supported on this platform or none of the connected output supports it\n");
+		igt_require_f(data.non_big_joiner_output_count > 0,
+			      "Non big joiner output not found\n");
+		igt_require_f(data.n_pipes > 1,
+			      "Minimum of 2 pipes are required\n");
+		if (data.non_big_joiner_output_count >= 1) {
+			igt_dynamic_f("big_joiner_on_last_pipe") {
+				toggle_force_joiner_on_all_non_big_joiner_outputs(&data, true);
+				test_joiner_on_last_pipe(&data, true);
+				toggle_force_joiner_on_all_non_big_joiner_outputs(&data, false);
+			}
+		}
+		if (data.non_big_joiner_output_count > 1) {
+			igt_dynamic_f("invalid_combinations") {
+				toggle_force_joiner_on_all_non_big_joiner_outputs(&data, true);
+				test_invalid_modeset_two_joiner(&data, false, true);
+				toggle_force_joiner_on_all_non_big_joiner_outputs(&data, false);
+			}
+		}
 	}
 
 	igt_fixture {
