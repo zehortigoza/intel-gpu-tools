@@ -64,8 +64,6 @@
 
 #define ENGINE_MASK  (I915_EXEC_RING_MASK | I915_EXEC_BSD_MASK)
 
-#define MI_ARB_CHK (0x5 << 23)
-
 static const int BATCH_SIZE = 4096;
 static const int LOOP_START_OFFSET = 64;
 
@@ -286,7 +284,7 @@ emit_recursive_batch(igt_spin_t *spin,
 
 	/* Allow ourselves to be preempted */
 	if (!(opts->flags & IGT_SPIN_NO_PREEMPTION))
-		*cs++ = MI_ARB_CHK;
+		*cs++ = MI_ARB_CHECK;
 	if (opts->flags & IGT_SPIN_INVALID_CS) {
 		igt_assert(opts->ctx);
 		if (!gem_engine_has_cmdparser(fd, &opts->ctx->cfg, opts->engine))

@@ -97,7 +97,7 @@ void xe_spin_init(struct xe_spin *spin, struct xe_spin_opts *opts)
 	spin->batch[b++] = 0xc0ffee;
 
 	if (opts->preempt)
-		spin->batch[b++] = (0x5 << 23);
+		spin->batch[b++] = MI_ARB_CHECK;
 
 	if (opts->write_timestamp) {
 		spin->batch[b++] = MI_LOAD_REGISTER_REG | MI_LRR_DST_CS_MMIO | MI_LRR_SRC_CS_MMIO;

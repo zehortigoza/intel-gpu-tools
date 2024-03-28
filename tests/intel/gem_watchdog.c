@@ -356,7 +356,7 @@ static void delay(int i915,
 		*cs++ = 0;
 	jmp = cs;
 
-	*cs++ = 0x5 << 23; /* MI_ARB_CHECK */
+	*cs++ = MI_ARB_CHECK;
 
 	*cs++ = MI_LOAD_REGISTER_IMM(1);
 	*cs++ = CS_GPR(NOW_TS) + 4;

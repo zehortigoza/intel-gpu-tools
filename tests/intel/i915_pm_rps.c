@@ -653,7 +653,7 @@ static void waitboost(int fd, bool reset)
 static uint32_t batch_create(int i915, uint64_t sz)
 {
 	const uint32_t bbe = MI_BATCH_BUFFER_END;
-	const uint32_t chk = 0x5 << 23;
+	const uint32_t chk = MI_ARB_CHECK;
 	uint32_t handle = gem_create(i915, sz);
 	uint32_t *map;
 

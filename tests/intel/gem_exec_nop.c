@@ -154,7 +154,6 @@ static void poll_ring(int fd, const intel_ctx_t *ctx,
 		      int timeout)
 {
 	const unsigned int gen = intel_gen(intel_get_drm_devid(fd));
-	const uint32_t MI_ARB_CHK = 0x5 << 23;
 	struct drm_i915_gem_execbuffer2 execbuf;
 	struct drm_i915_gem_exec_object2 obj;
 	struct drm_i915_gem_relocation_entry reloc[4], *r;
@@ -206,7 +205,7 @@ static void poll_ring(int fd, const intel_ctx_t *ctx,
 
 		b = batch + (start_offset + 64) / sizeof(*batch);
 		bbe[start_offset != 0] = b;
-		*b++ = MI_ARB_CHK;
+		*b++ = MI_ARB_CHECK;
 
 		r->target_handle = obj.handle;
 		r->offset = (b - batch + 1) * sizeof(uint32_t);
@@ -240,7 +239,7 @@ static void poll_ring(int fd, const intel_ctx_t *ctx,
 	do {
 		unsigned int idx = ++cycles & 1;
 
-		*bbe[idx] = MI_ARB_CHK;
+		*bbe[idx] = MI_ARB_CHECK;
 		execbuf.batch_start_offset =
 			(bbe[idx] - batch) * sizeof(*batch) - 64;
 
@@ -267,7 +266,6 @@ static void poll_sequential(int fd, const intel_ctx_t *ctx,
 {
 	const unsigned int gen = intel_gen(intel_get_drm_devid(fd));
 	const struct intel_execution_engine2 *e;
-	const uint32_t MI_ARB_CHK = 0x5 << 23;
 	struct drm_i915_gem_execbuffer2 execbuf;
 	struct drm_i915_gem_exec_object2 obj[2];
 	struct drm_i915_gem_relocation_entry reloc[4], *r;
@@ -334,7 +332,7 @@ static void poll_sequential(int fd, const intel_ctx_t *ctx,
 
 		b = batch + (start_offset + 64) / sizeof(*batch);
 		bbe[start_offset != 0] = b;
-		*b++ = MI_ARB_CHK;
+		*b++ = MI_ARB_CHECK;
 
 		r->target_handle = obj[1].handle;
 		r->offset = (b - batch + 1) * sizeof(uint32_t);
@@ -371,7 +369,7 @@ static void poll_sequential(int fd, const intel_ctx_t *ctx,
 	do {
 		unsigned int idx = ++cycles & 1;
 
-		*bbe[idx] = MI_ARB_CHK;
+		*bbe[idx] = MI_ARB_CHECK;
 		execbuf.batch_start_offset =
 			(bbe[idx] - batch) * sizeof(*batch) - 64;
 

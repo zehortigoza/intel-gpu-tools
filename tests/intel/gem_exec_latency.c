@@ -816,7 +816,7 @@ static void context_switch(int i915, const intel_ctx_t *ctx,
 		       I915_GEM_DOMAIN_WC, I915_GEM_DOMAIN_WC);
 
 	cs = bbe;
-	*cs++ = 0x5 << 23;
+	*cs++ = MI_ARB_CHECK;
 	*cs++ = 0x24 << 23 | 2; /* SRM */
 	*cs++ = mmio_base + 0x358; /* TIMESTAMP */
 	reloc[0].target_handle = obj[0].handle;
@@ -871,7 +871,7 @@ static void context_switch(int i915, const intel_ctx_t *ctx,
 
 		*bbe = 0xa << 23;
 		gem_sync(i915, obj[1].handle);
-		*bbe = 0x5 << 23;
+		*bbe = MI_ARB_CHECK;
 
 		v = results[0];
 		igt_mean_add(&mean, (results[1] - results[2]) * rcs_clock);

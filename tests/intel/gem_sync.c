@@ -876,7 +876,7 @@ switch_ring(int fd, const intel_ctx_t *ctx, unsigned ring,
 					*b++ = offset;
 				}
 				*b++ = r;
-				*b++ = 0x5 << 23;
+				*b++ = MI_ARB_CHECK;
 			}
 			*b++ = MI_BATCH_BUFFER_END;
 			igt_assert((b - batch)*sizeof(uint32_t) < sz);

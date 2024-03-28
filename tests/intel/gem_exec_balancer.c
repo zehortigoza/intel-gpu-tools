@@ -1276,7 +1276,7 @@ static void disable_preparser(int i915, uint32_t ctx)
 
 	cs = gem_mmap__device_coherent(i915, obj.handle, 0, 4096, PROT_WRITE);
 
-	cs[0] = 0x5 << 23 | 1 << 8 | 0; /* disable preparser magic */
+	cs[0] = MI_ARB_CHECK | 1 << 8 | 0; /* disable preparser magic */
 	cs[1] = MI_BATCH_BUFFER_END;
 	munmap(cs, 4096);
 

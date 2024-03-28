@@ -318,7 +318,7 @@ static void test_fence_busy_all(int fd, const intel_ctx_t *ctx, unsigned flags)
 
 	i = 0;
 	if ((flags & HANG) == 0)
-		batch[i++] = 0x5 << 23;
+		batch[i++] = MI_ARB_CHECK;
 
 	if (!ahnd) {
 		obj.relocs_ptr = to_user_pointer(&reloc);
