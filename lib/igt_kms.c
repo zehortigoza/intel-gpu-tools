@@ -6144,6 +6144,34 @@ bool igt_bigjoiner_possible(drmModeModeInfo *mode, int max_dotclock)
 }
 
 /**
+ * bigjoiner_mode_found:
+ * @drm_fd: drm file descriptor
+ * @connector: libdrm connector
+ * @max_dot_clock: max dot clock frequency
+ * @mode: libdrm mode to be filled
+ *
+ * Bigjoiner will come in to the picture when the
+ * resolution > 5K or clock > max-dot-clock.
+ *
+ * Returns: True if big joiner found in connector modes
+ */
+bool bigjoiner_mode_found(int drm_fd, drmModeConnector *connector,
+			  int max_dotclock, drmModeModeInfo *mode)
+{
+	bool found = false;
+
+	igt_sort_connector_modes(connector, sort_drm_modes_by_res_dsc);
+	found = igt_bigjoiner_possible(&connector->modes[0], max_dotclock);
+	if (!found) {
+		igt_sort_connector_modes(connector, sort_drm_modes_by_clk_dsc);
+		found = igt_bigjoiner_possible(&connector->modes[0], max_dotclock);
+	}
+	if (found)
+		*mode = connector->modes[0];
+	return found;
+}
+
+/**
  * igt_check_bigjoiner_support:
  * @display: a pointer to an #igt_display_t structure
  *
