@@ -6172,6 +6172,57 @@ bool bigjoiner_mode_found(int drm_fd, drmModeConnector *connector,
 }
 
 /**
+ * Checks if the force big joiner debugfs is available
+ * for a specific connector.
+ *
+ * @drmfd: file descriptor of the DRM device.
+ * @output: output to check.
+ * Returns:
+ *  true if the debugfs is available, false otherwise.
+ */
+bool igt_has_force_joiner_debugfs(int drmfd, igt_output_t *output)
+{
+	char buf[512];
+	int debugfs_fd, ret;
+
+	igt_assert_f(output->name, "Connector name cannot be NULL\n");
+	debugfs_fd = igt_debugfs_connector_dir(drmfd, output->name, O_RDONLY);
+	if (debugfs_fd < 0)
+		return false;
+	ret = igt_debugfs_simple_read(debugfs_fd, "i915_bigjoiner_force_enable", buf, sizeof(buf));
+	close(debugfs_fd);
+	return ret >= 0;
+}
+
+/**
+ * Forces the enable/disable state of big joiner for a specific connector.
+ *
+ * @drmfd The file descriptor of the DRM device.
+ * @connector_name The name of the connector.
+ * @enable The desired state of big joiner (true for enable, false for disable).
+ * Returns:
+ *  true if writing the debugfs was successful
+ *  and the state was set as requested, false otherwise.
+ */
+bool igt_force_and_check_bigjoiner_status(int drmfd, char *connector_name, bool enable)
+{
+	int debugfs_fd, ret;
+	char buf[512];
+
+	igt_assert_f(connector_name, "Connector name cannot be NULL\n");
+	debugfs_fd = igt_debugfs_connector_dir(drmfd, connector_name, O_DIRECTORY);
+	igt_assert_f(debugfs_fd >= 0, "Could not open debugfs for connector %s\n", connector_name);
+	ret = igt_sysfs_write(debugfs_fd, "i915_bigjoiner_force_enable", enable ? "1" : "0", 1);
+	igt_assert_f(ret > 0, "Could not write i915_bigjoiner_force_enable for connector %s\n", connector_name);
+	ret = igt_debugfs_simple_read(debugfs_fd, "i915_bigjoiner_force_enable", buf, sizeof(buf));
+	close(debugfs_fd);
+	igt_assert_f(ret > 0, "Could not read i915_bigjoiner_force_enable for connector %s\n", connector_name);
+
+	return enable ? strstr(buf, "Bigjoiner enable: 1") :
+		    strstr(buf, "Bigjoiner enable: 0");
+}
+
+/**
  * igt_check_bigjoiner_support:
  * @display: a pointer to an #igt_display_t structure
  *
