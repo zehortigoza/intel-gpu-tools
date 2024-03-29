@@ -188,12 +188,12 @@ void xe_spin_end(struct xe_spin *spin)
 
 /**
  * xe_spin_create:
- *@opt: controlling options such as allocator handle, exec_queue, vm etc
+ * @opt: controlling options such as allocator handle, exec_queue, vm etc
  *
  * igt_spin_new for xe, xe_spin_create submits a batch using xe_spin_init
  * which wraps around vm bind and unbinding the object associated to it.
- * This returs a spinner after submitting a dummy load.
  *
+ * This returns a spinner after submitting a dummy load.
  */
 igt_spin_t *
 xe_spin_create(int fd, const struct igt_spin_factory *opt)
@@ -260,7 +260,7 @@ void xe_spin_sync_wait(int fd, struct igt_spin *spin)
 
 /*
  * xe_spin_free:
- *@spin: spin state from igt_spin_new()
+ * @spin: spin state from igt_spin_new()
  *
  * Wrapper to free spinner whhich is triggered by xe_spin_create.
  * which distroys vm, exec_queue and unbinds the vm which is binded to
