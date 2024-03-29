@@ -1030,6 +1030,7 @@ static void threads(int fd, int flags)
 		xe_for_each_gt(fd, gt)
 			xe_for_each_engine_class(class) {
 				int num_placements = 0;
+				int *data_flags = (int[]){ VIRTUAL, PARALLEL, -1 };
 
 				xe_for_each_engine(fd, hwe) {
 					if (hwe->engine_class != class ||
@@ -1038,7 +1039,10 @@ static void threads(int fd, int flags)
 					++num_placements;
 				}
 
-				if (num_placements > 1) {
+				if (num_placements <= 1)
+					continue;
+
+				while (*data_flags >= 0) {
 					threads_data[i].mutex = &mutex;
 					threads_data[i].cond = &cond;
 					if (flags & SHARED_VM)
@@ -1060,42 +1064,14 @@ static void threads(int fd, int flags)
 					threads_data[i].n_exec = N_EXEC;
 					threads_data[i].flags = flags;
 					threads_data[i].flags &= ~BALANCER;
-					threads_data[i].flags |= VIRTUAL;
+					threads_data[i].flags |= *data_flags;
 					threads_data[i].go = &go;
 
 					++n_threads;
 					pthread_create(&threads_data[i].thread, 0,
 						       thread, &threads_data[i]);
 					++i;
-
-					threads_data[i].mutex = &mutex;
-					threads_data[i].cond = &cond;
-					if (flags & SHARED_VM)
-						threads_data[i].addr = addr |
-							(i << ADDRESS_SHIFT);
-					else
-						threads_data[i].addr = addr;
-					threads_data[i].userptr = userptr |
-						(i << ADDRESS_SHIFT);
-					if (flags & FD)
-						threads_data[i].fd = 0;
-					else
-						threads_data[i].fd = fd;
-					threads_data[i].gt = gt;
-					threads_data[i].vm_legacy_mode =
-						vm_legacy_mode;
-					threads_data[i].class = class;
-					threads_data[i].n_exec_queue = N_EXEC_QUEUE;
-					threads_data[i].n_exec = N_EXEC;
-					threads_data[i].flags = flags;
-					threads_data[i].flags &= ~BALANCER;
-					threads_data[i].flags |= PARALLEL;
-					threads_data[i].go = &go;
-
-					++n_threads;
-					pthread_create(&threads_data[i].thread, 0,
-						       thread, &threads_data[i]);
-					++i;
+					data_flags++;
 				}
 			}
 	}
