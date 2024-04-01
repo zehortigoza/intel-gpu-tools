@@ -114,16 +114,10 @@ test_balancer(int fd, int gt, uint32_t vm, uint64_t addr, uint64_t userptr,
 
 	memset(sync_all, 0, sizeof(sync_all));
 	for (i = 0; i < n_exec_queues; i++) {
-		struct drm_xe_exec_queue_create create = {
-			.vm_id = vm,
-			.width = flags & PARALLEL ? num_placements : 1,
-			.num_placements = flags & PARALLEL ? 1 : num_placements,
-			.instances = to_user_pointer(eci),
-		};
-
-		igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_EXEC_QUEUE_CREATE,
-					&create), 0);
-		exec_queues[i] = create.exec_queue_id;
+		igt_assert_eq(__xe_exec_queue_create(fd, vm,
+						     flags & PARALLEL ? num_placements : 1,
+						     flags & PARALLEL ? 1 : num_placements,
+						     eci, 0, &exec_queues[i]), 0);
 		syncobjs[i] = syncobj_create(fd, 0);
 		sync_all[i].type = DRM_XE_SYNC_TYPE_SYNCOBJ;
 		sync_all[i].handle = syncobjs[i];

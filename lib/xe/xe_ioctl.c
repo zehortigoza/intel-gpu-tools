@@ -332,15 +332,15 @@ uint32_t xe_bind_exec_queue_create(int fd, uint32_t vm, uint64_t ext)
 	return create.exec_queue_id;
 }
 
-int __xe_exec_queue_create(int fd, uint32_t vm,
+int __xe_exec_queue_create(int fd, uint32_t vm, uint16_t width, uint16_t num_placements,
 			   struct drm_xe_engine_class_instance *instance,
 			   uint64_t ext, uint32_t *exec_queue_id)
 {
 	struct drm_xe_exec_queue_create create = {
 		.extensions = ext,
 		.vm_id = vm,
-		.width = 1,
-		.num_placements = 1,
+		.width = width,
+		.num_placements = num_placements,
 		.instances = to_user_pointer(instance),
 	};
 	int err;
@@ -363,7 +363,7 @@ uint32_t xe_exec_queue_create(int fd, uint32_t vm,
 {
 	uint32_t exec_queue_id;
 
-	igt_assert_eq(__xe_exec_queue_create(fd, vm, instance, ext, &exec_queue_id), 0);
+	igt_assert_eq(__xe_exec_queue_create(fd, vm, 1, 1, instance, ext, &exec_queue_id), 0);
 
 	return exec_queue_id;
 }

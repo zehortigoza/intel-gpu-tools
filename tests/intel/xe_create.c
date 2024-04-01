@@ -206,7 +206,7 @@ static void create_execqueues(int fd, enum exec_queue_destroy ed,
 		for (i = 0; i < exec_queues_per_process; i++) {
 			idx = rand() % num_engines;
 			engine = xe_engine(fd, idx);
-			err = __xe_exec_queue_create(fd, vm, &engine->instance,
+			err = __xe_exec_queue_create(fd, vm, 1, 1, &engine->instance,
 						     0, &exec_queue);
 			igt_debug("[%2d] Create exec_queue: err=%d, exec_queue=%u [idx = %d]\n",
 				  n, err, exec_queue, i);
@@ -349,7 +349,7 @@ static void create_contexts(int fd)
 	xe_vm_bind_sync(fd, vm, bo, 0, bo_addr, bo_size);
 
 	for (i = 0; i < n; i++) {
-		int err = __xe_exec_queue_create(fd, vm, &xe_engine(fd, 0)->instance, 0,
+		int err = __xe_exec_queue_create(fd, vm, 1, 1, &xe_engine(fd, 0)->instance, 0,
 						 &exec_queues[i]);
 		igt_assert_f(!err, "Failed to create exec queue (%d), iteration: %d\n", err,
 			     i + 1);

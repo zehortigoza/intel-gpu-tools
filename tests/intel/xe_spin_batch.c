@@ -114,16 +114,8 @@ static void spin_all(int fd, int gt, int class)
 	vm = xe_vm_create(fd, 0, 0);
 
 	for (i = 0; i < num_placements; i++) {
-		struct drm_xe_exec_queue_create create = {
-			.vm_id = vm,
-			.width = 1,
-			.num_placements = num_placements,
-			.instances = to_user_pointer(eci),
-		};
-
-		igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_EXEC_QUEUE_CREATE,
-					&create), 0);
-		exec_queues[i] = create.exec_queue_id;
+		igt_assert_eq(__xe_exec_queue_create(fd, vm, 1, num_placements,
+						     eci, 0, &exec_queues[i]), 0);
 		spin[i] = igt_spin_new(fd, .ahnd = ahnd, .engine = exec_queues[i], .vm = vm);
 	}
 

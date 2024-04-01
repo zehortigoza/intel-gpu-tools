@@ -88,7 +88,7 @@ test_ccs_mode(int num_gt)
 			hwe->gt_id = gt;
 			hwe->engine_class = DRM_XE_ENGINE_CLASS_COMPUTE;
 			hwe->engine_instance = m;
-			igt_assert_neq(__xe_exec_queue_create(fd, vm, hwe, 0, &q), 0);
+			igt_assert_neq(__xe_exec_queue_create(fd, vm, 1, 1, hwe, 0, &q), 0);
 
 			xe_vm_destroy(fd, vm);
 			drm_close_driver(fd);

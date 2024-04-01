@@ -177,16 +177,10 @@ test_balancer(int fd, int gt, int class, int n_exec_queues, int n_execs,
 	data = xe_bo_map(fd, bo, bo_size);
 
 	for (i = 0; i < n_exec_queues; i++) {
-		struct drm_xe_exec_queue_create create = {
-			.vm_id = vm,
-			.width = flags & PARALLEL ? num_placements : 1,
-			.num_placements = flags & PARALLEL ? 1 : num_placements,
-			.instances = to_user_pointer(eci),
-		};
-
-		igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_EXEC_QUEUE_CREATE,
-					&create), 0);
-		exec_queues[i] = create.exec_queue_id;
+		igt_assert_eq(__xe_exec_queue_create(fd, vm,
+						     flags & PARALLEL ? num_placements : 1,
+						     flags & PARALLEL ? 1 : num_placements,
+						     eci, 0, &exec_queues[i]), 0);
 		syncobjs[i] = syncobj_create(fd, 0);
 	};
 	exec.num_batch_buffer = flags & PARALLEL ? num_placements : 1;
@@ -621,25 +615,18 @@ static void submit_jobs(struct gt_thread_data *t)
 			.engine_instance = 0,
 			.gt_id = 0,
 		};
-		struct drm_xe_exec_queue_create create = {
-			.vm_id = vm,
-			.width = 1,
-			.num_placements = 1,
-			.instances = to_user_pointer(&instance),
-		};
 		struct drm_xe_exec exec;
 		int ret;
 
 		/* GuC IDs can get exhausted */
-		ret = igt_ioctl(fd, DRM_IOCTL_XE_EXEC_QUEUE_CREATE, &create);
+		ret = __xe_exec_queue_create(fd, vm, 1, 1, &instance, 0, &exec.exec_queue_id);
 		if (ret)
 			continue;
 
-		exec.exec_queue_id = create.exec_queue_id;
 		exec.address = addr;
 		exec.num_batch_buffer = 1;
 		xe_exec(fd, &exec);
-		xe_exec_queue_destroy(fd, create.exec_queue_id);
+		xe_exec_queue_destroy(fd, exec.exec_queue_id);
 	}
 
 	munmap(data, bo_size);

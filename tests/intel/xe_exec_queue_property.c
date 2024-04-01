@@ -56,21 +56,11 @@ static void test_set_property(int xe, int property_name,
 		.property = property_name,
 		.value = property_value,
 	};
+	uint32_t exec_queue_id;
 
-	struct drm_xe_exec_queue_create create = {
-		.extensions = to_user_pointer(&ext),
-		.width = 1,
-		.num_placements = 1,
-		.instances = to_user_pointer(&instance),
-		.vm_id = xe_vm_create(xe, 0, 0),
-	};
-	int ret = 0;
-
-	if (igt_ioctl(xe, DRM_IOCTL_XE_EXEC_QUEUE_CREATE, &create)) {
-		ret = -errno;
-		errno = 0;
-	}
-	igt_assert_eq(ret, err_val);
+	igt_assert_eq(__xe_exec_queue_create(xe, xe_vm_create(xe, 0, 0), 1, 1,
+					     &instance, to_user_pointer(&ext),
+					     &exec_queue_id), err_val);
 }
 
 static void test_property_min_max(int xe, int engine, const char **property)
@@ -183,27 +173,24 @@ static void invalid_property(int xe)
 		.property = valid_property,
 		.value = 1,
 	};
+	uint32_t exec_queue_id, vm = xe_vm_create(xe, 0, 0);
 
-	struct drm_xe_exec_queue_create create = {
-		.extensions = to_user_pointer(&ext),
-		.width = 1,
-		.num_placements = 1,
-		.instances = to_user_pointer(&instance),
-		.vm_id = xe_vm_create(xe, 0, 0),
-	};
 	/* Correct value should pass */
-	igt_assert_eq(igt_ioctl(xe, DRM_IOCTL_XE_EXEC_QUEUE_CREATE, &create), 0);
+	igt_assert_eq(__xe_exec_queue_create(xe, vm, 1, 1, &instance,
+					     to_user_pointer(&ext), &exec_queue_id), 0);
 
 	/* This will fail as soon as a new property is introduced. It is
 	 * expected and the test will have to be updated. */
 	for (int i = 2; i < 16; i++ ) {
 		ext.property = i;
-		do_ioctl_err(xe, DRM_IOCTL_XE_EXEC_QUEUE_CREATE, &create, EINVAL);
+		igt_assert_eq(__xe_exec_queue_create(xe, vm, 1, 1, &instance,
+						     to_user_pointer(&ext), &exec_queue_id), -EINVAL);
 	}
 
 	/* Correct value should still pass */
 	ext.property = valid_property;
-	igt_assert_eq(igt_ioctl(xe, DRM_IOCTL_XE_EXEC_QUEUE_CREATE, &create), 0);
+	igt_assert_eq(__xe_exec_queue_create(xe, vm, 1, 1, &instance,
+					     to_user_pointer(&ext), &exec_queue_id), 0);
 }
 
 igt_main
