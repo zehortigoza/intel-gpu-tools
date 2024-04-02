@@ -35,11 +35,9 @@ struct igt_drm_clients *igt_drm_clients_init(void *private_data)
 {
 	struct igt_drm_clients *clients;
 
-	clients = malloc(sizeof(*clients));
+	clients = calloc(1, sizeof(*clients));
 	if (!clients)
 		return NULL;
-
-	memset(clients, 0, sizeof(*clients));
 
 	clients->private_data = private_data;
 
@@ -165,9 +163,8 @@ igt_drm_client_add(struct igt_drm_clients *clients,
 	c->clients = clients;
 
 	/* Engines */
-	c->engines = malloc(sizeof(*c->engines));
+	c->engines = calloc(1, sizeof(*c->engines));
 	assert(c->engines);
-	memset(c->engines, 0, sizeof(*c->engines));
 	c->engines->capacity = calloc(info->last_engine_index + 1,
 				      sizeof(*c->engines->capacity));
 	assert(c->engines->capacity);
@@ -190,9 +187,8 @@ igt_drm_client_add(struct igt_drm_clients *clients,
 	assert(c->val && c->last);
 
 	/* Memory regions */
-	c->regions = malloc(sizeof(*c->regions));
+	c->regions = calloc(1, sizeof(*c->regions));
 	assert(c->regions);
-	memset(c->regions, 0, sizeof(*c->regions));
 	c->regions->names = calloc(info->last_region_index + 1,
 				   sizeof(*c->regions->names));
 	assert(c->regions->names);
