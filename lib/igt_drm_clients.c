@@ -182,8 +182,9 @@ igt_drm_client_add(struct igt_drm_clients *clients,
 		c->engines->num_engines++;
 		c->engines->max_engine_id = i;
 	}
-	c->val = calloc(c->engines->max_engine_id + 1, sizeof(c->val));
-	c->last = calloc(c->engines->max_engine_id + 1, sizeof(c->last));
+
+	c->val = calloc(c->engines->max_engine_id + 1, sizeof(*c->val));
+	c->last = calloc(c->engines->max_engine_id + 1, sizeof(*c->last));
 	assert(c->val && c->last);
 
 	/* Memory regions */
