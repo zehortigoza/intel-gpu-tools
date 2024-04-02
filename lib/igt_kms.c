@@ -6218,8 +6218,8 @@ bool igt_force_and_check_bigjoiner_status(int drmfd, char *connector_name, bool 
 	close(debugfs_fd);
 	igt_assert_f(ret > 0, "Could not read i915_bigjoiner_force_enable for connector %s\n", connector_name);
 
-	return enable ? strstr(buf, "Bigjoiner enable: 1") :
-		    strstr(buf, "Bigjoiner enable: 0");
+	return enable ? strstr(buf, "Y") :
+			strstr(buf, "N");
 }
 
 /**
