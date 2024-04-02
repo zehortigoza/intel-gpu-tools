@@ -293,5 +293,7 @@ int main(int argc, char **argv)
 		usleep(period_us);
 	}
 
+	igt_drm_clients_free(clients);
+
 	return 0;
 }
