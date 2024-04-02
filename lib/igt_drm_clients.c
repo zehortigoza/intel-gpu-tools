@@ -222,8 +222,18 @@ void igt_drm_client_free(struct igt_drm_client *c, bool clear)
 		free(c->engines->names);
 	}
 	free(c->engines);
+
 	free(c->val);
 	free(c->last);
+
+	if (c->regions) {
+		for (i = 0; i <= c->regions->max_region_id; i++)
+			free(c->regions->names[i]);
+		free(c->regions->names);
+	}
+	free(c->regions);
+
+	free(c->memory);
 
 	if (clear)
 		memset(c, 0, sizeof(*c));
