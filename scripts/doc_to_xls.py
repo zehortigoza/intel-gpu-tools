@@ -16,6 +16,8 @@ from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
 from openpyxl import Workbook
 
+from sys import stderr
+
 from test_list import TestList
 
 EPILOG = """
@@ -47,16 +49,20 @@ def tests_to_xls(tests, fname):
         test = tests[row]
         sheet_name = test.title
 
+        sheet = test.get_spreadsheet(expand_fields)
+        # Ignore empty sheets
+        if not len(sheet):
+            print(f"Warning: sheet '{test.title}' is empty!", file=stderr)
+            continue
+
         if not ws:
             ws = wb.active
             ws.title = sheet_name
         else:
             ws = wb.create_sheet(sheet_name)
 
-        sheet = test.get_spreadsheet(expand_fields)
-
         max_length = []
-        for col in range(len(sheet[row])):
+        for col in range(len(sheet[0])):
             max_length.append(0)
 
         for row in range(len(sheet)):
