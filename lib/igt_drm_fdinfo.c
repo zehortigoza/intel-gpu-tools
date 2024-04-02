@@ -106,20 +106,17 @@ static int parse_engine(char *line, struct drm_client_fdinfo *info,
 
 static const char *find_kv(const char *buf, const char *key, size_t keylen)
 {
-	const char *p = buf;
+	const char *p;
 
 	if (strncmp(buf, key, keylen))
 		return NULL;
 
-	p = index(buf, ':');
-	if (!p || p == buf)
-		return NULL;
-	if ((p - buf) != keylen)
+	p = buf + keylen;
+	if (*p != ':')
 		return NULL;
 
-	p++;
-	while (*p && isspace(*p))
-		p++;
+	for (p++; *p && isspace(*p); p++)
+		;
 
 	return *p ? p : NULL;
 }
