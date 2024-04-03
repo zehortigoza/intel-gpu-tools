@@ -205,21 +205,22 @@ static void test_flow(data_t *data, enum sub_test option)
 			continue;
 		}
 
-		/* igt_amd_output_has_ilr_setting only checks if debugfs
-		 * exist. ilr settings could be all 0s -- not supported.
-		 * IGT needs to check if ilr settings values are supported.
+		/* states under /sys/kernel/debug/dri/0/eDP-1:
+		 * psr_capability.driver_support (drv_support_psr): yes
+		 * ilr_setting (intermediate link rates capabilities,
+		 * ilr_cap): yes/no
+		 * kernel driver disallow_edp_enter_psr (dis_psr): no
 		 */
-		igt_amd_read_ilr_setting(data->drm_fd, output->name, data->supported_ilr);
-		if (data->supported_ilr[0] == 0)
-			continue;
 
-		igt_info("Testing on output: %s\n", output->name);
-
-		/* Init only if display supports ilr link settings */
+		/* Init only eDP */
 		test_init(data, output);
 
-		/* Disable eDP PSR to avoid timeout when reading CRC */
-		igt_amd_disallow_edp_enter_psr(data->drm_fd, output->name, true);
+		/* set_all_output_pipe_to_none: no pipe is enabled.
+		 * DPMS on/off will not take effect until
+		 * next igt_display_commit_atomic.
+		 * eDP enter power saving mode within test_init
+		 * drv_support_psr: yes; ilr_cap: no; dis_psr: no
+		 */
 
 		mode = igt_output_get_mode(output);
 		igt_assert(mode);
@@ -229,7 +230,44 @@ static void test_flow(data_t *data, enum sub_test option)
 				      mode->vdisplay, DRM_FORMAT_XRGB8888,
 				      0, &data->fb);
 		igt_plane_set_fb(data->primary, &data->fb);
+
+		/* drv_support_psr: yes; ilr_cap: no; dis_psr: no
+		 * commit stream. eDP exit power saving mode.
+		 */
 		igt_display_commit_atomic(&data->display, DRM_MODE_ATOMIC_ALLOW_MODESET, NULL);
+		/* drv_support_psr: yes; ilr_cap: yes; dis_psr: no */
+
+		/* igt_amd_output_has_ilr_setting only checks if debugfs
+		 * exist. ilr settings could be all 0s -- not supported.
+		 * IGT needs to check if ilr settings values are supported.
+		 * Supported_ilr is read from DPCD registers. Make sure
+		 * eDP exiting power saving mode before reading supported_ilr.
+		 * This check will let test be skipped for non-ilr eDP.
+		 */
+		igt_amd_read_ilr_setting(data->drm_fd, output->name, data->supported_ilr);
+		if (data->supported_ilr[0] == 0)
+			continue;
+
+		igt_info("Testing on output: %s\n", output->name);
+
+		/* drv_support_psr: yes; ilr_cap: yes; dis_psr: no */
+		kmstest_set_connector_dpms(data->drm_fd,
+			output->config.connector, DRM_MODE_DPMS_OFF);
+		/* eDP enter power saving mode.
+		 * drv_support_psr: yes; ilr_cap: no; dis_psr: no.
+		 */
+
+		/* Disable eDP PSR to avoid timeout when reading CRC */
+		igt_amd_disallow_edp_enter_psr(data->drm_fd, output->name, true);
+		/* drv_support_psr: yes; ilr_cap: no: dis_psr: yes */
+
+		/* eDP exit power saving mode and setup psr */
+		kmstest_set_connector_dpms(data->drm_fd,
+			output->config.connector, DRM_MODE_DPMS_ON);
+		/* drv_support_psr: no; ilr_cap: yes: dis_psr: yes
+		 * With dis_psr yes, drm kernel driver
+		 * disable psr, psr_en is set to no.
+		 */
 
 		/* Collect info of Reported Lane Count & ILR */
 		igt_amd_read_link_settings(data->drm_fd, output->name, data->lane_count,
@@ -247,18 +285,34 @@ static void test_flow(data_t *data, enum sub_test option)
 				break;
 		}
 
+		/* drv_support_psr: no; ilr_cap: yes; dis_psr: yes */
+		kmstest_set_connector_dpms(data->drm_fd,
+			output->config.connector, DRM_MODE_DPMS_OFF);
+		/* eDP enter power saving mode.
+		 * drv_support_psr: no; ilr_cap: no; dis_psr: yes.
+		 */
+
+		/* Enable PSR after reading eDP Rx CRC */
+		igt_amd_disallow_edp_enter_psr(data->drm_fd, output->name, false);
+		/* drv_support_psr: no; ilr_cap: no: dis_psr: no */
+
+		/* eDP exit power saving mode and setup psr */
+		kmstest_set_connector_dpms(data->drm_fd,
+			output->config.connector, DRM_MODE_DPMS_ON);
+		/* drv_support_psr: yes; ilr_cap: yes: dis_psr: no */
+
 		/* Reset preferred link settings*/
 		memset(data->supported_ilr, 0, sizeof(data->supported_ilr));
 		igt_amd_write_ilr_setting(data->drm_fd, output->name, 0, 0);
+		/* drv_support_psr: yes; ilr_cap: yes; dis_psr: no */
 
+		/* commit 0 stream. eDP enter power saving mode */
 		igt_remove_fb(data->drm_fd, &data->fb);
+		/* drv_support_psr: yes; ilr_cap: no; dis_psr: no */
 
 		test_fini(data);
-
-		/* Enable eDP PSR */
-		igt_amd_disallow_edp_enter_psr(data->drm_fd, output->name, false);
+		/* drv_support_psr: yes; ilr_cap: no; dis_psr: no */
 	}
-
 }
 
 igt_main
