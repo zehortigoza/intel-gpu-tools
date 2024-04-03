@@ -154,7 +154,7 @@ intel_mmio_use_pci_bar(struct intel_mmio_data *mmio_data, struct pci_device *pci
 
 	gen = intel_gen(devid);
 	if (gen >= 12)
-		mmio_size = 8 * 1024 * 1024;
+		mmio_size = pci_dev->regions[mmio_bar].size;
 	else if (gen >= 5)
 		mmio_size = 2 * 1024 * 1024;
 	else
