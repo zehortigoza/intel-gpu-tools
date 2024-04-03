@@ -104,13 +104,13 @@ static int backlight_write_brightness(int value)
 	return 0;
 }
 
-static void set_abm_level(char *connector_name, int level)
+static void set_abm_level(data_t *data, igt_output_t *output, int level)
 {
 	char buf[PATH_MAX];
 	int fd;
 
 	igt_assert(snprintf(buf, PATH_MAX, PANEL_POWER_SAVINGS_PATH,
-			    connector_name) < PATH_MAX);
+			    output->name) < PATH_MAX);
 
 	fd = open(buf, O_WRONLY);
 
@@ -120,6 +120,15 @@ static void set_abm_level(char *connector_name, int level)
 		      write(fd, buf, 1));
 
 	igt_assert_eq(close(fd), 0);
+
+	/**
+	 * We need to trigger a full modeset to have the new ABM level take effect.
+	 * DPMS off -> on transition is one of many approaches.
+	 */
+	kmstest_set_connector_dpms(data->drm_fd, output->config.connector,
+			 DRM_MODE_DPMS_OFF);
+	kmstest_set_connector_dpms(data->drm_fd, output->config.connector,
+			 DRM_MODE_DPMS_ON);
 }
 
 static int backlight_read_max_brightness(int *result)
@@ -183,7 +192,7 @@ static void backlight_dpms_cycle(data_t *data)
 		ret = backlight_read_max_brightness(&max_brightness);
 		igt_assert_eq(ret, 0);
 
-		set_abm_level(output->name, 0);
+		set_abm_level(data, output, 0);
 		backlight_write_brightness(max_brightness / 2);
 		usleep(100000);
 		pwm_1 = read_target_backlight_pwm(data->drm_fd, output->name);
@@ -214,7 +223,7 @@ static void backlight_monotonic_basic(data_t *data)
 
 		brightness_step = max_brightness / 10;
 
-		set_abm_level(output->name, 0);
+		set_abm_level(data, output, 0);
 		backlight_write_brightness(max_brightness);
 		usleep(100000);
 		prev_pwm = read_target_backlight_pwm(data->drm_fd, output->name);
@@ -248,7 +257,7 @@ static void backlight_monotonic_abm(data_t *data)
 
 		brightness_step = max_brightness / 10;
 		for (i = 1; i < 5; i++) {
-			set_abm_level(output->name, 0);
+			set_abm_level(data, output, 0);
 			backlight_write_brightness(max_brightness);
 			usleep(100000);
 			prev_pwm = read_target_backlight_pwm(data->drm_fd, output->name);
@@ -280,14 +289,14 @@ static void abm_enabled(data_t *data)
 		ret = backlight_read_max_brightness(&max_brightness);
 		igt_assert_eq(ret, 0);
 
-		set_abm_level(output->name, 0);
+		set_abm_level(data, output, 0);
 		backlight_write_brightness(max_brightness);
 		usleep(100000);
 		prev_pwm = read_target_backlight_pwm(data->drm_fd, output->name);
 		pwm_without_abm = prev_pwm;
 
 		for (i = 1; i < 5; i++) {
-			set_abm_level(output->name, i);
+			set_abm_level(data, output, i);
 			usleep(100000);
 			pwm = read_target_backlight_pwm(data->drm_fd, output->name);
 			igt_assert(pwm <= prev_pwm);
@@ -314,7 +323,7 @@ static void abm_gradual(data_t *data)
 
 		igt_assert_eq(ret, 0);
 
-		set_abm_level(output->name, 0);
+		set_abm_level(data, output, 0);
 		backlight_write_brightness(max_brightness);
 
 		sleep(convergence_delay);
@@ -322,7 +331,7 @@ static void abm_gradual(data_t *data)
 		curr = read_current_backlight_pwm(data->drm_fd, output->name);
 
 		igt_assert_eq(prev_pwm, curr);
-		set_abm_level(output->name, 4);
+		set_abm_level(data, output, 4);
 		for (i = 0; i < 10; i++) {
 			usleep(100000);
 			pwm = read_current_backlight_pwm(data->drm_fd, output->name);
