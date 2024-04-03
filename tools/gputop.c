@@ -119,11 +119,36 @@ print_client_header(struct igt_drm_client *c, int lines, int con_w, int con_h,
 	return lines;
 }
 
+static bool
+engines_identical(const struct igt_drm_client *c,
+		  const struct igt_drm_client *pc)
+{
+	unsigned int i;
+
+	if (c->engines->num_engines != pc->engines->num_engines ||
+	    c->engines->max_engine_id != pc->engines->max_engine_id)
+		return false;
+
+	for (i = 0; i <= c->engines->max_engine_id; i++)
+		if (c->engines->capacity[i] != pc->engines->capacity[i] ||
+		    !!c->engines->names[i] != !!pc->engines->names[i] ||
+		    strcmp(c->engines->names[i], pc->engines->names[i]))
+			return false;
+
+	return true;
+}
 
 static bool
 newheader(const struct igt_drm_client *c, const struct igt_drm_client *pc)
 {
-	return !pc || c->drm_minor != pc->drm_minor;
+	return !pc || c->drm_minor != pc->drm_minor ||
+	       /*
+		* Below is a a hack for drivers like amdgpu which omit listing
+		* unused engines. Simply treat them as separate minors which
+		* will ensure the per-engine columns are correctly sized in all
+		* cases.
+		*/
+	       !engines_identical(c, pc);
 }
 
 static int
