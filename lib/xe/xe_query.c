@@ -731,6 +731,25 @@ bool xe_is_media_gt(int fd, int gt)
 	return false;
 }
 
+/**
+ * xe_gt_to_tile_id:
+ * @fd: xe device fd
+ * @gt: gt id
+ *
+ * Returns tile id for given @gt.
+ */
+uint16_t xe_gt_get_tile_id(int fd, int gt)
+{
+	struct xe_device *xe_dev;
+
+	xe_dev = find_in_cache(fd);
+
+	igt_assert(xe_dev);
+	igt_assert(gt < xe_number_gt(fd));
+
+	return xe_dev->gt_list->gt_list[gt].tile_id;
+}
+
 igt_constructor
 {
 	xe_device_cache_init();

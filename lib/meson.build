@@ -111,6 +111,7 @@ lib_sources = [
 	'igt_dsc.c',
 	'xe/xe_gt.c',
 	'xe/xe_ioctl.c',
+	'xe/xe_mmio.c',
 	'xe/xe_query.c',
 	'xe/xe_spin.c',
 	'xe/xe_util.c',
