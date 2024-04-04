@@ -34,10 +34,10 @@ grep_test ()
 	myout=$2
 
 	echo "running: $myout file: $test"
-	grep $myout: $test | sed -e "s/...$2: //" \
+	grep -E $myout: $test | sed -e "s/...$2: //" \
 		| tr '[:upper:]' '[:lower:]' | sed -e 's/, /\n/g' \
 		| sed -e 's/ /Y/g' >> b.$myout
-	grep -r $myout: ../tests/* >> n.$myout
+	grep -E -r $myout: ../tests/* >> n.$myout
 }
 
 
@@ -61,8 +61,12 @@ scan_dirs ()
 {
 	rm a.columns
 
-	for todo in $@; do
-		echo $todo >> a.columns
+        for todo in "$@"; do
+                echo "$todo" | sed -e 's/ /./g' >> a.columns
+	done
+
+	SCANWORDS=`cat a.columns`
+	for todo in $SCANWORDS; do
 		echo "Scanning name: $todo"
 		one_scan_dir $todo
 	done
@@ -89,7 +93,20 @@ check_test ()
 		grep -i -w "$test" w.$1 >> .tmp_check
 	done
 
-	sort -u < .tmp_check > e.$1
+	sort -u < .tmp_check > .tmp_ck2
+
+	# it is a match only when is a column in our original c.$1
+	# as a word could be shorter and grep will match it then
+	rm .tmp_ck3
+	CKWORDS=`cat .tmp_ck2`
+	for test in $CKWORDS; do
+		grep -E -i -w "$test" c.$1
+		if [ $? -eq 0 ]; then
+			echo $test >> .tmp_ck3
+		fi
+	done
+
+	sort -u < .tmp_ck3 > e.$1
 }
 
 # will use .tmpcols and create w.$1
@@ -134,7 +151,7 @@ echo "=============================================="
 
 # Mega feature / Category / Sub-category / Functionality
 # Mega-feature is not used now
-scan_dirs Category Sub-category Functionality
+scan_dirs Category Sub-category Functionality "Mega feature"
 
 echo "=============================================="
 echo "checking..."
@@ -153,8 +170,8 @@ wc -l e.[A-Za-z]*
 echo ""
 echo "=============================================="
 echo "example useage: take a word from e.* file and grep it in c*"
-echo "grep -i word c.*"
+echo "grep -E -i word c.*"
 echo "to see where it is used in tests, use:"
-echo "grep -i word n.*"
+echo "grep -E -i ':.*word' n.*"
 echo "=============================================="
 
