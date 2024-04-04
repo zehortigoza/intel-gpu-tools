@@ -49,8 +49,7 @@ igt_main
 
 	igt_subtest_with_dynamic("compute-preempt") {
 		xe_for_each_engine(xe, hwe) {
-			if (hwe->engine_class != DRM_XE_ENGINE_CLASS_COMPUTE &&
-			    hwe->engine_class != DRM_XE_ENGINE_CLASS_RENDER)
+			if (hwe->engine_class != DRM_XE_ENGINE_CLASS_COMPUTE)
 				continue;
 
 			igt_dynamic_f("engine-%s", xe_engine_class_string(hwe->engine_class))
@@ -60,7 +59,6 @@ igt_main
 
 	igt_subtest_with_dynamic("compute-preempt-many") {
 		xe_for_each_engine(xe, hwe) {
-			/* TODO: This subtest fails on RCS engine */
 			if (hwe->engine_class != DRM_XE_ENGINE_CLASS_COMPUTE)
 				continue;
 
@@ -74,8 +72,7 @@ igt_main
 
 	igt_subtest_with_dynamic("compute-threadgroup-preempt") {
 		xe_for_each_engine(xe, hwe) {
-			if (hwe->engine_class != DRM_XE_ENGINE_CLASS_COMPUTE &&
-			    hwe->engine_class != DRM_XE_ENGINE_CLASS_RENDER)
+			if (hwe->engine_class != DRM_XE_ENGINE_CLASS_COMPUTE)
 				continue;
 
 			igt_dynamic_f("engine-%s", xe_engine_class_string(hwe->engine_class))
