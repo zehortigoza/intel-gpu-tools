@@ -95,6 +95,67 @@ void amd_cs_wait_fuzzing(int fd, const enum amd_ip_block_type types[], int size)
 	}
 }
 
+static int
+amdgpu_ftrace_enablement(const char *function, bool enable)
+{
+	char cmd[128];
+	int ret;
+
+	snprintf(cmd, sizeof(cmd),
+			"echo %s > /sys/kernel/debug/tracing/events/amdgpu/%s/enable",
+			enable == true ? "1":"0", function);
+	ret = igt_system(cmd);
+
+	return ret;
+}
+
+/* The bug was found using customized Syzkaller and with Kazan enabled.
+ * Report a slab-use-after-free bug in the AMDGPU DRM driver.
+ * Ftrace enablement is mandatory precondition to reproduce the error once after boot.
+ * The bug was reported by Joonkyo Jung <joonkyoj@yonsei.ac.kr>.
+ *
+ * BUG: KFENCE: use-after-free read in amdgpu_bo_move+0x1ce/0x710 [amdgpu]
+ * https://gitlab.freedesktop.org/drm/amd/-/issues/3171#note_2287646
+ *
+ * Fix Christian König ckoenig.leichtzumerken at gmail.com
+ * https://lists.freedesktop.org/archives/amd-gfx/2024-March/105680.html
+ *
+ * The issue is visible only when Kazan enables and dumps to the kernel log:
+ * BUG: KASAN: slab-use-after-free in amdgpu_bo_move+0x974/0xd90
+ * We accessed the freed memory during the ftrace enablement in a
+ * amdgpu_bo_move_notify.
+ * The test amd_gem_create_fuzzing does amdgpu_bo_reserve
+ */
+static void
+amd_gem_create_fuzzing(int fd)
+{
+	static const char function_amdgpu_bo_move[] = "amdgpu_bo_move";
+	union drm_amdgpu_gem_create arg;
+	int ret;
+
+	ret = amdgpu_ftrace_enablement(function_amdgpu_bo_move, true);
+	igt_assert_eq(ret, 0);
+	arg.in.bo_size = 0x8;
+	arg.in.alignment = 0x0;
+	arg.in.domains = 0x4;
+	arg.in.domain_flags = 0x9;
+	ret = drmIoctl(fd, 0xc0206440
+			/* DRM_AMDGPU_GEM_CREATE amdgpu_gem_create_ioctl */, &arg);
+	igt_info("drmCommandWriteRead DRM_AMDGPU_GEM_CREATE ret %d\n", ret);
+
+	arg.in.bo_size = 0x7fffffff;
+	arg.in.alignment = 0x0;
+	arg.in.domains = 0x4;
+	arg.in.domain_flags = 0x9;
+	ret = drmIoctl(fd, 0xc0206440
+			/* DRM_AMDGPU_GEM_CREATE amdgpu_gem_create_ioctl */, &arg);
+	igt_info("drmCommandWriteRead DRM_AMDGPU_GEM_CREATE ret %d\n", ret);
+
+	ret = amdgpu_ftrace_enablement(function_amdgpu_bo_move, false);
+	igt_assert_eq(ret, 0);
+
+}
+
 igt_main
 {
 	int fd = -1;
@@ -113,6 +174,10 @@ igt_main
 	igt_describe("Check cs wait fuzzing");
 	igt_subtest("cs-wait-fuzzing")
 		amd_cs_wait_fuzzing(fd, arr_types, ARRAY_SIZE(arr_types));
+
+	igt_describe("Check gem create fuzzing");
+	igt_subtest("gem-create-fuzzing")
+		amd_gem_create_fuzzing(fd);
 
 	igt_fixture {
 		drm_close_driver(fd);
