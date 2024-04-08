@@ -102,13 +102,13 @@ static void persistance_batch(struct data *data, uint64_t addr)
  */
 static void basic_inst(int fd, int inst_type, struct drm_xe_engine_class_instance *eci)
 {
-	struct drm_xe_sync sync = {
-		.type = DRM_XE_SYNC_TYPE_SYNCOBJ,
-		.flags = DRM_XE_SYNC_FLAG_SIGNAL,
+	struct drm_xe_sync sync[2] = {
+		{ .type = DRM_XE_SYNC_TYPE_SYNCOBJ, .flags = DRM_XE_SYNC_FLAG_SIGNAL, },
+		{ .type = DRM_XE_SYNC_TYPE_SYNCOBJ, .flags = DRM_XE_SYNC_FLAG_SIGNAL, }
 	};
 	struct drm_xe_exec exec = {
 		.num_batch_buffer = 1,
-		.num_syncs = 1,
+		.num_syncs = 2,
 		.syncs = to_user_pointer(&sync),
 	};
 	struct data *data;
@@ -122,7 +122,8 @@ static void basic_inst(int fd, int inst_type, struct drm_xe_engine_class_instanc
 	uint32_t bo = 0;
 
 	syncobj = syncobj_create(fd, 0);
-	sync.handle = syncobj;
+	sync[0].handle = syncobj_create(fd, 0);
+	sync[1].handle = syncobj;
 
 	vm = xe_vm_create(fd, 0, 0);
 	bo_size = sizeof(*data);
@@ -134,7 +135,7 @@ static void basic_inst(int fd, int inst_type, struct drm_xe_engine_class_instanc
 
 	exec_queue = xe_exec_queue_create(fd, vm, eci, 0);
 	bind_engine = xe_bind_exec_queue_create(fd, vm, 0);
-	xe_vm_bind_async(fd, vm, bind_engine, bo, 0, addr, bo_size, &sync, 1);
+	xe_vm_bind_async(fd, vm, bind_engine, bo, 0, addr, bo_size, sync, 1);
 	data = xe_bo_map(fd, bo, bo_size);
 
 	if (inst_type == STORE)
@@ -149,12 +150,14 @@ static void basic_inst(int fd, int inst_type, struct drm_xe_engine_class_instanc
 
 	exec.exec_queue_id = exec_queue;
 	exec.address = data->addr;
-	sync.flags &= DRM_XE_SYNC_FLAG_SIGNAL;
+	sync[0].flags &= ~DRM_XE_SYNC_FLAG_SIGNAL;
+	sync[1].flags |= DRM_XE_SYNC_FLAG_SIGNAL;
 	xe_exec(fd, &exec);
 
 	igt_assert(syncobj_wait(fd, &syncobj, 1, INT64_MAX, 0, NULL));
 	igt_assert_eq(data->data, value);
 
+	syncobj_destroy(fd, sync[0].handle);
 	syncobj_destroy(fd, syncobj);
 	munmap(data, bo_size);
 	gem_close(fd, bo);
@@ -232,7 +235,7 @@ static void store_cachelines(int fd, struct drm_xe_engine_class_instance *eci,
 		batch_map[b++] = value[n];
 	}
 	batch_map[b++] = MI_BATCH_BUFFER_END;
-	sync[0].flags &= DRM_XE_SYNC_FLAG_SIGNAL;
+	sync[0].flags &= ~DRM_XE_SYNC_FLAG_SIGNAL;
 	sync[1].flags |= DRM_XE_SYNC_FLAG_SIGNAL;
 	sync[1].handle = syncobjs;
 	exec.exec_queue_id = exec_queues;
@@ -250,7 +253,6 @@ static void store_cachelines(int fd, struct drm_xe_engine_class_instance *eci,
 
 	for (i = 0; i < count; i++) {
 		munmap(bo_map[i], bo_size);
-		xe_vm_unbind_async(fd, vm, 0, 0, dst_offset[i], bo_size, sync, 1);
 		gem_close(fd, bo[i]);
 	}
 
@@ -300,7 +302,7 @@ static void persistent(int fd)
 			      vram_if_possible(fd, engine->instance.gt_id),
 			      DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
 
-	xe_vm_bind_async(fd, vm, 0, sd_batch, 0, addr, batch_size, &sync, 1);
+	xe_vm_bind_sync(fd, vm, sd_batch, 0, addr, batch_size);
 	sd_data = xe_bo_map(fd, sd_batch, batch_size);
 	prt_data = xe_bo_map(fd, prt_batch, batch_size);
 
