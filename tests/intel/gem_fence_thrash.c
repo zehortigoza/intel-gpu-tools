@@ -150,7 +150,7 @@ _bo_write_verify(struct test *t)
 	igt_assert(t->tiling >= 0 && t->tiling <= I915_TILING_Y);
 	igt_assert_lt(0, t->num_surfaces);
 
-	s = calloc(sizeof(*s), t->num_surfaces);
+	s = calloc(t->num_surfaces, sizeof(*s));
 	igt_assert(s);
 
 	for (k = 0; k < t->num_surfaces; k++)
@@ -231,7 +231,7 @@ static int run_test(int threads_per_fence, void *f, int tiling,
 		 num_fences, tiling, surfaces_per_thread);
 
 	if (threads_per_fence) {
-		threads = calloc(sizeof(*threads), num_threads);
+		threads = calloc(num_threads, sizeof(*threads));
 		igt_assert(threads != NULL);
 
 		for (n = 0; n < num_threads; n++)

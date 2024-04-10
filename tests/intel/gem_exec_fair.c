@@ -1118,8 +1118,8 @@ static void deadline(int i915, const intel_ctx_cfg_t *cfg,
 		(frame_ns / 1000 / 1000 + 2) * switch_ns + parent_ns;
 	struct intel_execution_engine2 pe = pick_default(i915, cfg);
 	struct intel_execution_engine2 ve = pick_engine(i915, cfg, "vcs0");
-	struct drm_i915_gem_exec_fence *fences = calloc(sizeof(*fences), 32);
-	struct drm_i915_gem_exec_object2 *obj = calloc(sizeof(*obj), 32);
+	struct drm_i915_gem_exec_fence *fences = calloc(32, sizeof(*fences));
+	struct drm_i915_gem_exec_object2 *obj = calloc(32, sizeof(*obj));
 	struct drm_i915_gem_execbuffer2 execbuf = {
 		.buffers_ptr = to_user_pointer(obj),
 		.cliprects_ptr = to_user_pointer(fences),

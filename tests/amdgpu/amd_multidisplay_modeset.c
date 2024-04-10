@@ -239,7 +239,7 @@ static void multiple_display_test(struct data_t *data, enum sub_test test_mode)
 			      num_disps > data->display.n_outputs,
 		      "ASIC does not have %d outputs/pipes\n", num_disps);
 
-	buf = calloc(sizeof(struct igt_fb), num_disps);
+	buf = calloc(num_disps, sizeof(struct igt_fb));
 	igt_assert_f(buf, "Failed to allocate memory\n");
 
 	/* For mode test, it is max number of modes for

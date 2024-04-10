@@ -149,7 +149,7 @@ static void run_test (int fd, int count)
 		igt_info("Using a snoop linear buffer for comparisons\n");
 	}
 
-	bufs = calloc(sizeof(*bufs), count);
+	bufs = calloc(count, sizeof(*bufs));
 	start_val = malloc(sizeof(*start_val)*count);
 
 	for (i = 0; i < count; i++) {

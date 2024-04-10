@@ -940,7 +940,7 @@ static void test_display_planes_random(chamelium_data_t *data,
 	overlay_planes_count = (rand() % overlay_planes_max) + 1;
 	igt_debug("Using %d overlay planes\n", overlay_planes_count);
 
-	overlay_fbs = calloc(sizeof(struct igt_fb), overlay_planes_count);
+	overlay_fbs = calloc(overlay_planes_count, sizeof(struct igt_fb));
 
 	for (i = 0; i < overlay_planes_count; i++) {
 		struct igt_fb *overlay_fb = &overlay_fbs[i];

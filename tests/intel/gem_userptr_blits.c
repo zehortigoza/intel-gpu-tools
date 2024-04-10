@@ -1430,7 +1430,7 @@ static void store_dword_rand(int i915, const intel_ctx_t *ctx,
 	batchsz = count * 16 + 4;
 	batchsz = ALIGN(batchsz, 4096);
 
-	reloc = calloc(sizeof(*reloc), count);
+	reloc = calloc(count, sizeof(*reloc));
 
 	memset(obj, 0, sizeof(obj));
 	obj[0].handle = target;

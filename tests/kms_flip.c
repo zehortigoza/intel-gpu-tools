@@ -423,8 +423,8 @@ static void emit_fence_stress(struct test_output *o)
 	igt_require(bops);
 
 	igt_assert(num_fences);
-	bo = calloc(sizeof(*bo), num_fences);
-	exec = calloc(sizeof(*exec), num_fences+1);
+	bo = calloc(num_fences, sizeof(*bo));
+	exec = calloc(num_fences+1, sizeof(*exec));
 	for (i = 0; i < num_fences - 1; i++) {
 		uint32_t tiling = I915_TILING_X;
 		bo[i] = intel_buf_create(bops, 1024, 1024, 32, 0, tiling,

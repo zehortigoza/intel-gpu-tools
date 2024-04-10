@@ -429,7 +429,7 @@ igt_main
 		mem_per_test = SIZE;
 		igt_require_memory(nchild + 1, mem_per_test, CHECK_RAM);
 
-		rcs = calloc(sizeof(*rcs), nchild);
+		rcs = calloc(nchild, sizeof(*rcs));
 		igt_assert(rcs);
 
 		fork_bcs_copy(30, 0x4000, bcs, 1);
@@ -456,7 +456,7 @@ igt_main
 		mem_per_test = SIZE + mem_per_ctx;
 		igt_require_memory(1 + nchild, mem_per_test, CHECK_RAM);
 
-		rcs = calloc(sizeof(*rcs), nchild);
+		rcs = calloc(nchild, sizeof(*rcs));
 		igt_assert(rcs);
 
 		fork_rcs_copy(30, 0x8000 / nchild, rcs, nchild, CREATE_CONTEXT);

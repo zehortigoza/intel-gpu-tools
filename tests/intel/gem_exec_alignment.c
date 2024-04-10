@@ -201,7 +201,7 @@ naughty_child(int i915, int link, uint32_t shared, unsigned int flags)
 		flags |= EXEC_OBJECT_SUPPORTS_48B_ADDRESS;
 
 	/* Fill the low-priority address space */
-	obj = calloc(sizeof(*obj), count);
+	obj = calloc(count, sizeof(*obj));
 	igt_assert(obj);
 
 	memset(&execbuf, 0, sizeof(execbuf));
@@ -406,7 +406,7 @@ setup_many(int i915, unsigned long *out)
 		count = file_max();
 	igt_require_memory(count, 4096, CHECK_RAM);
 
-	obj = calloc(sizeof(*obj), count);
+	obj = calloc(count, sizeof(*obj));
 	igt_assert(obj);
 
 	flags = 0;

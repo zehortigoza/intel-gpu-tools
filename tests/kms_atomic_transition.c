@@ -480,11 +480,11 @@ static void prepare_fencing(data_t *data, enum pipe pipe)
 	igt_require_sw_sync();
 
 	n_planes = data->display.pipes[pipe].n_planes;
-	timeline = calloc(sizeof(*timeline), n_planes);
+	timeline = calloc(n_planes, sizeof(*timeline));
 	igt_assert_f(timeline != NULL, "Failed to allocate memory for timelines\n");
-	thread = calloc(sizeof(*thread), n_planes);
+	thread = calloc(n_planes, sizeof(*thread));
 	igt_assert_f(thread != NULL, "Failed to allocate memory for thread\n");
-	seqno = calloc(sizeof(*seqno), n_planes);
+	seqno = calloc(n_planes, sizeof(*seqno));
 	igt_assert_f(seqno != NULL, "Failed to allocate memory for seqno\n");
 
 	for_each_plane_on_pipe(&data->display, pipe, plane)
