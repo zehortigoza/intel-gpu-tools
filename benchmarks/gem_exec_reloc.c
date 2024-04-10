@@ -80,9 +80,9 @@ static int run(unsigned batch_size,
 	struct drm_i915_gem_relocation_entry *mem_reloc = NULL;
 	int *target;
 
-	gem_exec = calloc(sizeof(*gem_exec), num_objects + 1);
-	mem_reloc = calloc(sizeof(*mem_reloc), num_relocs);
-	target = calloc(sizeof(*target), num_relocs);
+	gem_exec = calloc(num_objects + 1, sizeof(*gem_exec));
+	mem_reloc = calloc(num_relocs, sizeof(*mem_reloc));
+	target = calloc(num_relocs, sizeof(*target));
 
 	fd = drm_open_driver(DRIVER_INTEL);
 

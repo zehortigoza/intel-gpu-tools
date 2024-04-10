@@ -193,7 +193,7 @@ static void setup_workload(struct producer *p, int gen,
 	struct drm_i915_gem_relocation_entry *reloc;
 	int offset;
 
-	reloc = calloc(sizeof(*reloc), 2*factor);
+	reloc = calloc(2*factor, sizeof(*reloc));
 
 	p->workload_dispatch.exec[0].handle = scratch;
 	p->workload_dispatch.exec[1].relocation_count = 2*factor;
