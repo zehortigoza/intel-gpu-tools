@@ -153,7 +153,7 @@ struct chamelium_port **chamelium_get_ports(struct chamelium *chamelium,
 {
 	int i;
 	struct chamelium_port **ret =
-		calloc(sizeof(void*), chamelium->port_count);
+		calloc(chamelium->port_count, sizeof(void*));
 
 	*count = chamelium->port_count;
 	for (i = 0; i < chamelium->port_count; i++)
@@ -1516,7 +1516,7 @@ igt_crc_t *chamelium_read_captured_crcs(struct chamelium *chamelium,
 	res = chamelium_rpc(chamelium, NULL, "GetCapturedChecksums", "(in)", 0);
 
 	*frame_count = xmlrpc_array_size(&chamelium->env, res);
-	ret = calloc(sizeof(igt_crc_t), *frame_count);
+	ret = calloc(*frame_count, sizeof(igt_crc_t));
 
 	for (i = 0; i < *frame_count; i++) {
 		xmlrpc_array_read_item(&chamelium->env, res, i, &elem);

@@ -2778,7 +2778,7 @@ void igt_display_require(igt_display_t *display, int drm_fd)
 		     resources->count_crtcs, IGT_MAX_PIPES);
 
 	display->n_pipes = IGT_MAX_PIPES;
-	display->pipes = calloc(sizeof(igt_pipe_t), display->n_pipes);
+	display->pipes = calloc(display->n_pipes, sizeof(igt_pipe_t));
 	igt_assert_f(display->pipes, "Failed to allocate memory for %d pipes\n", display->n_pipes);
 
 	for (i = 0; i < resources->count_crtcs; i++) {
@@ -2806,7 +2806,7 @@ void igt_display_require(igt_display_t *display, int drm_fd)
 	igt_assert(plane_resources);
 
 	display->n_planes = plane_resources->count_planes;
-	display->planes = calloc(sizeof(igt_plane_t), display->n_planes);
+	display->planes = calloc(display->n_planes, sizeof(igt_plane_t));
 	igt_assert_f(display->planes, "Failed to allocate memory for %d planes\n", display->n_planes);
 
 	for (i = 0; i < plane_resources->count_planes; ++i) {
@@ -2855,7 +2855,7 @@ void igt_display_require(igt_display_t *display, int drm_fd)
 		}
 
 		igt_assert_lt(0, n_planes);
-		pipe->planes = calloc(sizeof(igt_plane_t), n_planes);
+		pipe->planes = calloc(n_planes, sizeof(igt_plane_t));
 		igt_assert_f(pipe->planes, "Failed to allocate memory for %d planes\n", n_planes);
 		last_plane = n_planes - 1;
 
