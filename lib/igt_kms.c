@@ -91,14 +91,18 @@
 #define MAX_EDID 2
 #define DISPLAY_TILE_BLOCK 0x12
 
-struct igt_forced_connector {
+typedef bool (*igt_connector_attr_set)(int dir, const char *attr, const char *value);
+
+struct igt_connector_attr {
 	uint32_t connector_type;
 	uint32_t connector_type_id;
 	int idx;
 	int dir;
+	igt_connector_attr_set set;
+	const char *attr, *value, *reset_value;
 };
 
-static struct igt_forced_connector forced_connectors[MAX_CONNECTORS];
+static struct igt_connector_attr connector_attrs[MAX_CONNECTORS];
 
 /**
  * igt_kms_get_base_edid:
@@ -1495,39 +1499,87 @@ int igt_connector_sysfs_open(int drm_fd,
 	return conn_dir;
 }
 
-static bool connector_is_forced(int idx, drmModeConnector *connector)
+static struct igt_connector_attr *connector_attr_find(int idx, drmModeConnector *connector,
+						      igt_connector_attr_set set,
+						      const char *attr)
 {
 	igt_assert(connector->connector_type != 0);
 
-	for (int i = 0; i < ARRAY_SIZE(forced_connectors); i++) {
-		struct igt_forced_connector *c = &forced_connectors[i];
+	for (int i = 0; i < ARRAY_SIZE(connector_attrs); i++) {
+		struct igt_connector_attr *c = &connector_attrs[i];
 
 		if (c->idx == idx &&
 		    c->connector_type == connector->connector_type &&
-		    c->connector_type_id == connector->connector_type_id)
-			return true;
-	}
-
-	return false;
-}
-
-static struct igt_forced_connector *forced_connector_alloc(void)
-{
-	for (int i = 0; i < ARRAY_SIZE(forced_connectors); i++) {
-		struct igt_forced_connector *c = &forced_connectors[i];
-
-		if (!c->connector_type)
+		    c->connector_type_id == connector->connector_type_id &&
+		    c->set == set && !strcmp(c->attr, attr))
 			return c;
 	}
 
 	return NULL;
 }
 
-static bool force_connector(int drm_fd,
-			    drmModeConnector *connector,
-			    const char *value)
+static struct igt_connector_attr *connector_attr_find_free(void)
 {
-	struct igt_forced_connector *c;
+	for (int i = 0; i < ARRAY_SIZE(connector_attrs); i++) {
+		struct igt_connector_attr *c = &connector_attrs[i];
+
+		if (!c->attr)
+			return c;
+	}
+
+	return NULL;
+}
+
+static struct igt_connector_attr *connector_attr_alloc(int idx, drmModeConnector *connector,
+						       int dir, igt_connector_attr_set set,
+						       const char *attr, const char *reset_value)
+{
+	struct igt_connector_attr *c = connector_attr_find_free();
+
+	c->idx = idx;
+	c->connector_type = connector->connector_type;
+	c->connector_type_id = connector->connector_type_id;
+
+	c->dir = dir;
+	c->set = set;
+	c->attr = attr;
+	c->reset_value = reset_value;
+
+	return c;
+}
+
+static void connector_attr_free(struct igt_connector_attr *c)
+{
+	memset(c, 0, sizeof(*c));
+}
+
+static bool connector_attr_set(int idx, drmModeConnector *connector,
+			       int dir, igt_connector_attr_set set,
+			       const char *attr, const char *value,
+			       const char *reset_value)
+{
+	struct igt_connector_attr *c;
+
+	c = connector_attr_find(idx, connector, set, attr);
+	if (!c)
+		c = connector_attr_alloc(idx, connector, dir, set,
+					 attr, reset_value);
+
+	c->value = value;
+
+	if (!c->set(c->dir, c->attr, c->value)) {
+		connector_attr_free(c);
+		return false;
+	}
+
+	return true;
+}
+
+static bool connector_attr_set_sysfs(int drm_fd,
+				     drmModeConnector *connector,
+				     const char *attr, const char *value,
+				     const char *reset_value)
+{
 	char name[80];
 	int idx, dir;
 
@@ -1543,51 +1595,40 @@ static bool force_connector(int drm_fd,
 	if (dir < 0)
 		return false;
 
-	if (!igt_sysfs_set(dir, "status", value)) {
-		close(dir);
+	if (!connector_attr_set(idx, connector, dir,
+				igt_sysfs_set, attr, value, reset_value))
 		return false;
-	}
 
-	igt_debug("Connector %s is now forced %s\n", name, value);
-
-	/* already tracked? */
-	if (connector_is_forced(idx, connector)) {
-		close(dir);
-		return true;
-	}
-
-	c = forced_connector_alloc();
-	if (!c) {
-		igt_warn("Connector limit reached, %s will not be reset\n", name);
-		close(dir);
-		return true;
-	}
-
-	c->idx = idx;
-	c->connector_type = connector->connector_type;
-	c->connector_type_id = connector->connector_type_id;
-	c->dir = dir;
+	igt_debug("Connector %s/%s is now %s\n", name, attr, value);
 
 	return true;
 }
 
-static void dump_forced_connectors(void)
+static void dump_connector_attrs(void)
 {
 	char name[80];
 
-	igt_debug("Current forced connectors:\n");
+	igt_debug("Current connector attrs:\n");
 
-	for (int i = 0; i < ARRAY_SIZE(forced_connectors); i++) {
-		struct igt_forced_connector *c = &forced_connectors[i];
+	for (int i = 0; i < ARRAY_SIZE(connector_attrs); i++) {
+		struct igt_connector_attr *c = &connector_attrs[i];
 
-		if (!c->connector_type)
+		if (!c->attr)
 			continue;
 
 		kmstest_connector_dirname(c->idx, c->connector_type,
 					  c->connector_type_id,
 					  name, sizeof(name));
-		igt_debug("\t%s\n", name);
+		igt_debug("\t%s/%s: %s\n", name, c->attr, c->value);
 	}
+}
+
+static bool force_connector(int drm_fd,
+			    drmModeConnector *connector,
+			    const char *value)
+{
+	return connector_attr_set_sysfs(drm_fd, connector,
+					"status", value, "detect");
 }
 
 /**
@@ -1634,7 +1675,7 @@ bool kmstest_force_connector(int drm_fd, drmModeConnector *connector,
 	if (!force_connector(drm_fd, connector, value))
 		return false;
 
-	dump_forced_connectors();
+	dump_connector_attrs();
 
 	igt_install_exit_handler(reset_connectors_at_exit);
 
@@ -2627,7 +2668,7 @@ static void igt_handle_spurious_hpd(igt_display_t *display)
 			 conn->connector_type_id);
 	}
 
-	dump_forced_connectors();
+	dump_connector_attrs();
 }
 
 /**
@@ -5311,15 +5352,15 @@ void igt_enable_connectors(int drm_fd)
  */
 void igt_reset_connectors(void)
 {
-	/* reset the connectors stored in forced_connectors, avoiding any
+	/* reset the connectors stored in connector_attrs, avoiding any
 	 * functions that are not safe to call in signal handlers */
-	for (int i = 0; i < ARRAY_SIZE(forced_connectors); i++) {
-		struct igt_forced_connector *c = &forced_connectors[i];
+	for (int i = 0; i < ARRAY_SIZE(connector_attrs); i++) {
+		struct igt_connector_attr *c = &connector_attrs[i];
 
-		if (!c->connector_type)
+		if (!c->attr)
 			continue;
 
-		igt_sysfs_set(c->dir, "status",  "detect");
+		c->set(c->dir, c->attr, c->reset_value);
 	}
 }
 
