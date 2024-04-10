@@ -2095,6 +2095,128 @@ void blt_surface_info(const char *info, const struct blt_copy_object *obj)
 }
 
 /**
+ * blt_surface_get_flatccs_data:
+ * @fd: drm fd
+ * @ctx: intel_ctx_t context
+ * @e: blitter engine for @ctx
+ * @ahnd: allocator handle
+ * @obj: object from which flatccs data will be extracted
+ *
+ * Function executes ctrl-surf-copy to extract object ccs data from flatccs
+ * area. Memory for the result ccs data are allocated in the function and must
+ * be freed by the caller.
+ */
+void blt_surface_get_flatccs_data(int fd,
+				  intel_ctx_t *ctx,
+				  const struct intel_execution_engine2 *e,
+				  uint64_t ahnd,
+				  const struct blt_copy_object *obj,
+				  uint32_t **ccsptr, uint64_t *sizeptr)
+{
+	struct blt_ctrl_surf_copy_data surf = {};
+	uint32_t bb, ccs, *ccsmap;
+	uint64_t bb_size, ccssize = obj->size / CCS_RATIO(fd);
+	uint32_t *ccscopy;
+	uint32_t sysmem;
+	uint8_t uc_mocs = intel_get_uc_mocs_index(fd);
+	uint8_t comp_pat_index = DEFAULT_PAT_INDEX;
+
+	igt_assert(ccsptr);
+	igt_assert(sizeptr);
+
+	blt_ctrl_surf_copy_init(fd, &surf);
+
+	ccscopy = (uint32_t *)malloc(ccssize);
+	igt_assert(ccscopy);
+
+	if (surf.driver == INTEL_DRIVER_XE) {
+		uint16_t cpu_caching;
+		uint64_t ccs_bo_size;
+
+		sysmem = system_memory(fd);
+		cpu_caching = __xe_default_cpu_caching(fd, sysmem, 0);
+		ccs_bo_size = ALIGN(ccssize, xe_get_default_alignment(fd));
+
+		if (AT_LEAST_GEN(intel_get_drm_devid(fd), 20) && obj->compression) {
+			comp_pat_index  = intel_get_pat_idx_uc_comp(fd);
+			cpu_caching = DRM_XE_GEM_CPU_CACHING_WC;
+		}
+
+		ccs = xe_bo_create_caching(fd, 0, ccs_bo_size, sysmem, 0, cpu_caching);
+		bb_size = xe_bb_size(fd, SZ_4K);
+		bb = xe_bo_create(fd, 0, bb_size, sysmem, 0);
+	} else {
+		sysmem = REGION_SMEM;
+		ccs = gem_create(fd, ccssize);
+		bb_size = 4096;
+		igt_assert_eq(__gem_create(fd, &bb_size, &bb), 0);
+	}
+
+	blt_set_ctrl_surf_object(&surf.src, obj->handle, obj->region, obj->size,
+				 uc_mocs, comp_pat_index, BLT_INDIRECT_ACCESS);
+	blt_set_ctrl_surf_object(&surf.dst, ccs, sysmem, ccssize, uc_mocs,
+				 DEFAULT_PAT_INDEX, DIRECT_ACCESS);
+	blt_set_batch(&surf.bb, bb, bb_size, sysmem);
+	blt_ctrl_surf_copy(fd, ctx, e, ahnd, &surf);
+
+	if (surf.driver == INTEL_DRIVER_XE) {
+		intel_ctx_xe_sync(ctx, true);
+		ccsmap = xe_bo_map(fd, ccs, surf.dst.size);
+	} else {
+		gem_sync(fd, surf.dst.handle);
+		ccsmap = gem_mmap__device_coherent(fd, ccs, 0, surf.dst.size,
+						   PROT_READ | PROT_WRITE);
+	}
+
+	memcpy(ccscopy, ccsmap, ccssize);
+	munmap(ccsmap, surf.dst.size);
+
+	gem_close(fd, ccs);
+	gem_close(fd, bb);
+	put_offset(ahnd, ccs);
+	put_offset(ahnd, bb);
+	if (surf.driver == INTEL_DRIVER_XE)
+		intel_allocator_bind(ahnd, 0, 0);
+
+	*ccsptr = ccscopy;
+	*sizeptr = ccssize;
+}
+
+/**
+ * blt_surface_is_compressed:
+ * @fd: drm fd
+ * @ctx: intel_ctx_t context
+ * @e: blitter engine for @ctx
+ * @ahnd: allocator handle
+ * @obj: object to check
+ *
+ * Function extracts object ccs data and check it contains any non-zero
+ * value what means surface is compressed. Returns true if it is, otherwise
+ * false.
+ */
+bool blt_surface_is_compressed(int fd,
+			       intel_ctx_t *ctx,
+			       const struct intel_execution_engine2 *e,
+			       uint64_t ahnd,
+			       const struct blt_copy_object *obj)
+{
+	uint64_t size;
+	uint32_t *ptr;
+	bool is_compressed = false;
+
+	blt_surface_get_flatccs_data(fd, ctx, e, ahnd, obj, &ptr, &size);
+	for (int i = 0; i < size / sizeof(*ptr); i++) {
+		if (ptr[i] != 0) {
+			is_compressed = true;
+			break;
+		}
+	}
+	free(ptr);
+
+	return is_compressed;
+}
+
+/**
  * blt_surface_to_png:
  * @fd: drm fd
  * @run_id: prefix id to allow grouping files stored from single run

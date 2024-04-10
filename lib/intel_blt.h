@@ -311,6 +311,17 @@ void blt_set_ctrl_surf_object(struct blt_ctrl_surf_copy_object *obj,
 			      uint8_t mocs_index, uint8_t pat_index,
 			      enum blt_access_type access_type);
 
+void blt_surface_get_flatccs_data(int fd,
+				  intel_ctx_t *ctx,
+				  const struct intel_execution_engine2 *e,
+				  uint64_t ahnd,
+				  const struct blt_copy_object *obj,
+				  uint32_t **ccsptr, uint64_t *sizeptr);
+bool blt_surface_is_compressed(int fd,
+			       intel_ctx_t *ctx,
+			       const struct intel_execution_engine2 *e,
+			       uint64_t ahnd,
+			       const struct blt_copy_object *obj);
 void blt_surface_info(const char *info,
 		      const struct blt_copy_object *obj);
 void blt_surface_fill_rect(int fd, const struct blt_copy_object *obj,
