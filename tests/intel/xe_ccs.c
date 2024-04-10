@@ -359,15 +359,13 @@ static void block_copy(int xe,
 	intel_ctx_xe_sync(ctx, true);
 
 	/*
-	 * We expect mid != src if there's compression. Ignore this for small
-	 * width x height for linear as compression for gradient occurs in the
-	 * middle for bigger sizes. We also ignore 1x1 as this looks same for
-	 * xmajor.
+	 * If there's a compression we expect ctrl surface is not fully zeroed.
+	 * Gradient image used as the reference may be not compressible for
+	 * smaller sizes. Let's use some 'safe' size we're sure compression
+	 * occurs and ctrl surface will be filled with some not-zeroed values.
 	 */
-	if (mid->compression && MIN_EXP_WH(width, height)) {
-		if (mid_tiling != T_LINEAR || FROM_EXP_WH(width, height))
-			igt_assert(memcmp(src->ptr, mid->ptr, src->size) != 0);
-	}
+	if (mid->compression && FROM_EXP_WH(width, height))
+		igt_assert(blt_surface_is_compressed(xe, ctx, NULL, ahnd, mid));
 
 	WRITE_PNG(xe, run_id, "mid", &blt.dst, width, height, bpp);
 

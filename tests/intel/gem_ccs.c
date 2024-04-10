@@ -305,6 +305,10 @@ static int blt_block_copy3(int i915,
 	return ret;
 }
 
+#define CHECK_FROM_WIDTH 256
+#define CHECK_FROM_HEIGHT 256
+#define FROM_EXP_WH(w, h) ((w) >= CHECK_FROM_WIDTH && (h) >= CHECK_FROM_HEIGHT)
+
 static void block_copy(int i915,
 		       const intel_ctx_t *ctx,
 		       const struct intel_execution_engine2 *e,
@@ -359,9 +363,15 @@ static void block_copy(int i915,
 	blt_block_copy(i915, ctx, e, ahnd, &blt, pext);
 	gem_sync(i915, mid->handle);
 
-	/* We expect mid != src if there's compression */
-	if (mid->compression)
-		igt_assert(memcmp(src->ptr, mid->ptr, src->size) != 0);
+	/*
+	 * If there's a compression we expect ctrl surface is not fully zeroed.
+	 * Gradient image used as the reference may be not compressible for
+	 * smaller sizes. Let's use some 'safe' size we're sure compression
+	 * occurs and ctrl surface will be filled with some not-zeroed values.
+	 */
+	if (mid->compression && FROM_EXP_WH(width, height))
+		igt_assert(blt_surface_is_compressed(i915, (intel_ctx_t *)ctx, e,
+						     ahnd, mid));
 
 	WRITE_PNG(i915, run_id, "mid", &blt.dst, width, height, bpp);
 
