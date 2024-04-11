@@ -98,7 +98,7 @@ struct igt_forced_connector {
 	int dir;
 };
 
-static struct igt_forced_connector forced_connectors[MAX_CONNECTORS + 1];
+static struct igt_forced_connector forced_connectors[MAX_CONNECTORS];
 
 /**
  * igt_kms_get_base_edid:
@@ -1499,7 +1499,7 @@ static bool connector_is_forced(int idx, drmModeConnector *connector)
 {
 	igt_assert(connector->connector_type != 0);
 
-	for (int i = 0; forced_connectors[i].connector_type; i++) {
+	for (int i = 0; i < ARRAY_SIZE(forced_connectors); i++) {
 		struct igt_forced_connector *c = &forced_connectors[i];
 
 		if (c->idx == idx &&
@@ -1513,15 +1513,14 @@ static bool connector_is_forced(int idx, drmModeConnector *connector)
 
 static struct igt_forced_connector *forced_connector_alloc(void)
 {
-	int i;
+	for (int i = 0; i < ARRAY_SIZE(forced_connectors); i++) {
+		struct igt_forced_connector *c = &forced_connectors[i];
 
-	for (i = 0; forced_connectors[i].connector_type; i++)
-		;
+		if (!c->connector_type)
+			return c;
+	}
 
-	if (i >= ARRAY_SIZE(forced_connectors))
-		return NULL;
-
-	return &forced_connectors[i];
+	return NULL;
 }
 
 static bool force_connector(int drm_fd,
@@ -1578,8 +1577,11 @@ static void dump_forced_connectors(void)
 
 	igt_debug("Current forced connectors:\n");
 
-	for (int i = 0; forced_connectors[i].connector_type; i++) {
+	for (int i = 0; i < ARRAY_SIZE(forced_connectors); i++) {
 		struct igt_forced_connector *c = &forced_connectors[i];
+
+		if (!c->connector_type)
+			continue;
 
 		kmstest_connector_dirname(c->idx, c->connector_type,
 					  c->connector_type_id,
@@ -5311,8 +5313,11 @@ void igt_reset_connectors(void)
 {
 	/* reset the connectors stored in forced_connectors, avoiding any
 	 * functions that are not safe to call in signal handlers */
-	for (int i = 0; i < forced_connectors[i].connector_type; i++) {
+	for (int i = 0; i < ARRAY_SIZE(forced_connectors); i++) {
 		struct igt_forced_connector *c = &forced_connectors[i];
+
+		if (!c->connector_type)
+			continue;
 
 		igt_sysfs_set(c->dir, "status",  "detect");
 	}
