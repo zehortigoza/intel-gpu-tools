@@ -33,10 +33,10 @@
 /**
  * TEST: gem exec endless
  * Category: Server
- * Feature: cmd_submission
- * Functionality: compute
  * Sub-category: CMD submission
+ * Functionality: compute test
  * Test category: Compute
+ * Feature: cmd_submission
  *
  * SUBTEST: dispatch
  */

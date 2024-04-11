@@ -6,7 +6,7 @@
  * Description: Xe driver live dmabuf unit tests
  * Category: Software building block
  * Sub-category: kunit
- * Functionality: kunit
+ * Functionality: kunit test
  * Test category: functionality test
  *
  * SUBTEST: xe_bo
@@ -17,7 +17,7 @@
  *
  * SUBTEST: xe_dma_buf
  * Description: Kernel dynamic selftests for dmabuf functionality.
- * Functionality: dmabuf
+ * Functionality: dmabuf test
  *
  * SUBTEST: xe_migrate
  * Description:
@@ -28,7 +28,7 @@
  * SUBTEST: xe_mocs
  * Description:
  *	Kernel dynamic selftests to check mocs configuration.
- * Functionality: mocs
+ * Functionality: mocs configuration
  */
 
 static const char *live_tests[] = {

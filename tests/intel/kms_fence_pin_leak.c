@@ -41,7 +41,7 @@
  * SUBTEST:
  * Description: Along with the modeset, validate fence pin_count leakage.
  * Driver requirement: i915
- * Functionality: kms_core, synchronization
+ * Functionality: kms_core, fences
  * Mega feature: General Display Features
  * Test category: functionality test
  */

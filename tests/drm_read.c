@@ -54,7 +54,7 @@ IGT_TEST_DESCRIPTION("Call read(drm) and see if it behaves.");
  * TEST: drm read
  * Description: boundary testing of read(drm_fd)
  * Category: Infrastructure
- * Functionality: DRM memory managemnt
+ * Functionality: drm_mm
  * Sub-category: uapi
  *
  * SUBTEST: invalid-buffer

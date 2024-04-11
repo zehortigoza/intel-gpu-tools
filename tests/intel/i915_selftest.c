@@ -349,7 +349,7 @@
  * SUBTEST: live@vma
  * Category: Selftest
  * Description: Per-object virtual address management
- * Functionality: vma
+ * Functionality: virtual address
  * Test category: i915
  * Sub-category: Memory management
  *
@@ -516,7 +516,7 @@
  * SUBTEST: mock@vma
  * Category: Selftest
  * Description: API checks for virtual address management
- * Functionality: vma
+ * Functionality: virtual address
  * Test category: i915
  * Sub-category: uapi
  *

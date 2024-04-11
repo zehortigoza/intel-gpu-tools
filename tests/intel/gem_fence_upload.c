@@ -45,7 +45,7 @@
  * TEST: gem fence upload
  * Sub-category: CMD submission
  * Category: Desktop client
- * Functionality: synchronization
+ * Functionality: fences
  *
  * SUBTEST: performance
  *

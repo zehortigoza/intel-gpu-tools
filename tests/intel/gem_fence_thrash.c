@@ -48,7 +48,7 @@
  * Feature: gtt, synchronization feature
  * Sub-category: CMD submission
  * Category: Desktop client
- * Functionality: synchronization
+ * Functionality: fences
  *
  * SUBTEST: bo-copy
  *

@@ -29,7 +29,7 @@
  * Feature: mapping, prime
  * Category: Infrastructure
  * Description: drm_mm range manager SW validation
- * Functionality: DRM
+ * Functionality: drm_mm
  * Sub-category: Memory management
  * Test category: GEM_Legacy
  *

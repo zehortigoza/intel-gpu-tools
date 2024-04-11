@@ -12,7 +12,7 @@
  * TEST: prime_nv_api
  * Description: Basic api tests between intel and nouveau
  * Sub-category: uapi
- * Functionality: intel-nouveau
+ * Functionality: intel-nouveau uapi
  *
  * SUBTEST: i915_nv_import_twice
  * SUBTEST: i915_nv_import_twice_check_flink_name
