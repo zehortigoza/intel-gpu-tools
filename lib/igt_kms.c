@@ -1572,6 +1572,9 @@ static bool connector_attr_set(int idx, drmModeConnector *connector,
 		return false;
 	}
 
+	if (!strcmp(c->value, c->reset_value))
+		connector_attr_free(c);
+
 	return true;
 }
 
