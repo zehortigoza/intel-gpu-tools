@@ -663,13 +663,18 @@ static bool needs_recoverable_ctx(int fd)
 
 #define find_first_available_engine(fd, ctx, e, saved) \
 	do { \
+		struct intel_execution_engine2 *tmpe = NULL; \
+		e = NULL; \
+		\
 		ctx = intel_ctx_create_all_physical(fd); \
 		igt_assert(ctx); \
-		for_each_ctx_engine(fd, ctx, e) \
-			for_each_if(gem_class_can_store_dword(fd, e->class)) \
+		for_each_ctx_engine(fd, ctx, tmpe) \
+			if(gem_class_can_store_dword(fd, tmpe->class)) { \
+				saved = configure_hangs(fd, tmpe, ctx->id); \
+				e = &saved.engine; \
 				break; \
-		igt_assert(e); \
-		saved = configure_hangs(fd, e, ctx->id); \
+			} \
+		igt_skip_on_f(e == NULL, "no capable engine found\n"); \
 	} while(0)
 
 static void many(int fd, int dir, uint64_t size, unsigned int flags)
