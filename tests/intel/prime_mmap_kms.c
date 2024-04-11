@@ -41,7 +41,7 @@ IGT_TEST_DESCRIPTION(
  * TEST: prime mmap kms
  * Category: Infrastructure
  * Feature: prime
- * Functionality: memory management
+ * Functionality: prime
  * Sub-category: DRM
  * Test category: GEM_Legacy
  *

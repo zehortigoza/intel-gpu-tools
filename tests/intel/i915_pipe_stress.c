@@ -26,7 +26,7 @@
  *              possible bandwidth/watermark and similar problems.
  * Functionality: kms_core
  * Mega feature: General Display Features
- * Sub-category: Display
+ * Sub-category: Display Tests
  * Test category: stress test
  *
  * SUBTEST: stress-xrgb8888-untiled
