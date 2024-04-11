@@ -28,10 +28,10 @@
  * Description: Basic unit tests for i915.ko
  *
  * SUBTEST: live
- * Feature: gem_core
- * Sub-category: Selftest
  * Category: Selftest
+ * Sub-category: Selftest subcategory
  * Functionality: live selftest
+ * Feature: gem_core
  *
  * SUBTEST: live@active
  * Category: Selftest
@@ -70,7 +70,7 @@
  * Category: Selftest
  * Functionality: display sanity
  * Test category: i915
- * Sub-category: Display
+ * Sub-category: Display tests
  *
  * SUBTEST: live@dmabuf
  * Category: Selftest
@@ -312,11 +312,11 @@
  * Sub-category: Reset
  *
  * SUBTEST: live@sanitycheck
- * Category: Selftest
  * Description: Checks the selftest infrastructure itself
- * Functionality: selftest
- * Test category: i915
+ * Category: Selftest
  * Sub-category: Core
+ * Functionality: sanitycheck
+ * Test category: i915
  *
  * SUBTEST: live@scheduler
  * Category: Selftest
@@ -369,9 +369,9 @@
  *
  * SUBTEST: mock
  * Category: Selftest
- * Feature: gem_core
- * Sub-category: Selftest
+ * Sub-category: Selftest subcategory
  * Functionality: mock selftest
+ * Feature: gem_core
  *
  * SUBTEST: mock@buddy
  * Category: Selftest
@@ -465,11 +465,11 @@
  * Sub-category: uapi
  *
  * SUBTEST: mock@sanitycheck
- * Category: Selftest
  * Description: Selftest for the selftest
- * Functionality: selftest
- * Test category: i915
+ * Category: Selftest
  * Sub-category: Core
+ * Functionality: sanitycheck
+ * Test category: i915
  *
  * SUBTEST: mock@scatterlist
  * Category: Selftest
