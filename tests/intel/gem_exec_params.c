@@ -111,10 +111,10 @@
  * SUBTEST: rsvd2-dirt
  *
  * SUBTEST: secure-non-master
- * Feature: cmd_submission, obsolete
+ * Feature: cmd_submission, obsolete test
  *
  * SUBTEST: secure-non-root
- * Feature: cmd_submission, obsolete
+ * Feature: cmd_submission, obsolete test
  *
  * SUBTEST: sol-reset-invalid
  *

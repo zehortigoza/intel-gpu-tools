@@ -34,7 +34,7 @@
  * SUBTEST: load-detect
  * Description: Check tv load detection works correctly.
  * Driver requirement: i915, xe
- * Functionality: obsolete
+ * Functionality: obsolete_test
  * Mega feature: General Display Features
  * Test category: functionality test
  */

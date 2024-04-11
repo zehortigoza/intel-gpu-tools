@@ -99,7 +99,7 @@
  * Feature: oa perf
  *
  * SUBTEST: gen8-unprivileged-single-ctx-counters
- * Feature: oa perf, obsolete
+ * Feature: oa perf, obsolete test
  *
  * SUBTEST: global-sseu-config
  * Description: Verify specifying SSEU opening parameters
@@ -155,7 +155,7 @@
  * Description: Test the i915 perf metrics streaming interface
  *
  * SUBTEST: per-context-mode-unprivileged
- * Feature: oa perf, obsolete
+ * Feature: oa perf, obsolete test
  *
  * SUBTEST: polling
  * Description: Test polled read with default hrtimer frequency
@@ -180,7 +180,7 @@
  * Description: Test the i915 perf metrics streaming interface
  *
  * SUBTEST: unprivileged-single-ctx-counters
- * Feature: oa perf, obsolete
+ * Feature: oa perf, obsolete test
  *
  * SUBTEST: whitelisted-registers-userspace-config
  * Description: Test the i915 perf metrics streaming interface

@@ -50,10 +50,10 @@
 #include "igt.h"
 /**
  * TEST: gen3 render tiledy blits
- * Feature: obsolete
- * Sub-category: Obsolete_gen3
  * Category: Obsolete
+ * Sub-category: Obsolete_gen3
  * Functionality: obsolete_test
+ * Feature: obsolete test
  *
  * SUBTEST:
  */

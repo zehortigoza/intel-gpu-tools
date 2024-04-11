@@ -49,10 +49,10 @@
 #include "igt.h"
 /**
  * TEST: gen3 render linear blits
- * Feature: obsolete
+ * Category: Obsolete
  * Sub-category: Obsolete_gen3
  * Functionality: obsolete_test
- * Category: Obsolete
+ * Feature: obsolete test
  *
  * SUBTEST:
  */
