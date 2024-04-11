@@ -140,6 +140,7 @@ waitfence(int fd, enum waittype wt)
 /**
  * TEST: Negative test for wait ufence ioctl
  * Category: Software building block
+ * Sub-category: Synchronization
  * Functionality: waitfence
  * Test category: negative test
  *
