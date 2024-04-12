@@ -28,7 +28,7 @@
 static void test_defaults(int xe, int engine, const char **property)
 {
 	struct dirent *de;
-	int property_value;
+	uint64_t property_value;
 	int defaults;
 	DIR *dir;
 
@@ -42,10 +42,10 @@ static void test_defaults(int xe, int engine, const char **property)
 
 		igt_debug("Checking attr '%s'\n", de->d_name);
 
-		igt_assert_f(property_value = igt_sysfs_get_u64(defaults, de->d_name),
+		igt_assert_f(__igt_sysfs_get_u64(defaults, de->d_name, &property_value),
 			     "Default value %s is not present!\n", de->d_name);
 
-		igt_debug("Default property:%s, value:%d\n", de->d_name, property_value);
+		igt_debug("Default property:%s, value:0x%" PRId64 "\n", de->d_name, property_value);
 
 		igt_assert_f(!igt_sysfs_set(defaults, de->d_name, "garbage"),
 					    "write into default value of %s succeeded!\n",
