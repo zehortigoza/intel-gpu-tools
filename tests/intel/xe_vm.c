@@ -1263,6 +1263,11 @@ test_munmap_style_unbind(int fd, struct drm_xe_engine_class_instance *eci,
 	int exit = 0;
 	int n_page_per_2mb = 0x200000 / xe_get_default_alignment(fd);
 
+	/* Ensure prefetch will not fetch an unmapped page */
+	if (flags & MAP_FLAG_HAMMER_FIRST_PAGE)
+		igt_assert(unbind_n_page_offset * 0x1000 >
+			   xe_cs_prefetch_size(fd));
+
 	if (flags & MAP_FLAG_LARGE_PAGE) {
 		bo_n_pages *= n_page_per_2mb;
 		unbind_n_pages *= n_page_per_2mb;
@@ -1843,12 +1848,12 @@ igt_main
 		{ "all", 4, 2, 0, 4, 0 },
 		{ "one-partial", 4, 1, 1, 2, 0 },
 		{ "either-side-partial", 4, 2, 1, 2, 0 },
-		{ "either-side-partial-hammer", 4, 2, 1, 2,
+		{ "either-side-partial-hammer", 6, 2, 2, 2,
 			MAP_FLAG_HAMMER_FIRST_PAGE },
-		{ "either-side-partial-split-page-hammer", 4, 2, 1, 2,
+		{ "either-side-partial-split-page-hammer", 6, 2, 2, 2,
 			MAP_FLAG_HAMMER_FIRST_PAGE |
 			MAP_FLAG_LARGE_PAGE },
-		{ "either-side-partial-large-page-hammer", 4, 2, 1, 2,
+		{ "either-side-partial-large-page-hammer", 6, 2, 2, 2,
 			MAP_FLAG_HAMMER_FIRST_PAGE |
 			MAP_FLAG_LARGE_PAGE |
 			MAP_FLAG_LARGE_PAGE_NO_SPLIT },
@@ -1857,7 +1862,7 @@ igt_main
 		{ "front", 4, 2, 1, 3, 0 },
 		{ "many-all", 4 * 8, 2 * 8, 0 * 8, 4 * 8, 0 },
 		{ "many-either-side-partial", 4 * 8, 2 * 8, 1, 4 * 8 - 2, 0 },
-		{ "many-either-side-partial-hammer", 4 * 8, 2 * 8, 1, 4 * 8 - 2,
+		{ "many-either-side-partial-hammer", 4 * 8, 2 * 8, 2, 4 * 8 - 4,
 			MAP_FLAG_HAMMER_FIRST_PAGE },
 		{ "many-either-side-full", 4 * 8, 4 * 8, 1 * 8, 2 * 8, 0 },
 		{ "many-end", 4 * 8, 4, 0 * 8, 3 * 8 + 2, 0 },
