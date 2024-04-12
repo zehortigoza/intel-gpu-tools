@@ -963,7 +963,7 @@ static int kunit_kmsg_result_get(struct igt_list_head *results,
 				 int fd, struct igt_ktap_results *ktap)
 {
 	struct sigaction sigchld = { .sa_handler = kunit_sigchld_handler, },
-			 *saved;
+			 saved;
 	char record[BUF_LEN + 1], *buf;
 	unsigned long taints;
 	int ret;
@@ -975,7 +975,7 @@ static int kunit_kmsg_result_get(struct igt_list_head *results,
 			return -ENOTRECOVERABLE;
 
 		if (modprobe) {
-			err = igt_debug_on(sigaction(SIGCHLD, &sigchld, saved));
+			err = igt_debug_on(sigaction(SIGCHLD, &sigchld, &saved));
 			if (err == -1)
 				return -errno;
 			else if (unlikely(err))
@@ -988,7 +988,7 @@ static int kunit_kmsg_result_get(struct igt_list_head *results,
 				igt_debug_on(pthread_mutex_unlock(&modprobe->lock));
 				__attribute__ ((fallthrough));
 			case ENOTRECOVERABLE:
-				igt_debug_on(sigaction(SIGCHLD, saved, NULL));
+				igt_debug_on(sigaction(SIGCHLD, &saved, NULL));
 				if (igt_debug_on(modprobe->err))
 					return modprobe->err;
 				break;
@@ -996,7 +996,7 @@ static int kunit_kmsg_result_get(struct igt_list_head *results,
 				break;
 			default:
 				igt_debug("pthread_mutex_lock() error: %d\n", err);
-				igt_debug_on(sigaction(SIGCHLD, saved, NULL));
+				igt_debug_on(sigaction(SIGCHLD, &saved, NULL));
 				return -err;
 			}
 		}
@@ -1005,7 +1005,7 @@ static int kunit_kmsg_result_get(struct igt_list_head *results,
 
 		if (modprobe && !err) {	/* pthread_mutex_lock() succeeded */
 			igt_debug_on(pthread_mutex_unlock(&modprobe->lock));
-			igt_debug_on(sigaction(SIGCHLD, saved, NULL));
+			igt_debug_on(sigaction(SIGCHLD, &saved, NULL));
 		}
 
 		if (igt_debug_on(!ret))
@@ -1236,7 +1236,7 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 			    struct igt_ktap_results **ktap)
 {
 	struct sigaction sigalrm = { .sa_handler = kunit_get_tests_timeout, },
-			 *saved;
+			 saved;
 	struct igt_ktap_result *r, *rn;
 	unsigned long taints;
 	int flags, err;
@@ -1263,13 +1263,13 @@ static bool kunit_get_tests(struct igt_list_head *tests,
 	igt_skip_on(modprobe(tst->kmod, opts));
 	igt_skip_on(igt_kernel_tainted(&taints));
 
-	igt_skip_on(sigaction(SIGALRM, &sigalrm, saved));
+	igt_skip_on(sigaction(SIGALRM, &sigalrm, &saved));
 	alarm(10);
 
 	err = kunit_get_results(tests, tst->kmsg, ktap);
 
 	alarm(0);
-	igt_debug_on(sigaction(SIGALRM, saved, NULL));
+	igt_debug_on(sigaction(SIGALRM, &saved, NULL));
 
 	igt_skip_on_f(err,
 		      "KTAP parser failed while getting a list of test cases\n");
