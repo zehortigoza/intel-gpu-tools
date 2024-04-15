@@ -9,6 +9,28 @@
 #include "lib/amdgpu/amd_command_submission.h"
 #include "lib/amdgpu/amd_deadlock_helpers.h"
 
+#define AMDGPU_FAMILY_SI                        110 /* Hainan, Oland, Verde, Pitcairn, Tahiti */
+#define AMDGPU_FAMILY_CI                        120 /* Bonaire, Hawaii */
+#define AMDGPU_FAMILY_CZ                        135 /* Carrizo, Stoney */
+#define AMDGPU_FAMILY_RV                        142 /* Raven */
+
+static bool
+is_deadlock_tests_enable(const struct amdgpu_gpu_info *gpu_info)
+{
+	bool enable = true;
+	/*
+	 * skip for the ASICs that don't support GPU reset.
+	 */
+	if (gpu_info->family_id == AMDGPU_FAMILY_SI ||
+	    gpu_info->family_id == AMDGPU_FAMILY_KV ||
+	    gpu_info->family_id == AMDGPU_FAMILY_CZ ||
+	    gpu_info->family_id == AMDGPU_FAMILY_RV) {
+		igt_info("\n\nGPU reset is not enabled for the ASIC, deadlock test skip\n");
+		enable = false;
+	}
+	return enable;
+}
+
 igt_main
 {
 	amdgpu_device_handle device;
@@ -34,6 +56,7 @@ igt_main
 		r = setup_amdgpu_ip_blocks(major, minor, &gpu_info, device);
 		igt_assert_eq(r, 0);
 		asic_rings_readness(device, 1, arr_cap);
+		igt_skip_on(!is_deadlock_tests_enable(&gpu_info));
 
 	}
 	igt_describe("Test-GPU-reset-by-flooding-sdma-ring-with-jobs");
