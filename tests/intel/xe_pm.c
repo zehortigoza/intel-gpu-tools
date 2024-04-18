@@ -33,6 +33,8 @@
 #define MAGIC_1 0xc0ffee
 #define MAGIC_2 0xdeadbeef
 
+#define USERPTR (0x1 << 0)
+
 typedef struct {
 	int fd_xe;
 	struct pci_device *pci_xe;
@@ -272,11 +274,26 @@ static void close_fw_handle(int sig)
  * @d3hot:	d3hot
  * @d3cold:	d3cold
  */
-
+/**
+ * SUBTEST: %s-vm-bind-%s
+ * DESCRIPTION: Test to check suspend/autoresume on %arg[1] state
+ * 		with vm bind %arg[2] combination
+ * Functionality: pm - %arg[1]
+ *
+ * arg[1]:
+ *
+ * @s2idle:     s2idle
+ * @s3:         s3
+ * @s4:         s4
+ *
+ * arg[2]:
+ *
+ * @userptr:	userptr
+ */
 static void
 test_exec(device_t device, struct drm_xe_engine_class_instance *eci,
 	  int n_exec_queues, int n_execs, enum igt_suspend_state s_state,
-	  enum igt_acpi_d_state d_state)
+	  enum igt_acpi_d_state d_state, unsigned int flags)
 {
 	uint32_t vm;
 	uint64_t addr = 0x1a0000;
@@ -320,10 +337,15 @@ test_exec(device_t device, struct drm_xe_engine_class_instance *eci,
 	if (check_rpm && runtime_usage_available(device.pci_xe))
 		rpm_usage = igt_pm_get_runtime_usage(device.pci_xe);
 
-	bo = xe_bo_create(device.fd_xe, vm, bo_size,
-			  vram_if_possible(device.fd_xe, eci->gt_id),
-			  DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
-	data = xe_bo_map(device.fd_xe, bo, bo_size);
+	if (flags & USERPTR) {
+		data = aligned_alloc(xe_get_default_alignment(device.fd_xe), bo_size);
+		memset(data, 0, bo_size);
+	} else {
+		bo = xe_bo_create(device.fd_xe, vm, bo_size,
+				  vram_if_possible(device.fd_xe, eci->gt_id),
+				  DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
+		data = xe_bo_map(device.fd_xe, bo, bo_size);
+	}
 
 	for (i = 0; i < n_exec_queues; i++) {
 		exec_queues[i] = xe_exec_queue_create(device.fd_xe, vm, eci, 0);
@@ -333,8 +355,12 @@ test_exec(device_t device, struct drm_xe_engine_class_instance *eci,
 
 	sync[0].handle = syncobj_create(device.fd_xe, 0);
 
-	xe_vm_bind_async(device.fd_xe, vm, bind_exec_queues[0], bo, 0, addr,
-			 bo_size, sync, 1);
+	if (bo)
+		xe_vm_bind_async(device.fd_xe, vm, bind_exec_queues[0], bo, 0, addr,
+				 bo_size, sync, 1);
+	else
+		xe_vm_bind_userptr_async(device.fd_xe, vm, bind_exec_queues[0],
+					 to_user_pointer(data), addr, bo_size, sync, 1);
 
 	if (check_rpm && runtime_usage_available(device.pci_xe))
 		igt_assert(igt_pm_get_runtime_usage(device.pci_xe) > rpm_usage);
@@ -398,9 +424,12 @@ NULL));
 			xe_exec_queue_destroy(device.fd_xe, bind_exec_queues[i]);
 	}
 
-	munmap(data, bo_size);
-
-	gem_close(device.fd_xe, bo);
+	if (bo) {
+		munmap(data, bo_size);
+		gem_close(device.fd_xe, bo);
+	} else {
+		free(data);
+	}
 
 	if (check_rpm && runtime_usage_available(device.pci_xe))
 		igt_assert(igt_pm_get_runtime_usage(device.pci_xe) < rpm_usage);
@@ -583,6 +612,13 @@ igt_main
 		{ "d3cold", IGT_ACPI_D3Cold },
 		{ NULL },
 	};
+	const struct vm_op {
+		const char *name;
+		unsigned int flags;
+	} vm_op[] = {
+		{ "userptr", USERPTR },
+		{ NULL },
+	};
 
 	igt_fixture {
 		memset(&device, 0, sizeof(device));
@@ -593,7 +629,7 @@ igt_main
 
 		/* Always perform initial once-basic exec checking for health */
 		xe_for_each_engine(device.fd_xe, hwe)
-			test_exec(device, hwe, 1, 1, NO_SUSPEND, NO_RPM);
+			test_exec(device, hwe, 1, 1, NO_SUSPEND, NO_RPM, 0);
 
 		igt_pm_get_d3cold_allowed(device.pci_slot_name, &d3cold_allowed);
 		igt_assert(igt_setup_runtime_pm(device.fd_xe));
@@ -610,7 +646,7 @@ igt_main
 		igt_subtest_f("%s-basic-exec", s->name) {
 			xe_for_each_engine(device.fd_xe, hwe)
 				test_exec(device, hwe, 1, 2, s->state,
-					  NO_RPM);
+					  NO_RPM, 0);
 		}
 
 		igt_subtest_f("%s-exec-after", s->name) {
@@ -618,13 +654,21 @@ igt_main
 						      SUSPEND_TEST_NONE);
 			xe_for_each_engine(device.fd_xe, hwe)
 				test_exec(device, hwe, 1, 2, NO_SUSPEND,
-					  NO_RPM);
+					  NO_RPM, 0);
 		}
 
 		igt_subtest_f("%s-multiple-execs", s->name) {
 			xe_for_each_engine(device.fd_xe, hwe)
 				test_exec(device, hwe, 16, 32, s->state,
-					  NO_RPM);
+					  NO_RPM, 0);
+		}
+
+		for (const struct vm_op *op = vm_op; op->name; op++) {
+			igt_subtest_f("%s-vm-bind-%s", s->name, op->name) {
+				xe_for_each_engine(device.fd_xe, hwe)
+					test_exec(device, hwe, 16, 32, s->state,
+						  NO_RPM, op->flags);
+			}
 		}
 
 		for (const struct d_state *d = d_states; d->name; d++) {
@@ -632,7 +676,7 @@ igt_main
 				igt_assert(setup_d3(device, d->state));
 				xe_for_each_engine(device.fd_xe, hwe)
 					test_exec(device, hwe, 1, 2, s->state,
-						  NO_RPM);
+						  NO_RPM, 0);
 				cleanup_d3(device);
 			}
 		}
@@ -649,7 +693,7 @@ igt_main
 			igt_assert(setup_d3(device, d->state));
 			xe_for_each_engine(device.fd_xe, hwe)
 				test_exec(device, hwe, 1, 1,
-					  NO_SUSPEND, d->state);
+					  NO_SUSPEND, d->state, 0);
 			cleanup_d3(device);
 		}
 
@@ -657,7 +701,7 @@ igt_main
 			igt_assert(setup_d3(device, d->state));
 			xe_for_each_engine(device.fd_xe, hwe)
 				test_exec(device, hwe, 16, 32,
-					  NO_SUSPEND, d->state);
+					  NO_SUSPEND, d->state, 0);
 			cleanup_d3(device);
 		}
 	}
