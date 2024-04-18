@@ -34,6 +34,7 @@
 #define MAGIC_2 0xdeadbeef
 
 #define USERPTR (0x1 << 0)
+#define PREFETCH (0x1 << 1)
 
 typedef struct {
 	int fd_xe;
@@ -289,6 +290,7 @@ static void close_fw_handle(int sig)
  * arg[2]:
  *
  * @userptr:	userptr
+ * @prefetch:	prefetch
  */
 static void
 test_exec(device_t device, struct drm_xe_engine_class_instance *eci,
@@ -341,9 +343,15 @@ test_exec(device_t device, struct drm_xe_engine_class_instance *eci,
 		data = aligned_alloc(xe_get_default_alignment(device.fd_xe), bo_size);
 		memset(data, 0, bo_size);
 	} else {
-		bo = xe_bo_create(device.fd_xe, vm, bo_size,
-				  vram_if_possible(device.fd_xe, eci->gt_id),
-				  DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
+		if (flags & PREFETCH)
+			bo = xe_bo_create(device.fd_xe, 0, bo_size,
+					  all_memory_regions(device.fd_xe) |
+					  vram_if_possible(device.fd_xe, 0),
+					  DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
+		else
+			bo = xe_bo_create(device.fd_xe, vm, bo_size,
+					  vram_if_possible(device.fd_xe, eci->gt_id),
+					  DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
 		data = xe_bo_map(device.fd_xe, bo, bo_size);
 	}
 
@@ -361,6 +369,9 @@ test_exec(device_t device, struct drm_xe_engine_class_instance *eci,
 	else
 		xe_vm_bind_userptr_async(device.fd_xe, vm, bind_exec_queues[0],
 					 to_user_pointer(data), addr, bo_size, sync, 1);
+	if (flags & PREFETCH)
+		xe_vm_prefetch_async(device.fd_xe, vm, bind_exec_queues[0], 0, addr,
+				     bo_size, sync, 1, 0);
 
 	if (check_rpm && runtime_usage_available(device.pci_xe))
 		igt_assert(igt_pm_get_runtime_usage(device.pci_xe) > rpm_usage);
@@ -617,6 +628,7 @@ igt_main
 		unsigned int flags;
 	} vm_op[] = {
 		{ "userptr", USERPTR },
+		{ "prefetch", PREFETCH },
 		{ NULL },
 	};
 
