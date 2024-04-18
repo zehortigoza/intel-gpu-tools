@@ -380,6 +380,7 @@ install_headers(
 xe_oa_files = [
   'igt_list.c',
   'xe/xe_oa.c',
+  'i915/perf_data_reader.c',
 ]
 
 xe_oa_hardware = [
@@ -453,6 +454,9 @@ install_headers(
   'igt_list.h',
   'intel_chipset.h',
   'xe/xe_oa.h',
+  'i915/perf.h',
+  'i915/perf_data.h',
+  'i915/perf_data_reader.h',
   subdir : 'xe-oa'
 )
 
@@ -468,6 +472,12 @@ pkgconf.set('xe_oa_version', '1.5.1')
 configure_file(
   input : 'i915-perf.pc.in',
   output : 'i915-perf.pc',
+  configuration : pkgconf,
+  install_dir : pkgconfigdir)
+
+configure_file(
+  input : 'xe-oa.pc.in',
+  output : 'xe-oa.pc',
   configuration : pkgconf,
   install_dir : pkgconfigdir)
 
