@@ -35,6 +35,7 @@
 
 #define USERPTR (0x1 << 0)
 #define PREFETCH (0x1 << 1)
+#define UNBIND_ALL (0x1 << 2)
 
 typedef struct {
 	int fd_xe;
@@ -219,6 +220,7 @@ static void close_fw_handle(int sig)
 	close(fw_handle);
 }
 
+#define MAX_VMAS 2
 /**
  * SUBTEST: %s-basic
  * Description: set GPU state to %arg[1] and test suspend/autoresume
@@ -291,6 +293,7 @@ static void close_fw_handle(int sig)
  *
  * @userptr:	userptr
  * @prefetch:	prefetch
+ * @unbind-all:	unbind-all
  */
 static void
 test_exec(device_t device, struct drm_xe_engine_class_instance *eci,
@@ -308,6 +311,7 @@ test_exec(device_t device, struct drm_xe_engine_class_instance *eci,
 		.num_syncs = 2,
 		.syncs = to_user_pointer(sync),
 	};
+	int n_vmas = flags & UNBIND_ALL ? MAX_VMAS : 1;
 	uint32_t exec_queues[MAX_N_EXEC_QUEUES];
 	uint32_t bind_exec_queues[MAX_N_EXEC_QUEUES];
 	uint32_t syncobjs[MAX_N_EXEC_QUEUES];
@@ -363,12 +367,15 @@ test_exec(device_t device, struct drm_xe_engine_class_instance *eci,
 
 	sync[0].handle = syncobj_create(device.fd_xe, 0);
 
-	if (bo)
-		xe_vm_bind_async(device.fd_xe, vm, bind_exec_queues[0], bo, 0, addr,
-				 bo_size, sync, 1);
-	else
+	if (bo) {
+		for (i = 0; i < n_vmas; i++)
+			xe_vm_bind_async(device.fd_xe, vm, bind_exec_queues[0], bo, 0,
+					 addr + i * bo_size, bo_size, sync, 1);
+	} else {
 		xe_vm_bind_userptr_async(device.fd_xe, vm, bind_exec_queues[0],
 					 to_user_pointer(data), addr, bo_size, sync, 1);
+	}
+
 	if (flags & PREFETCH)
 		xe_vm_prefetch_async(device.fd_xe, vm, bind_exec_queues[0], 0, addr,
 				     bo_size, sync, 1, 0);
@@ -419,8 +426,11 @@ test_exec(device_t device, struct drm_xe_engine_class_instance *eci,
 		rpm_usage = igt_pm_get_runtime_usage(device.pci_xe);
 
 	sync[0].flags |= DRM_XE_SYNC_FLAG_SIGNAL;
-	xe_vm_unbind_async(device.fd_xe, vm, bind_exec_queues[0], 0, addr,
-			   bo_size, sync, 1);
+	if (n_vmas > 1)
+		xe_vm_unbind_all_async(device.fd_xe, vm, 0, bo, sync, 1);
+	else
+		xe_vm_unbind_async(device.fd_xe, vm, bind_exec_queues[0], 0, addr,
+				   bo_size, sync, 1);
 	igt_assert(syncobj_wait(device.fd_xe, &sync[0].handle, 1, INT64_MAX, 0,
 NULL));
 
@@ -629,6 +639,7 @@ igt_main
 	} vm_op[] = {
 		{ "userptr", USERPTR },
 		{ "prefetch", PREFETCH },
+		{ "unbind-all", UNBIND_ALL },
 		{ NULL },
 	};
 
