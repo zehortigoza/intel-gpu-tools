@@ -1791,10 +1791,6 @@ static void dump_psr(struct context *context,
 	int i;
 	uint32_t psr2_tp_time;
 
-	/* The same block ID was used for something else before? */
-	if (context->bdb->version < 165)
-		return;
-
 	psr2_tp_time = psr_block->psr2_tp2_tp3_wakeup_time;
 	for (i = 0; i < 16; i++) {
 		const struct psr_table *psr = &psr_block->psr_table[i];
@@ -2722,6 +2718,7 @@ struct dumper dumpers[] = {
 	},
 	{
 		.id = BDB_PSR,
+		.min_bdb_version = 165,
 		.name = "PSR block",
 		.dump = dump_psr,
 	},
