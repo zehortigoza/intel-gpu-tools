@@ -273,11 +273,11 @@ test_exec(int fd, struct drm_xe_engine_class_instance *eci,
 		}
 	}
 	if (!(flags & INVALID_FAULT)) {
-		int64_t timeout = ONE_SEC;
-
 		j = flags & INVALIDATE ? n_execs - 1 : 0;
 
 		for (i = j; i < n_execs; i++) {
+			int64_t timeout = ONE_SEC;
+
 			if (flags & INVALID_VA && !(flags & ENABLE_SCRATCH))
 				igt_assert_eq(__xe_wait_ufence(fd, &data[i].exec_sync, USER_FENCE_VALUE,
 							       exec_queues[i % n_exec_queues], &timeout), -EIO);
