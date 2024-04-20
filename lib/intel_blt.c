@@ -465,6 +465,20 @@ bool blt_block_copy_supports_compression(int fd)
 }
 
 /**
+ * blt_platform_has_flat_ccs_enabled
+ * @fd: drm fd
+ *
+ * Check if platform provided by @fd device has flat-ccs enabled.
+ *
+ * Returns:
+ * true if it does, false otherwise.
+ */
+bool blt_platform_has_flat_ccs_enabled(int fd)
+{
+	return igt_debugfs_search(fd, "info", "has_flat_ccs yes");
+}
+
+/**
  * blt_uses_extended_block_copy
  * @fd: drm fd
  *
