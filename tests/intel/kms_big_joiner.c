@@ -162,7 +162,7 @@ static void test_single_joiner(data_t *data, int output_count, bool force_joiner
 
 static void test_multi_joiner(data_t *data, int output_count, bool force_joiner)
 {
-	int i;
+	int i, cleanup;
 	uint32_t available_pipe_mask;
 	enum pipe pipe, master_pipe;
 	igt_output_t **outputs;
@@ -173,6 +173,7 @@ static void test_multi_joiner(data_t *data, int output_count, bool force_joiner)
 
 	available_pipe_mask = BIT(data->n_pipes) - 1;
 	outputs = force_joiner ? data->non_big_joiner_output : data->big_joiner_output;
+	cleanup = 0;
 
 	igt_display_reset(&data->display);
 	igt_display_commit2(&data->display, COMMIT_ATOMIC);
@@ -183,6 +184,7 @@ static void test_multi_joiner(data_t *data, int output_count, bool force_joiner)
 			master_pipe = setup_pipe(data, output, pipe, available_pipe_mask);
 			if (master_pipe == PIPE_NONE)
 				continue;
+			cleanup++;
 			mode = igt_output_get_mode(output);
 			primary[i] = igt_output_get_plane_type(output, DRM_PLANE_TYPE_PRIMARY);
 			igt_create_pattern_fb(data->drm_fd, mode->hdisplay, mode->vdisplay, DRM_FORMAT_XRGB8888,
@@ -195,7 +197,7 @@ static void test_multi_joiner(data_t *data, int output_count, bool force_joiner)
 		}
 	}
 	igt_display_commit2(&data->display, COMMIT_ATOMIC);
-	for (i = 0; i < output_count; i++) {
+	for (i = 0; i < cleanup; i++) {
 		igt_plane_set_fb(primary[i], NULL);
 		igt_remove_fb(data->drm_fd, &fb[i]);
 	}
