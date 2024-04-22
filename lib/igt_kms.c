@@ -6246,6 +6246,14 @@ bool igt_has_force_joiner_debugfs(int drmfd, igt_output_t *output)
 	char buf[512];
 	int debugfs_fd, ret;
 
+	/*
+	 * bigjoiner is supported on display<= 12 with DSC only
+	 * and only on Pipe A for Display 11
+	 * For simplicity avoid Display 11 and 12, check for >= 13
+	 */
+	if (intel_display_ver(intel_get_drm_devid(drmfd)) < 13)
+		return false;
+
 	igt_assert_f(output->name, "Connector name cannot be NULL\n");
 	debugfs_fd = igt_debugfs_connector_dir(drmfd, output->name, O_RDONLY);
 	if (debugfs_fd < 0)
