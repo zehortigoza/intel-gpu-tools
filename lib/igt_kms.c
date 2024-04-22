@@ -1607,6 +1607,36 @@ static bool connector_attr_set_sysfs(int drm_fd,
 	return true;
 }
 
+static bool connector_attr_set_debugfs(int drm_fd,
+				       drmModeConnector *connector,
+				       const char *attr, const char *value,
+				       const char *reset_value)
+{
+	char name[80];
+	int idx, dir;
+
+	idx = igt_device_get_card_index(drm_fd);
+	if (idx < 0 || idx > 63)
+		return false;
+
+	snprintf(name, sizeof(name), "%s-%d",
+		 kmstest_connector_type_str(connector->connector_type),
+		 connector->connector_type_id);
+
+	dir = igt_debugfs_connector_dir(drm_fd, name, O_DIRECTORY);
+	if (dir < 0)
+		return false;
+
+	if (!connector_attr_set(idx, connector, dir,
+				igt_sysfs_set, attr,
+				value, reset_value))
+		return false;
+
+	igt_info("Connector %s/%s is now %s\n", name, attr, value);
+
+	return true;
+}
+
 static void dump_connector_attrs(void)
 {
 	char name[80];
@@ -1684,6 +1714,49 @@ bool kmstest_force_connector(int drm_fd, drmModeConnector *connector,
 
 	/* To allow callers to always use GetConnectorCurrent we need to force a
 	 * redetection here. */
+	temp = drmModeGetConnector(drm_fd, connector->connector_id);
+	drmModeFreeConnector(temp);
+
+	return true;
+}
+
+static bool force_connector_bigjoiner(int drm_fd,
+				      drmModeConnector *connector,
+				      const char *value)
+{
+	return connector_attr_set_debugfs(drm_fd, connector,
+					  "i915_bigjoiner_force_enable",
+					  value, "0");
+}
+
+/**
+ * kmstest_force_connector_bigjoiner:
+ * @fd: drm file descriptor
+ * @connector: connector
+ *
+ * Enable force bigjoiner state on the specified connector
+ * and install exit handler for resetting
+ *
+ * Returns: True on success
+ */
+bool kmstest_force_connector_bigjoiner(int drm_fd, drmModeConnector *connector)
+{
+	const char *value = "1";
+	drmModeConnector *temp;
+
+	if (!is_intel_device(drm_fd))
+		return false;
+
+	if (!force_connector_bigjoiner(drm_fd, connector, value))
+		return false;
+
+	dump_connector_attrs();
+	igt_install_exit_handler(reset_connectors_at_exit);
+
+	/*
+	 * To allow callers to always use GetConnectorCurrent we need to force a
+	 * redetection here.
+	 */
 	temp = drmModeGetConnector(drm_fd, connector->connector_id);
 	drmModeFreeConnector(temp);
 
