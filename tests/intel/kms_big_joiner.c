@@ -267,6 +267,7 @@ static void test_joiner_on_last_pipe(data_t *data, bool force_joiner)
 
 	for (i = 0; i < len; i++) {
 		igt_display_reset(&data->display);
+		igt_display_commit2(&data->display, COMMIT_ATOMIC);
 		output = outputs[i];
 		igt_output_set_pipe(output, data->pipe_seq[data->n_pipes - 1]);
 		mode = igt_output_get_mode(output);
