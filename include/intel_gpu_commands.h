@@ -144,6 +144,7 @@
 #define   MI_ATOMIC_INLINE_DATA		(1 << 18)
 #define   MI_ATOMIC_CS_STALL		(1 << 17)
 #define	  MI_ATOMIC_MOVE		(0x4 << 8)
+#define MI_COPY_MEM_MEM		MI_INSTR(0x2E, 3)
 
 /*
  * Official intel docs are somewhat sloppy concerning MI_LOAD_REGISTER_IMM:
@@ -300,6 +301,7 @@
 #define   PIPE_CONTROL_QW_WRITE				(1<<14)
 #define   PIPE_CONTROL_POST_SYNC_OP_MASK                (3<<14)
 #define   PIPE_CONTROL_DEPTH_STALL			(1<<13)
+#define   PIPE_CONTROL0_CCS_FLUSH			REG_BIT(13) /* dg2+ */
 #define   PIPE_CONTROL_WRITE_FLUSH			(1<<12)
 #define   PIPE_CONTROL_RENDER_TARGET_CACHE_FLUSH	(1<<12) /* gen6+ */
 #define   PIPE_CONTROL_INSTRUCTION_CACHE_INVALIDATE	(1<<11) /* MBZ on ILK */

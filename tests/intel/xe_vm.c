@@ -65,7 +65,6 @@ write_dwords(int fd, uint32_t vm, int n_dwords, uint64_t *addrs)
 		batch_map[b++] = addr_low(addrs[i]);
 		batch_map[b++] = addr_high(fd, addrs[i]);
 		batch_map[b++] = hash_addr(addrs[i]);
-
 	}
 	batch_map[b++] = MI_BATCH_BUFFER_END;
 	igt_assert_lte(&batch_map[b] - batch_map, batch_size);

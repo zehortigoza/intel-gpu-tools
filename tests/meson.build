@@ -315,6 +315,7 @@ intel_xe_progs = [
 	'xe_spin_batch',
 	'xe_sysfs_defaults',
 	'xe_sysfs_scheduler',
+	'xe_compression',
 ]
 
 msm_progs = [
