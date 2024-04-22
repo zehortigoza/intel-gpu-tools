@@ -71,8 +71,8 @@ test_balancer(int fd, int gt, uint32_t vm, uint64_t addr, uint64_t userptr,
 
 	igt_assert(n_exec_queues <= MAX_N_EXEC_QUEUES);
 
-	if (!fd) {
-		fd = drm_open_driver(DRIVER_XE);
+	if (flags & FD) {
+		fd = drm_reopen_driver(fd);
 		owns_fd = true;
 	}
 
@@ -273,8 +273,8 @@ test_compute_mode(int fd, uint32_t vm, uint64_t addr, uint64_t userptr,
 
 	igt_assert(n_exec_queues <= MAX_N_EXEC_QUEUES);
 
-	if (!fd) {
-		fd = drm_open_driver(DRIVER_XE);
+	if (flags & FD) {
+		fd = drm_reopen_driver(fd);
 		owns_fd = true;
 	}
 
@@ -477,8 +477,8 @@ test_legacy_mode(int fd, uint32_t vm, uint64_t addr, uint64_t userptr,
 
 	igt_assert(n_exec_queues <= MAX_N_EXEC_QUEUES);
 
-	if (!fd) {
-		fd = drm_open_driver(DRIVER_XE);
+	if (flags & FD) {
+		fd = drm_reopen_driver(fd);
 		owns_fd = true;
 	}
 
@@ -995,10 +995,7 @@ static void threads(int fd, int flags)
 #define ADDRESS_SHIFT	39
 		threads_data[i].addr = addr | (i << ADDRESS_SHIFT);
 		threads_data[i].userptr = userptr | (i << ADDRESS_SHIFT);
-		if (flags & FD)
-			threads_data[i].fd = 0;
-		else
-			threads_data[i].fd = fd;
+		threads_data[i].fd = fd;
 		threads_data[i].vm_legacy_mode = vm_legacy_mode;
 		threads_data[i].vm_compute_mode = vm_compute_mode;
 		threads_data[i].eci = hwe;
@@ -1046,10 +1043,7 @@ static void threads(int fd, int flags)
 						threads_data[i].addr = addr;
 					threads_data[i].userptr = userptr |
 						(i << ADDRESS_SHIFT);
-					if (flags & FD)
-						threads_data[i].fd = 0;
-					else
-						threads_data[i].fd = fd;
+					threads_data[i].fd = fd;
 					threads_data[i].gt = gt;
 					threads_data[i].vm_legacy_mode =
 						vm_legacy_mode;

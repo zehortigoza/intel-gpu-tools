@@ -61,7 +61,7 @@ test_evict(int fd, struct drm_xe_engine_class_instance *eci,
 	bo = calloc(n_execs / 2, sizeof(*bo));
 	igt_assert(bo);
 
-	fd = drm_open_driver(DRIVER_XE);
+	fd = drm_reopen_driver(fd);
 
 	vm = xe_vm_create(fd, 0, 0);
 	if (flags & BIND_EXEC_QUEUE)
@@ -241,7 +241,7 @@ test_evict_cm(int fd, struct drm_xe_engine_class_instance *eci,
 	bo = calloc(n_execs / 2, sizeof(*bo));
 	igt_assert(bo);
 
-	fd = drm_open_driver(DRIVER_XE);
+	fd = drm_reopen_driver(fd);
 
 	vm = xe_vm_create(fd, DRM_XE_VM_CREATE_FLAG_LR_MODE, 0);
 	if (flags & BIND_EXEC_QUEUE)
@@ -769,21 +769,21 @@ igt_main
 
 	for (const struct section *s = sections; s->name; s++) {
 		igt_subtest_f("evict-%s", s->name)
-			test_evict(-1, hwe, s->n_exec_queues, s->n_execs,
+			test_evict(fd, hwe, s->n_exec_queues, s->n_execs,
 				   calc_bo_size(vram_size, s->mul, s->div),
 				   s->flags, NULL);
 	}
 
 	for (const struct section_cm *s = sections_cm; s->name; s++) {
 		igt_subtest_f("evict-%s", s->name)
-			test_evict_cm(-1, hwe, s->n_exec_queues, s->n_execs,
+			test_evict_cm(fd, hwe, s->n_exec_queues, s->n_execs,
 				      calc_bo_size(vram_size, s->mul, s->div),
 				      s->flags, NULL);
 	}
 
 	for (const struct section_threads *s = sections_threads; s->name; s++) {
 		igt_subtest_f("evict-%s", s->name)
-			threads(-1, hwe, s->n_threads, s->n_exec_queues,
+			threads(fd, hwe, s->n_threads, s->n_exec_queues,
 				 s->n_execs,
 				 calc_bo_size(vram_size, s->mul, s->div),
 				 s->flags);
