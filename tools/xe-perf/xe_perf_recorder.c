@@ -374,7 +374,7 @@ enum xe_oa_report_header {
 
 /*To be kept in sync with the same enum in lib/xe/oa-configs/oa-metricset-codegen.py */
 enum xe_oa_format_name {
-	XE_OA_FORMAT_C4_B8 = 7,
+	XE_OA_FORMAT_C4_B8 = 1,
 
 	/* Gen8+ */
 	XE_OA_FORMAT_A12,
