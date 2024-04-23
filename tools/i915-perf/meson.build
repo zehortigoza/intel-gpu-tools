@@ -18,5 +18,5 @@ executable('i915-perf-control',
 executable('i915-perf-reader',
            [ 'i915_perf_reader.c' ],
            include_directories: inc,
-           dependencies: [lib_igt, lib_igt_i915_perf],
+           dependencies: [lib_igt, lib_igt_xe_oa],
            install: true)
