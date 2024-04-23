@@ -162,9 +162,59 @@ simple_exec(int fd, struct drm_xe_engine_class_instance *eci)
 	xe_vm_destroy(fd, vm);
 }
 
+static void
+simple_hang(int fd)
+{
+	struct drm_xe_engine_class_instance *eci = &xe_engine(fd, 0)->instance;
+	uint32_t vm;
+	uint64_t addr = 0x1a0000;
+	struct drm_xe_exec exec_hang = {
+		.num_batch_buffer = 1,
+	};
+	uint64_t spin_offset;
+	uint32_t hang_exec_queue;
+	size_t bo_size;
+	uint32_t bo = 0;
+	struct {
+		struct xe_spin spin;
+		uint32_t batch[16];
+		uint64_t pad;
+		uint32_t data;
+	} *data;
+	struct xe_spin_opts spin_opts = { .preempt = false };
+	int err;
+
+	vm = xe_vm_create(fd, 0, 0);
+	bo_size = xe_bb_size(fd, sizeof(*data));
+	bo = xe_bo_create(fd, vm, bo_size,
+			  vram_if_possible(fd, eci->gt_id),
+			  DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
+	data = xe_bo_map(fd, bo, bo_size);
+	hang_exec_queue = xe_exec_queue_create(fd, vm, eci, 0);
+
+	spin_offset = (char *)&data[0].spin - (char *)data;
+	spin_opts.addr = addr + spin_offset;
+	xe_spin_init(&data[0].spin, &spin_opts);
+	exec_hang.exec_queue_id = hang_exec_queue;
+	exec_hang.address = spin_opts.addr;
+
+	do {
+		err =  igt_ioctl(fd, DRM_IOCTL_XE_EXEC, &exec_hang);
+	} while (err && errno == ENOMEM);
+
+	xe_exec_queue_destroy(fd, hang_exec_queue);
+	munmap(data, bo_size);
+	gem_close(fd, bo);
+	xe_vm_destroy(fd, vm);
+}
+
 /**
  * SUBTEST: basic-wedged
  * Description: Force Xe device wedged after injecting a failure in GT reset
+ */
+/**
+ * SUBTEST: wedged-at-any-timeout
+ * Description: Force Xe device wedged after a simple guc timeout
  */
 igt_main
 {
@@ -181,6 +231,25 @@ igt_main
 
 		igt_assert_eq(simple_ioctl(fd), 0);
 		force_wedged(fd);
+		igt_assert_neq(simple_ioctl(fd), 0);
+		fd = rebind_xe(fd);
+		igt_assert_eq(simple_ioctl(fd), 0);
+		xe_for_each_engine(fd, hwe)
+			simple_exec(fd, hwe);
+	}
+
+	igt_subtest_f("wedged-at-any-timeout") {
+		igt_require(igt_debugfs_exists(fd, "wedged_mode", O_RDWR));
+
+		igt_debugfs_write(fd, "wedged_mode", "2");
+		simple_hang(fd);
+		/*
+		 * Any ioctl after the first timeout on wedged_mode=2 is blocked
+		 * so we cannot relly on sync objects. Let's wait a bit for
+		 * things to settle before we confirm device as wedged and
+		 * rebind.
+		 */
+		sleep(1);
 		igt_assert_neq(simple_ioctl(fd), 0);
 		fd = rebind_xe(fd);
 		igt_assert_eq(simple_ioctl(fd), 0);
