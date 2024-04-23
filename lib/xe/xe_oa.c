@@ -806,6 +806,268 @@ intel_perf_load_perf_configs(struct intel_perf *perf, int drm_fd)
 	}
 }
 
+static void
+accumulate_uint32(const uint32_t *report0,
+                  const uint32_t *report1,
+                  uint64_t *deltas)
+{
+	*deltas += (uint32_t)(*report1 - *report0);
+}
+
+static void
+accumulate_uint40(int a_index,
+                  const uint32_t *report0,
+                  const uint32_t *report1,
+                  uint64_t *deltas)
+{
+	const uint8_t *high_bytes0 = (uint8_t *)(report0 + 40);
+	const uint8_t *high_bytes1 = (uint8_t *)(report1 + 40);
+	uint64_t high0 = (uint64_t)(high_bytes0[a_index]) << 32;
+	uint64_t high1 = (uint64_t)(high_bytes1[a_index]) << 32;
+	uint64_t value0 = report0[a_index + 4] | high0;
+	uint64_t value1 = report1[a_index + 4] | high1;
+	uint64_t delta;
+
+	if (value0 > value1)
+		delta = (1ULL << 40) + value1 - value0;
+	else
+		delta = value1 - value0;
+
+	*deltas += delta;
+}
+
+void intel_perf_accumulate_reports(struct intel_perf_accumulator *acc,
+				   const struct intel_perf *perf,
+				   const struct intel_perf_metric_set *metric_set,
+				   const struct drm_i915_perf_record_header *record0,
+				   const struct drm_i915_perf_record_header *record1)
+{
+	const uint32_t *start = (const uint32_t *)(record0 + 1);
+	const uint32_t *end = (const uint32_t *)(record1 + 1);
+	uint64_t *deltas = acc->deltas;
+	int idx = 0;
+	int i;
+
+	memset(acc, 0, sizeof(*acc));
+
+	switch (metric_set->perf_oa_format) {
+	case I915_OA_FORMAT_A24u40_A14u32_B8_C8:
+		/* timestamp */
+		if (perf->devinfo.oa_timestamp_shift >= 0)
+			deltas[idx++] += (end[1] - start[1]) << perf->devinfo.oa_timestamp_shift;
+		else
+			deltas[idx++] += (end[1] - start[1]) >> (-perf->devinfo.oa_timestamp_shift);
+		accumulate_uint32(start + 3, end + 3, deltas + idx++); /* clock */
+
+		/* 4x 32bit A0-3 counters... */
+		for (i = 0; i < 4; i++)
+			accumulate_uint32(start + 4 + i, end + 4 + i, deltas + idx++);
+
+		/* 20x 40bit A4-23 counters... */
+		for (i = 0; i < 20; i++)
+			accumulate_uint40(i + 4, start, end, deltas + idx++);
+
+		/* 4x 32bit A24-27 counters... */
+		for (i = 0; i < 4; i++)
+			accumulate_uint32(start + 28 + i, end + 28 + i, deltas + idx++);
+
+		/* 4x 40bit A28-31 counters... */
+		for (i = 0; i < 4; i++)
+			accumulate_uint40(i + 28, start, end, deltas + idx++);
+
+		/* 5x 32bit A32-36 counters... */
+		for (i = 0; i < 5; i++)
+			accumulate_uint32(start + 36 + i, end + 36 + i, deltas + idx++);
+
+		/* 1x 32bit A37 counter... */
+		accumulate_uint32(start + 46, end + 46, deltas + idx++);
+
+		/* 8x 32bit B counters + 8x 32bit C counters... */
+		for (i = 0; i < 16; i++)
+			accumulate_uint32(start + 48 + i, end + 48 + i, deltas + idx++);
+		break;
+
+	case I915_OAR_FORMAT_A32u40_A4u32_B8_C8:
+	case I915_OA_FORMAT_A32u40_A4u32_B8_C8:
+		if (perf->devinfo.oa_timestamp_shift >= 0)
+			deltas[idx++] += (end[1] - start[1]) << perf->devinfo.oa_timestamp_shift;
+		else
+			deltas[idx++] += (end[1] - start[1]) >> (-perf->devinfo.oa_timestamp_shift);
+		accumulate_uint32(start + 3, end + 3, deltas + idx++); /* clock */
+
+		/* 32x 40bit A counters... */
+		for (i = 0; i < 32; i++)
+			accumulate_uint40(i, start, end, deltas + idx++);
+
+		/* 4x 32bit A counters... */
+		for (i = 0; i < 4; i++)
+			accumulate_uint32(start + 36 + i, end + 36 + i, deltas + idx++);
+
+		/* 8x 32bit B counters + 8x 32bit C counters... */
+		for (i = 0; i < 16; i++)
+			accumulate_uint32(start + 48 + i, end + 48 + i, deltas + idx++);
+		break;
+
+	case I915_OA_FORMAT_A45_B8_C8:
+		/* timestamp */
+		if (perf->devinfo.oa_timestamp_shift >= 0)
+			deltas[0] += (end[1] - start[1]) << perf->devinfo.oa_timestamp_shift;
+		else
+			deltas[0] += (end[1] - start[1]) >> (-perf->devinfo.oa_timestamp_shift);
+
+		for (i = 0; i < 61; i++)
+			accumulate_uint32(start + 3 + i, end + 3 + i, deltas + 1 + i);
+		break;
+
+	case I915_OAM_FORMAT_MPEC8u32_B8_C8: {
+		const uint64_t *start64 = (const uint64_t *)(record0 + 1);
+		const uint64_t *end64 = (const uint64_t *)(record1 + 1);
+
+		/* 64 bit timestamp */
+		if (perf->devinfo.oa_timestamp_shift >= 0)
+			deltas[idx++] += (end64[1] - start64[1]) << perf->devinfo.oa_timestamp_shift;
+		else
+			deltas[idx++] += (end64[1] - start64[1]) >> (-perf->devinfo.oa_timestamp_shift);
+
+		/* 64 bit clock */
+		deltas[idx++] = end64[3] - start64[3];
+
+		/* 8x 32bit MPEC counters */
+		for (i = 0; i < 8; i++)
+			accumulate_uint32(start + 8 + i, end + 8 + i, deltas + idx++);
+
+		/* 8x 32bit B counters */
+		for (i = 0; i < 8; i++)
+			accumulate_uint32(start + 16 + i, end + 16 + i, deltas + idx++);
+
+		/* 8x 32bit C counters */
+		for (i = 0; i < 8; i++)
+			accumulate_uint32(start + 24 + i, end + 24 + i, deltas + idx++);
+
+		break;
+		}
+	default:
+		assert(0);
+	}
+
+}
+
+uint64_t intel_perf_read_record_timestamp(const struct intel_perf *perf,
+					  const struct intel_perf_metric_set *metric_set,
+					  const struct drm_i915_perf_record_header *record)
+{
+       const uint32_t *report32 = (const uint32_t *)(record + 1);
+       const uint64_t *report64 = (const uint64_t *)(record + 1);
+       uint64_t ts;
+
+       switch (metric_set->perf_oa_format) {
+       case I915_OA_FORMAT_A24u40_A14u32_B8_C8:
+       case I915_OA_FORMAT_A32u40_A4u32_B8_C8:
+       case I915_OA_FORMAT_A45_B8_C8:
+               ts = report32[1];
+               break;
+
+       case I915_OAM_FORMAT_MPEC8u32_B8_C8:
+               ts = report64[1];
+               break;
+
+       default:
+               assert(0);
+       }
+
+       if (perf->devinfo.oa_timestamp_shift >= 0)
+	       ts <<= perf->devinfo.oa_timestamp_shift;
+       else
+	       ts >>= -perf->devinfo.oa_timestamp_shift;
+
+       return ts;
+}
+
+uint64_t intel_perf_read_record_timestamp_raw(const struct intel_perf *perf,
+					  const struct intel_perf_metric_set *metric_set,
+					  const struct drm_i915_perf_record_header *record)
+{
+       const uint32_t *report32 = (const uint32_t *)(record + 1);
+       const uint64_t *report64 = (const uint64_t *)(record + 1);
+       uint64_t ts;
+
+       switch (metric_set->perf_oa_format) {
+       case I915_OA_FORMAT_A24u40_A14u32_B8_C8:
+       case I915_OA_FORMAT_A32u40_A4u32_B8_C8:
+       case I915_OA_FORMAT_A45_B8_C8:
+               ts = report32[1];
+               break;
+
+       case I915_OAM_FORMAT_MPEC8u32_B8_C8:
+               ts = report64[1];
+               break;
+
+       default:
+               assert(0);
+       }
+
+       if (perf->devinfo.oa_timestamp_shift >= 0)
+	       ts <<= perf->devinfo.oa_timestamp_shift;
+       else
+	       ts >>= -perf->devinfo.oa_timestamp_shift;
+
+       return ts;
+}
+
+const char *intel_perf_read_report_reason(const struct intel_perf *perf,
+					  const struct drm_i915_perf_record_header *record)
+{
+	const uint32_t *report = (const uint32_t *) (record + 1);
+
+	/* Not really documented on Gfx7/7.5*/
+	if (perf->devinfo.graphics_ver < 8)
+		return "timer";
+
+	/* Gfx8-11 */
+	if (perf->devinfo.graphics_ver < 12) {
+		uint32_t reason = report[0] >> 19;
+		if (reason & (1u << 0))
+			return "timer";
+		if (reason & (1u << 1))
+			return "trigger1";
+		if (reason & (1u << 2))
+			return "trigger2";
+		if (reason & (1u << 3))
+			return "context-switch";
+		if (reason & (1u << 4))
+			return "go-transition";
+
+		if (perf->devinfo.graphics_ver >= 9 &&
+		    reason & (1u << 5))
+			return "clock-ratio-change";
+
+		return "unknown";
+	}
+
+	/* Gfx12 */
+	if (perf->devinfo.graphics_ver <= 12) {
+		uint32_t reason = report[0] >> 19;
+		if (reason & (1u << 0))
+			return "timer";
+		if (reason & (1u << 1))
+			return "trigger1";
+		if (reason & (1u << 2))
+			return "trigger2";
+		if (reason & (1u << 3))
+			return "context-switch";
+		if (reason & (1u << 4))
+			return "go-transition";
+		if (reason & (1u << 5))
+			return "clock-ratio-change";
+		if (reason & (1u << 6))
+			return "mmio-trigger";
+
+		return "unknown";
+	}
+
+	return "unknown";
+}
+
 static void xe_oa_prop_to_ext(struct intel_xe_oa_open_prop *properties,
 			      struct drm_xe_ext_set_property *extn)
 {

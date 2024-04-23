@@ -14,6 +14,7 @@ extern "C" {
 #include <stdint.h>
 
 #include "igt_list.h"
+#include <i915_drm.h>
 #include <xe_drm.h>
 
 #define _DIV_ROUND_UP(a, b)  (((a) + (b) - 1) / (b))
@@ -319,6 +320,23 @@ struct intel_xe_oa_open_prop {
 	uint32_t reserved;
 	uint64_t properties_ptr;
 };
+
+void intel_perf_accumulate_reports(struct intel_perf_accumulator *acc,
+				   const struct intel_perf *perf,
+				   const struct intel_perf_metric_set *metric_set,
+				   const struct drm_i915_perf_record_header *record0,
+				   const struct drm_i915_perf_record_header *record1);
+
+uint64_t intel_perf_read_record_timestamp(const struct intel_perf *perf,
+					  const struct intel_perf_metric_set *metric_set,
+					  const struct drm_i915_perf_record_header *record);
+
+uint64_t intel_perf_read_record_timestamp_raw(const struct intel_perf *perf,
+					      const struct intel_perf_metric_set *metric_set,
+					      const struct drm_i915_perf_record_header *record);
+
+const char *intel_perf_read_report_reason(const struct intel_perf *perf,
+					  const struct drm_i915_perf_record_header *record);
 
 int xe_perf_ioctl(int fd, enum drm_xe_perf_op op, void *arg);
 void xe_perf_ioctl_err(int fd, enum drm_xe_perf_op op, void *arg, int err);
