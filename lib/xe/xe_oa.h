@@ -14,7 +14,6 @@ extern "C" {
 #include <stdint.h>
 
 #include "igt_list.h"
-#include <i915_drm.h>
 #include <xe_drm.h>
 
 #define _DIV_ROUND_UP(a, b)  (((a) + (b) - 1) / (b))
@@ -25,6 +24,15 @@ extern "C" {
 
 struct intel_perf_devinfo {
 	char devname[20];
+	char prettyname[100];
+
+	/*
+	 * Always false for gputop, we don't have the additional
+	 * snapshots of register values, only the OA reports.
+	 */
+	bool query_mode;
+
+	bool has_dynamic_configs;
 
 	/* The following fields are prepared for equations from the XML files.
 	 * Their values are build up from the topology fields.
@@ -266,6 +274,7 @@ struct intel_perf {
 	struct intel_perf_devinfo devinfo;
 };
 
+struct drm_i915_perf_record_header;
 struct drm_i915_query_topology_info;
 
 static inline bool
