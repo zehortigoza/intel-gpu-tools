@@ -14,9 +14,12 @@
 #include "xe/xe_ioctl.h"
 #include "xe/xe_query.h"
 #include "intel_pat.h"
+#include "intel_mocs.h"
 #include "lib/igt_syncobj.h"
 
-#define NUM_DWORDS (800 * 600)
+#define WIDTH 800
+#define HEIGHT 600
+#define NUM_DWORDS (WIDTH * HEIGHT)
 
 #define ADDR_BO_CPU 	     0x1000000
 #define ADDR_BO_COMPRESSED   0x2000000
@@ -33,6 +36,10 @@ struct data {
 	uint32_t bo_cpu;
 	uint32_t bo_compressed;
 	uint32_t *bo_cpu_map;
+
+	struct buf_ops *bops;
+	struct intel_buf buf_cpu;
+	struct intel_buf buf_compressed;
 };
 
 static uint32_t
@@ -139,26 +146,40 @@ calc_bo_size(struct data *data)
 	return ALIGN(bo_size, xe_get_default_alignment(data->fd));
 }
 
+/*
+ * intel_pat is returnig wrong indexes for Xe2 so hard-coding indexes.
+ * intel_get_pat_idx_wt() is returning a compressed WT index
+ * intel_get_pat_idx_uc_comp() Xe uAPI only accept WC/WT or WB, there no UC.
+ */
+static uint8_t
+get_wc_uncompressed_pat(struct data *data)
+{
+	uint16_t dev_id = intel_get_drm_devid(data->fd);
+
+	if (intel_get_device_info(dev_id)->graphics_ver == 20)
+		return 6;
+	return intel_get_pat_idx_wt(data->fd);
+}
+
+static uint8_t
+get_wc_compressed_pat(struct data *data)
+{
+	uint16_t dev_id = intel_get_drm_devid(data->fd);
+
+	if (intel_get_device_info(dev_id)->graphics_ver == 20)
+		return 11;
+	return intel_get_pat_idx_wt(data->fd);
+}
+
 static void
 prepare(struct data *data)
 {
-	uint16_t dev_id = intel_get_drm_devid(data->fd);
 	uint64_t bo_size = calc_bo_size(data);
 	uint8_t wc_uncompressed_pat, wc_compressed_pat;
 	uint32_t ret;
 
-	/*
-	 * intel_pat is returnig wrong indexes for Xe2 so hard-coding indexes.
-	 * intel_get_pat_idx_wt() is returning a compressed WT index
-	 * intel_get_pat_idx_uc_comp() Xe uAPI only accept WC/WT or WB, there no UC.
-	 */
-	if (intel_get_device_info(dev_id)->graphics_ver == 20) {
-		wc_uncompressed_pat = 6;
-		wc_compressed_pat = 11;
-	} else {
-		wc_uncompressed_pat = intel_get_pat_idx_wt(data->fd);
-		wc_compressed_pat = wc_uncompressed_pat;
-	}
+	wc_uncompressed_pat = get_wc_uncompressed_pat(data);
+	wc_compressed_pat = get_wc_compressed_pat(data);
 
 	ret = __xe_bo_create_caching(data->fd, data->vm_id, bo_size,
 				     vram_if_possible(data->fd, 0),
@@ -220,6 +241,94 @@ check_cpu_map(struct data *data)
 			printf("i=%i value=%i\n", i, data->bo_cpu_map[i]);
 		igt_assert(data->bo_cpu_map[i] == expected);
 	}
+}
+
+static void
+prepare_with_buf(struct data *data)
+{
+	uint32_t bpp = 32;
+	uint32_t alignment = 0;
+	uint32_t req_tiling = 0;
+	uint32_t compression = 0;
+	uint32_t size = calc_bo_size(data);
+	int stride = 0;
+	uint64_t region = system_memory(data->fd);
+	uint8_t wc_uncompressed_pat = get_wc_uncompressed_pat(data);
+	uint8_t wc_compressed_pat = get_wc_uncompressed_pat(data);
+
+	prepare(data);
+
+	intel_buf_init_full(data->bops, data->bo_cpu, &data->buf_cpu,
+			    WIDTH, HEIGHT, bpp, alignment, req_tiling,
+			    compression, size, stride, region, wc_uncompressed_pat,
+			    DEFAULT_MOCS_INDEX);
+
+	intel_buf_init_full(data->bops, data->bo_compressed, &data->buf_compressed,
+			    WIDTH, HEIGHT, bpp, alignment, req_tiling,
+			    compression, size, stride, region, wc_compressed_pat,
+			    DEFAULT_MOCS_INDEX);
+}
+
+/**
+ * SUBTEST: basic-render-copy
+ * Description: Basic compression test
+ * Functionality: Test basic compression read and write
+ * Test category: functionality test
+ */
+
+static void
+basic_render_copy(struct data *data)
+{
+	uint16_t dev_id = intel_get_drm_devid(data->fd);
+	igt_render_copyfunc_t rendercopy = igt_get_render_copyfunc(dev_id);
+	uint32_t white = 0xFFFFFFFF;
+	uint32_t different_color = 0xFF00FFFF;
+	struct intel_bb *ibb;
+	uint32_t *expected = malloc(NUM_DWORDS * sizeof(uint32_t));
+	uint32_t i;
+
+	prepare_with_buf(data);
+
+	/* draw white screen with a rectangle in the middle */
+	igt_draw_rect(data->fd, data->bops, 0, data->buf_cpu.handle,
+		      data->buf_cpu.bo_size, data->buf_cpu.surface[0].stride,
+		      data->buf_cpu.width, data->buf_cpu.height,
+		      data->buf_cpu.tiling, IGT_DRAW_MMAP_WC, 0, 0, WIDTH,
+		      HEIGHT, white, 32);
+	igt_draw_rect(data->fd, data->bops, 0, data->buf_cpu.handle,
+		      data->buf_cpu.bo_size, data->buf_cpu.surface[0].stride,
+		      data->buf_cpu.width, data->buf_cpu.height,
+		      data->buf_cpu.tiling, IGT_DRAW_MMAP_WC, 0, 100, WIDTH,
+		      200, different_color, 32);
+	/* copy it to a buffer that will be compared at the end of the test */
+	memcpy(expected, data->bo_cpu_map, NUM_DWORDS * sizeof(uint32_t));
+
+	/* copy cpu buffer to compressed using GPU */
+	ibb = intel_bb_create_with_context(data->fd, data->exec_queue,
+					   data->vm_id, NULL, 0x1000);
+	rendercopy(ibb, &data->buf_cpu, 0, 0, WIDTH, HEIGHT,
+		   &data->buf_compressed, 0, 0);
+	intel_bb_destroy(ibb);
+
+	/* set CPU buffer to 0 */
+	memset(data->bo_cpu_map, 0, NUM_DWORDS * sizeof(uint32_t));
+
+	/* copy compressed buffer to CPU buffer using GPU */
+	ibb = intel_bb_create_with_context(data->fd, data->exec_queue,
+					   data->vm_id, NULL, 0x1000);
+	rendercopy(ibb, &data->buf_compressed, 0, 0, WIDTH, HEIGHT,
+		   &data->buf_cpu, 0, 0);
+	intel_bb_destroy(ibb);
+
+	/* check if passed */
+	for (i = 0; i < NUM_DWORDS; i++) {
+		if (debug_enabled && expected[i] != data->bo_cpu_map[i])
+			printf("i=%i value=%u expected=%u\n", i, data->bo_cpu_map[i], expected[i]);
+		igt_assert(expected[i] == data->bo_cpu_map[i]);
+	}
+
+	free(expected);
+	finish(data);
 }
 
 /**
@@ -315,10 +424,14 @@ igt_main_args("", long_options, help_str, opt_handler, NULL)
 		data.fd = drm_open_driver(DRIVER_XE);
 		data.vm_id = xe_vm_create(data.fd, DRM_XE_VM_CREATE_FLAG_SCRATCH_PAGE, 0);
 		data.exec_queue = xe_exec_queue_create_class(data.fd, data.vm_id, DRM_XE_ENGINE_CLASS_RENDER);
+		data.bops = buf_ops_create(data.fd);
 	}
 
 	igt_subtest("basic")
 		basic(&data);
+
+	igt_subtest("basic-render-copy")
+		basic_render_copy(&data);
 
 	igt_subtest("resolve-compressed-to-uncompressed")
 		resolve_compressed_to_uncompressed(&data);
@@ -327,6 +440,7 @@ igt_main_args("", long_options, help_str, opt_handler, NULL)
 		resolve_uncompressed_to_compressed(&data);
 
 	igt_fixture {
+		buf_ops_destroy(data.bops);
 		xe_exec_queue_destroy(data.fd, data.exec_queue);
 		xe_vm_destroy(data.fd, data.vm_id);
 		drm_close_driver(data.fd);
