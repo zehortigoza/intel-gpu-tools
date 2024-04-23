@@ -40,6 +40,7 @@ struct data {
 	struct buf_ops *bops;
 	struct intel_buf buf_cpu;
 	struct intel_buf buf_compressed;
+	struct intel_buf buf_uncompressed;
 };
 
 static uint32_t
@@ -267,6 +268,80 @@ prepare_with_buf(struct data *data)
 			    WIDTH, HEIGHT, bpp, alignment, req_tiling,
 			    compression, size, stride, region, wc_compressed_pat,
 			    DEFAULT_MOCS_INDEX);
+
+	intel_buf_init_full(data->bops, data->bo_compressed, &data->buf_uncompressed,
+			    WIDTH, HEIGHT, bpp, alignment, req_tiling,
+			    compression, size, stride, region, wc_uncompressed_pat,
+			    DEFAULT_MOCS_INDEX);
+}
+
+/**
+ * SUBTEST: resolve-compressed-uncompressed-render-copy
+ * Description: Basic compression test
+ * Functionality: Test basic compression read and write
+ * Test category: functionality test
+ */
+
+static void
+resolve_compress_uncompressed_render_copy(struct data *data)
+{
+	uint16_t dev_id = intel_get_drm_devid(data->fd);
+	igt_render_copyfunc_t rendercopy = igt_get_render_copyfunc(dev_id);
+	uint32_t white = 0xFFFFFFFF;
+	uint32_t different_color = 0xFF00FFFF;
+	struct intel_bb *ibb;
+	uint32_t *expected = malloc(NUM_DWORDS * sizeof(uint32_t));
+	uint32_t i;
+
+	prepare_with_buf(data);
+
+	/* draw white screen with a rectangle in the middle */
+	igt_draw_rect(data->fd, data->bops, 0, data->buf_cpu.handle,
+		      data->buf_cpu.bo_size, data->buf_cpu.surface[0].stride,
+		      data->buf_cpu.width, data->buf_cpu.height,
+		      data->buf_cpu.tiling, IGT_DRAW_MMAP_WC, 0, 0, WIDTH,
+		      HEIGHT, white, 32);
+	igt_draw_rect(data->fd, data->bops, 0, data->buf_cpu.handle,
+		      data->buf_cpu.bo_size, data->buf_cpu.surface[0].stride,
+		      data->buf_cpu.width, data->buf_cpu.height,
+		      data->buf_cpu.tiling, IGT_DRAW_MMAP_WC, 0, 100, WIDTH,
+		      200, different_color, 32);
+	/* copy it to a buffer that will be compared at the end of the test */
+	memcpy(expected, data->bo_cpu_map, NUM_DWORDS * sizeof(uint32_t));
+
+	/* copy cpu buffer to compressed using GPU */
+	ibb = intel_bb_create_with_context(data->fd, data->exec_queue,
+					   data->vm_id, NULL, 0x1000);
+	rendercopy(ibb, &data->buf_cpu, 0, 0, WIDTH, HEIGHT,
+		   &data->buf_compressed, 0, 0);
+	intel_bb_destroy(ibb);
+
+	/* set CPU buffer to 0 */
+	memset(data->bo_cpu_map, 0, NUM_DWORDS * sizeof(uint32_t));
+
+	/* copy compressed buffer to uncompressed buffer using GPU */
+	ibb = intel_bb_create_with_context(data->fd, data->exec_queue,
+					   data->vm_id, NULL, 0x1000);
+	rendercopy(ibb, &data->buf_compressed, 0, 0, WIDTH, HEIGHT,
+		   &data->buf_uncompressed, 0, 0);
+	intel_bb_destroy(ibb);
+
+	/* copy uncompressed buffer to CPU buffer using GPU */
+	ibb = intel_bb_create_with_context(data->fd, data->exec_queue,
+					   data->vm_id, NULL, 0x1000);
+	rendercopy(ibb, &data->buf_uncompressed, 0, 0, WIDTH, HEIGHT,
+		   &data->buf_cpu, 0, 0);
+	intel_bb_destroy(ibb);
+
+	/* check if passed */
+	for (i = 0; i < NUM_DWORDS; i++) {
+		if (debug_enabled && expected[i] != data->bo_cpu_map[i])
+			printf("i=%i value=%u expected=%u\n", i, data->bo_cpu_map[i], expected[i]);
+		igt_assert(expected[i] == data->bo_cpu_map[i]);
+	}
+
+	free(expected);
+	finish(data);
 }
 
 /**
@@ -432,6 +507,9 @@ igt_main_args("", long_options, help_str, opt_handler, NULL)
 
 	igt_subtest("basic-render-copy")
 		basic_render_copy(&data);
+
+	igt_subtest("resolve-compressed-uncompressed-render-copy")
+		resolve_compress_uncompressed_render_copy(&data);
 
 	igt_subtest("resolve-compressed-to-uncompressed")
 		resolve_compressed_to_uncompressed(&data);
