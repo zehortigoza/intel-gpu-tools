@@ -216,6 +216,10 @@ simple_hang(int fd)
  * SUBTEST: wedged-at-any-timeout
  * Description: Force Xe device wedged after a simple guc timeout
  */
+/**
+ * SUBTEST: wedged-mode-toggle
+ * Description: Test wedged.mode=1 after testing wedged.mode=2
+ */
 igt_main
 {
 	struct drm_xe_engine_class_instance *hwe;
@@ -255,6 +259,16 @@ igt_main
 		igt_assert_eq(simple_ioctl(fd), 0);
 		xe_for_each_engine(fd, hwe)
 			simple_exec(fd, hwe);
+	}
+
+	igt_subtest_f("wedged-mode-toggle") {
+		igt_require(igt_debugfs_exists(fd, "wedged_mode", O_RDWR));
+
+		igt_debugfs_write(fd, "wedged_mode", "2");
+		igt_assert_eq(simple_ioctl(fd), 0);
+		igt_debugfs_write(fd, "wedged_mode", "1");
+		simple_hang(fd);
+		igt_assert_eq(simple_ioctl(fd), 0);
 	}
 
 	igt_fixture {
