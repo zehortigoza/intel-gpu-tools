@@ -31,7 +31,8 @@ static bool debug_enabled = false;
 struct data {
 	int fd;
 	uint32_t vm_id;
-	uint32_t exec_queue;
+	uint32_t render_exec_queue;
+	uint32_t copy_exec_queue;
 
 	uint32_t bo_cpu;
 	uint32_t bo_compressed;
@@ -108,7 +109,7 @@ copy_dwords_with_flush(struct data *data, uint64_t src, uint64_t dest,
 	}
 	batch_map[batch_index++] = MI_BATCH_BUFFER_END;
 	igt_assert(batch_size >= batch_index);
-	xe_exec_wait(data->fd, data->exec_queue, ADDR_BO_BATCH);
+	xe_exec_wait(data->fd, data->render_exec_queue, ADDR_BO_BATCH);
 
 	munmap(batch_map, batch_size);
 	xe_vm_unbind_sync(data->fd, data->vm_id, 0, ADDR_BO_BATCH, batch_size);
@@ -310,7 +311,7 @@ resolve_compress_uncompressed_render_copy(struct data *data)
 	memcpy(expected, data->bo_cpu_map, NUM_DWORDS * sizeof(uint32_t));
 
 	/* copy cpu buffer to compressed using GPU */
-	ibb = intel_bb_create_with_context(data->fd, data->exec_queue,
+	ibb = intel_bb_create_with_context(data->fd, data->render_exec_queue,
 					   data->vm_id, NULL, 0x1000);
 	rendercopy(ibb, &data->buf_cpu, 0, 0, WIDTH, HEIGHT,
 		   &data->buf_compressed, 0, 0);
@@ -320,14 +321,14 @@ resolve_compress_uncompressed_render_copy(struct data *data)
 	memset(data->bo_cpu_map, 0, NUM_DWORDS * sizeof(uint32_t));
 
 	/* copy compressed buffer to uncompressed buffer using GPU */
-	ibb = intel_bb_create_with_context(data->fd, data->exec_queue,
+	ibb = intel_bb_create_with_context(data->fd, data->render_exec_queue,
 					   data->vm_id, NULL, 0x1000);
 	rendercopy(ibb, &data->buf_compressed, 0, 0, WIDTH, HEIGHT,
 		   &data->buf_uncompressed, 0, 0);
 	intel_bb_destroy(ibb);
 
 	/* copy uncompressed buffer to CPU buffer using GPU */
-	ibb = intel_bb_create_with_context(data->fd, data->exec_queue,
+	ibb = intel_bb_create_with_context(data->fd, data->render_exec_queue,
 					   data->vm_id, NULL, 0x1000);
 	rendercopy(ibb, &data->buf_uncompressed, 0, 0, WIDTH, HEIGHT,
 		   &data->buf_cpu, 0, 0);
@@ -342,6 +343,70 @@ resolve_compress_uncompressed_render_copy(struct data *data)
 
 	free(expected);
 	finish(data);
+}
+
+/**
+ * SUBTEST: basic-copy
+ * Description: Basic compression test
+ * Functionality: Test basic compression read and write
+ * Test category: functionality test
+ */
+
+static void
+basic_copy(struct data *data)
+{
+	uint32_t white = 0xFFFFFFFF;
+	uint32_t different_color = 0xFF00FFFF;
+	uint32_t *expected = malloc(NUM_DWORDS * sizeof(uint32_t));
+	uint32_t bo_batch, *batch_map, batch_index = 0;
+	uint64_t batch_size;
+	uint8_t mocs_index = intel_get_uc_mocs_index(data->fd);
+
+	prepare_with_buf(data);
+
+	/* initialize batch */
+	batch_size = (NUM_DWORDS * 5 + 1) * sizeof(uint32_t);
+	batch_size = xe_bb_size(data->fd, batch_size);
+	bo_batch = xe_bo_create(data->fd, data->vm_id, batch_size,
+				vram_if_possible(data->fd, 0),
+				DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
+	batch_map = xe_bo_mmap_ext(data->fd, bo_batch, batch_size,
+				   PROT_READ | PROT_WRITE);
+	xe_vm_bind_sync(data->fd, data->vm_id, bo_batch, 0, ADDR_BO_BATCH, batch_size);
+
+	/* draw white screen with a rectangle in the middle */
+	igt_draw_rect(data->fd, data->bops, 0, data->buf_cpu.handle,
+		      data->buf_cpu.bo_size, data->buf_cpu.surface[0].stride,
+		      data->buf_cpu.width, data->buf_cpu.height,
+		      data->buf_cpu.tiling, IGT_DRAW_MMAP_WC, 0, 0, WIDTH,
+		      HEIGHT, white, 32);
+	igt_draw_rect(data->fd, data->bops, 0, data->buf_cpu.handle,
+		      data->buf_cpu.bo_size, data->buf_cpu.surface[0].stride,
+		      data->buf_cpu.width, data->buf_cpu.height,
+		      data->buf_cpu.tiling, IGT_DRAW_MMAP_WC, 0, 100, WIDTH,
+		      200, different_color, 32);
+	/* copy it to a buffer that will be compared at the end of the test */
+	memcpy(expected, data->bo_cpu_map, NUM_DWORDS * sizeof(uint32_t));
+
+	/* copy cpu buffer to compressed using GPU */
+	batch_map[batch_index++] = (0x2 << 29) | (0x41 << 22) | (2 << 19) | (1 << 12) | 0x14;
+	batch_map[batch_index++] = (mocs_index << 24) | 4 * WIDTH;
+	batch_map[batch_index++] = 0;//dst y1, x1
+	batch_map[batch_index++] = (HEIGHT << 16) | WIDTH;//dst y2, x2
+	batch_map[batch_index++] = addr_low(ADDR_BO_COMPRESSED);//dst addr low
+	batch_map[batch_index++] = addr_high(data->fd, ADDR_BO_COMPRESSED);//dst addr high
+	batch_map[batch_index++] = 1 << 31;/* destination target memory? lmem(0) or smem(1) */
+	batch_map[batch_index++] = 0;//src y1, x1
+	batch_map[batch_index++] = (mocs_index << 24) | 4 * WIDTH;
+	batch_map[batch_index++] = addr_low(ADDR_BO_CPU);//src addr low
+	batch_map[batch_index++] = addr_high(data->fd, ADDR_BO_CPU);//src addr high
+	batch_map[batch_index++] = 1 << 31;/* src target memory? lmem(0) or smem(1) */
+	batch_map[batch_index++] = 0;/* SourceCompressionFormat */
+	batch_map[batch_index++] = 0;/* reserved group 13 */
+	batch_map[batch_index++] = 0;/* DestinationCompressionFormat */
+	batch_map[batch_index++] = 0;/* reserved group 15 */
+	batch_map[batch_index++] = ((WIDTH - 1) << 14)| (HEIGHT - 1);
+	/* Not finished */
 }
 
 /**
@@ -379,7 +444,7 @@ basic_render_copy(struct data *data)
 	memcpy(expected, data->bo_cpu_map, NUM_DWORDS * sizeof(uint32_t));
 
 	/* copy cpu buffer to compressed using GPU */
-	ibb = intel_bb_create_with_context(data->fd, data->exec_queue,
+	ibb = intel_bb_create_with_context(data->fd, data->render_exec_queue,
 					   data->vm_id, NULL, 0x1000);
 	rendercopy(ibb, &data->buf_cpu, 0, 0, WIDTH, HEIGHT,
 		   &data->buf_compressed, 0, 0);
@@ -389,7 +454,7 @@ basic_render_copy(struct data *data)
 	memset(data->bo_cpu_map, 0, NUM_DWORDS * sizeof(uint32_t));
 
 	/* copy compressed buffer to CPU buffer using GPU */
-	ibb = intel_bb_create_with_context(data->fd, data->exec_queue,
+	ibb = intel_bb_create_with_context(data->fd, data->render_exec_queue,
 					   data->vm_id, NULL, 0x1000);
 	rendercopy(ibb, &data->buf_compressed, 0, 0, WIDTH, HEIGHT,
 		   &data->buf_cpu, 0, 0);
@@ -498,7 +563,8 @@ igt_main_args("", long_options, help_str, opt_handler, NULL)
 	igt_fixture {
 		data.fd = drm_open_driver(DRIVER_XE);
 		data.vm_id = xe_vm_create(data.fd, DRM_XE_VM_CREATE_FLAG_SCRATCH_PAGE, 0);
-		data.exec_queue = xe_exec_queue_create_class(data.fd, data.vm_id, DRM_XE_ENGINE_CLASS_RENDER);
+		data.render_exec_queue = xe_exec_queue_create_class(data.fd, data.vm_id, DRM_XE_ENGINE_CLASS_RENDER);
+		data.copy_exec_queue = xe_exec_queue_create_class(data.fd, data.vm_id, DRM_XE_ENGINE_CLASS_COPY);
 		data.bops = buf_ops_create(data.fd);
 	}
 
@@ -507,6 +573,9 @@ igt_main_args("", long_options, help_str, opt_handler, NULL)
 
 	igt_subtest("basic-render-copy")
 		basic_render_copy(&data);
+
+	igt_subtest("basic-copy")
+		basic_copy(&data);
 
 	igt_subtest("resolve-compressed-uncompressed-render-copy")
 		resolve_compress_uncompressed_render_copy(&data);
@@ -519,7 +588,8 @@ igt_main_args("", long_options, help_str, opt_handler, NULL)
 
 	igt_fixture {
 		buf_ops_destroy(data.bops);
-		xe_exec_queue_destroy(data.fd, data.exec_queue);
+		xe_exec_queue_destroy(data.fd, data.render_exec_queue);
+		xe_exec_queue_destroy(data.fd, data.copy_exec_queue);
 		xe_vm_destroy(data.fd, data.vm_id);
 		drm_close_driver(data.fd);
 	}
