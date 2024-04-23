@@ -274,6 +274,7 @@ intel_kms_progs = [
 ]
 
 intel_xe_progs = [
+	'xe_wedged',
 	'xe_ccs',
 	'xe_create',
 	'xe_compute',
