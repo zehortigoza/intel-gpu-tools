@@ -114,10 +114,11 @@ static void surf_copy(int xe,
 	uint32_t sysmem = system_memory(xe);
 	uint8_t comp_pat_index = DEFAULT_PAT_INDEX;
 	uint16_t cpu_caching = __xe_default_cpu_caching(xe, sysmem, 0);
+	uint32_t devid = intel_get_drm_devid(xe);
 	int result;
 
 	igt_assert(mid->compression);
-	if (AT_LEAST_GEN(intel_get_drm_devid(xe), 20) && mid->compression) {
+	if (AT_LEAST_GEN(devid, 20) && mid->compression) {
 		comp_pat_index  = intel_get_pat_idx_uc_comp(xe);
 		cpu_caching = DRM_XE_GEM_CPU_CACHING_WC;
 	}
@@ -162,8 +163,24 @@ static void surf_copy(int xe,
 						      (void *)mid->ptr, mid->size);
 
 		munmap(ccsmap2, ccssize);
-		igt_assert(!strcmp(orig, newsum));
-		igt_assert(!strcmp(orig2, newsum2));
+		if (blt_platform_has_flat_ccs_enabled(xe)) {
+			if (IS_GEN(devid, 12) && is_intel_dgfx(xe)) {
+				igt_assert(!strcmp(orig, newsum));
+				igt_assert(!strcmp(orig2, newsum2));
+			} else if (AT_LEAST_GEN(devid, 20)) {
+				if (is_intel_dgfx(xe)) {
+					/* buffer object would become
+					 * uncompressed in xe2+ dgfx
+					 */
+					igt_assert(!blt_surface_is_compressed(xe, ctx,
+							NULL, ahnd, mid));
+				} else {
+					/* ccs should be present in xe2+ igfx */
+					igt_assert(blt_surface_is_compressed(xe, ctx,
+							NULL, ahnd, mid));
+				}
+			}
+		}
 		g_free(orig);
 		g_free(orig2);
 		g_free(newsum);
@@ -193,10 +210,18 @@ static void surf_copy(int xe,
 	intel_ctx_xe_sync(ctx, true);
 	WRITE_PNG(xe, run_id, "corrupted", &blt.dst, dst->x2, dst->y2, bpp);
 	result = memcmp(src->ptr, dst->ptr, src->size);
-	igt_assert(result != 0);
+	if (blt_platform_has_flat_ccs_enabled(xe))
+		igt_assert(result != 0);
 
-	/* retrieve back ccs */
-	memcpy(ccsmap, ccscopy, ccssize);
+	/* In case of suspend_resume, buffer object would become
+	 * uncompressed in xe2+ dgfx, and therefore retrieve the
+	 * ccs by copying 0 to ccsmap
+	 */
+	if (suspend_resume && AT_LEAST_GEN(devid, 20) && is_intel_dgfx(xe))
+		memset(ccsmap, 0, ccssize);
+	else
+		/* retrieve back ccs */
+		memcpy(ccsmap, ccscopy, ccssize);
 	blt_ctrl_surf_copy(xe, ctx, NULL, ahnd, &surf);
 
 	blt_block_copy(xe, ctx, NULL, ahnd, &blt, &ext);
@@ -365,7 +390,8 @@ static void block_copy(int xe,
 	 * occurs and ctrl surface will be filled with some not-zeroed values.
 	 */
 	if (mid->compression && FROM_EXP_WH(width, height))
-		igt_assert(blt_surface_is_compressed(xe, ctx, NULL, ahnd, mid));
+		if (blt_platform_has_flat_ccs_enabled(xe))
+			igt_assert(blt_surface_is_compressed(xe, ctx, NULL, ahnd, mid));
 
 	WRITE_PNG(xe, run_id, "mid", &blt.dst, width, height, bpp);
 
