@@ -820,9 +820,17 @@ static const int num_child_device_handles =
 static const char *child_device_handle(struct context *context,
 				       uint16_t handle)
 {
-	int i;
+	static char buffer[64];
+	size_t len = sizeof(buffer);
+	char *ptr = buffer;
+	bool first = true;
 
-	for (i = 0; i < num_child_device_handles; i++) {
+	if (handle == 0)
+		return "none";
+
+	for (int i = 0; i < num_child_device_handles; i++) {
+		int r;
+
 		if (!(child_device_handles[i].handle & handle))
 			continue;
 
@@ -834,10 +842,23 @@ static const char *child_device_handle(struct context *context,
 		    context->bdb->version > child_device_handles[i].max_ver)
 			continue;
 
-		return child_device_handles[i].name;
+		handle &= ~child_device_handles[i].handle;
+
+		r = snprintf(ptr, len, "%s%s", first ? "" : ",",
+			     child_device_handles[i].name);
+		if (r < 0 || r >= len)
+			break;
+
+		first = false;
+		ptr += r;
+		len -= r;
 	}
 
-	return "unknown";
+	if (handle)
+		snprintf(ptr, len, "%sunknown(0x%x)",
+			 first ? "" : ",", handle);
+
+	return buffer;
 }
 
 static const char *dvo_port_names[] = {
