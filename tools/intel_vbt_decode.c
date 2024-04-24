@@ -2896,18 +2896,13 @@ static void dump_headers(struct context *context)
 
 	printf("BDB blocks present:");
 	for (i = 0; i < 256; i++) {
-		struct bdb_block *block;
-
-		block = find_section(context, i);
-		if (!block)
+		if (!find_raw_section(context, i))
 			continue;
 
 		if (j++ % 16)
 			printf(" %3d", i);
 		else
 			printf("\n\t%3d", i);
-
-		free(block);
 	}
 	printf("\n\n");
 }
