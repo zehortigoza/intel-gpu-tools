@@ -1953,8 +1953,8 @@ print_detail_timing_data(const struct bdb_edid_dtd *dvo_timing)
 	printf("\tclock: %d\n", dvo_timing->clock * 10);
 }
 
-static void dump_sdvo_panel_dtds(struct context *context,
-				 const struct bdb_block *block)
+static void dump_sdvo_lvds_dtd(struct context *context,
+			       const struct bdb_block *block)
 {
 	const struct bdb_edid_dtd *dvo_timing = block_data(block);
 	int n, count;
@@ -2724,8 +2724,8 @@ struct dumper dumpers[] = {
 	},
 	{
 		.id = BDB_SDVO_LVDS_DTD,
-		.name = "SDVO panel dtds",
-		.dump = dump_sdvo_panel_dtds,
+		.name = "SDVO LVDS DTD",
+		.dump = dump_sdvo_lvds_dtd,
 	},
 	{
 		.id = BDB_DRIVER_FEATURES,
