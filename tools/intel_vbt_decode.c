@@ -53,17 +53,6 @@ typedef uint64_t u64;
 #define _INTEL_BIOS_PRIVATE
 #include "intel_vbt_defs.h"
 
-/* no bother to include "edid.h" */
-#define _H_ACTIVE(x) (x[2] + ((x[4] & 0xF0) << 4))
-#define _H_SYNC_OFF(x) (x[8] + ((x[11] & 0xC0) << 2))
-#define _H_SYNC_WIDTH(x) (x[9] + ((x[11] & 0x30) << 4))
-#define _H_BLANK(x) (x[3] + ((x[4] & 0x0F) << 8))
-#define _V_ACTIVE(x) (x[5] + ((x[7] & 0xF0) << 4))
-#define _V_SYNC_OFF(x) ((x[10] >> 4) + ((x[11] & 0x0C) << 2))
-#define _V_SYNC_WIDTH(x) ((x[10] & 0x0F) + ((x[11] & 0x03) << 4))
-#define _V_BLANK(x) (x[6] + ((x[7] & 0x0F) << 8))
-#define _PIXEL_CLOCK(x) (x[0] + (x[1] << 8)) * 10000
-
 #define YESNO(val) ((val) ? "yes" : "no")
 
 /* This is not for mapping to memory layout. */
@@ -1382,6 +1371,38 @@ static void dump_lfp_data_ptrs(struct context *context,
 	}
 }
 
+static void
+print_detail_timing_data(const struct bdb_edid_dtd *dvo_timing)
+{
+	int display, sync_start, sync_end, total;
+
+	display = (dvo_timing->hactive_hi << 8) | dvo_timing->hactive_lo;
+	sync_start = display +
+		((dvo_timing->hsync_off_hi << 8) | dvo_timing->hsync_off_lo);
+	sync_end = sync_start + ((dvo_timing->hsync_pulse_width_hi << 8) |
+				 dvo_timing->hsync_pulse_width_lo);
+	total = display +
+		((dvo_timing->hblank_hi << 8) | dvo_timing->hblank_lo);
+	printf("\t\t  hdisplay: %d\n", display);
+	printf("\t\t  hsync [%d, %d] %s\n", sync_start, sync_end,
+	       dvo_timing->hsync_positive ? "+sync" : "-sync");
+	printf("\t\t  htotal: %d\n", total);
+
+	display = (dvo_timing->vactive_hi << 8) | dvo_timing->vactive_lo;
+	sync_start = display + ((dvo_timing->vsync_off_hi << 8) |
+				dvo_timing->vsync_off_lo);
+	sync_end = sync_start + ((dvo_timing->vsync_pulse_width_hi << 8) |
+				 dvo_timing->vsync_pulse_width_lo);
+	total = display +
+		((dvo_timing->vblank_hi << 8) | dvo_timing->vblank_lo);
+	printf("\t\t  vdisplay: %d\n", display);
+	printf("\t\t  vsync [%d, %d] %s\n", sync_start, sync_end,
+	       dvo_timing->vsync_positive ? "+sync" : "-sync");
+	printf("\t\t  vtotal: %d\n", total);
+
+	printf("\t\t  clock: %d\n", dvo_timing->clock * 10);
+}
+
 static char *decode_pnp_id(u16 mfg_name, char str[4])
 {
 	mfg_name = ntohs(mfg_name);
@@ -1412,9 +1433,6 @@ static void dump_lfp_data(struct context *context,
 	struct bdb_block *ptrs_block;
 	const struct bdb_lfp_data_ptrs *ptrs;
 	int i;
-	int hdisplay, hsyncstart, hsyncend, htotal;
-	int vdisplay, vsyncstart, vsyncend, vtotal;
-	float clock;
 
 	ptrs_block = find_section(context, BDB_LFP_DATA_PTRS);
 	if (!ptrs_block)
@@ -1425,7 +1443,7 @@ static void dump_lfp_data(struct context *context,
 	for (i = 0; i < 16; i++) {
 		const struct fp_timing *fp_timing =
 			block_data(block) + ptrs->ptr[i].fp_timing.offset;
-		const uint8_t *timing_data =
+		const struct bdb_edid_dtd *dvo_timing =
 			block_data(block) + ptrs->ptr[i].dvo_timing.offset;
 		const struct bdb_edid_pnp_id *pnp_id =
 			block_data(block) + ptrs->ptr[i].panel_pnp_id.offset;
@@ -1435,22 +1453,10 @@ static void dump_lfp_data(struct context *context,
 		if (!dump_panel(context, i))
 			continue;
 
-		hdisplay = _H_ACTIVE(timing_data);
-		hsyncstart = hdisplay + _H_SYNC_OFF(timing_data);
-		hsyncend = hsyncstart + _H_SYNC_WIDTH(timing_data);
-		htotal = hdisplay + _H_BLANK(timing_data);
-
-		vdisplay = _V_ACTIVE(timing_data);
-		vsyncstart = vdisplay + _V_SYNC_OFF(timing_data);
-		vsyncend = vsyncstart + _V_SYNC_WIDTH(timing_data);
-		vtotal = vdisplay + _V_BLANK(timing_data);
-		clock = _PIXEL_CLOCK(timing_data) / 1000;
-
 		printf("\tPanel %d%s\n", i, panel_str(context, i));
-		printf("\t\t%dx%d clock %d\n",
-		       fp_timing->x_res, fp_timing->y_res,
-		       _PIXEL_CLOCK(timing_data));
-		printf("\t\tinfo:\n");
+		printf("\t\tResolution: %dx%d\n",
+		       fp_timing->x_res, fp_timing->y_res);
+		printf("\t\tFP timing data:\n");
 		printf("\t\t  LVDS: 0x%08lx\n",
 		       (unsigned long)fp_timing->lvds_reg_val);
 		printf("\t\t  PP_ON_DELAYS: 0x%08lx\n",
@@ -1461,11 +1467,9 @@ static void dump_lfp_data(struct context *context,
 		       (unsigned long)fp_timing->pp_cycle_reg_val);
 		printf("\t\t  PFIT: 0x%08lx\n",
 		       (unsigned long)fp_timing->pfit_reg_val);
-		printf("\t\ttimings: %d %d %d %d %d %d %d %d %.2f (%s)\n",
-		       hdisplay, hsyncstart, hsyncend, htotal,
-		       vdisplay, vsyncstart, vsyncend, vtotal, clock,
-		       (hsyncend > htotal || vsyncend > vtotal) ?
-		       "BAD!" : "good");
+
+		printf("\t\tDVO timing:\n");
+		print_detail_timing_data(dvo_timing);
 
 		printf("\t\tPnP ID:\n");
 		dump_pnp_id(pnp_id);
@@ -1924,38 +1928,6 @@ static void dump_lfp_power(struct context *context,
 		printf("\t\tOPST Aggrgessiveness: %d\n",
 		       lfp_block->aggressiveness2[i].opst_aggressiveness);
 	}
-}
-
-static void
-print_detail_timing_data(const struct bdb_edid_dtd *dvo_timing)
-{
-	int display, sync_start, sync_end, total;
-
-	display = (dvo_timing->hactive_hi << 8) | dvo_timing->hactive_lo;
-	sync_start = display +
-		((dvo_timing->hsync_off_hi << 8) | dvo_timing->hsync_off_lo);
-	sync_end = sync_start + ((dvo_timing->hsync_pulse_width_hi << 8) |
-				 dvo_timing->hsync_pulse_width_lo);
-	total = display +
-		((dvo_timing->hblank_hi << 8) | dvo_timing->hblank_lo);
-	printf("\thdisplay: %d\n", display);
-	printf("\thsync [%d, %d] %s\n", sync_start, sync_end,
-	       dvo_timing->hsync_positive ? "+sync" : "-sync");
-	printf("\thtotal: %d\n", total);
-
-	display = (dvo_timing->vactive_hi << 8) | dvo_timing->vactive_lo;
-	sync_start = display + ((dvo_timing->vsync_off_hi << 8) |
-				dvo_timing->vsync_off_lo);
-	sync_end = sync_start + ((dvo_timing->vsync_pulse_width_hi << 8) |
-				 dvo_timing->vsync_pulse_width_lo);
-	total = display +
-		((dvo_timing->vblank_hi << 8) | dvo_timing->vblank_lo);
-	printf("\tvdisplay: %d\n", display);
-	printf("\tvsync [%d, %d] %s\n", sync_start, sync_end,
-	       dvo_timing->vsync_positive ? "+sync" : "-sync");
-	printf("\tvtotal: %d\n", total);
-
-	printf("\tclock: %d\n", dvo_timing->clock * 10);
 }
 
 static void dump_sdvo_lvds_dtd(struct context *context,
