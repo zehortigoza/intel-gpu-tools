@@ -797,27 +797,45 @@ static void dump_child_device_type_bits(uint16_t type)
 }
 
 static const struct {
-	unsigned char handle;
+	uint16_t handle;
+	uint16_t min_ver, max_ver;
 	const char *name;
 } child_device_handles[] = {
-	{ DEVICE_HANDLE_CRT, "CRT" },
-	{ DEVICE_HANDLE_EFP1, "EFP1" },
-	{ DEVICE_HANDLE_EFP2, "EFP2" },
-	{ DEVICE_HANDLE_EFP3, "EFP3" },
-	{ DEVICE_HANDLE_EFP4, "EFP4" },
-	{ DEVICE_HANDLE_LFP1, "LFP1" },
-	{ DEVICE_HANDLE_LFP2, "LFP2" },
+	{ .handle = DEVICE_HANDLE_CRT,  .name = "CRT",  .max_ver = 216, },
+	{ .handle = DEVICE_HANDLE_TV,   .name = "TV",   .max_ver = 214, },
+	{ .handle = DEVICE_HANDLE_EFP1, .name = "EFP1",                 },
+	{ .handle = DEVICE_HANDLE_EFP2, .name = "EFP2",                 },
+	{ .handle = DEVICE_HANDLE_EFP3, .name = "EFP3",                 },
+	{ .handle = DEVICE_HANDLE_EFP4, .name = "EFP4",                 },
+	{ .handle = DEVICE_HANDLE_EFP5, .name = "EFP5", .min_ver = 215, },
+	{ .handle = DEVICE_HANDLE_EFP6, .name = "EFP6", .min_ver = 217, },
+	{ .handle = DEVICE_HANDLE_EFP7, .name = "EFP7", .min_ver = 217, },
+	{ .handle = DEVICE_HANDLE_EFP8, .name = "EFP8", .min_ver = 217, },
+	{ .handle = DEVICE_HANDLE_LFP1, .name = "LFP1",                 },
+	{ .handle = DEVICE_HANDLE_LFP2, .name = "LFP2",                 },
 };
 static const int num_child_device_handles =
 	sizeof(child_device_handles) / sizeof(child_device_handles[0]);
 
-static const char *child_device_handle(unsigned char handle)
+static const char *child_device_handle(struct context *context,
+				       uint16_t handle)
 {
 	int i;
 
-	for (i = 0; i < num_child_device_handles; i++)
-		if (child_device_handles[i].handle == handle)
-			return child_device_handles[i].name;
+	for (i = 0; i < num_child_device_handles; i++) {
+		if (!(child_device_handles[i].handle & handle))
+			continue;
+
+		if (child_device_handles[i].min_ver &&
+		    context->bdb->version < child_device_handles[i].min_ver)
+			continue;
+
+		if (child_device_handles[i].max_ver &&
+		    context->bdb->version > child_device_handles[i].max_ver)
+			continue;
+
+		return child_device_handles[i].name;
+	}
 
 	return "unknown";
 }
@@ -1006,7 +1024,7 @@ static void dump_child_device(struct context *context,
 
 	printf("\tChild device info:\n");
 	printf("\t\tDevice handle: 0x%04x (%s)\n", child->handle,
-	       child_device_handle(child->handle));
+	       child_device_handle(context, child->handle));
 	printf("\t\tDevice type: 0x%04x (%s)\n", child->device_type,
 	       child_device_type(child->device_type));
 	dump_child_device_type_bits(child->device_type);
