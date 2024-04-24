@@ -335,6 +335,7 @@ void pipewire_pulse_stop_reserve(void);
 #define roundup_power_of_two(x) ((x) != 0 ? 1ULL << igt_fls((x) - 1) : 0)
 
 #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
+#define DIV_ROUND_CLOSEST(n, d) (((n) + (d) / 2) / (d))
 
 uint64_t vfs_file_max(void);
 
