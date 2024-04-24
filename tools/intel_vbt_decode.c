@@ -1777,6 +1777,10 @@ static void dump_edp(struct context *context,
 			printf("\t\teDP max port link rate: %g Gbps (0x%02x)\n",
 			       rate / 5000.0f, rate);
 		}
+
+		if (context->bdb->version >= 251)
+			printf("\t\teDP DSC disable: %s\n",
+			       YESNO(panel_bool(edp->edp_dsc_disable, i)));
 	}
 }
 
