@@ -6,38 +6,38 @@
     "exclude_files": [ "../chamelium/kms_chamelium_helper.c", "../kms_color_helper.c",
                        "kms_dsc_helper.c" ],
     "fields": {
-        "Category": {
+        "Run type": {
             "_properties_": {
-                "description": "Contains the major group for the tested functionality 'Display'"
-            },
-            "Mega feature": {
-                "_properties_": {
-                    "description": "Contains the mega feature for end to end use case, e.g. the 'PSR' feature."
-                },
-                "Functionality": {
-                    "_properties_": {
-                        "description": "Groups tests on buckets containg more detailed functionality"
-                    }
-                }
-            },
-            "Run type": {
-                "_properties_": {
-                    "description": "Defines what category of testlist it belongs",
-                    "update-from-file": {
-                        "append-value-if-not-excluded": "Xe FULL, i915 FULL",
-                        "exclude-type": "regex-ignorecase",
-                        "include": [
-                            { "i915 BAT": "../intel-ci/fast-feedback.testlist" },
-                            { "i915 BAT chamelium": "../intel-ci/fast-feedback-chamelium-only.testlist" },
-                            { "i915 chamelium": "../intel-ci/chamelium-only.testlist" },
+                "description": "Defines what category of testlist it belongs",
+                "update-from-file": {
+                    "append-value-if-not-excluded": "Xe FULL, i915 FULL",
+                    "exclude-type": "regex-ignorecase",
+                    "include": [
+                        { "i915 BAT": "../intel-ci/fast-feedback.testlist" },
+                        { "i915 BAT chamelium": "../intel-ci/fast-feedback-chamelium-only.testlist" },
+                        { "i915 chamelium": "../intel-ci/chamelium-only.testlist" },
 
-                            { "Xe BAT": "../intel-ci/xe-fast-feedback.testlist" },
-                            { "Xe BAT chamelium": "../intel-ci/xe-fast-feedback-chamelium-only.testlist" }
-                        ],
-                        "exclude": [
-                            { "i915 BAT, i915 BAT chamelium, i915 chamelium, i915 FULL": "../intel-ci/blacklist.txt" },
+                        { "Xe BAT": "../intel-ci/xe-fast-feedback.testlist" },
+                        { "Xe BAT chamelium": "../intel-ci/xe-fast-feedback-chamelium-only.testlist" }
+                    ],
+                    "exclude": [
+                        { "i915 BAT, i915 BAT chamelium, i915 chamelium, i915 FULL": "../intel-ci/blacklist.txt" },
                             { "Xe BAT, Xe BAT chamelium, Xe FULL": "../intel-ci/xe.blocklist.txt" }
                         ]
+                    }
+                },
+            "Category": {
+                "_properties_": {
+                    "description": "Contains the major group for the tested functionality 'Display'"
+                },
+                "Mega feature": {
+                    "_properties_": {
+                        "description": "Contains the mega feature for end to end use case, e.g. the 'PSR' feature."
+                    },
+                    "Functionality": {
+                        "_properties_": {
+                            "description": "Groups tests on buckets containg more detailed functionality"
+                        }
                     }
                 }
             }
