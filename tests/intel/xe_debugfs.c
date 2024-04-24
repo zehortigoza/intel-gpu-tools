@@ -158,6 +158,7 @@ test_gt(int fd, int gt_id)
 		"topology",
 		"sa_info",
 		"hw_engines",
+		"mocs",
 //		"force_reset"
 	};
 	static const char * const expected_files_uc[] = {
@@ -180,6 +181,10 @@ test_gt(int fd, int gt_id)
 	igt_debugfs_dump(fd, name);
 
 	sprintf(name, "gt%d/topology", gt_id);
+	igt_assert(igt_debugfs_exists(fd, name, O_RDONLY));
+	igt_debugfs_dump(fd, name);
+
+	sprintf(name, "gt%d/mocs", gt_id);
 	igt_assert(igt_debugfs_exists(fd, name, O_RDONLY));
 	igt_debugfs_dump(fd, name);
 
