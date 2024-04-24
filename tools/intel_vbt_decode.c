@@ -801,12 +801,12 @@ static const struct {
 	const char *name;
 } child_device_handles[] = {
 	{ DEVICE_HANDLE_CRT, "CRT" },
-	{ DEVICE_HANDLE_EFP1, "EFP 1 (HDMI/DVI/DP)" },
-	{ DEVICE_HANDLE_EFP2, "EFP 2 (HDMI/DVI/DP)" },
-	{ DEVICE_HANDLE_EFP3, "EFP 3 (HDMI/DVI/DP)" },
-	{ DEVICE_HANDLE_EFP4, "EFP 4 (HDMI/DVI/DP)" },
-	{ DEVICE_HANDLE_LFP1, "LFP 1 (eDP)" },
-	{ DEVICE_HANDLE_LFP2, "LFP 2 (eDP)" },
+	{ DEVICE_HANDLE_EFP1, "EFP1" },
+	{ DEVICE_HANDLE_EFP2, "EFP2" },
+	{ DEVICE_HANDLE_EFP3, "EFP3" },
+	{ DEVICE_HANDLE_EFP4, "EFP4" },
+	{ DEVICE_HANDLE_LFP1, "LFP1" },
+	{ DEVICE_HANDLE_LFP2, "LFP2" },
 };
 static const int num_child_device_handles =
 	sizeof(child_device_handles) / sizeof(child_device_handles[0]);
