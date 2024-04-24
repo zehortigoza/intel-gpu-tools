@@ -69,6 +69,7 @@ struct context {
 
 	uint32_t devid;
 	int panel_type, panel_type2;
+	int sdvo_panel_type;
 	bool dump_all_panel_types;
 	bool hexdump;
 };
@@ -97,6 +98,14 @@ static const char *panel_str(const struct context *context, int panel_type)
 
 	if (panel_type == context->panel_type2)
 		return " (LFP2)";
+
+	return "";
+}
+
+static const char *sdvo_panel_str(const struct context *context, int sdvo_panel_type)
+{
+	if (sdvo_panel_type == context->sdvo_panel_type)
+		return " (*)";
 
 	return "";
 }
@@ -1935,7 +1944,7 @@ static void dump_sdvo_lvds_dtd(struct context *context,
 	const struct bdb_sdvo_lvds_dtd *t = block_data(block);
 
 	for (int n = 0; n < ARRAY_SIZE(t->dtd); n++) {
-		printf("%d:\n", n);
+		printf("\tSDVO Panel %d%s\n", n, sdvo_panel_str(context, n));
 		print_detail_timing_data(&t->dtd[n]);
 	}
 }
@@ -2623,6 +2632,25 @@ static int get_panel_type(struct context *context, bool is_panel_type2)
 	return panel_type;
 }
 
+/* get SDVO panel type from SDVO options block, or -1 if block not found */
+static int get_sdvo_panel_type(struct context *context)
+{
+	const struct bdb_sdvo_lvds_options *options;
+	struct bdb_block *block;
+	int panel_type = -1;
+
+	block = find_section(context, BDB_SDVO_LVDS_OPTIONS);
+	if (!block)
+		return -1;
+
+	options = block_data(block);
+	panel_type = options->panel_type;
+
+	free(block);
+
+	return panel_type;
+}
+
 static int
 get_device_id(unsigned char *bios, int size)
 {
@@ -2933,6 +2961,7 @@ int main(int argc, char **argv)
 	struct context context = {
 		.panel_type = -1,
 		.panel_type2 = -1,
+		.sdvo_panel_type = -1,
 	};
 	const char *panel_edid = NULL, *panel_edid2 = NULL;
 	char *endp;
@@ -3133,6 +3162,9 @@ int main(int argc, char **argv)
 			context.bdb->version);
 		context.panel_type2 = -1;
 	}
+
+	if (context.sdvo_panel_type == -1)
+		context.sdvo_panel_type = get_sdvo_panel_type(&context);
 
 	if (describe) {
 		print_description(&context);
