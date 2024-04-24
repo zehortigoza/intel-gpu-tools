@@ -205,8 +205,8 @@ static size_t lfp_data_min_size(const struct context *context)
 	return size;
 }
 
-static int make_lvds_data_ptr(struct lfp_data_ptr_table *table,
-			      int table_size, int total_size)
+static int make_lfp_data_ptr(struct lfp_data_ptr_table *table,
+			     int table_size, int total_size)
 {
 	if (total_size < table_size)
 		return total_size;
@@ -217,15 +217,15 @@ static int make_lvds_data_ptr(struct lfp_data_ptr_table *table,
 	return total_size - table_size;
 }
 
-static void next_lvds_data_ptr(struct lfp_data_ptr_table *next,
-			       const struct lfp_data_ptr_table *prev,
-			       int size)
+static void next_lfp_data_ptr(struct lfp_data_ptr_table *next,
+			      const struct lfp_data_ptr_table *prev,
+			      int size)
 {
 	next->table_size = prev->table_size;
 	next->offset = prev->offset + size;
 }
 
-static void *generate_lvds_data_ptrs(const struct context *context)
+static void *generate_lfp_data_ptrs(const struct context *context)
 {
 	int size, table_size, block_size, offset, fp_timing_size;
 	const void *block;
@@ -265,13 +265,13 @@ static void *generate_lvds_data_ptrs(const struct context *context)
 	ptrs = ptrs_block + 3;
 
 	table_size = sizeof(struct bdb_edid_pnp_id);
-	size = make_lvds_data_ptr(&ptrs->ptr[0].panel_pnp_id, table_size, size);
+	size = make_lfp_data_ptr(&ptrs->ptr[0].panel_pnp_id, table_size, size);
 
 	table_size = sizeof(struct bdb_edid_dtd);
-	size = make_lvds_data_ptr(&ptrs->ptr[0].dvo_timing, table_size, size);
+	size = make_lfp_data_ptr(&ptrs->ptr[0].dvo_timing, table_size, size);
 
 	table_size = fp_timing_size;
-	size = make_lvds_data_ptr(&ptrs->ptr[0].fp_timing, table_size, size);
+	size = make_lfp_data_ptr(&ptrs->ptr[0].fp_timing, table_size, size);
 
 	if (ptrs->ptr[0].fp_timing.table_size)
 		ptrs->num_entries++;
@@ -286,9 +286,9 @@ static void *generate_lvds_data_ptrs(const struct context *context)
 	size = fp_timing_size + sizeof(struct bdb_edid_dtd) +
 		sizeof(struct bdb_edid_pnp_id);
 	for (int i = 1; i < 16; i++) {
-		next_lvds_data_ptr(&ptrs->ptr[i].fp_timing, &ptrs->ptr[i-1].fp_timing, size);
-		next_lvds_data_ptr(&ptrs->ptr[i].dvo_timing, &ptrs->ptr[i-1].dvo_timing, size);
-		next_lvds_data_ptr(&ptrs->ptr[i].panel_pnp_id, &ptrs->ptr[i-1].panel_pnp_id, size);
+		next_lfp_data_ptr(&ptrs->ptr[i].fp_timing, &ptrs->ptr[i-1].fp_timing, size);
+		next_lfp_data_ptr(&ptrs->ptr[i].dvo_timing, &ptrs->ptr[i-1].dvo_timing, size);
+		next_lfp_data_ptr(&ptrs->ptr[i].panel_pnp_id, &ptrs->ptr[i-1].panel_pnp_id, size);
 	}
 
 	table_size = sizeof(struct bdb_edid_product_name);
@@ -488,8 +488,8 @@ static struct bdb_block *find_section(const struct context *context, int section
 
 	data = find_raw_section(context, section_id);
 	if (!data && section_id == BDB_LFP_DATA_PTRS) {
-		fprintf(stderr, "Generating LVDS data table pointers\n");
-		temp_block = generate_lvds_data_ptrs(context);
+		fprintf(stderr, "Generating LFP data table pointers\n");
+		temp_block = generate_lfp_data_ptrs(context);
 		if (temp_block)
 			data = temp_block + 3;
 	}
@@ -1261,8 +1261,8 @@ static const char * const pos_type[] = {
 	[3] = "reserved",
 };
 
-static void dump_lvds_options(struct context *context,
-			      const struct bdb_block *block)
+static void dump_lfp_options(struct context *context,
+			     const struct bdb_block *block)
 {
 	const struct bdb_lfp_options *options = block_data(block);
 
@@ -1343,7 +1343,7 @@ static void dump_lvds_options(struct context *context,
 	}
 }
 
-static void dump_lvds_ptr_data(struct context *context,
+static void dump_lfp_data_ptrs(struct context *context,
 			       const struct bdb_block *block)
 {
 	const struct bdb_lfp_data_ptrs *ptrs = block_data(block);
@@ -1396,8 +1396,8 @@ static char *decode_pnp_id(u16 mfg_name, char str[4])
 	return str;
 }
 
-static void dump_lvds_data(struct context *context,
-			   const struct bdb_block *block)
+static void dump_lfp_data(struct context *context,
+			  const struct bdb_block *block)
 {
 	struct bdb_block *ptrs_block;
 	const struct bdb_lfp_data_ptrs *ptrs;
@@ -2627,7 +2627,7 @@ static int get_panel_type_pnpid(const struct context *context,
 	return best;
 }
 
-/* get panel type from lvds options block, or -1 if block not found */
+/* get panel type from lfp options block, or -1 if block not found */
 static int get_panel_type(struct context *context, bool is_panel_type2)
 {
 	struct bdb_block *block;
@@ -2694,22 +2694,22 @@ struct dumper dumpers[] = {
 	},
 	{
 		.id = BDB_LFP_OPTIONS,
-		.name = "LVDS options block",
-		.dump = dump_lvds_options,
+		.name = "LFP options block",
+		.dump = dump_lfp_options,
 	},
 	{
 		.id = BDB_LFP_DATA_PTRS,
-		.name = "LVDS timing pointer data",
-		.dump = dump_lvds_ptr_data,
+		.name = "LFP data table pointers",
+		.dump = dump_lfp_data_ptrs,
 	},
 	{
 		.id = BDB_LFP_DATA,
-		.name = "LVDS panel data block",
-		.dump = dump_lvds_data,
+		.name = "LFP data table block",
+		.dump = dump_lfp_data,
 	},
 	{
 		.id = BDB_LFP_BACKLIGHT,
-		.name = "Backlight info block",
+		.name = "LFP backlight info block",
 		.dump = dump_backlight_info,
 	},
 	{
