@@ -316,8 +316,7 @@ static size_t block_min_size(const struct context *context, int section_id)
 	case BDB_SDVO_LVDS_OPTIONS:
 		return sizeof(struct bdb_sdvo_lvds_options);
 	case BDB_SDVO_LVDS_DTD:
-		/* FIXME? */
-		return 0;
+		return sizeof(struct bdb_sdvo_lvds_dtd);
 	case BDB_EDP:
 		return sizeof(struct bdb_edp);
 	case BDB_LFP_OPTIONS:
@@ -1933,13 +1932,11 @@ static void dump_lfp_power(struct context *context,
 static void dump_sdvo_lvds_dtd(struct context *context,
 			       const struct bdb_block *block)
 {
-	const struct bdb_edid_dtd *dvo_timing = block_data(block);
-	int n, count;
+	const struct bdb_sdvo_lvds_dtd *t = block_data(block);
 
-	count = block->size / sizeof(struct bdb_edid_dtd);
-	for (n = 0; n < count; n++) {
+	for (int n = 0; n < ARRAY_SIZE(t->dtd); n++) {
 		printf("%d:\n", n);
-		print_detail_timing_data(dvo_timing++);
+		print_detail_timing_data(&t->dtd[n]);
 	}
 }
 
