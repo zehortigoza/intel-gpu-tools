@@ -775,7 +775,7 @@ static const struct {
 	{ DEVICE_TYPE_POWER_MANAGEMENT, "Power management" },
 	{ DEVICE_TYPE_HOTPLUG_SIGNALING, "Hotplug signaling" },
 	{ DEVICE_TYPE_INTERNAL_CONNECTOR, "Internal connector" },
-	{ DEVICE_TYPE_NOT_HDMI_OUTPUT, "HDMI output" }, /* decoded as inverse */
+	{ DEVICE_TYPE_NOT_HDMI_OUTPUT, "Not HDMI output" },
 	{ DEVICE_TYPE_MIPI_OUTPUT, "MIPI output" },
 	{ DEVICE_TYPE_COMPOSITE_OUTPUT, "Composite output" },
 	{ DEVICE_TYPE_DUAL_CHANNEL, "Dual channel" },
@@ -792,8 +792,6 @@ static const struct {
 static void dump_child_device_type_bits(uint16_t type)
 {
 	int i;
-
-	type ^= DEVICE_TYPE_NOT_HDMI_OUTPUT;
 
 	for (i = 0; i < ARRAY_SIZE(child_device_type_bits); i++) {
 		if (child_device_type_bits[i].mask & type)
