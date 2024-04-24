@@ -4,51 +4,51 @@
     "drivers": [ "xe" ],
     "files": [ "xe_*.c", "../core_hotunplug.c", "../sriov_basic.c", "intel_hwmon.c" ],
     "fields": {
-        "Category": {
+        "Run type": {
             "_properties_": {
                 "mandatory": true,
-                "description": "Contains the major group for the tested functionality, being hardware, software or firmware"
-            },
-            "Mega feature": {
-                "_properties_": {
-                    "description": "Contains the mega feature for end to end use case, e. g. the 'sellable' feature."
+                "description": "Defines what category of testlist it belongs",
+                "default-testlist": "FULL",
+                "update-from-file": {
+                    "exclude-type": "regex-ignorecase",
+                    "append-value-if-not-excluded": "Xe FULL",
+                    "include": [
+                        { "Xe BAT": "../intel-ci/xe-fast-feedback.testlist" }
+                    ],
+                    "exclude": [
+                        { "Xe BAT, Xe FULL": "../intel-ci/xe.blocklist.txt" }
+                    ]
                 },
-                "Sub-category": {
+                "order": [
+                    "boot",
+                    "__all__",
+                    "kunit"
+                ]
+            },
+            "Category": {
+                "_properties_": {
+                    "mandatory": true,
+                    "description": "Contains the major group for the tested functionality, being hardware, software or firmware"
+                },
+                "Mega feature": {
                     "_properties_": {
-                        "mandatory": true,
-                        "description": "Contains the the technical feature/functionality"
+                        "description": "Contains the mega feature for end to end use case, e. g. the 'sellable' feature."
                     },
-                    "Functionality": {
+                    "Sub-category": {
                         "_properties_": {
                             "mandatory": true,
-                            "description": "Groups page table tests on buckets containg more detailed functionality"
+                            "description": "Contains the technical feature/functionality"
                         },
-                        "Feature": {
+                        "Functionality": {
                             "_properties_": {
-                                "description": "Describes the lowest level feature bucket"
-                            }
-                        }
-                    },
-                    "Run type": {
-                        "_properties_": {
-                            "mandatory": true,
-                            "description": "Defines what category of testlist it belongs",
-                            "default-testlist": "FULL",
-                            "update-from-file": {
-                                "exclude-type": "regex-ignorecase",
-                                "append-value-if-not-excluded": "Xe FULL",
-                                "include": [
-                                    { "Xe BAT": "../intel-ci/xe-fast-feedback.testlist" }
-                                ],
-                                "exclude": [
-                                    { "Xe BAT, Xe FULL": "../intel-ci/xe.blocklist.txt" }
-                                ]
+                                "mandatory": true,
+                                "description": "Groups page table tests on buckets containg more detailed functionality"
                             },
-                            "order": [
-                                "boot",
-                                "__all__",
-                                "kunit"
-                            ]
+                            "Feature": {
+                                "_properties_": {
+                                    "description": "Describes the lowest level feature bucket"
+                                }
+                            }
                         }
                     }
                 }
