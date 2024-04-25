@@ -1694,7 +1694,7 @@ static void dump_edp(struct context *context,
 			       edp->fast_link_params[i].rate);
 			break;
 		}
-		printf("\t\t\tlanes: X%d",
+		printf("\t\t\tlanes: X%d\n",
 		       edp->fast_link_params[i].lanes + 1);
 		printf("\t\t\tpre-emphasis: %s (0x%x)\n",
 		       dp_preemph(edp->fast_link_params[i].preemphasis),
