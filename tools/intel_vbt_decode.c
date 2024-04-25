@@ -1394,6 +1394,18 @@ static char *decode_pnp_id(u16 mfg_name, char str[4])
 	return str;
 }
 
+static void dump_pnp_id(const struct bdb_edid_pnp_id *pnp_id)
+{
+	char mfg[4];
+
+	printf("\t\t  Mfg name: %s (0x%x)\n",
+	       decode_pnp_id(pnp_id->mfg_name, mfg), pnp_id->mfg_name);
+	printf("\t\t  Product code: %u\n", pnp_id->product_code);
+	printf("\t\t  Serial: %u\n", pnp_id->serial);
+	printf("\t\t  Mfg week: %d\n", pnp_id->mfg_week);
+	printf("\t\t  Mfg year: %d\n", 1990 + pnp_id->mfg_year);
+}
+
 static void dump_lfp_data(struct context *context,
 			  const struct bdb_block *block)
 {
@@ -1419,7 +1431,6 @@ static void dump_lfp_data(struct context *context,
 			block_data(block) + ptrs->ptr[i].panel_pnp_id.offset;
 		const struct bdb_lfp_data_tail *tail =
 			block_data(block) + ptrs->panel_name.offset;
-		char mfg[4];
 
 		if (!dump_panel(context, i))
 			continue;
@@ -1457,12 +1468,7 @@ static void dump_lfp_data(struct context *context,
 		       "BAD!" : "good");
 
 		printf("\t\tPnP ID:\n");
-		printf("\t\t  Mfg name: %s (0x%x)\n",
-		       decode_pnp_id(pnp_id->mfg_name, mfg), pnp_id->mfg_name);
-		printf("\t\t  Product code: %u\n", pnp_id->product_code);
-		printf("\t\t  Serial: %u\n", pnp_id->serial);
-		printf("\t\t  Mfg week: %d\n", pnp_id->mfg_week);
-		printf("\t\t  Mfg year: %d\n", 1990 + pnp_id->mfg_year);
+		dump_pnp_id(pnp_id);
 
 		if (!ptrs->panel_name.table_size)
 			continue;
