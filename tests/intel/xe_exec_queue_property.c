@@ -203,7 +203,7 @@ igt_main
 	const char *property[][3] = { {"timeslice_duration_us", "timeslice_duration_min", "timeslice_duration_max"},
 	};
 	int count = sizeof(property) / sizeof(property[0]);
-	int sys_fd;
+	bool has_sysfs;
 	int xe;
 	int gt;
 
@@ -233,14 +233,20 @@ igt_main
 
 	igt_subtest_group {
 		igt_fixture {
-			sys_fd = igt_sysfs_open(xe);
-			igt_require(sys_fd != -1);
-			close(sys_fd);
+			int sys_fd = igt_sysfs_open(xe);
+
+			if (sys_fd != -1) {
+				close(sys_fd);
+				has_sysfs = true;
+			} else {
+				has_sysfs = false;
+			}
 		}
 
 		for (int i = 0; i < count; i++) {
 			for (typeof(*tests) *t = tests; t->name; t++) {
 				igt_subtest_with_dynamic_f("%s-%s", property[i][0], t->name) {
+					igt_require(has_sysfs);
 					xe_for_each_gt(xe, gt) {
 						int engines_fd = -1;
 						int gt_fd = -1;
