@@ -79,7 +79,7 @@
                 "description": "Describes any GPU-specific requrirement, like requiring multi-tiles."
             }
         },
-        "Depends on" : {
+        "Depends on": {
             "_properties_": {
                 "description": "List other subtests that are required to not be skipped before calling this one."
             }
@@ -89,7 +89,7 @@
                 "description": "Point to known missing features at the test or subtest."
             }
         },
-        "Description" : {
+        "Description": {
             "_properties_": {
                 "mandatory": true,
                 "description": "Provides a description for the test/subtest."

@@ -52,7 +52,7 @@
                 "description": "Defines the test category. Usually used at subtest level."
             }
         },
-        "Description" : {
+        "Description": {
             "_properties_": {
                 "description": "Provides a description for the test/subtest."
             }
