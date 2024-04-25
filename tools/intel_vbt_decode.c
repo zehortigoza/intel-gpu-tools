@@ -101,13 +101,13 @@ static const char *panel_str(const struct context *context, int panel_type)
 {
 	if (panel_type == context->panel_type &&
 	    panel_type == context->panel_type2)
-		return " (1)(2)";
+		return " (LFP1)(LFP2)";
 
 	if (panel_type == context->panel_type)
-		return " (1)";
+		return " (LFP1)";
 
 	if (panel_type == context->panel_type2)
-		return " (2)";
+		return " (LFP2)";
 
 	return "";
 }
