@@ -186,6 +186,9 @@ static void test_freq_fixed(int fd, int gt_id, bool gt_idle)
 		igt_assert(get_freq(fd, gt_id, "act") == rpn);
 	}
 
+	/* Refresh value of rpe, pcode could have adjusted it */
+	rpe = get_freq(fd, gt_id, "rpe");
+
 	igt_assert(set_freq(fd, gt_id, "min", rpe) > 0);
 	igt_assert(set_freq(fd, gt_id, "max", rpe) > 0);
 	usleep(ACT_FREQ_LATENCY_US);
@@ -268,6 +271,10 @@ static void test_freq_low_max(int fd, int gt_id)
 	igt_assert(set_freq(fd, gt_id, "min", rpe) > 0);
 	igt_assert(set_freq(fd, gt_id, "max", rpn) > 0);
 	usleep(ACT_FREQ_LATENCY_US);
+
+	/* Refresh value of rpe, pcode could have adjusted it */
+	rpe = get_freq(fd, gt_id, "rpe");
+
 	igt_assert(get_freq(fd, gt_id, "cur") == rpe);
 
 	if (!xe_is_gt_in_c6(fd, gt_id))
