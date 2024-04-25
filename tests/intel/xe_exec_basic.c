@@ -57,14 +57,17 @@
  *
  * SUBTEST: multigpu-once-%s
  * Description: Run %arg[1] test only once on multiGPU
+ * Sub-category: MultiGPU
  * Test category: functionality test
  *
  * SUBTEST: multigpu-many-execqueues-many-vm-%s
  * Description: Run %arg[1] test on many exec_queues and many VMs on multiGPU
+ * Sub-category: MultiGPU
  * Test category: stress test
  *
  * SUBTEST: multigpu-no-exec-%s
  * Description: Run no-exec %arg[1] test on multiGPU
+ * Sub-category: MultiGPU
  * Test category: functionality test
  *
  * arg[1]:
