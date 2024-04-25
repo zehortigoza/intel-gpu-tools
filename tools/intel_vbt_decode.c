@@ -1853,9 +1853,10 @@ static void dump_lfp_power(struct context *context,
 	       YESNO(lfp_block->features.dpst_support));
 
 	for (i = 0; i < 5; i++) {
-		printf("\tALS backlight adjust: %d\n",
+		printf("\tALS entry #%d\n", i + 1);
+		printf("\t\tALS backlight adjust: %d\n",
 		       lfp_block->als[i].backlight_adjust);
-		printf("\tALS Lux: %d\n",
+		printf("\t\tALS Lux: %d\n",
 		       lfp_block->als[i].lux);
 	}
 
