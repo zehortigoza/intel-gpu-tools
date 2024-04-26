@@ -1506,8 +1506,12 @@ struct drm_xe_query_oa_units {
 	__u32 num_oa_units;
 	/** @pad: MBZ */
 	__u32 pad;
-	/** @oa_units: OA units returned for this device */
-	struct drm_xe_oa_unit oa_units[];
+	/**
+	 * @oa_units: struct @drm_xe_oa_unit array returned for this device.
+	 * Written below as a u64 array to avoid problems with nested flexible
+	 * arrays with some compilers
+	 */
+	__u64 oa_units[];
 };
 
 /** enum drm_xe_oa_format_type - OA format types */

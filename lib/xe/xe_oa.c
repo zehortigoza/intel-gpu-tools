@@ -591,7 +591,6 @@ xe_perf_for_fd(int drm_fd, int gt)
 {
 	uint32_t device_id;
 	uint32_t device_revision = 0;
-	uint32_t timestamp_frequency;
 	uint32_t topology_size;
 	uint64_t gt_min_freq = 0;
 	uint64_t gt_max_freq = 0;
@@ -599,6 +598,8 @@ xe_perf_for_fd(int drm_fd, int gt)
 	struct intel_perf *ret;
 	int sysfs_dir_fd = open_master_sysfs_dir(drm_fd);
 	char path_min[64], path_max[64];
+	struct drm_xe_query_oa_units *qoa = xe_oa_units(drm_fd);
+	struct drm_xe_oa_unit *oau = (struct drm_xe_oa_unit *)&qoa->oa_units[0];
 
 	if (sysfs_dir_fd < 0) {
 		igt_warn("open_master_sysfs_dir failed\n");
@@ -622,7 +623,6 @@ xe_perf_for_fd(int drm_fd, int gt)
 	close(sysfs_dir_fd);
 
 	device_id = intel_get_drm_devid(drm_fd);
-	timestamp_frequency = xe_oa_units(drm_fd)->oa_units[0].oa_timestamp_freq;
 
 	topology = xe_fill_i915_topology_info(drm_fd, device_id, &topology_size);
 	if (!topology) {
@@ -632,7 +632,7 @@ xe_perf_for_fd(int drm_fd, int gt)
 
 	ret = intel_perf_for_devinfo(device_id,
 				     device_revision,
-				     timestamp_frequency,
+				     oau->oa_timestamp_freq,
 				     gt_min_freq * 1000000,
 				     gt_max_freq * 1000000,
 				     topology);
