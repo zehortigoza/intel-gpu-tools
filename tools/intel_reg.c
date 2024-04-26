@@ -967,10 +967,16 @@ struct command {
 	const char *name;
 	const char *description;
 	const char *synopsis;
+	bool decode;
 	int (*function)(struct config *config, int argc, char *argv[]);
 };
 
 static const struct command commands[] = {
+	{
+		.name = "help",
+		.function = intel_reg_help,
+		.description = "show this help",
+	},
 	{
 		.name = "read",
 		.function = intel_reg_read,
@@ -984,30 +990,28 @@ static const struct command commands[] = {
 		.description = "write value(s) to specified register(s)",
 	},
 	{
+		.name = "snapshot",
+		.function = intel_reg_snapshot,
+		.description = "create a snapshot of the MMIO bar to stdout",
+	},
+	{
 		.name = "dump",
 		.function = intel_reg_dump,
 		.description = "dump all known registers",
+		.decode = true,
 	},
 	{
 		.name = "decode",
 		.function = intel_reg_decode,
 		.synopsis = "REGISTER VALUE [REGISTER VALUE ...]",
 		.description = "decode value(s) for specified register(s)",
-	},
-	{
-		.name = "snapshot",
-		.function = intel_reg_snapshot,
-		.description = "create a snapshot of the MMIO bar to stdout",
+		.decode = true,
 	},
 	{
 		.name = "list",
 		.function = intel_reg_list,
 		.description = "list all known register names",
-	},
-	{
-		.name = "help",
-		.function = intel_reg_help,
-		.description = "show this help",
+		.decode = true,
 	},
 };
 
