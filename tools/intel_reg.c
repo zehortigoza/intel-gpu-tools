@@ -68,6 +68,9 @@ struct config {
 	/* write: do a posting read */
 	bool post;
 
+	/* decode registers, otherwise use just raw values */
+	bool decode;
+
 	/* decode register for all platforms */
 	bool all_platforms;
 
@@ -195,7 +198,7 @@ static bool port_is_mmio(enum port_addr port)
 	}
 }
 
-static void dump_decode(struct config *config, struct reg *reg, uint32_t val)
+static void dump_regval(struct config *config, struct reg *reg, uint32_t val)
 {
 	char decode[1300];
 	char tmp[1024];
@@ -206,8 +209,11 @@ static void dump_decode(struct config *config, struct reg *reg, uint32_t val)
 	else
 		*bin = '\0';
 
-	intel_reg_spec_decode(tmp, sizeof(tmp), reg, val,
-			      config->all_platforms ? 0 : config->devid);
+	if (config->decode)
+		intel_reg_spec_decode(tmp, sizeof(tmp), reg, val,
+				      config->all_platforms ? 0 : config->devid);
+	else
+		*tmp = '\0';
 
 	if (*tmp) {
 		/* We have a decode result, and maybe binary decode. */
@@ -573,7 +579,7 @@ static void dump_register(struct config *config, struct reg *reg)
 	uint32_t val;
 
 	if (read_register(config, reg, &val) == 0)
-		dump_decode(config, reg, val);
+		dump_regval(config, reg, val);
 }
 
 static int write_register(struct config *config, struct reg *reg, uint32_t val)
@@ -944,7 +950,7 @@ static int intel_reg_decode(struct config *config, int argc, char *argv[])
 			continue;
 		}
 
-		dump_decode(config, &reg, val);
+		dump_regval(config, &reg, val);
 	}
 
 	return EXIT_SUCCESS;
@@ -1044,10 +1050,11 @@ static int intel_reg_help(struct config *config, int argc, char *argv[])
 	printf("\n\n");
 
 	printf("OPTIONS common to most COMMANDS:\n");
-	printf(" --spec=PATH    Read register spec from directory or file\n");
+	printf(" --spec=PATH    Read register spec from directory or file. Implies --decode\n");
 	printf(" --mmio=FILE    Use an MMIO snapshot\n");
 	printf(" --devid=DEVID  Specify PCI device ID for --mmio=FILE\n");
-	printf(" --all          Decode registers for all known platforms\n");
+	printf(" --decode       Decode registers. Implied by commands that require it\n");
+	printf(" --all          Decode registers for all known platforms. Implies --decode\n");
 	printf(" --binary       Binary dump registers\n");
 	printf(" --verbose      Increase verbosity\n");
 	printf(" --quiet        Reduce verbosity\n");
@@ -1113,6 +1120,9 @@ static int read_reg_spec(struct config *config)
 	struct stat st;
 	int r;
 
+	if (!config->decode)
+		return 0;
+
 	path = config->specfile;
 	if (!path)
 		path = getenv("INTEL_REG_SPEC");
@@ -1161,6 +1171,7 @@ enum opt {
 	OPT_DEVID,
 	OPT_COUNT,
 	OPT_POST,
+	OPT_DECODE,
 	OPT_ALL,
 	OPT_BINARY,
 	OPT_SPEC,
@@ -1195,6 +1206,7 @@ int main(int argc, char *argv[])
 		/* options specific to write */
 		{ "post",	no_argument,		NULL,	OPT_POST },
 		/* options specific to read, dump and decode */
+		{ "decode",	no_argument,		NULL,	OPT_DECODE },
 		{ "all",	no_argument,		NULL,	OPT_ALL },
 		{ "binary",	no_argument,		NULL,	OPT_BINARY },
 		{ 0 }
@@ -1230,6 +1242,7 @@ int main(int argc, char *argv[])
 			config.post = true;
 			break;
 		case OPT_SPEC:
+			config.decode = true;
 			config.specfile = strdup(optarg);
 			if (!config.specfile) {
 				fprintf(stderr, "strdup: %s\n",
@@ -1239,6 +1252,10 @@ int main(int argc, char *argv[])
 			break;
 		case OPT_ALL:
 			config.all_platforms = true;
+			config.decode = true;
+			break;
+		case OPT_DECODE:
+			config.decode = true;
 			break;
 		case OPT_BINARY:
 			config.binary = true;
@@ -1285,10 +1302,6 @@ int main(int argc, char *argv[])
 		config.devid = config.pci_dev->device_id;
 	}
 
-	if (read_reg_spec(&config) < 0) {
-		return EXIT_FAILURE;
-	}
-
 	for (i = 0; i < ARRAY_SIZE(commands); i++) {
 		if (strcmp(argv[0], commands[i].name) == 0) {
 			command = &commands[i];
@@ -1300,6 +1313,12 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "'%s' is not an intel-reg command\n", argv[0]);
 		return EXIT_FAILURE;
 	}
+
+	if (command->decode)
+		config.decode = true;
+
+	if (read_reg_spec(&config) < 0)
+		return EXIT_FAILURE;
 
 	ret = command->function(&config, argc, argv);
 
