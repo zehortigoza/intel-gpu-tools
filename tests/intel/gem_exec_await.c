@@ -22,8 +22,8 @@
  *
  */
 
+#include <signal.h>
 #include <sys/ioctl.h>
-#include <sys/signal.h>
 
 #include "drmtest.h"
 #include "i915/gem.h"

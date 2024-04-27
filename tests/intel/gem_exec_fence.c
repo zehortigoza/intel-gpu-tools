@@ -23,8 +23,8 @@
 
 #include <poll.h>
 #include <string.h>
+#include <signal.h>
 #include <sys/ioctl.h>
-#include <sys/signal.h>
 #include "i915/gem.h"
 #include "i915/gem_create.h"
 #include "igt.h"

@@ -34,8 +34,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <signal.h>
 #include <sys/ioctl.h>
-#include <sys/signal.h>
 #include <sys/time.h>
 
 #include "igt.h"

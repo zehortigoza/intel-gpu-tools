@@ -23,8 +23,8 @@
 
 #include <fcntl.h>
 #include <sched.h>
+#include <signal.h>
 #include <sys/ioctl.h>
-#include <sys/signal.h>
 #include <poll.h>
 
 #include "dmabuf_sync_file.h"
