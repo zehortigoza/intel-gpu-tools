@@ -24,8 +24,8 @@
 
 #include <time.h>
 #include <signal.h>
+#include <poll.h>
 #include <pthread.h>
-#include <sys/poll.h>
 #include <sys/timerfd.h>
 
 #include <i915_drm.h>

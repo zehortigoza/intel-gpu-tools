@@ -39,10 +39,10 @@
 #include <sys/mman.h>
 #include <signal.h>
 #include <pciaccess.h>
+#include <poll.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/poll.h>
 #include <sys/wait.h>
 #include <sys/resource.h>
 #include <sys/time.h>

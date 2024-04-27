@@ -9,7 +9,7 @@
 #ifdef __linux__
 #include <linux/dma-buf.h>
 #endif
-#include <sys/poll.h>
+#include <poll.h>
 #include <stdbool.h>
 #include <stdint.h>
 
