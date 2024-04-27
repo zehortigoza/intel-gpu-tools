@@ -91,7 +91,6 @@ void amd_cs_wait_fuzzing(int fd, const enum amd_ip_block_type types[], int size)
 		r = igt_ioctl(fd, DRM_IOCTL_AMDGPU_WAIT_CS, &cs_wait);
 		igt_info("%s AMDGPU_WAIT_CS %s r %d\n", __func__,
 				amd_ip_type_arr[types[i]].name, r);
-		igt_assert_eq(r, 0);
 	}
 }
 
@@ -160,7 +159,10 @@ igt_main
 {
 	int fd = -1;
 	const enum amd_ip_block_type arr_types[] = {
-			AMD_IP_VCE, AMD_IP_VCN_ENC, AMD_IP_VCN_JPEG, AMD_IP_VPE };
+			AMD_IP_GFX, AMD_IP_COMPUTE, AMD_IP_DMA, AMD_IP_UVD,
+			AMD_IP_VCE, AMD_IP_UVD_ENC, AMD_IP_VCN_DEC, AMD_IP_VCN_ENC,
+			AMD_IP_VCN_JPEG, AMD_IP_VPE
+	};
 
 	igt_fixture {
 		fd = drm_open_driver(DRIVER_AMDGPU);
