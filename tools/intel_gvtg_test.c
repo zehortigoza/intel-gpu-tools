@@ -37,9 +37,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <strings.h>
+#include <poll.h>
 #include <unistd.h>
 #include <termios.h>
-#include <sys/poll.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>

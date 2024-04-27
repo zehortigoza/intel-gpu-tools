@@ -29,10 +29,10 @@
 #include <sys/ioctl.h>
 #include <string.h>
 #include <errno.h>
+#include <poll.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/poll.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
