@@ -16,7 +16,6 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/select.h>
-#include <sys/poll.h>
 #include <sys/signalfd.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -25,6 +24,7 @@
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <dirent.h>
+#include <poll.h>
 #include <time.h>
 #include <unistd.h>
 
