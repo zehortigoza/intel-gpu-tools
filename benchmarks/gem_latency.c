@@ -36,10 +36,10 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <errno.h>
+#include <poll.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include <sys/poll.h>
 #include <sys/resource.h>
 
 #include "drm.h"
