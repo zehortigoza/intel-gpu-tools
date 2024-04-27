@@ -74,6 +74,8 @@ cc_args = [
 # well with longjmp which is heavily used by IGT framework.
 	'-fno-builtin-malloc',
 	'-fno-builtin-calloc',
+# Required to use off64_t and ino64_t on musl libc
+	'-D_LARGEFILE64_SOURCE=1',
 ]
 
 foreach cc_arg : cc_args
