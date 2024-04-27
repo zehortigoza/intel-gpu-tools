@@ -34,12 +34,12 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <errno.h>
+#include <poll.h>
 #include <sched.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include <sys/poll.h>
 #include <sys/resource.h>
 #include "drm.h"
 /**

@@ -40,7 +40,7 @@
 #include <inttypes.h>
 #include <errno.h>
 #include <time.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>

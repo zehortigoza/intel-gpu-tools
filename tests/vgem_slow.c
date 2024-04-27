@@ -26,8 +26,8 @@
 #include "igt_debugfs.h"
 #include "igt_sysfs.h"
 
+#include <poll.h>
 #include <sys/mman.h>
-#include <sys/poll.h>
 #include <sys/stat.h>
 #include <dirent.h>
 /**

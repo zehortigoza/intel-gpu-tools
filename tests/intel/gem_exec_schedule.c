@@ -25,8 +25,8 @@
 
 #include <linux/userfaultfd.h>
 
+#include <poll.h>
 #include <pthread.h>
-#include <sys/poll.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>

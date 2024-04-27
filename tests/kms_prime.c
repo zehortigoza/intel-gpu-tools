@@ -37,8 +37,8 @@
 #include "igt_sysfs.h"
 #include <fcntl.h>
 
+#include <poll.h>
 #include <sys/ioctl.h>
-#include <sys/poll.h>
 #include <time.h>
 
 /**

@@ -40,9 +40,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <math.h>
+#include <poll.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <sys/poll.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
 

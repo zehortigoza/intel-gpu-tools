@@ -31,7 +31,7 @@
  * Test category: functionality test
  */
 
-#include <sys/poll.h>
+#include <poll.h>
 #include <signal.h>
 #include <time.h>
 

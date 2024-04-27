@@ -24,7 +24,7 @@
 #include <amdgpu.h>
 #include <amdgpu_drm.h>
 
-#include <sys/poll.h>
+#include <poll.h>
 
 #include "i915/gem.h"
 #include "i915/gem_create.h"

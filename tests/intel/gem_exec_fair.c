@@ -5,8 +5,8 @@
 
 #include "config.h"
 
+#include <poll.h>
 #include <pthread.h>
-#include <sys/poll.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/resource.h>

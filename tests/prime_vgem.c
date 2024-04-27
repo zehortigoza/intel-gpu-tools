@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  */
 
+#include <poll.h>
 #include <sys/ioctl.h>
-#include <sys/poll.h>
 #include <time.h>
 
 #include "i915/gem.h"

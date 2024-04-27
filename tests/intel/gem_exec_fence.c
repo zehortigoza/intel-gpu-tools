@@ -21,9 +21,9 @@
  * IN THE SOFTWARE.
  */
 
+#include <poll.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <sys/poll.h>
 #include <sys/signal.h>
 #include "i915/gem.h"
 #include "i915/gem_create.h"

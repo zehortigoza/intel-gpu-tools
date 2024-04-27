@@ -20,7 +20,7 @@
 #include "xe/xe_spin.h"
 #include <string.h>
 #include <linux/dma-buf.h>
-#include <sys/poll.h>
+#include <poll.h>
 
 #define MAX_N_BO	16
 #define N_FD		2

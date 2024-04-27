@@ -32,8 +32,8 @@
  * Test category: functionality test
  */
 
+#include <poll.h>
 #include <sched.h>
-#include <sys/poll.h>
 
 #include "i915/gem.h"
 #include "igt.h"
