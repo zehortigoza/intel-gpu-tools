@@ -97,10 +97,9 @@ static int parse_engine(char *line, struct drm_client_fdinfo *info,
 		}
 	}
 
-	if (found >= 0) {
-		while (*++p && isspace(*p));
+	p++;
+	if (found >= 0)
 		*val = strtoull(p, NULL, 10);
-	}
 
 	return found;
 }
@@ -172,9 +171,8 @@ static int parse_region(char *line, struct drm_client_fdinfo *info,
 	if (found < 0)
 		goto out;
 
-	while (*++p && isspace(*p))
-		;
-	*val = strtoull(p, NULL, 10);
+	p++;
+	*val = strtoull(p, &p, 10);
 
 	p = index(p, ' ');
 	if (!p)
