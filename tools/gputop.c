@@ -285,6 +285,11 @@ static void update_console_size(int *w, int *h)
 	}
 }
 
+static void clrscr(void)
+{
+	printf("\033[H\033[J");
+}
+
 int main(int argc, char **argv)
 {
 	unsigned int period_us = 2e6;
@@ -301,12 +306,11 @@ int main(int argc, char **argv)
 		struct igt_drm_client *c, *prevc = NULL;
 		int i, engine_w = 0, lines = 0;
 
-		update_console_size(&con_w, &con_h);
-
 		igt_drm_clients_scan(clients, NULL, NULL, 0, NULL, 0);
 		igt_drm_clients_sort(clients, client_cmp);
 
-		printf("\033[H\033[J");
+		update_console_size(&con_w, &con_h);
+		clrscr();
 
 		igt_for_each_drm_client(clients, c, i) {
 			assert(c->status != IGT_DRM_CLIENT_PROBE);
