@@ -63,6 +63,7 @@ igt_main
 				continue;
 
 			igt_dynamic_f("engine-%s", xe_engine_class_string(hwe->engine_class)) {
+				test_compute_preempt(xe, hwe, false);
 				igt_fork(child, 100)
 					test_compute_preempt(xe, hwe, false);
 				igt_waitchildren();
