@@ -237,6 +237,7 @@ __igt_parse_drm_fdinfo(int dir, const char *fd, struct drm_client_fdinfo *info,
 			good++;
 		} else if ((v = find_kv(l, "drm-pdev", strlen("drm-pdev")))) {
 			/* optional */
+			assert(strlen(v) < sizeof(info->pdev));
 			strncpy(info->pdev, v, sizeof(info->pdev) - 1);
 		} else if (!strncmp(l, "drm-engine-capacity-", 20)) {
 			idx = parse_engine(l, info,
