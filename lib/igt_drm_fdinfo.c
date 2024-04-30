@@ -224,6 +224,7 @@ __igt_parse_drm_fdinfo(int dir, const char *fd, struct drm_client_fdinfo *info,
 	while ((l = strtok_r(_buf, "\n", &ctx))) {
 		uint64_t val = 0;
 		const char *v;
+		char *end_ptr;
 		int idx;
 
 		_buf = NULL;
@@ -233,8 +234,9 @@ __igt_parse_drm_fdinfo(int dir, const char *fd, struct drm_client_fdinfo *info,
 			good++;
 		}  else if ((v = find_kv(l, "drm-client-id",
 					 strlen("drm-client-id")))) {
-			info->id = atol(v);
-			good++;
+			info->id = strtol(v, &end_ptr, 10);
+			if (end_ptr != v)
+				good++;
 		} else if ((v = find_kv(l, "drm-pdev", strlen("drm-pdev")))) {
 			/* optional */
 			assert(strlen(v) < sizeof(info->pdev));
