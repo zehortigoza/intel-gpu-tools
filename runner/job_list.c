@@ -276,16 +276,7 @@ static bool job_list_from_test_list(struct job_list *job_list,
 			 * specified, also start a new entry.
 			 */
 			if (entry.binary && !strcmp(entry.binary, binary) &&
-			    (delim == NULL || strchr(delim, '@') == NULL)) {
-				if (!delim) {
-					/* ... except we didn't get a subtest */
-					fprintf(stderr,
-						"Error: Unexpected test without subtests "
-						"after same test had subtests\n");
-					free(binary);
-					fclose(f);
-					return false;
-				}
+			    strchr(delim, '@') == NULL) {
 				entry.subtest_count++;
 				entry.subtests = realloc(entry.subtests,
 							 entry.subtest_count *
@@ -303,7 +294,7 @@ static bool job_list_from_test_list(struct job_list *job_list,
 
 			memset(&entry, 0, sizeof(entry));
 
-			if (delim != NULL && strchr(delim, '@') != NULL) {
+			if (strchr(delim, '@') != NULL) {
 				/* Dynamic subtest specified. Add to job list alone. */
 				char **subtests;
 
@@ -314,11 +305,9 @@ static bool job_list_from_test_list(struct job_list *job_list,
 				any = true;
 			} else {
 				entry.binary = strdup(binary);
-				if (delim) {
-					entry.subtests = malloc(sizeof(*entry.subtests));
-					entry.subtests[0] = strdup(delim);
-					entry.subtest_count = 1;
-				}
+				entry.subtests = malloc(sizeof(*entry.subtests));
+				entry.subtests[0] = strdup(delim);
+				entry.subtest_count = 1;
 			}
 
 			free(binary);
