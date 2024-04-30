@@ -268,6 +268,23 @@ static int client_cmp(const void *_a, const void *_b, void *unused)
 
 }
 
+static void update_console_size(int *w, int *h)
+{
+	struct winsize ws = {};
+
+	if (ioctl(0, TIOCGWINSZ, &ws) == -1)
+		return;
+
+	*w = ws.ws_col;
+	*h = ws.ws_row;
+
+	if (*w == 0 && *h == 0) {
+		/* Serial console. */
+		*w = 80;
+		*h = 24;
+	}
+}
+
 int main(int argc, char **argv)
 {
 	unsigned int period_us = 2e6;
@@ -283,17 +300,8 @@ int main(int argc, char **argv)
 	for (;;) {
 		struct igt_drm_client *c, *prevc = NULL;
 		int i, engine_w = 0, lines = 0;
-		struct winsize ws;
 
-		if (ioctl(0, TIOCGWINSZ, &ws) != -1) {
-			con_w = ws.ws_col;
-			con_h = ws.ws_row;
-			if (con_w == 0 && con_h == 0) {
-				/* Serial console. */
-				con_w = 80;
-				con_h = 24;
-			}
-		}
+		update_console_size(&con_w, &con_h);
 
 		igt_drm_clients_scan(clients, NULL, NULL, 0, NULL, 0);
 		igt_drm_clients_sort(clients, client_cmp);
