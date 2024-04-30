@@ -90,8 +90,9 @@ static int parse_engine(char *line, struct drm_client_fdinfo *info,
 
 		if (found < 0) {
 			assert((info->num_engines + 1) < ARRAY_SIZE(info->names));
-			assert((strlen(name) + 1) < sizeof(info->names[0]));
-			strncpy(info->names[info->num_engines], name, name_len);
+			assert(name_len  < sizeof(info->names[0]));
+			memcpy(info->names[info->num_engines], name, name_len);
+			info->names[info->num_engines][name_len] = '\0';
 			found = info->num_engines;
 		}
 	}
