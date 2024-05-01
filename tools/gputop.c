@@ -26,6 +26,7 @@
 #include <sys/sysmacros.h>
 #include <stdbool.h>
 
+#include "igt_core.h"
 #include "igt_drm_clients.h"
 #include "igt_drm_fdinfo.h"
 #include "drmtest.h"
@@ -294,6 +295,7 @@ static void clrscr(void)
 
 struct gputop_args {
 	long n_iter;
+	unsigned long delay_usec;
 };
 
 static void help(void)
@@ -302,15 +304,17 @@ static void help(void)
 	       "\t%s [options]\n\n"
 	       "Options:\n"
 	       "\t-h, --help                show this help\n"
+	       "\t-d, --delay =SEC[.TENTHS] iterative delay as SECS [.TENTHS]\n"
 	       "\t-n, --iterations =NUMBER  number of executions\n"
 	       , program_invocation_short_name);
 }
 
 static int parse_args(int argc, char * const argv[], struct gputop_args *args)
 {
-	static const char cmdopts_s[] = "hn:";
+	static const char cmdopts_s[] = "hn:d:";
 	static const struct option cmdopts[] = {
 	       {"help", no_argument, 0, 'h'},
+	       {"delay", required_argument, 0, 'd'},
 	       {"iterations", required_argument, 0, 'n'},
 	       { }
 	};
@@ -318,9 +322,11 @@ static int parse_args(int argc, char * const argv[], struct gputop_args *args)
 	/* defaults */
 	memset(args, 0, sizeof(*args));
 	args->n_iter = -1;
+	args->delay_usec = 2 * USEC_PER_SEC;
 
 	for (;;) {
 		int c, idx = 0;
+		char *end_ptr = NULL;
 
 		c = getopt_long(argc, argv, cmdopts_s, cmdopts, &idx);
 		if (c == -1)
@@ -329,6 +335,16 @@ static int parse_args(int argc, char * const argv[], struct gputop_args *args)
 		switch (c) {
 		case 'n':
 			args->n_iter = strtol(optarg, NULL, 10);
+			break;
+		case 'd':
+			args->delay_usec = strtoul(optarg, &end_ptr, 10) * USEC_PER_SEC;
+			if (*end_ptr == '.')
+				args->delay_usec += strtoul(end_ptr + 1, &end_ptr, 10) * USEC_PER_DECISEC;
+
+			if (!args->delay_usec) {
+				fprintf(stderr, "Invalid delay value: %s\n", optarg);
+				return -1;
+			}
 			break;
 		case 'h':
 			help();
@@ -345,7 +361,7 @@ static int parse_args(int argc, char * const argv[], struct gputop_args *args)
 int main(int argc, char **argv)
 {
 	struct gputop_args args;
-	unsigned int period_us = 2e6;
+	unsigned int period_us;
 	struct igt_drm_clients *clients = NULL;
 	int con_w = -1, con_h = -1;
 	int ret;
@@ -358,6 +374,7 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 
 	n = args.n_iter;
+	period_us = args.delay_usec;
 
 	clients = igt_drm_clients_init(NULL);
 	if (!clients)
