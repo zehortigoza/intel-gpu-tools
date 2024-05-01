@@ -292,11 +292,62 @@ static void clrscr(void)
 	printf("\033[H\033[J");
 }
 
+struct gputop_args {
+};
+
+static void help(void)
+{
+	printf("Usage:\n"
+	       "\t%s [options]\n\n"
+	       "Options:\n"
+	       "\t-h, --help                show this help\n"
+	       , program_invocation_short_name);
+}
+
+static int parse_args(int argc, char * const argv[], struct gputop_args *args)
+{
+	static const char cmdopts_s[] = "h";
+	static const struct option cmdopts[] = {
+	       {"help", no_argument, 0, 'h'},
+	       { }
+	};
+
+	/* defaults */
+	memset(args, 0, sizeof(*args));
+
+	for (;;) {
+		int c, idx = 0;
+
+		c = getopt_long(argc, argv, cmdopts_s, cmdopts, &idx);
+		if (c == -1)
+			break;
+
+		switch (c) {
+		case 'h':
+			help();
+			return 0;
+		default:
+			fprintf(stderr, "Unkonwn option '%c'.\n", c);
+			return -1;
+		}
+	}
+
+	return 1;
+}
+
 int main(int argc, char **argv)
 {
+	struct gputop_args args;
 	unsigned int period_us = 2e6;
 	struct igt_drm_clients *clients = NULL;
 	int con_w = -1, con_h = -1;
+	int ret;
+
+	ret = parse_args(argc, argv, &args);
+	if (ret < 0)
+		return EXIT_FAILURE;
+	if (!ret)
+		return EXIT_SUCCESS;
 
 	clients = igt_drm_clients_init(NULL);
 	if (!clients)
