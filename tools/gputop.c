@@ -42,16 +42,18 @@ static void n_spaces(const unsigned int n)
 
 static void print_percentage_bar(double percent, int max_len)
 {
-	int bar_len, i, len = max_len - 2;
+	int bar_len, i, len = max_len - 1;
 	const int w = 8;
 
-	assert(max_len > 0);
+	len -= printf("|%5.1f%% ", percent);
+
+	/* no space left for bars, do what we can */
+	if (len < 0)
+		len = 0;
 
 	bar_len = ceil(w * percent * len / 100.0);
 	if (bar_len > w * len)
 		bar_len = w * len;
-
-	putchar('|');
 
 	for (i = bar_len; i >= w; i -= w)
 		printf("%s", bars[w]);
