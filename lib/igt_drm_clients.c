@@ -368,25 +368,32 @@ static size_t readat2buf(int at, const char *name, char *buf, const size_t sz)
 	}
 }
 
-static bool get_task_name(const char *buffer, char *out, unsigned long sz)
+static void get_task_data(int pid_dir, unsigned int *pid, char *task, size_t tasksz)
 {
-	char *s = index(buffer, '(');
-	char *e = rindex(buffer, ')');
-	unsigned int len;
+	char buf[4096];
+	char *s, *e;
+	size_t len;
 
+	if (!readat2buf(pid_dir, "stat", buf, sizeof(buf)))
+		return;
+
+	s = strchr(buf, '(');
+	e = strchr(s, ')');
 	if (!s || !e)
-		return false;
-	assert(e >= s);
+		return;
 
 	len = e - ++s;
-	if(!len || (len + 1) >= sz)
-		return false;
+	if (!len)
+		return;
 
-	strncpy(out, s, len);
-	out[len] = 0;
+	if (len + 1 > tasksz)
+		len = tasksz - 1;
 
-	return true;
+	strncpy(task, s, len);
+	task[len] = 0;
+	*pid = atoi(buf);
 }
+
 
 static bool is_drm_fd(int fd_dir, const char *name, unsigned int *minor)
 {
@@ -481,13 +488,11 @@ igt_drm_clients_scan(struct igt_drm_clients *clients,
 		return clients;
 
 	while ((proc_dent = readdir(proc_dir)) != NULL) {
-		unsigned int client_pid, minor = 0;
+		unsigned int client_pid = 0, minor = 0;
 		int pid_dir = -1, fd_dir = -1;
 		struct dirent *fdinfo_dent;
 		char client_name[64] = { };
 		DIR *fdinfo_dir = NULL;
-		char buf[4096];
-		size_t count;
 
 		if (proc_dent->d_type != DT_DIR)
 			continue;
@@ -498,17 +503,6 @@ igt_drm_clients_scan(struct igt_drm_clients *clients,
 				 O_DIRECTORY | O_RDONLY);
 		if (pid_dir < 0)
 			continue;
-
-		count = readat2buf(pid_dir, "stat", buf, sizeof(buf));
-		if (!count)
-			goto next;
-
-		client_pid = atoi(buf);
-		if (!client_pid)
-			goto next;
-
-		if (!get_task_name(buf, client_name, sizeof(client_name)))
-			goto next;
 
 		fd_dir = openat(pid_dir, "fd", O_DIRECTORY | O_RDONLY);
 		if (fd_dir < 0)
@@ -541,6 +535,12 @@ igt_drm_clients_scan(struct igt_drm_clients *clients,
 			if (igt_drm_clients_find(clients, IGT_DRM_CLIENT_ALIVE,
 						 minor, info.id))
 				continue; /* Skip duplicate fds. */
+
+			if (!client_pid) {
+				get_task_data(pid_dir, &client_pid, client_name,
+					      sizeof(client_name));
+				assert(client_pid > 0);
+			}
 
 			c = igt_drm_clients_find(clients, IGT_DRM_CLIENT_PROBE,
 						 minor, info.id);
