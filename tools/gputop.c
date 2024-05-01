@@ -293,6 +293,7 @@ static void clrscr(void)
 }
 
 struct gputop_args {
+	long n_iter;
 };
 
 static void help(void)
@@ -301,19 +302,22 @@ static void help(void)
 	       "\t%s [options]\n\n"
 	       "Options:\n"
 	       "\t-h, --help                show this help\n"
+	       "\t-n, --iterations =NUMBER  number of executions\n"
 	       , program_invocation_short_name);
 }
 
 static int parse_args(int argc, char * const argv[], struct gputop_args *args)
 {
-	static const char cmdopts_s[] = "h";
+	static const char cmdopts_s[] = "hn:";
 	static const struct option cmdopts[] = {
 	       {"help", no_argument, 0, 'h'},
+	       {"iterations", required_argument, 0, 'n'},
 	       { }
 	};
 
 	/* defaults */
 	memset(args, 0, sizeof(*args));
+	args->n_iter = -1;
 
 	for (;;) {
 		int c, idx = 0;
@@ -323,6 +327,9 @@ static int parse_args(int argc, char * const argv[], struct gputop_args *args)
 			break;
 
 		switch (c) {
+		case 'n':
+			args->n_iter = strtol(optarg, NULL, 10);
+			break;
 		case 'h':
 			help();
 			return 0;
@@ -342,6 +349,7 @@ int main(int argc, char **argv)
 	struct igt_drm_clients *clients = NULL;
 	int con_w = -1, con_h = -1;
 	int ret;
+	long n;
 
 	ret = parse_args(argc, argv, &args);
 	if (ret < 0)
@@ -349,13 +357,15 @@ int main(int argc, char **argv)
 	if (!ret)
 		return EXIT_SUCCESS;
 
+	n = args.n_iter;
+
 	clients = igt_drm_clients_init(NULL);
 	if (!clients)
 		exit(1);
 
 	igt_drm_clients_scan(clients, NULL, NULL, 0, NULL, 0);
 
-	for (;;) {
+	while (n != 0) {
 		struct igt_drm_client *c, *prevc = NULL;
 		int i, engine_w = 0, lines = 0;
 
@@ -381,6 +391,8 @@ int main(int argc, char **argv)
 			printf("\n");
 
 		usleep(period_us);
+		if (n > 0)
+			n--;
 	}
 
 	igt_drm_clients_free(clients);
