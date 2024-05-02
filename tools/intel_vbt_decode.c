@@ -418,6 +418,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_rgb_palette);
 	case BDB_COMPRESSION_PARAMETERS:
 		return sizeof(struct bdb_compression_parameters);
+	case BDB_VSWING_PREEMPH:
+		return sizeof(struct bdb_vswing_preemph);
 	case BDB_GENERIC_DTD:
 		/* FIXME check spec */
 		return sizeof(struct bdb_generic_dtd);
@@ -3413,6 +3415,40 @@ static void dump_compression_parameters(struct context *context,
 	}
 }
 
+static const char * const vswing_preemph[10] = {
+	"V0-P0",
+	"V0-P1",
+	"V0-P2",
+	"V0-P3",
+	"V1-P0",
+	"V1-P1",
+	"V1-P2",
+	"V2-P0",
+	"V2-P1",
+	"V3-P0",
+};
+
+static void dump_vswing_preemphasis(struct context *context,
+				    const struct bdb_block *block)
+{
+	const struct bdb_vswing_preemph *vs = block_data(block);
+
+	printf("\tNumber of vswing tables: %d\n", vs->num_tables);
+	printf("\tNumber of columns: %d\n", vs->num_columns);
+
+	for (int n = 0; n < vs->num_tables; n++) {
+		printf("\tVswing Table #%d:\n", n+1);
+
+		for (int i = 0; i < 10; i++) {
+			printf("\t\t%s: ", vswing_preemph[i]);
+
+			for (int j = 0; j < vs->num_columns; j++)
+				printf(" 0x%08x", vs->tables[n * 10 * vs->num_columns + j]);
+			printf("\n");
+		}
+	}
+}
+
 static int get_panel_type_pnpid(const struct context *context,
 				const char *edid_file)
 {
@@ -3760,6 +3796,11 @@ struct dumper dumpers[] = {
 		.id = BDB_COMPRESSION_PARAMETERS,
 		.name = "Compression parameters block",
 		.dump = dump_compression_parameters,
+	},
+	{
+		.id = BDB_VSWING_PREEMPH,
+		.name = "Vswing Preemph",
+		.dump = dump_vswing_preemphasis,
 	},
 };
 
