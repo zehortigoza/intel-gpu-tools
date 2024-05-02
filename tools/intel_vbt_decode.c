@@ -387,6 +387,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_edp_bfi);
 	case BDB_CHROMATICITY:
 		return sizeof(struct bdb_chromaticity);
+	case BDB_FIXED_SET_MODE:
+		return sizeof(struct bdb_fixed_set_mode);
 	case BDB_MIPI_CONFIG:
 		return sizeof(struct bdb_mipi_config);
 	case BDB_MIPI_SEQUENCE:
@@ -2787,6 +2789,16 @@ static void dump_chromaticity(struct context *context,
 	}
 }
 
+static void dump_fixed_set_mode(struct context *context,
+				const struct bdb_block *block)
+{
+	const struct bdb_fixed_set_mode *f = block_data(block);
+
+	printf("\tEnable: %s (0x%02x)\n", YESNO(f->enable), f->enable);
+	printf("\tX Res: %d\n", f->x_res);
+	printf("\tY Res: %d\n", f->y_res);
+}
+
 static void dump_mipi_config(struct context *context,
 			     const struct bdb_block *block)
 {
@@ -3685,6 +3697,11 @@ struct dumper dumpers[] = {
 		.id = BDB_CHROMATICITY,
 		.name = "Chromaticity for narrow gamut panel",
 		.dump = dump_chromaticity,
+	},
+	{
+		.id = BDB_FIXED_SET_MODE,
+		.name = "Fixed set mode",
+		.dump = dump_fixed_set_mode,
 	},
 	{
 		.id = BDB_MIPI_CONFIG,
