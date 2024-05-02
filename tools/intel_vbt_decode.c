@@ -323,6 +323,10 @@ static size_t block_min_size(const struct context *context, int section_id)
 	case BDB_GENERIC_MODE_TABLE:
 		return max(sizeof(struct bdb_generic_mode_table_alm),
 			   sizeof(struct bdb_generic_mode_table_mgm));
+	case BDB_EXT_MMIO_REGS:
+	case BDB_SWF_IO:
+	case BDB_SWF_MMIO:
+		return sizeof(struct bdb_reg_table);
 	case BDB_PSR:
 		return sizeof(struct bdb_psr);
 	case BDB_CHILD_DEVICE_TABLE:
@@ -1359,6 +1363,40 @@ static void dump_generic_mode_table(struct context *context,
 		dump_generic_mode_table_mgm(block);
 	else
 		dump_generic_mode_table_alm(block);
+}
+
+static void dump_reg_table(struct context *context,
+			   const struct bdb_block *block)
+{
+	const struct bdb_reg_table *t = block_data(block);
+	const void *data = (const void *)t + sizeof(*t);
+	const void *end = (const void *)t + block->size - 2;
+
+	printf("\tTable Id: 0x%0x\n", t->table_id);
+	printf("\tData access size: 0x%02x\n", t->data_access_size);
+
+	switch (t->data_access_size) {
+	case 0xce:
+		for (; data < end; data += 2 * 1) {
+			const uint8_t *entry = data;
+
+			printf("\t\t0x%02x: 0x%02x\n", entry[0], entry[1]);
+		}
+		break;
+	case 0x02:
+		for (; data < end; data += 2 * 4) {
+			const uint32_t *entry = data;
+
+			printf("\t\t0x%08x: 0x%08x\n", entry[0], entry[1]);
+		}
+		break;
+	default:
+		printf("\t\tUnknown data access size\n");
+		return;
+	}
+
+	printf("\tTable end marker: 0x%04x\n",
+	       *(const uint16_t *)end);
 }
 
 static void dump_legacy_child_devices(struct context *context,
@@ -2853,6 +2891,21 @@ struct dumper dumpers[] = {
 		.id = BDB_GENERIC_MODE_TABLE,
 		.name = "Generic mode table",
 		.dump = dump_generic_mode_table,
+	},
+	{
+		.id = BDB_EXT_MMIO_REGS,
+		.name = "Extended MMIO registers",
+		.dump = dump_reg_table,
+	},
+	{
+		.id = BDB_SWF_IO,
+		.name = "IO software flag",
+		.dump = dump_reg_table,
+	},
+	{
+		.id = BDB_SWF_MMIO,
+		.name = "MMIO SWF register table",
+		.dump = dump_reg_table,
 	},
 	{
 		.id = BDB_PSR,
