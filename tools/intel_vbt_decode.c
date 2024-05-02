@@ -354,6 +354,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_sdvo_lvds_options);
 	case BDB_SDVO_LVDS_DTD:
 		return sizeof(struct bdb_sdvo_lvds_dtd);
+	case BDB_SDVO_LVDS_PNP_ID:
+		return sizeof(struct bdb_sdvo_lvds_pnp_id);
 	case BDB_EDP:
 		return sizeof(struct bdb_edp);
 	case BDB_DISPLAY_SELECT_IVB:
@@ -2587,6 +2589,17 @@ static void dump_sdvo_lvds_dtd(struct context *context,
 	}
 }
 
+static void dump_sdvo_lvds_pnp_id(struct context *context,
+				  const struct bdb_block *block)
+{
+	const struct bdb_sdvo_lvds_pnp_id *t = block_data(block);
+
+	for (int n = 0; n < ARRAY_SIZE(t->pnp_id); n++) {
+		printf("\tSDVO Panel %d%s\n", n, sdvo_panel_str(context, n));
+		dump_pnp_id(&t->pnp_id[n]);
+	}
+}
+
 static void dump_sdvo_lvds_options(struct context *context,
 				   const struct bdb_block *block)
 {
@@ -3427,6 +3440,11 @@ struct dumper dumpers[] = {
 		.id = BDB_SDVO_LVDS_DTD,
 		.name = "SDVO LVDS DTD",
 		.dump = dump_sdvo_lvds_dtd,
+	},
+	{
+		.id = BDB_SDVO_LVDS_PNP_ID,
+		.name = "SDVO LVDS PnP ID",
+		.dump = dump_sdvo_lvds_pnp_id
 	},
 	{
 		.id = BDB_EDP,
