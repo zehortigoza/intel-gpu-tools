@@ -316,6 +316,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_general_features);
 	case BDB_GENERAL_DEFINITIONS:
 		return sizeof(struct bdb_general_definitions);
+	case BDB_DISPLAY_TOGGLE:
+		return sizeof(struct bdb_display_toggle);
 	case BDB_PSR:
 		return sizeof(struct bdb_psr);
 	case BDB_CHILD_DEVICE_TABLE:
@@ -1247,6 +1249,20 @@ static void dump_general_definitions(struct context *context,
 
 	dump_child_devices(context, defs->devices,
 			   child_dev_num, defs->child_dev_size);
+}
+
+static void dump_display_toggle(struct context *context,
+				const struct bdb_block *block)
+{
+	const struct bdb_display_toggle *t = block_data(block);
+
+	printf("\tFeature bits: 0x%02x\n", t->feature_bits);
+	printf("\tNum entries: %d\n", t->num_entries);
+
+	for (int i = 0; i < t->num_entries; i++)
+		printf("\tToggle list #%d: %s (0x%04x)\n",
+		       i+1, child_device_handle(context, t->list[i]),
+		       t->list[i]);
 }
 
 static void dump_legacy_child_devices(struct context *context,
@@ -2726,6 +2742,11 @@ struct dumper dumpers[] = {
 		.id = BDB_GENERAL_DEFINITIONS,
 		.name = "General definitions block",
 		.dump = dump_general_definitions,
+	},
+	{
+		.id = BDB_DISPLAY_TOGGLE,
+		.name = "Display toggle option block",
+		.dump = dump_display_toggle,
 	},
 	{
 		.id = BDB_PSR,
