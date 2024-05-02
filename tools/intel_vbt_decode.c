@@ -335,6 +335,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_legacy_child_devices);
 	case BDB_DRIVER_FEATURES:
 		return sizeof(struct bdb_driver_features);
+	case BDB_DRIVER_PERSISTENCE:
+		return sizeof(struct bdb_driver_persistence);
 	case BDB_SDVO_LVDS_OPTIONS:
 		return sizeof(struct bdb_sdvo_lvds_options);
 	case BDB_SDVO_LVDS_DTD:
@@ -1870,6 +1872,34 @@ static void dump_driver_feature(struct context *context,
 	       YESNO(feature->rmpm_enabled));
 }
 
+static void dump_driver_persistence(struct context *context,
+				    const struct bdb_block *block)
+{
+	const struct bdb_driver_persistence *persistence = block_data(block);
+
+	printf("\tDocking persistent algorithm: %s\n",
+	       default_algorithm(persistence->docking_persistent_algorithm));
+	printf("\tDVO hotplug persistent on mode: %s\n",
+	       YESNO(persistence->dvo_hotplug_persistent_on_mode));
+	printf("\tEDID persistent on mode: %s\n",
+	       YESNO(persistence->edid_persistent_on_mode));
+	printf("\tHotkey persistent on mode: %s\n",
+	       YESNO(persistence->hotkey_persistent_on_mode));
+	printf("\tHotkey persistent on restore pipe: %s\n",
+	       YESNO(persistence->hotkey_persistent_on_restore_pipe));
+	printf("\tHotkey persistent on refresh rate: %s\n",
+	       YESNO(persistence->hotkey_persistent_on_refresh_rate));
+	printf("\tHotkey persistent on MDS/Twin: %s\n",
+	       YESNO(persistence->hotkey_persistent_on_mds_twin));
+	printf("\tPower management persistent algorithm: %s\n",
+	       default_algorithm(persistence->power_management_persistent_algorithm));
+	printf("\tLid switch persistent algorithm: %s\n",
+	       default_algorithm(persistence->lid_switch_persistent_algorithm));
+	printf("\tHotkey persisentt algorithm: %s\n",
+	       default_algorithm(persistence->hotkey_persistent_algorithm));
+	printf("\tPersistent max config: %d\n", persistence->persistent_max_config);
+}
+
 static void dump_edp(struct context *context,
 		     const struct bdb_block *block)
 {
@@ -2956,6 +2986,11 @@ struct dumper dumpers[] = {
 		.id = BDB_DRIVER_FEATURES,
 		.name = "Driver feature data block",
 		.dump = dump_driver_feature,
+	},
+	{
+		.id = BDB_DRIVER_PERSISTENCE,
+		.name = "Driver persistent algorithm",
+		.dump = dump_driver_persistence,
 	},
 	{
 		.id = BDB_SDVO_LVDS_OPTIONS,
