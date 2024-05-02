@@ -327,8 +327,9 @@ static size_t block_min_size(const struct context *context, int section_id)
 	case BDB_SWF_IO:
 	case BDB_SWF_MMIO:
 		return sizeof(struct bdb_reg_table);
-	case BDB_PSR:
-		return sizeof(struct bdb_psr);
+	case BDB_PSR: /* nee BDB_DOT_CLOCK_OVERRIDE_ALM */
+		return max(sizeof(struct bdb_psr),
+			   sizeof(struct bdb_dot_clock_override_alm));
 	case BDB_MODE_REMOVAL_TABLE:
 		return sizeof(struct bdb_mode_removal);
 	case BDB_CHILD_DEVICE_TABLE:
@@ -337,6 +338,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_driver_features);
 	case BDB_DRIVER_PERSISTENCE:
 		return sizeof(struct bdb_driver_persistence);
+	case BDB_DOT_CLOCK_OVERRIDE:
+		return sizeof(struct bdb_dot_clock_override);
 	case BDB_SDVO_LVDS_OPTIONS:
 		return sizeof(struct bdb_sdvo_lvds_options);
 	case BDB_SDVO_LVDS_DTD:
@@ -1900,6 +1903,132 @@ static void dump_driver_persistence(struct context *context,
 	printf("\tPersistent max config: %d\n", persistence->persistent_max_config);
 }
 
+static void dump_dot_clock_override_entry_gen2(const struct dot_clock_override_entry_gen2 *t,
+					       bool is_lvds)
+{
+	int ref = 48000;
+	int m1 = t->m1 + 2;
+	int m2 = t->m2 + 2;
+	int m = 5 * m1 + m2;
+	int n = t->n + 2;
+	int p1, p2, p;
+
+	if (is_lvds) {
+		p1 = igt_fls((unsigned int)t->p1);
+		p2 = 14;
+	} else {
+		p1 = t->p1_div_by_2 ? 2 : (t->p1 + 2);
+		p2 = t->p2_div_by_4 ? 4 : 2;
+	}
+
+	p = p1 * p2;
+
+	printf("\t\t\tDotclock: %d kHz\n", t->dotclock);
+
+	if (!t->dotclock)
+		return;
+
+	printf("\t\t\tCalculated dotclock: %d kHz\n",
+	       n && p ? DIV_ROUND_CLOSEST(ref * m, n * p) : 0);
+	printf("\t\t\tN: %d\n", n);
+	printf("\t\t\tM1: %d\n", m1);
+	printf("\t\t\tM2: %d\n", m2);
+	printf("\t\t\tM: %d\n", m);
+	printf("\t\t\tP1: %d\n", p1);
+	printf("\t\t\tP2: %d\n", p2);
+	printf("\t\t\tP: %d\n", p);
+}
+
+static void dump_dot_clock_override_alm(struct context *context,
+					const struct bdb_block *block)
+{
+	const struct bdb_dot_clock_override_alm *b = block_data(block);
+	int count = block->size / sizeof(b->t[0]);
+
+	for (int i = 0; i < count; i++) {
+		const struct dot_clock_override_entry_gen2 *t = &b->t[i];
+
+		printf("\t\tEntry #%d:\n", i + 1);
+		dump_dot_clock_override_entry_gen2(t, false);
+	}
+}
+
+static void dump_dot_clock_override_entry_gen3(const struct dot_clock_override_entry_gen3 *t)
+{
+	int ref = 96000;
+	int m1 = t->m1 + 2;
+	int m2 = t->m2 + 2;
+	int m = 5 * m1 + m2;
+	int n = t->n + 2;
+	int p1 = t->p1;
+	int p2 = t->p2;
+	int p = p1 * p2;
+
+	printf("\t\t\tDotclock: %d kHz\n", t->dotclock);
+
+	if (!t->dotclock)
+		return;
+
+	printf("\t\t\tCalculated dotclock: %d kHz\n",
+	       n && p ? DIV_ROUND_CLOSEST(ref * m, n * p) : 0);
+	printf("\t\t\tN: %d\n", n);
+	printf("\t\t\tM1: %d\n", m1);
+	printf("\t\t\tM2: %d\n", m2);
+	printf("\t\t\tP1: %d\n", p1);
+	printf("\t\t\tP2: %d\n", p2);
+}
+
+static void _dump_dot_clock_override(const struct bdb_dot_clock_override *d,
+				     int count, bool is_lvds)
+{
+	printf("\t\tRow size: %d\n", d->row_size);
+	printf("\t\tNum rows: %d\n", d->num_rows);
+
+	for (int i = 0; i < count; i++) {
+		const struct dot_clock_override_entry_gen2 *t_gen2 =
+			(const void *)d->table + i * d->row_size;
+		const struct dot_clock_override_entry_gen3 *t_gen3 =
+			(const void *)d->table + i * d->row_size;
+
+		printf("\t\tEntry #%d:\n", i + 1);
+
+		switch (d->row_size) {
+		case 9:
+			dump_dot_clock_override_entry_gen3(t_gen3);
+			break;
+		case 8:
+			dump_dot_clock_override_entry_gen2(t_gen2, is_lvds);
+			break;
+		default:
+			printf("\t\t\tDotclock: %d kHz\n", t_gen3->dotclock);
+			break;
+		}
+	}
+}
+
+static void dump_dot_clock_override(struct context *context,
+				    const struct bdb_block *block)
+{
+	const struct bdb_dot_clock_override *d = block_data(block);
+	const void *start = d->table;
+	const void *end = (const void *)d + block->size;
+	int count;
+
+	count = min((int)(end - start) / d->row_size, (int)d->num_rows);
+	printf("\tNormal:\n");
+	_dump_dot_clock_override(d, count, false);
+
+	d = (const void *)d->table + count * d->row_size;
+	if ((const void *)d + sizeof(*d) >= end)
+		return;
+
+	start = d->table;
+
+	count = min((int)(end - start) / d->row_size, (int)d->num_rows);
+	printf("\tLVDS:\n");
+	_dump_dot_clock_override(d, count, true);
+}
+
 static void dump_edp(struct context *context,
 		     const struct bdb_block *block)
 {
@@ -2967,6 +3096,12 @@ struct dumper dumpers[] = {
 		.dump = dump_reg_table,
 	},
 	{
+		.id = BDB_DOT_CLOCK_OVERRIDE_ALM,
+		.max_bdb_version = 164,
+		.name = "Dot clock override (ALM)",
+		.dump = dump_dot_clock_override_alm,
+	},
+	{
 		.id = BDB_PSR,
 		.min_bdb_version = 165,
 		.name = "PSR block",
@@ -2991,6 +3126,11 @@ struct dumper dumpers[] = {
 		.id = BDB_DRIVER_PERSISTENCE,
 		.name = "Driver persistent algorithm",
 		.dump = dump_driver_persistence,
+	},
+	{
+		.id = BDB_DOT_CLOCK_OVERRIDE,
+		.name = "Dot clock override",
+		.dump = dump_dot_clock_override,
 	},
 	{
 		.id = BDB_SDVO_LVDS_OPTIONS,
