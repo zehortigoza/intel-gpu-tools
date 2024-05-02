@@ -81,6 +81,27 @@ struct edid {
 	/* ... */
 } __packed;
 
+static void hex_dump(const void *data, uint32_t size)
+{
+	int i;
+	const uint8_t *p = data;
+
+	for (i = 0; i < size; i++) {
+		if (i % 16 == 0)
+			printf("\t%04x: ", i);
+		printf("%02x", p[i]);
+		if (i % 16 == 15) {
+			if (i + 1 < size)
+				printf("\n");
+		} else if (i % 8 == 7) {
+			printf("  ");
+		} else {
+			printf(" ");
+		}
+	}
+	printf("\n\n");
+}
+
 static bool dump_panel(const struct context *context, int panel_type)
 {
 	return panel_type == context->panel_type ||
@@ -393,6 +414,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_mipi_config);
 	case BDB_MIPI_SEQUENCE:
 		return sizeof(struct bdb_mipi_sequence);
+	case BDB_RGB_PALETTE:
+		return sizeof(struct bdb_rgb_palette);
 	case BDB_COMPRESSION_PARAMETERS:
 		return sizeof(struct bdb_compression_parameters);
 	case BDB_GENERIC_DTD:
@@ -3294,6 +3317,21 @@ static void dump_mipi_sequence(struct context *context,
 	}
 }
 
+static void dump_rgb_palette(struct context *context,
+			     const struct bdb_block *block)
+{
+	const struct bdb_rgb_palette *pal = block_data(block);
+
+	printf("\tIs enabled: %s (0x%02x)\n", YESNO(pal->is_enabled), pal->is_enabled);
+
+	printf("\tRed:\n");
+	hex_dump(pal->red, sizeof(pal->red));
+	printf("\tGreen:\n");
+	hex_dump(pal->green, sizeof(pal->green));
+	printf("\tBlue:\n");
+	hex_dump(pal->blue, sizeof(pal->blue));
+}
+
 #define KB(x) ((x) * 1024)
 
 static int dsc_buffer_block_size(u8 buffer_block_size)
@@ -3714,32 +3752,16 @@ struct dumper dumpers[] = {
 		.dump = dump_mipi_sequence,
 	},
 	{
+		.id = BDB_RGB_PALETTE,
+		.name = "RGB palette",
+		.dump = dump_rgb_palette,
+	},
+	{
 		.id = BDB_COMPRESSION_PARAMETERS,
 		.name = "Compression parameters block",
 		.dump = dump_compression_parameters,
 	},
 };
-
-static void hex_dump(const void *data, uint32_t size)
-{
-	int i;
-	const uint8_t *p = data;
-
-	for (i = 0; i < size; i++) {
-		if (i % 16 == 0)
-			printf("\t%04x: ", i);
-		printf("%02x", p[i]);
-		if (i % 16 == 15) {
-			if (i + 1 < size)
-				printf("\n");
-		} else if (i % 8 == 7) {
-			printf("  ");
-		} else {
-			printf(" ");
-		}
-	}
-	printf("\n\n");
-}
 
 static void hex_dump_block(const struct bdb_block *block)
 {
