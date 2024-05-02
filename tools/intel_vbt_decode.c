@@ -348,6 +348,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_display_remove_old);
 	case BDB_OEM_CUSTOM:
 		return sizeof(struct bdb_oem_custom);
+	case BDB_EFP_LIST:
+		return sizeof(struct bdb_efp_list);
 	case BDB_SDVO_LVDS_OPTIONS:
 		return sizeof(struct bdb_sdvo_lvds_options);
 	case BDB_SDVO_LVDS_DTD:
@@ -2262,6 +2264,32 @@ static void dump_oem_custom(struct context *context,
 	}
 }
 
+static void dump_efp_list(struct context *context,
+			  const struct bdb_block *block)
+{
+	const struct bdb_efp_list *list = block_data(block);
+
+	printf("\tEntry size: %d\n", list->entry_size);
+	printf("\tNum entries: %d\n", list->num_entries);
+
+	if (sizeof(list->efp[0]) != list->entry_size) {
+		printf("\tEFP struct sizes don't match (expected %zu, got %u), skipping\n",
+		       sizeof(list->efp[0]), list->entry_size);
+		return;
+	}
+
+	for (int i = 0; i < list->num_entries; i++) {
+		char mfg[4];
+
+		printf("\tEFP #%d:\n", i + 1);
+		printf("\t\tMfg name: %s (0x%x)\n",
+		       decode_pnp_id(list->efp[i].mfg_name, mfg),
+		       list->efp[i].mfg_name);
+		printf("\t\tProduct code: %u\n",
+		       list->efp[i].product_code);
+	}
+}
+
 static void dump_edp(struct context *context,
 		     const struct bdb_block *block)
 {
@@ -3384,6 +3412,11 @@ struct dumper dumpers[] = {
 		.id = BDB_OEM_CUSTOM,
 		.name = "OEM customizable modes",
 		.dump = dump_oem_custom,
+	},
+	{
+		.id = BDB_EFP_LIST,
+		.name = "EFP list",
+		.dump = dump_efp_list,
 	},
 	{
 		.id = BDB_SDVO_LVDS_OPTIONS,
