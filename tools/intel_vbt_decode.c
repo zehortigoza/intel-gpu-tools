@@ -362,6 +362,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_tv_options);
 	case BDB_EDP:
 		return sizeof(struct bdb_edp);
+	case BDB_EFP_DTD:
+		return sizeof(struct bdb_efp_dtd);
 	case BDB_DISPLAY_SELECT_IVB:
 		return sizeof(struct bdb_display_select_ivb);
 	case BDB_DISPLAY_REMOVE_IVB:
@@ -2458,6 +2460,17 @@ static void dump_edp(struct context *context,
 	}
 }
 
+static void dump_efp_dtd(struct context *context,
+			 const struct bdb_block *block)
+{
+	const struct bdb_efp_dtd *efp = block_data(block);
+
+	for (int n = 0; n < ARRAY_SIZE(efp->dtd); n++) {
+		printf("\tEFP DTD #%d:\n", n + 1);
+		print_detail_timing_data(&efp->dtd[n]);
+	}
+}
+
 static void dump_psr(struct context *context,
 		     const struct bdb_block *block)
 {
@@ -3501,6 +3514,11 @@ struct dumper dumpers[] = {
 		.id = BDB_EDP,
 		.name = "eDP block",
 		.dump = dump_edp,
+	},
+	{
+		.id = BDB_EFP_DTD,
+		.name = "EFP DTD",
+		.dump = dump_efp_dtd,
 	},
 	{
 		.id = BDB_DISPLAY_SELECT_IVB,
