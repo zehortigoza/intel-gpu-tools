@@ -39,6 +39,7 @@
 #include <sys/types.h>
 
 #include "igt_aux.h"
+#include "igt_halffloat.h"
 #include "intel_io.h"
 #include "intel_chipset.h"
 #include "drmtest.h"
@@ -384,6 +385,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_lfp_power);
 	case BDB_EDP_BFI:
 		return sizeof(struct bdb_edp_bfi);
+	case BDB_CHROMATICITY:
+		return sizeof(struct bdb_chromaticity);
 	case BDB_MIPI_CONFIG:
 		return sizeof(struct bdb_mipi_config);
 	case BDB_MIPI_SEQUENCE:
@@ -2706,6 +2709,84 @@ static void dump_edp_bfi(struct context *context,
 	}
 }
 
+static float decode_coordinate(int value)
+{
+	return 1.0f * value / (1 << 10);
+}
+
+static float decode_luminance(uint16_t value)
+{
+	float f;
+
+	igt_half_to_float(&value, &f, 1);
+
+	return f;
+}
+
+static float decode_gamma(int value)
+{
+	return (value + 100) / 100.0f;
+}
+
+static void dump_chromaticity(struct context *context,
+			      const struct bdb_block *block)
+{
+	const struct bdb_chromaticity *chromaticity = block_data(block);
+
+	for (int i = 0; i < 16; i++) {
+		const struct chromaticity *c = &chromaticity->chromaticity[i];
+		const struct luminance_and_gamma *l = &chromaticity->luminance_and_gamma[i];
+		int x, y;
+
+		if (!dump_panel(context, i))
+			continue;
+
+		printf("\tPanel %d%s\n", i, panel_str(context, i));
+
+		printf("\t\tUse chromaticity values from EDID base block: %s\n",
+		       YESNO(c->chromaticity_from_edid_base_block));
+		printf("\t\tChromaticity enable: %s\n",
+		       YESNO(c->chromaticity_enable));
+
+		x = (c->red_x_hi << 2) | c->red_x_lo;
+		y = (c->red_y_hi << 2) | c->red_y_lo;
+		printf("\t\tRed X coordinate: %f (0x%03x)\n", decode_coordinate(x), x);
+		printf("\t\tRed Y coordinate: %f (0x%03x)\n", decode_coordinate(y), y);
+
+		x = (c->green_x_hi << 2) | c->green_x_lo;
+		y = (c->green_y_hi << 2) | c->green_y_lo;
+		printf("\t\tGreen X coordinate: %f (0x%03x)\n", decode_coordinate(x), x);
+		printf("\t\tGreen Y coordinate: %f (0x%03x)\n", decode_coordinate(y), y);
+
+		x = (c->blue_x_hi << 2) | c->blue_x_lo;
+		y = (c->blue_y_hi << 2) | c->blue_y_lo;
+		printf("\t\tBlue X coordinate: %f (0x%03x)\n", decode_coordinate(x), x);
+		printf("\t\tBlue Y coordinate: %f (0x%03x)\n", decode_coordinate(y), y);
+
+		x = (c->white_x_hi << 2) | c->white_x_lo;
+		y = (c->white_y_hi << 2) | c->white_y_lo;
+		printf("\t\tWhite X coordinate: %f (0x%03x)\n", decode_coordinate(x), x);
+		printf("\t\tWhite Y coordinate: %f (0x%03x)\n", decode_coordinate(y), y);
+
+		if (context->bdb->version < 211)
+			continue;
+
+		printf("\t\tGamma enable: %s\n", YESNO(l->gamma_enable));
+		printf("\t\tLuminance enable: %s\n", YESNO(l->luminance_enable));
+
+		printf("\t\tMinimum luminance: %f (0x%04x)\n",
+		       decode_luminance(l->min_luminance), l->min_luminance);
+		printf("\t\tMaximum luminance: %f (0x%04x)\n",
+		       decode_luminance(l->max_luminance), l->max_luminance);
+		printf("\t\t1%% maximum luminanace: %f (0x%04x)\n",
+		       decode_luminance(l->one_percent_max_luminance), l->one_percent_max_luminance);
+		if (l->gamma != 0xff)
+			printf("\t\tGamma: %f (0x%02x)\n", decode_gamma(l->gamma), l->gamma);
+		else
+			printf("\t\tGamma: n/a (0x%02x)\n", l->gamma);
+	}
+}
+
 static void dump_mipi_config(struct context *context,
 			     const struct bdb_block *block)
 {
@@ -3599,6 +3680,11 @@ struct dumper dumpers[] = {
 		.id = BDB_EDP_BFI,
 		.name = "eDP BFI",
 		.dump = dump_edp_bfi,
+	},
+	{
+		.id = BDB_CHROMATICITY,
+		.name = "Chromaticity for narrow gamut panel",
+		.dump = dump_chromaticity,
 	},
 	{
 		.id = BDB_MIPI_CONFIG,
