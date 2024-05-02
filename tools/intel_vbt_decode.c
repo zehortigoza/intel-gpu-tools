@@ -342,6 +342,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_dot_clock_override);
 	case BDB_DISPLAY_SELECT_OLD:
 		return sizeof(struct bdb_display_select_old);
+	case BDB_DRIVER_ROTATION:
+		return sizeof(struct bdb_driver_rotation);
 	case BDB_DISPLAY_REMOVE_OLD:
 		return sizeof(struct bdb_display_remove_old);
 	case BDB_SDVO_LVDS_OPTIONS:
@@ -2211,6 +2213,20 @@ static void dump_display_remove_hsw(struct context *context,
 	}
 }
 
+static void dump_driver_rotation(struct context *context,
+				 const struct bdb_block *block)
+{
+	const struct bdb_driver_rotation *rot = block_data(block);
+
+	printf("\tRotation enable: %s (0x%x)\n", YESNO(rot->rotation_enable),
+	       rot->rotation_enable);
+
+	printf("\tRotation flags 1: 0x%02x\n", rot->rotation_flags_1);
+	printf("\tRotation flags 2: 0x%04x\n", rot->rotation_flags_2);
+	printf("\tRotation flags 3: 0x%08x\n", rot->rotation_flags_3);
+	printf("\tRotation flags 4: 0x%08x\n", rot->rotation_flags_4);
+}
+
 static void dump_edp(struct context *context,
 		     const struct bdb_block *block)
 {
@@ -3318,6 +3334,11 @@ struct dumper dumpers[] = {
 		.id = BDB_DISPLAY_SELECT_OLD,
 		.name = "Toggle list block (pre-IVB)",
 		.dump = dump_display_select_old,
+	},
+	{
+		.id = BDB_DRIVER_ROTATION,
+		.name = "Driver rotation",
+		.dump = dump_driver_rotation,
 	},
 	{
 		.id = BDB_DISPLAY_REMOVE_OLD,
