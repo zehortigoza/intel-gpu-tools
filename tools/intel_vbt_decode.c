@@ -318,6 +318,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_general_definitions);
 	case BDB_DISPLAY_TOGGLE:
 		return sizeof(struct bdb_display_toggle);
+	case BDB_MODE_SUPPORT_LIST:
+		return sizeof(struct bdb_mode_support_list);
 	case BDB_PSR:
 		return sizeof(struct bdb_psr);
 	case BDB_CHILD_DEVICE_TABLE:
@@ -1263,6 +1265,20 @@ static void dump_display_toggle(struct context *context,
 		printf("\tToggle list #%d: %s (0x%04x)\n",
 		       i+1, child_device_handle(context, t->list[i]),
 		       t->list[i]);
+}
+
+static void dump_mode_support_list(struct context *context,
+				   const struct bdb_block *block)
+{
+	const struct bdb_mode_support_list *l =
+		block_data(block) + block->size - sizeof(*l);
+	const uint8_t *mode_number = block_data(block);
+
+	printf("\tIntel mode numbers:\n");
+	for (int i = 0; i < l->mode_list_length; i++)
+		printf("\t\t0x%02x\n", mode_number[i]);
+
+	printf("\tMode list length: %d\n", l->mode_list_length);
 }
 
 static void dump_legacy_child_devices(struct context *context,
@@ -2747,6 +2763,11 @@ struct dumper dumpers[] = {
 		.id = BDB_DISPLAY_TOGGLE,
 		.name = "Display toggle option block",
 		.dump = dump_display_toggle,
+	},
+	{
+		.id = BDB_MODE_SUPPORT_LIST,
+		.name = "Mode support list",
+		.dump = dump_mode_support_list,
 	},
 	{
 		.id = BDB_PSR,
