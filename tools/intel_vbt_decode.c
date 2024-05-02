@@ -320,6 +320,9 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_display_toggle);
 	case BDB_MODE_SUPPORT_LIST:
 		return sizeof(struct bdb_mode_support_list);
+	case BDB_GENERIC_MODE_TABLE:
+		return max(sizeof(struct bdb_generic_mode_table_alm),
+			   sizeof(struct bdb_generic_mode_table_mgm));
 	case BDB_PSR:
 		return sizeof(struct bdb_psr);
 	case BDB_CHILD_DEVICE_TABLE:
@@ -1279,6 +1282,83 @@ static void dump_mode_support_list(struct context *context,
 		printf("\t\t0x%02x\n", mode_number[i]);
 
 	printf("\tMode list length: %d\n", l->mode_list_length);
+}
+
+static void dump_generic_mode_table_base(const struct generic_mode_table *t)
+{
+	printf("\tResolution: %dx%d\n", t->x_res, t->y_res);
+	printf("\tColor depths: 0x%02x\n", t->color_depths);
+	printf("\tRefresh rates: %d %d %d Hz\n",
+	       t->refresh_rate[0], t->refresh_rate[1], t->refresh_rate[2]);
+	printf("\tReserved: 0x%02x\n", t->reserved);
+	printf("\tText columns: %d\n", t->text_cols);
+	printf("\tText rows: %d\n", t->text_rows);
+	printf("\tFont height: %d\n", t->font_height);
+	printf("\tPage size: 0x%04x\n", t->page_size);
+	printf("\tMisc: 0x%02x\n", t->misc);
+}
+
+static void dump_generic_mode_timings(const struct generic_mode_timings *t)
+{
+	printf("\t\tDotclock: %d kHz\n", t->dotclock_khz);
+	printf("\t\tHorizontal active: %d\n", t->hdisplay+1);
+	printf("\t\tHorizontal total: %d\n", t->htotal+1);
+	printf("\t\tHorizontal blank start: %d\n", t->hblank_start+1);
+	printf("\t\tHorizontal blank end: %d\n", t->hblank_end+1);
+	printf("\t\tHorizontal sync start: %d\n", t->hsync_start+1);
+	printf("\t\tHorizontal sync end: %d\n", t->hsync_end+1);
+	printf("\t\tVertical active: %d\n", t->vdisplay+1);
+	printf("\t\tVertical total: %d\n", t->vtotal+1);
+	printf("\t\tVertical blank start: %d\n", t->vblank_start+1);
+	printf("\t\tVertical blank end: %d\n", t->vblank_end+1);
+	printf("\t\tVertical sync start: %d\n", t->vsync_start+1);
+	printf("\t\tVertical sync end: %d\n", t->vsync_end+1);
+}
+
+static void dump_generic_mode_table_alm(const struct bdb_block *block)
+{
+	const struct bdb_generic_mode_table_alm *t = block_data(block);
+
+	dump_generic_mode_table_base(&t->table);
+
+	for (int i = 0; i < ARRAY_SIZE(t->timings); i++) {
+		printf("\t#%d timings:\n", i+1);
+		dump_generic_mode_timings(&t->timings[i].timings);
+		printf("\t\tWatermark for 8 bpp: %d SW\n", t->timings[i].wm_8bpp);
+		printf("\t\tBurst length for 8 bpp: %d SW\n", 4*(t->timings[i].burst_8bpp+1));
+		printf("\t\tWatermark for 16 bpp: %d SW\n", t->timings[i].wm_16bpp+1);
+		printf("\t\tBurst length for 16 bpp: %d SW\n", 4*(t->timings[i].burst_16bpp+1));
+		printf("\t\tWatermark for 32 bpp: %d SW\n", t->timings[i].wm_32bpp+1);
+		printf("\t\tBurst length for 32 bpp: %d SW\n", 4*(t->timings[i].burst_32bpp+1));
+	}
+}
+
+static void dump_generic_mode_table_mgm(const struct bdb_block *block)
+{
+	const struct bdb_generic_mode_table_mgm *t = block_data(block);
+
+	printf("\tMode flag: 0x%04x\n", t->mode_flag);
+
+	dump_generic_mode_table_base(&t->table);
+
+	for (int i = 0; i < ARRAY_SIZE(t->timings); i++) {
+		printf("\t#%d timings:\n", i+1);
+		dump_generic_mode_timings(&t->timings[i]);
+	}
+}
+
+static void dump_generic_mode_table(struct context *context,
+				    const struct bdb_block *block)
+{
+	/*
+	 * FIXME ALM/105 is showing one layout, MGM/108
+	 * another. Not sure there is actual version
+	 * based cutoff.
+	 */
+	if (context->bdb->version >= 106)
+		dump_generic_mode_table_mgm(block);
+	else
+		dump_generic_mode_table_alm(block);
 }
 
 static void dump_legacy_child_devices(struct context *context,
@@ -2768,6 +2848,11 @@ struct dumper dumpers[] = {
 		.id = BDB_MODE_SUPPORT_LIST,
 		.name = "Mode support list",
 		.dump = dump_mode_support_list,
+	},
+	{
+		.id = BDB_GENERIC_MODE_TABLE,
+		.name = "Generic mode table",
+		.dump = dump_generic_mode_table,
 	},
 	{
 		.id = BDB_PSR,
