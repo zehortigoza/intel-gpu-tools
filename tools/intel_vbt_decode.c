@@ -382,6 +382,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_lfp_backlight);
 	case BDB_LFP_POWER:
 		return sizeof(struct bdb_lfp_power);
+	case BDB_EDP_BFI:
+		return sizeof(struct bdb_edp_bfi);
 	case BDB_MIPI_CONFIG:
 		return sizeof(struct bdb_mipi_config);
 	case BDB_MIPI_SEQUENCE:
@@ -2676,6 +2678,34 @@ static void dump_sdvo_lvds_options(struct context *context,
 	printf("\tmisc[3]: %x\n", options->panel_misc_bits_4);
 }
 
+static void dump_edp_bfi(struct context *context,
+			 const struct bdb_block *block)
+{
+	const struct bdb_edp_bfi *b = block_data(block);
+
+	printf("\tBFI strucure size: %d\n", b->bfi_structure_size);
+
+	if (sizeof(b->bfi[0]) != b->bfi_structure_size) {
+		printf("\tBFI struct sizes don't match (expected %zu, got %u), skipping\n",
+		       sizeof(b->bfi[0]), b->bfi_structure_size);
+		return;
+	}
+
+	for (int i = 0; i < 16; i++) {
+		if (!dump_panel(context, i))
+			continue;
+
+		printf("\tPanel %d%s\n", i, panel_str(context, i));
+
+		printf("\t\tEnable brightness control in CUI: %s\n",
+		       YESNO(b->bfi[i].enable_brightness_control_in_cui));
+		printf("\t\tEnable BFI in driver: %s\n",
+		       YESNO(b->bfi[i].enable_bfi_in_driver));
+		printf("\t\tBrightness percentage when BFI is disabled: %d\n",
+		       b->bfi[i].brightness_percentage_when_bfi_disabled);
+	}
+}
+
 static void dump_mipi_config(struct context *context,
 			     const struct bdb_block *block)
 {
@@ -3564,6 +3594,11 @@ struct dumper dumpers[] = {
 		.id = BDB_LFP_POWER,
 		.name = "LFP power conservation features block",
 		.dump = dump_lfp_power,
+	},
+	{
+		.id = BDB_EDP_BFI,
+		.name = "eDP BFI",
+		.dump = dump_edp_bfi,
 	},
 	{
 		.id = BDB_MIPI_CONFIG,
