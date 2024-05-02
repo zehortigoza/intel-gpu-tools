@@ -329,6 +329,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_reg_table);
 	case BDB_PSR:
 		return sizeof(struct bdb_psr);
+	case BDB_MODE_REMOVAL_TABLE:
+		return sizeof(struct bdb_mode_removal);
 	case BDB_CHILD_DEVICE_TABLE:
 		return sizeof(struct bdb_legacy_child_devices);
 	case BDB_DRIVER_FEATURES:
@@ -1397,6 +1399,33 @@ static void dump_reg_table(struct context *context,
 
 	printf("\tTable end marker: 0x%04x\n",
 	       *(const uint16_t *)end);
+}
+
+static void dump_mode_removal_table(struct context *context,
+				    const struct bdb_block *block)
+{
+	const struct bdb_mode_removal *r = block_data(block);
+	int num_entries = (block->size - sizeof(*r) - 2) / r->row_size;
+
+	printf("\tNum entries: %d\n", num_entries);
+	printf("\tRow size: %d\n", r->row_size);
+
+	for (int i = 0; i < num_entries; i++) {
+		const struct mode_removal_table *mode =
+			(const void*)&r->modes[0] + i * r->row_size;
+
+		printf("\tEntry #%d:\n", i + 1);
+		printf("\t\tResolution: %dx%d\n", mode->x_res, mode->y_res);
+		printf("\t\tBits per pixel: 0x%02x\n", mode->bpp);
+		printf("\t\tRefresh rate: 0x%04x\n", mode->refresh_rate);
+		printf("\t\tRemoval flags: 0x%02x\n", mode->removal_flags);
+
+		if (r->row_size >= 10)
+			printf("\t\tPanel flags: 0x%04x\n", mode->panel_flags);
+	}
+
+	printf("\tTerminator: 0x%04x\n",
+	       *(const u16*)(block_data(block) + block->size - 2));
 }
 
 static void dump_legacy_child_devices(struct context *context,
@@ -2912,6 +2941,11 @@ struct dumper dumpers[] = {
 		.min_bdb_version = 165,
 		.name = "PSR block",
 		.dump = dump_psr,
+	},
+	{
+		.id = BDB_MODE_REMOVAL_TABLE,
+		.name = "Mode removal table",
+		.dump = dump_mode_removal_table,
 	},
 	{
 		.id = BDB_CHILD_DEVICE_TABLE,
