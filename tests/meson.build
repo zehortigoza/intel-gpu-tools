@@ -468,15 +468,11 @@ subdir('vc4')
 subdir('vmwgfx')
 
 gen_testlist = find_program('generate_testlist.sh')
-if not meson.is_cross_build()
-	test_list_target = custom_target('testlist',
-		    output : 'test-list.txt',
-		    command : [ gen_testlist, '@OUTPUT@', test_list ],
-		    install : true,
-		    install_dir : libexecdir)
-else
-	test_list_target = []
-endif
+test_list_target = custom_target('testlist',
+	      output : 'test-list.txt',
+	      command : [ gen_testlist, '@OUTPUT@', test_list ],
+	      install : true,
+	      install_dir : libexecdir)
 
 test_executables += executable('gem_concurrent_all', 'intel/gem_concurrent_all.c',
 	   dependencies : test_deps + [ libatomic ],
@@ -485,13 +481,11 @@ test_executables += executable('gem_concurrent_all', 'intel/gem_concurrent_all.c
 	   install : true)
 test_list += 'gem_concurrent_all'
 
-if not meson.is_cross_build()
-	test_list_full_target = custom_target('testlist-full',
-		    output : 'test-list-full.txt',
-		    command : [ gen_testlist, '@OUTPUT@', test_list ],
-		    install : true,
-		    install_dir : libexecdir)
-endif
+test_list_full_target = custom_target('testlist-full',
+	      output : 'test-list-full.txt',
+	      command : [ gen_testlist, '@OUTPUT@', test_list ],
+	      install : true,
+	      install_dir : libexecdir)
 
 test_script = find_program('igt_command_line.sh')
 foreach prog : test_list
