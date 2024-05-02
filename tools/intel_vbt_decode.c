@@ -346,6 +346,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_driver_rotation);
 	case BDB_DISPLAY_REMOVE_OLD:
 		return sizeof(struct bdb_display_remove_old);
+	case BDB_OEM_CUSTOM:
+		return sizeof(struct bdb_oem_custom);
 	case BDB_SDVO_LVDS_OPTIONS:
 		return sizeof(struct bdb_sdvo_lvds_options);
 	case BDB_SDVO_LVDS_DTD:
@@ -2227,6 +2229,39 @@ static void dump_driver_rotation(struct context *context,
 	printf("\tRotation flags 4: 0x%08x\n", rot->rotation_flags_4);
 }
 
+static void dump_oem_custom(struct context *context,
+			    const struct bdb_block *block)
+{
+	const struct bdb_oem_custom *oem = block_data(block);
+
+	printf("\tNum entries: %d\n", oem->num_entries);
+	printf("\tEntry size: %d\n", oem->entry_size);
+
+	for (int i = 0; i < oem->num_entries; i++) {
+		const struct oem_mode *m = (const void *)&oem->modes[0] +
+			i * oem->entry_size;
+
+		printf("\tEntry #%d:\n", i+1);
+		printf("\t\tEnable in GOP: %s\n", YESNO(m->enable_in_gop));
+		printf("\t\tEnable in OS: %s\n", YESNO(m->enable_in_os));
+		printf("\t\tEnable in VBIOS: %s\n", YESNO(m->enable_in_vbios));
+		printf("\t\tResolution: %dx%d\n", m->x_res, m->y_res);
+		printf("\t\tDisplay flags: %s (0x%02x)\n",
+		       child_device_handle(context, m->display_flags),
+		       m->display_flags);
+		printf("\t\tColor depth: 0x%02x\n", m->color_depth);
+		printf("\t\tRefresh rate: %d\n", m->refresh_rate);
+
+		printf("\t\tDTD:\n");
+		print_detail_timing_data(&m->dtd);
+
+		if (oem->entry_size >= 28)
+			printf("\t\tDisplay flags 2: %s (0x%04x)\n",
+			       child_device_handle(context, m->display_flags_2),
+			       m->display_flags_2);
+	}
+}
+
 static void dump_edp(struct context *context,
 		     const struct bdb_block *block)
 {
@@ -3344,6 +3379,11 @@ struct dumper dumpers[] = {
 		.id = BDB_DISPLAY_REMOVE_OLD,
 		.name = "Display remove (pre-IVB)",
 		.dump = dump_display_remove_old,
+	},
+	{
+		.id = BDB_OEM_CUSTOM,
+		.name = "OEM customizable modes",
+		.dump = dump_oem_custom,
 	},
 	{
 		.id = BDB_SDVO_LVDS_OPTIONS,
