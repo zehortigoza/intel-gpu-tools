@@ -342,6 +342,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_dot_clock_override);
 	case BDB_DISPLAY_SELECT_OLD:
 		return sizeof(struct bdb_display_select_old);
+	case BDB_DISPLAY_REMOVE_OLD:
+		return sizeof(struct bdb_display_remove_old);
 	case BDB_SDVO_LVDS_OPTIONS:
 		return sizeof(struct bdb_sdvo_lvds_options);
 	case BDB_SDVO_LVDS_DTD:
@@ -350,8 +352,12 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_edp);
 	case BDB_DISPLAY_SELECT_IVB:
 		return sizeof(struct bdb_display_select_ivb);
+	case BDB_DISPLAY_REMOVE_IVB:
+		return sizeof(struct bdb_display_remove_ivb);
 	case BDB_DISPLAY_SELECT_HSW:
 		return sizeof(struct bdb_display_select_hsw);
+	case BDB_DISPLAY_REMOVE_HSW:
+		return sizeof(struct bdb_display_remove_hsw);
 	case BDB_LFP_OPTIONS:
 		return sizeof(struct bdb_lfp_options);
 	case BDB_LFP_DATA_PTRS:
@@ -2133,6 +2139,78 @@ static void dump_display_select_hsw(struct context *context,
 	}
 }
 
+static void dump_display_remove_old(struct context *context,
+				    const struct bdb_block *block)
+{
+	const struct bdb_display_remove_old *r = block_data(block);
+
+	printf("\tNum entries: %d\n", r->num_entries);
+	printf("\tEntry size: %d\n\n", r->entry_size);
+
+	if (sizeof(r->table[0]) != r->entry_size) {
+		printf("\t\tstruct doesn't match (expected %zu, got %u), skipping\n",
+		       sizeof(r->table[0]), r->entry_size);
+		return;
+	}
+
+	for (int i = 0; i < r->num_entries; i++) {
+		printf("\tEntry #%d:\n", i + 1);
+
+		printf("\t\t\tDisplay select pipe A: %s (0x%02x)\n",
+		       child_device_handle(context, r->table[i].display_select_pipe_a),
+		       r->table[i].display_select_pipe_a);
+		printf("\t\t\tDisplay select pipe B: %s (0x%02x)\n",
+		       child_device_handle(context, r->table[i].display_select_pipe_b),
+		       r->table[i].display_select_pipe_b);
+	}
+}
+
+static void dump_display_remove_ivb(struct context *context,
+				    const struct bdb_block *block)
+{
+	const struct bdb_display_remove_ivb *r = block_data(block);
+
+	printf("\tNum entries: %d\n", r->num_entries);
+	printf("\tEntry size: %d\n\n", r->entry_size);
+
+	if (sizeof(r->table[0]) != r->entry_size) {
+		printf("\t\tstruct doesn't match (expected %zu, got %u), skipping\n",
+		       sizeof(r->table[0]), r->entry_size);
+		return;
+	}
+
+	for (int i = 0; i < r->num_entries; i++) {
+		printf("\tEntry #%d:\n", i + 1);
+
+		printf("\t\t\tDisplay select: %s (0x%02x)\n",
+		       child_device_handle(context, r->table[i].display_select),
+		       r->table[i].display_select);
+	}
+}
+
+static void dump_display_remove_hsw(struct context *context,
+				    const struct bdb_block *block)
+{
+	const struct bdb_display_remove_hsw *r = block_data(block);
+
+	printf("\tNum entries: %d\n", r->num_entries);
+	printf("\tEntry size: %d\n\n", r->entry_size);
+
+	if (sizeof(r->table[0]) != r->entry_size) {
+		printf("\t\tstruct doesn't match (expected %zu, got %u), skipping\n",
+		       sizeof(r->table[0]), r->entry_size);
+		return;
+	}
+
+	for (int i = 0; i < r->num_entries; i++) {
+		printf("\tEntry #%d:\n", i + 1);
+
+		printf("\t\t\tDisplay select: %s (0x%04x)\n",
+		       child_device_handle(context, r->table[i].display_select),
+		       r->table[i].display_select);
+	}
+}
+
 static void dump_edp(struct context *context,
 		     const struct bdb_block *block)
 {
@@ -3242,6 +3320,11 @@ struct dumper dumpers[] = {
 		.dump = dump_display_select_old,
 	},
 	{
+		.id = BDB_DISPLAY_REMOVE_OLD,
+		.name = "Display remove (pre-IVB)",
+		.dump = dump_display_remove_old,
+	},
+	{
 		.id = BDB_SDVO_LVDS_OPTIONS,
 		.name = "SDVO LVDS options block",
 		.dump = dump_sdvo_lvds_options,
@@ -3262,9 +3345,19 @@ struct dumper dumpers[] = {
 		.dump = dump_display_select_ivb,
 	},
 	{
+		.id = BDB_DISPLAY_REMOVE_IVB,
+		.name = "Display removal table (IVB)",
+		.dump = dump_display_remove_ivb,
+	},
+	{
 		.id = BDB_DISPLAY_SELECT_HSW,
 		.name = "Display toggle list (HSW+)",
 		.dump = dump_display_select_hsw,
+	},
+	{
+		.id = BDB_DISPLAY_REMOVE_HSW,
+		.name = "Display removal table (HSW+)",
+		.dump = dump_display_remove_hsw,
 	},
 	{
 		.id = BDB_LFP_OPTIONS,
