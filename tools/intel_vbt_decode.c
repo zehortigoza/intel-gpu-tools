@@ -422,6 +422,9 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_vswing_preemph);
 	case BDB_GENERIC_DTD:
 		return sizeof(struct bdb_generic_dtd);
+	case BDB_PRD_TABLE:
+		return max(sizeof(struct bdb_prd_table_old),
+			   sizeof(struct bdb_prd_table_new));
 	default:
 		return 0;
 	}
@@ -3494,6 +3497,68 @@ static void dump_generic_dtd(struct context *context,
 	}
 }
 
+static void dump_prd_table_old(struct context *context,
+			       const struct bdb_block *block)
+{
+	const struct bdb_prd_table_old *prd =
+		block_data(block) + block->size - sizeof(*prd);
+	const struct prd_entry_old *list = block_data(block);
+
+	for (int i = 0; i < prd->num_entries; i++) {
+		printf("\tEntry #%d:\n", i + 1);
+		printf("\t\tDisplays attached: %s (0x%x)\n",
+		       child_device_handle(context, list[i].displays_attached),
+		       list[i].displays_attached);
+		printf("\t\tDisplays in pipe A: %s (0x%x)\n",
+		       child_device_handle(context, list[i].display_in_pipe_a),
+		       list[i].display_in_pipe_a);
+		printf("\t\tDisplays in pipe B: %s (0x%x)\n",
+		       child_device_handle(context, list[i].display_in_pipe_b),
+		       list[i].display_in_pipe_b);
+	}
+
+	printf("\tNum entries: %d\n", prd->num_entries);
+}
+
+static void dump_prd_table_new(struct context *context,
+			       const struct bdb_block *block)
+{
+	const struct bdb_prd_table_new *prd = block_data(block);
+	const struct prd_entry_new *list = prd->list;
+
+	printf("\tNum entries: %d\n", prd->num_entries);
+
+	for (int i = 0; i < prd->num_entries; i++) {
+		printf("\tEntry #%d:\n", i + 1);
+		printf("\t\tPrimary display: %s (0x%x)\n",
+		       child_device_handle(context, list[i].primary_display),
+		       list[i].primary_display);
+		printf("\t\tSecondary display: %s (0x%x)\n",
+		       child_device_handle(context, list[i].secondary_display),
+		       list[i].secondary_display);
+	}
+}
+
+static void dump_prd_table(struct context *context,
+			   const struct bdb_block *block)
+{
+	const struct bdb_prd_table_old *old =
+		block_data(block) + block->size - sizeof(*old);
+	const struct bdb_prd_table_new *new =
+		block_data(block);
+	int num_entries_old = (block->size - sizeof(*old)) / sizeof(*old->list);
+	int num_entries_new = (block->size - sizeof(*new)) / sizeof(*new->list);
+
+	/*
+	 * The cutoff seems to be TGL+ w/ GOP rather than a specific
+	 * BDB version number. Just guess based on the actual data.
+	 */
+	if (num_entries_old == old->num_entries)
+		dump_prd_table_old(context, block);
+	else if (num_entries_new == new->num_entries)
+		dump_prd_table_new(context, block);
+}
+
 static int get_panel_type_pnpid(const struct context *context,
 				const char *edid_file)
 {
@@ -3851,6 +3916,11 @@ struct dumper dumpers[] = {
 		.id = BDB_GENERIC_DTD,
 		.name = "Generic DTD",
 		.dump = dump_generic_dtd,
+	},
+	{
+		.id = BDB_PRD_TABLE,
+		.name = "PRD table",
+		.dump = dump_prd_table,
 	},
 };
 
