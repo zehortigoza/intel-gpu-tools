@@ -358,6 +358,8 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_sdvo_lvds_pnp_id);
 	case BDB_SDVO_LVDS_PPS:
 		return sizeof(struct bdb_sdvo_lvds_pps);
+	case BDB_TV_OPTIONS:
+		return sizeof(struct bdb_tv_options);
 	case BDB_EDP:
 		return sizeof(struct bdb_edp);
 	case BDB_DISPLAY_SELECT_IVB:
@@ -2294,6 +2296,28 @@ static void dump_efp_list(struct context *context,
 	}
 }
 
+static const char * const underscan_overscan[] = {
+	"Neither",
+	"Underscan/Overscan",
+	"Overscan only",
+	"Underscan only",
+};
+
+static void dump_tv_options(struct context *context,
+			    const struct bdb_block *block)
+{
+	const struct bdb_tv_options *tv = block_data(block);
+
+	printf("\tD connector support: %s\n",
+	       YESNO(tv->d_connector_support));
+	printf("\tAdd modes to avoid overscan issue: %s\n",
+	       YESNO(tv->add_modes_to_avoid_overscan_issue));
+	printf("\tUndescan/Overscan for HDTV via DVI: %s\n",
+	       underscan_overscan[tv->underscan_overscan_hdtv_dvi]);
+	printf("\tUndescan/Overscan for HDTV via component: %s\n",
+	       underscan_overscan[tv->underscan_overscan_hdtv_component]);
+}
+
 static void dump_edp(struct context *context,
 		     const struct bdb_block *block)
 {
@@ -3467,6 +3491,11 @@ struct dumper dumpers[] = {
 		.id = BDB_SDVO_LVDS_PPS,
 		.name = "SDVO LVDS PPS",
 		.dump = dump_sdvo_lvds_pps,
+	},
+	{
+		.id = BDB_TV_OPTIONS,
+		.name = "TV options",
+		.dump = dump_tv_options,
 	},
 	{
 		.id = BDB_EDP,
