@@ -340,12 +340,18 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_driver_persistence);
 	case BDB_DOT_CLOCK_OVERRIDE:
 		return sizeof(struct bdb_dot_clock_override);
+	case BDB_DISPLAY_SELECT_OLD:
+		return sizeof(struct bdb_display_select_old);
 	case BDB_SDVO_LVDS_OPTIONS:
 		return sizeof(struct bdb_sdvo_lvds_options);
 	case BDB_SDVO_LVDS_DTD:
 		return sizeof(struct bdb_sdvo_lvds_dtd);
 	case BDB_EDP:
 		return sizeof(struct bdb_edp);
+	case BDB_DISPLAY_SELECT_IVB:
+		return sizeof(struct bdb_display_select_ivb);
+	case BDB_DISPLAY_SELECT_HSW:
+		return sizeof(struct bdb_display_select_hsw);
 	case BDB_LFP_OPTIONS:
 		return sizeof(struct bdb_lfp_options);
 	case BDB_LFP_DATA_PTRS:
@@ -2029,6 +2035,104 @@ static void dump_dot_clock_override(struct context *context,
 	_dump_dot_clock_override(d, count, true);
 }
 
+static void dump_display_select_old(struct context *context,
+				    const struct bdb_block *block)
+{
+	const void *data = block_data(block);
+	int offset = 0;
+
+	for (int n = 0; n < 4; n++) {
+		const struct toggle_list_table_old *t = data + offset;
+
+		offset += sizeof(*t) + t->num_entries * t->entry_size;
+
+		printf("\tToggle list #%d\n", n+1);
+
+		printf("\t\tNum entries: %d\n", t->num_entries);
+		printf("\t\tEntry size: %d\n\n", t->entry_size);
+
+		if (sizeof(t->list[0]) != t->entry_size) {
+			printf("\t\tstruct doesn't match (expected %zu, got %u), skipping\n",
+			       sizeof(t->list[0]), t->entry_size);
+			continue;
+		}
+
+		for (int i = 0; i < t->num_entries; i++) {
+			printf("\t\tEntry #%d:\n", i + 1);
+			printf("\t\t\tDisplay select pipe A: %s (0x%02x)\n",
+			       child_device_handle(context, t->list[i].display_select_pipe_a),
+			       t->list[i].display_select_pipe_a);
+			printf("\t\t\tDisplay select pipe B: %s (0x%02x)\n",
+			       child_device_handle(context, t->list[i].display_select_pipe_b),
+			       t->list[i].display_select_pipe_b);
+			printf("\t\t\tCapabilities: 0x%02x\n",
+			       t->list[i].caps);
+		}
+	}
+}
+
+static void dump_display_select_ivb(struct context *context,
+				    const struct bdb_block *block)
+{
+	const void *data = block_data(block);
+	int offset = 0;
+
+	for (int n = 0; n < 4; n++) {
+		const struct toggle_list_table_ivb *t = data + offset;
+
+		offset += sizeof(*t) + t->num_entries * t->entry_size;
+
+		printf("\tToggle list #%d\n", n+1);
+
+		printf("\t\tNum entries: %d\n", t->num_entries);
+		printf("\t\tEntry size: %d\n\n", t->entry_size);
+
+		if (sizeof(t->list[0]) != t->entry_size) {
+			printf("\t\tstruct doesn't match (expected %zu, got %u), skipping\n",
+			       sizeof(t->list[0]), t->entry_size);
+			continue;
+		}
+
+		for (int i = 0; i < t->num_entries; i++) {
+			printf("\t\tEntry #%d:\n", i + 1);
+			printf("\t\t\tDisplay select: %s (0x%02x)\n",
+			       child_device_handle(context, t->list[i].display_select),
+			       t->list[i].display_select);
+		}
+	}
+}
+
+static void dump_display_select_hsw(struct context *context,
+				    const struct bdb_block *block)
+{
+	const void *data = block_data(block);
+	int offset = 0;
+
+	for (int n = 0; n < 4; n++) {
+		const struct toggle_list_table_hsw *t = data + offset;
+
+		offset += sizeof(*t) + t->num_entries * t->entry_size;
+
+		printf("\tToggle list #%d\n", n+1);
+
+		printf("\t\tNum entries: %d\n", t->num_entries);
+		printf("\t\tEntry size: %d\n\n", t->entry_size);
+
+		if (sizeof(t->list[0]) != t->entry_size) {
+			printf("\t\tstruct doesn't match (expected %zu, got %u), skipping\n",
+			       sizeof(t->list[0]), t->entry_size);
+			continue;
+		}
+
+		for (int i = 0; i < t->num_entries; i++) {
+			printf("\t\tEntry #%d:\n", i + 1);
+			printf("\t\t\tDisplay select: %s (0x%04x)\n",
+			       child_device_handle(context, t->list[i].display_select),
+			       t->list[i].display_select);
+		}
+	}
+}
+
 static void dump_edp(struct context *context,
 		     const struct bdb_block *block)
 {
@@ -3133,6 +3237,11 @@ struct dumper dumpers[] = {
 		.dump = dump_dot_clock_override,
 	},
 	{
+		.id = BDB_DISPLAY_SELECT_OLD,
+		.name = "Toggle list block (pre-IVB)",
+		.dump = dump_display_select_old,
+	},
+	{
 		.id = BDB_SDVO_LVDS_OPTIONS,
 		.name = "SDVO LVDS options block",
 		.dump = dump_sdvo_lvds_options,
@@ -3146,6 +3255,16 @@ struct dumper dumpers[] = {
 		.id = BDB_EDP,
 		.name = "eDP block",
 		.dump = dump_edp,
+	},
+	{
+		.id = BDB_DISPLAY_SELECT_IVB,
+		.name = "Display toggle list (IVB)",
+		.dump = dump_display_select_ivb,
+	},
+	{
+		.id = BDB_DISPLAY_SELECT_HSW,
+		.name = "Display toggle list (HSW+)",
+		.dump = dump_display_select_hsw,
 	},
 	{
 		.id = BDB_LFP_OPTIONS,
