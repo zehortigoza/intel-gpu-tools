@@ -732,7 +732,7 @@ static const char *mem_sleep_name[] = {
 	[MEM_SLEEP_DEEP] = "deep"
 };
 
-static enum igt_suspend_test get_suspend_test(int power_dir)
+static enum igt_suspend_test get_pm_test(int power_dir)
 {
 	char *test_line;
 	char *test_name;
@@ -765,10 +765,15 @@ static enum igt_suspend_test get_suspend_test(int power_dir)
 	return test;
 }
 
-static void set_suspend_test(int power_dir, enum igt_suspend_test test)
+static void set_pm_test(int power_dir, enum igt_suspend_test test)
 {
 	igt_assert(test < SUSPEND_TEST_NUM);
 
+	/*
+	 * When pm_test is available, it needs to be cleared or set to specific
+	 * test before /sys/power/state is written (which is also done by
+	 * rtcwake)
+	 */
 	if (faccessat(power_dir, "pm_test", W_OK, 0)) {
 		igt_require(test == SUSPEND_TEST_NONE);
 		return;
@@ -1009,7 +1014,7 @@ void igt_system_suspend_autoresume(enum igt_suspend_state state,
 		      !igt_get_total_swap_mb(),
 		      "Suspend to disk requires swap space.\n");
 
-	orig_test = get_suspend_test(power_dir);
+	orig_test = get_pm_test(power_dir);
 	igt_aux_enable_pm_suspend_dbg(power_dir);
 
 	if (state == SUSPEND_STATE_S3) {
@@ -1021,7 +1026,7 @@ void igt_system_suspend_autoresume(enum igt_suspend_state state,
 			      "S3 not possible in this system.\n");
 	}
 
-	set_suspend_test(power_dir, test);
+	set_pm_test(power_dir, test);
 
 	if (test == SUSPEND_TEST_NONE)
 		suspend_via_rtcwake(state);
@@ -1031,7 +1036,7 @@ void igt_system_suspend_autoresume(enum igt_suspend_state state,
 	if (orig_mem_sleep)
 		set_mem_sleep(power_dir, orig_mem_sleep);
 
-	set_suspend_test(power_dir, orig_test);
+	set_pm_test(power_dir, orig_test);
 	close(power_dir);
 }
 
