@@ -217,11 +217,10 @@
  * On top of that tests may report unexpected results and minor issues to
  * stderr. If stderr is non-empty the test result should be treated as "warn".
  *
- * The test lists are generated at build time. Simple testcases are listed in
- * tests/single-tests.txt and tests with subtests are listed in
- * tests/multi-tests.txt. When running tests with subtest from a test runner it
- * is recommend to run each subtest individually, since otherwise the return
- * code will only reflect the overall result.
+ * The list of test executables is generated at build time and stored in
+ * tests/test-list.txt. When running tests with subtest from a test runner it is
+ * recommend to run each subtest individually, since otherwise the return code
+ * will only reflect the overall result.
  *
  * To do that obtain the lists of subtests with "--list-subtests", which can be
  * run as non-root and doesn't require a DRM driver to be loaded (or any GPU to
