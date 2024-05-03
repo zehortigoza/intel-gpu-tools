@@ -223,7 +223,7 @@ static void close_fw_handle(int sig)
 #define MAX_VMAS 2
 /**
  * SUBTEST: %s-basic
- * Description: set GPU state to %arg[1] and test suspend/autoresume
+ * Description: test CPU/GPU in and out of s/d state from %arg[1]
  * Functionality: pm - %arg[1]
  * GPU requirements: D3 feature should be supported
  *
