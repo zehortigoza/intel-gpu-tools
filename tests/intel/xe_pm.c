@@ -414,9 +414,12 @@ test_exec(device_t device, struct drm_xe_engine_class_instance *eci,
 					INT64_MAX, 0, NULL));
 		igt_assert_eq(data[i].data, 0xc0ffee);
 
-		if (i == n_execs / 2 && s_state != NO_SUSPEND)
-			igt_system_suspend_autoresume(s_state,
-						      SUSPEND_TEST_NONE);
+		if (i == n_execs / 2 && s_state != NO_SUSPEND) {
+			enum igt_suspend_test test = s_state == SUSPEND_STATE_DISK ?
+				SUSPEND_TEST_DEVICES : SUSPEND_TEST_NONE;
+
+			igt_system_suspend_autoresume(s_state, test);
+		}
 	}
 
 	igt_assert(syncobj_wait(device.fd_xe, &sync[0].handle, 1, INT64_MAX, 0,
@@ -662,8 +665,10 @@ igt_main
 
 	for (const struct s_state *s = s_states; s->name; s++) {
 		igt_subtest_f("%s-basic", s->name) {
-			igt_system_suspend_autoresume(s->state,
-						      SUSPEND_TEST_NONE);
+			enum igt_suspend_test test = s->state == SUSPEND_STATE_DISK ?
+				SUSPEND_TEST_DEVICES : SUSPEND_TEST_NONE;
+
+			igt_system_suspend_autoresume(s->state, test);
 		}
 
 		igt_subtest_f("%s-basic-exec", s->name) {
@@ -673,8 +678,10 @@ igt_main
 		}
 
 		igt_subtest_f("%s-exec-after", s->name) {
-			igt_system_suspend_autoresume(s->state,
-						      SUSPEND_TEST_NONE);
+			enum igt_suspend_test test = s->state == SUSPEND_STATE_DISK ?
+				SUSPEND_TEST_DEVICES : SUSPEND_TEST_NONE;
+
+			igt_system_suspend_autoresume(s->state, test);
 			xe_for_each_engine(device.fd_xe, hwe)
 				test_exec(device, hwe, 1, 2, NO_SUSPEND,
 					  NO_RPM, 0);
