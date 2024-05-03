@@ -167,6 +167,7 @@ const char *get_topo_name(int value)
 	case DRM_XE_TOPO_DSS_GEOMETRY: return "DSS_GEOMETRY";
 	case DRM_XE_TOPO_DSS_COMPUTE: return "DSS_COMPUTE";
 	case DRM_XE_TOPO_EU_PER_DSS: return "EU_PER_DSS";
+	case DRM_XE_TOPO_L3_BANK: return "L3_BANK";
 	}
 	return "??";
 }
@@ -388,6 +389,78 @@ test_query_gt_topology(int fd)
 
 	free(topology);
 }
+
+/**
+ * SUBTEST: query-topology-l3-bank-mask
+ * Test category: functionality test
+ * Description: Check the value of the l3 bank mask
+ *
+ * SUBTEST: multigpu-query-topology-l3-bank-mask
+ * Test category: functionality test
+ * Description: Check the value of the l3 bank mask for all Xe devices.
+ * Sub-category: MultiGPU
+ */
+static void
+test_query_gt_topology_l3_bank_mask(int fd)
+{
+	uint16_t dev_id = intel_get_drm_devid(fd);
+	struct drm_xe_query_topology_mask *topology;
+	int pos = 0;
+	struct drm_xe_device_query query = {
+		.extensions = 0,
+		.query = DRM_XE_DEVICE_QUERY_GT_TOPOLOGY,
+		.size = 0,
+		.data = 0,
+	};
+
+	igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_DEVICE_QUERY, &query), 0);
+	igt_assert_neq(query.size, 0);
+
+	topology = malloc(query.size);
+	igt_assert(topology);
+
+	query.data = to_user_pointer(topology);
+	igt_assert_eq(igt_ioctl(fd, DRM_IOCTL_XE_DEVICE_QUERY, &query), 0);
+
+	igt_info("size: %d\n", query.size);
+
+	while (query.size >= sizeof(struct drm_xe_query_topology_mask)) {
+		struct drm_xe_query_topology_mask *topo = (struct drm_xe_query_topology_mask *)((unsigned char *)topology + pos);
+		int sz = sizeof(struct drm_xe_query_topology_mask) + topo->num_bytes;
+
+		if (topo->type == DRM_XE_TOPO_L3_BANK) {
+			int count = 0;
+
+			igt_info(" gt_id: %2d type: %-12s (%d) n:%d [%d] ", topo->gt_id,
+				 get_topo_name(topo->type), topo->type, topo->num_bytes, sz);
+			for (int j = 0; j < topo->num_bytes; j++)
+				igt_info(" %02x", topo->mask[j]);
+
+			for (int j = 0; j < topo->num_bytes; j++) {
+				for (int k = 0; k < 8; k++)
+					count += (topo->mask[j] & (1 << k)) ? 1 : 0;
+			}
+
+			igt_info(" count: %d\n", count);
+			if (intel_get_device_info(dev_id)->graphics_ver < 20) {
+				igt_assert(count > 0);
+			}
+
+			if (IS_METEORLAKE(dev_id))
+				igt_assert((count % 2) == 0);
+			else if (IS_PONTEVECCHIO(dev_id))
+				igt_assert((count % 4) == 0);
+			else if (IS_DG2(dev_id))
+				igt_assert((count % 8) == 0);
+		}
+
+		query.size -= sz;
+		pos += sz;
+	}
+
+	free(topology);
+}
+
 
 /**
  * SUBTEST: query-config
@@ -934,6 +1007,7 @@ igt_main
 		{ "query-config", test_query_config },
 		{ "query-hwconfig", test_query_hwconfig },
 		{ "query-topology", test_query_gt_topology },
+		{ "query-topology-l3-bank-mask", test_query_gt_topology_l3_bank_mask },
 		{ "query-cs-cycles", test_query_engine_cycles },
 		{ "query-uc-fw-version-guc", test_query_uc_fw_version_guc },
 		{ "query-uc-fw-version-huc", test_query_uc_fw_version_huc },
