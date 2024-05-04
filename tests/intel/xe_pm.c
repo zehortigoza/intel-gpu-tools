@@ -251,6 +251,10 @@ static void close_fw_handle(int sig)
  * Description: suspend/autoresume on %arg[1] state and exec after RPM
  * Functionality: pm - %arg[1]
  *
+ * SUBTEST: %s-mocs
+ * Description: test checks for mocs state before and after %arg[1] state
+ * Functionality: pm - %arg[1]
+ *
  * arg[1]:
  *
  * @s2idle:	s2idle
@@ -620,7 +624,7 @@ static void test_mmap(device_t device, uint32_t placement, uint32_t flags)
  * Functionality: mocs
  * Run type: FULL
  */
-static void test_mocs_suspend_resume(device_t device)
+static void test_mocs_suspend_resume(device_t device, bool runtime_sr, enum igt_suspend_state state)
 {
 	int gt;
 
@@ -635,14 +639,17 @@ static void test_mocs_suspend_resume(device_t device)
 		igt_debugfs_dump(device.fd_xe, path);
 		igt_debugfs_read(device.fd_xe, path, mocs_content_pre);
 
-		fw_handle = igt_debugfs_open(device.fd_xe, "forcewake_all", O_RDONLY);
-		igt_assert(fw_handle >= 0);
-		igt_assert(igt_get_runtime_pm_status() == IGT_RUNTIME_PM_STATUS_ACTIVE);
+		if (runtime_sr) {
+			fw_handle = igt_debugfs_open(device.fd_xe, "forcewake_all", O_RDONLY);
+			igt_assert(fw_handle >= 0);
+			igt_assert(igt_get_runtime_pm_status() == IGT_RUNTIME_PM_STATUS_ACTIVE);
 
-		/* Runtime suspend  */
-		close(fw_handle);
-		igt_assert(igt_wait_for_pm_status(IGT_RUNTIME_PM_STATUS_SUSPENDED));
-
+			/* Runtime suspend  */
+			close(fw_handle);
+			igt_assert(igt_wait_for_pm_status(IGT_RUNTIME_PM_STATUS_SUSPENDED));
+		} else {
+			igt_system_suspend_autoresume(state, SUSPEND_TEST_NONE);
+		}
 		igt_assert(igt_debugfs_exists(device.fd_xe, path, O_RDONLY));
 		igt_debugfs_dump(device.fd_xe, path);
 		igt_debugfs_read(device.fd_xe, path, mocs_contents_post);
@@ -749,6 +756,9 @@ igt_main
 				cleanup_d3(device);
 			}
 		}
+
+		igt_subtest_f("%s-mocs", s->name)
+			test_mocs_suspend_resume(device, 0, s->state);
 	}
 
 	for (const struct d_state *d = d_states; d->name; d++) {
@@ -815,8 +825,7 @@ igt_main
 		}
 
 		igt_subtest("mocs_suspend_resume")
-			test_mocs_suspend_resume(device);
-
+			test_mocs_suspend_resume(device, 1, 0);
 	}
 
 	igt_fixture {
