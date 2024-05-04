@@ -41,6 +41,11 @@ struct drm_client_meminfo {
 	uint64_t active;
 };
 
+enum drm_fdinfo_utilization {
+	DRM_FDINFO_UTILIZATION_ENGINE_TIME	= 1U << 0,
+	DRM_FDINFO_UTILIZATION_CYCLES		= 1U << 1,
+};
+
 struct drm_client_fdinfo {
 	char driver[128];
 	char pdev[128];
@@ -50,6 +55,9 @@ struct drm_client_fdinfo {
 	unsigned int last_engine_index;
 	unsigned int capacity[DRM_CLIENT_FDINFO_MAX_ENGINES];
 	char names[DRM_CLIENT_FDINFO_MAX_ENGINES][256];
+
+	/* mask of enum drm_fdinfo_utilization parsed from fdinfo */
+	unsigned int utilization_mask;
 
 	/* drm-engine-<engine> values */
 	uint64_t busy[DRM_CLIENT_FDINFO_MAX_ENGINES];

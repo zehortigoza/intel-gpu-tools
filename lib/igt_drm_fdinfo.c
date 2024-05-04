@@ -190,10 +190,11 @@ out:
 		}							\
 	} while (0)
 
-#define UPDATE_ENGINE(idx, engine, val)					\
+#define UPDATE_ENGINE(idx, engine, val, utilization_key)		\
 	do {								\
 		if (idx >= 0) {						\
 			info->engine[idx] = val;			\
+			info->utilization_mask |= utilization_key;	\
 			if (!info->capacity[idx])			\
 				info->capacity[idx] = 1;		\
 			if (!engines_found[idx]) {			\
@@ -259,11 +260,11 @@ __igt_parse_drm_fdinfo(int dir, const char *fd, struct drm_client_fdinfo *info,
 		} else if (strstartswith(l, "drm-engine-", &keylen)) {
 			idx = parse_engine(l + keylen, info,
 					   name_map, map_entries, &val);
-			UPDATE_ENGINE(idx, busy, val);
+			UPDATE_ENGINE(idx, busy, val, DRM_FDINFO_UTILIZATION_ENGINE_TIME);
 		} else if (strstartswith(l, "drm-cycles-", &keylen)) {
 			idx = parse_engine(l + keylen, info,
 					   name_map, map_entries, &val);
-			UPDATE_ENGINE(idx, cycles, val);
+			UPDATE_ENGINE(idx, cycles, val, DRM_FDINFO_UTILIZATION_CYCLES);
 		} else if (strstartswith(l, "drm-total-", &keylen)) {
 			idx = parse_region(l + keylen, info,
 					   region_map, region_entries, &val);
