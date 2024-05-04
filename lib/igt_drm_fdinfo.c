@@ -61,25 +61,23 @@ static const char *ignore_space(const char *s)
 	return s;
 }
 
-static int parse_engine(char *line, struct drm_client_fdinfo *info,
-			size_t prefix_len,
+static int parse_engine(const char *name, struct drm_client_fdinfo *info,
 			const char **name_map, unsigned int map_entries,
 			uint64_t *val)
 {
-	ssize_t name_len;
-	char *name, *p;
+	const char *p;
+	size_t name_len;
 	int found = -1;
 	unsigned int i;
 
-	p = index(line, ':');
-	if (!p || p == line)
+	p = strchr(name, ':');
+	if (!p)
 		return -1;
 
-	name_len = p - line - prefix_len;
+	name_len = p - name;
 	if (name_len < 1)
 		return -1;
-
-	name = line + prefix_len;
+	p++;
 
 	if (name_map) {
 		for (i = 0; i < map_entries; i++) {
@@ -112,25 +110,24 @@ static int parse_engine(char *line, struct drm_client_fdinfo *info,
 	return found;
 }
 
-static int parse_region(char *line, struct drm_client_fdinfo *info,
-			size_t prefix_len,
+static int parse_region(const char *name, struct drm_client_fdinfo *info,
 			const char **region_map, unsigned int region_entries,
 			uint64_t *val)
 {
-	char *name, *p;
+	char *p;
 	ssize_t name_len;
 	int found = -1;
 	unsigned int i;
 
-	p = index(line, ':');
-	if (!p || p == line)
+	p = strchr(name, ':');
+	if (!p)
 		return -1;
 
-	name_len = p - line - prefix_len;
+	name_len = p - name;
 	if (name_len < 1)
 		return -1;
 
-	name = line + prefix_len;
+	p++;
 
 	if (region_map) {
 		for (i = 0; i < region_entries; i++) {
@@ -237,14 +234,14 @@ __igt_parse_drm_fdinfo(int dir, const char *fd, struct drm_client_fdinfo *info,
 			v = ignore_space(l + keylen);
 			strncpy(info->pdev, v, sizeof(info->pdev) - 1);
 		} else if (strstartswith(l, "drm-engine-capacity-", &keylen)) {
-			idx = parse_engine(l, info, keylen,
+			idx = parse_engine(l + keylen, info,
 					   name_map, map_entries, &val);
 			if (idx >= 0) {
 				info->capacity[idx] = val;
 				num_capacity++;
 			}
 		} else if (strstartswith(l, "drm-engine-", &keylen)) {
-			idx = parse_engine(l, info, keylen,
+			idx = parse_engine(l + keylen, info,
 					   name_map, map_entries, &val);
 			if (idx >= 0) {
 				if (!info->capacity[idx])
@@ -255,23 +252,23 @@ __igt_parse_drm_fdinfo(int dir, const char *fd, struct drm_client_fdinfo *info,
 					info->last_engine_index = idx;
 			}
 		} else if (strstartswith(l, "drm-total-", &keylen)) {
-			idx = parse_region(l, info, keylen,
+			idx = parse_region(l + keylen, info,
 					   region_map, region_entries, &val);
 			UPDATE_REGION(idx, total, val);
 		} else if (strstartswith(l, "drm-shared-", &keylen)) {
-			idx = parse_region(l, info, keylen,
+			idx = parse_region(l + keylen, info,
 					   region_map, region_entries, &val);
 			UPDATE_REGION(idx, shared, val);
 		} else if (strstartswith(l, "drm-resident-", &keylen)) {
-			idx = parse_region(l, info, keylen,
+			idx = parse_region(l + keylen, info,
 					   region_map, region_entries, &val);
 			UPDATE_REGION(idx, resident, val);
 		} else if (strstartswith(l, "drm-purgeable-", &keylen)) {
-			idx = parse_region(l, info, keylen,
+			idx = parse_region(l + keylen, info,
 					   region_map, region_entries, &val);
 			UPDATE_REGION(idx, purgeable, val);
 		} else if (strstartswith(l, "drm-active-", &keylen)) {
-			idx = parse_region(l, info, keylen,
+			idx = parse_region(l + keylen, info,
 					   region_map, region_entries, &val);
 			UPDATE_REGION(idx, active, val);
 		}
