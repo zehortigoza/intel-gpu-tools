@@ -50,7 +50,11 @@ struct drm_client_fdinfo {
 	unsigned int last_engine_index;
 	unsigned int capacity[DRM_CLIENT_FDINFO_MAX_ENGINES];
 	char names[DRM_CLIENT_FDINFO_MAX_ENGINES][256];
+
+	/* drm-engine-<engine> values */
 	uint64_t busy[DRM_CLIENT_FDINFO_MAX_ENGINES];
+	/* drm-cycles-<engine> values */
+	uint64_t cycles[DRM_CLIENT_FDINFO_MAX_ENGINES];
 
 	unsigned int num_regions;
 	unsigned int last_region_index;

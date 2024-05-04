@@ -190,6 +190,21 @@ out:
 		}							\
 	} while (0)
 
+#define UPDATE_ENGINE(idx, engine, val)					\
+	do {								\
+		if (idx >= 0) {						\
+			info->engine[idx] = val;			\
+			if (!info->capacity[idx])			\
+				info->capacity[idx] = 1;		\
+			if (!engines_found[idx]) {			\
+				info->num_engines++;			\
+				engines_found[idx] = true;		\
+				if (idx > info->last_engine_index)	\
+					info->last_engine_index = idx;	\
+			}						\
+		}							\
+	} while (0)
+
 #define strstartswith(a, b, plen__) ({					\
 		*plen__ = strlen(b);					\
 		strncmp(a, b, *plen__) == 0;				\
@@ -201,6 +216,7 @@ __igt_parse_drm_fdinfo(int dir, const char *fd, struct drm_client_fdinfo *info,
 		       const char **region_map, unsigned int region_entries)
 {
 	bool regions_found[DRM_CLIENT_FDINFO_MAX_REGIONS] = { };
+	bool engines_found[DRM_CLIENT_FDINFO_MAX_ENGINES] = { };
 	unsigned int good = 0, num_capacity = 0;
 	char buf[4096], *_buf = buf;
 	char *l, *ctx = NULL;
@@ -243,14 +259,11 @@ __igt_parse_drm_fdinfo(int dir, const char *fd, struct drm_client_fdinfo *info,
 		} else if (strstartswith(l, "drm-engine-", &keylen)) {
 			idx = parse_engine(l + keylen, info,
 					   name_map, map_entries, &val);
-			if (idx >= 0) {
-				if (!info->capacity[idx])
-					info->capacity[idx] = 1;
-				info->busy[idx] = val;
-				info->num_engines++;
-				if (idx > info->last_engine_index)
-					info->last_engine_index = idx;
-			}
+			UPDATE_ENGINE(idx, busy, val);
+		} else if (strstartswith(l, "drm-cycles-", &keylen)) {
+			idx = parse_engine(l + keylen, info,
+					   name_map, map_entries, &val);
+			UPDATE_ENGINE(idx, cycles, val);
 		} else if (strstartswith(l, "drm-total-", &keylen)) {
 			idx = parse_region(l + keylen, info,
 					   region_map, region_entries, &val);
