@@ -3,8 +3,8 @@
  * Copyright © 2023 Intel Corporation
  */
 
-#ifndef PERF_METRICS_H
-#define PERF_METRICS_H
+#ifndef XE_OA_H
+#define XE_OA_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -354,4 +354,4 @@ void xe_perf_ioctl_err(int fd, enum drm_xe_perf_op op, void *arg, int err);
 };
 #endif
 
-#endif /* PERF_METRICS_H */
+#endif /* XE_OA_H */
