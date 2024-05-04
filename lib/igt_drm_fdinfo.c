@@ -53,6 +53,14 @@ static size_t read_fdinfo(char *buf, const size_t sz, int at, const char *name)
 	return count > 0 ? count : 0;
 }
 
+static const char *ignore_space(const char *s)
+{
+	for (; *s && isspace(*s); s++)
+		;
+
+	return s;
+}
+
 static int parse_engine(char *line, struct drm_client_fdinfo *info,
 			size_t prefix_len,
 			const char **name_map, unsigned int map_entries,
@@ -115,8 +123,8 @@ static const char *find_kv(const char *buf, const char *key, size_t keylen)
 	if (*p != ':')
 		return NULL;
 
-	for (p++; *p && isspace(*p); p++)
-		;
+	p++;
+	p = ignore_space(p);
 
 	return *p ? p : NULL;
 }
