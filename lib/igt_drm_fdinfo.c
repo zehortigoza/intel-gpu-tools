@@ -134,7 +134,7 @@ static int parse_region(char *line, struct drm_client_fdinfo *info,
 			const char **region_map, unsigned int region_entries,
 			uint64_t *val)
 {
-	char *name, *p, *unit = NULL;
+	char *name, *p;
 	ssize_t name_len;
 	int found = -1;
 	unsigned int i;
@@ -181,17 +181,15 @@ static int parse_region(char *line, struct drm_client_fdinfo *info,
 
 	p++;
 	*val = strtoull(p, &p, 10);
-
-	p = index(p, ' ');
-	if (!p)
+	p = (char *)ignore_space(p);
+	if (!*p)
 		goto out;
 
-	unit = ++p;
-	if (!strcmp(unit, "KiB")) {
+	if (!strcmp(p, "KiB")) {
 		*val *= 1024;
-	} else if (!strcmp(unit, "MiB")) {
+	} else if (!strcmp(p, "MiB")) {
 		*val *= 1024 * 1024;
-	} else if (!strcmp(unit, "GiB")) {
+	} else if (!strcmp(p, "GiB")) {
 		*val *= 1024 * 1024 * 1024;
 	}
 
