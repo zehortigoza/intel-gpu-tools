@@ -450,7 +450,7 @@ int __intel_ctx_xe_exec(const intel_ctx_t *ctx, uint64_t ahnd, uint64_t bb_offse
 		goto err;
 
 	if (!ctx->sync_bind || !ctx->sync_out)
-		syncobj_wait_err(ctx->fd, &sync_out, 1, INT64_MAX, 0);
+		ret = syncobj_wait_err(ctx->fd, &sync_out, 1, INT64_MAX, 0);
 
 err:
 	if (!ctx->sync_bind)
