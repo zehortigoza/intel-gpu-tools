@@ -197,6 +197,7 @@ static const struct {
 static const uint32_t formats[] = {
 	DRM_FORMAT_XYUV8888,
 	DRM_FORMAT_XRGB8888,
+	DRM_FORMAT_XRGB2101010,
 	DRM_FORMAT_YUYV,
 	DRM_FORMAT_NV12,
 	DRM_FORMAT_P012,
@@ -635,6 +636,7 @@ static uint32_t blt_compression_format(struct blt_copy_data *blt,
 {
 	switch (fb->drm_format) {
 	case DRM_FORMAT_XRGB8888:
+	case DRM_FORMAT_XRGB2101010:
 	case DRM_FORMAT_P010:
 	case DRM_FORMAT_P012:
 	case DRM_FORMAT_P016:
@@ -849,7 +851,8 @@ static bool try_config(data_t *data, enum test_fb_flags fb_flags,
 		return false;
 
 	if (is_ccs_cc_modifier(data->ccs_modifier) &&
-	    data->format != DRM_FORMAT_XRGB8888)
+	    data->format != DRM_FORMAT_XRGB8888 &&
+	    data->format != DRM_FORMAT_XRGB2101010)
 		return false;
 
 	if ((fb_flags & FB_MISALIGN_AUX_STRIDE) ||
