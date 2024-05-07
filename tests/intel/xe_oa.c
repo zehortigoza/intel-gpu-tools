@@ -531,7 +531,7 @@ __perf_open(int fd, struct intel_xe_oa_open_prop *param, bool prevent_pm)
 		pm_fd = -1;
 	}
 
-	ret = xe_perf_ioctl(fd, DRM_XE_PERF_OP_STREAM_OPEN, param);
+	ret = intel_xe_perf_ioctl(fd, DRM_XE_PERF_OP_STREAM_OPEN, param);
 
 	igt_assert(ret >= 0);
 	errno = 0;
@@ -1149,7 +1149,7 @@ static void test_system_wide_paranoid(void)
 
 		igt_drop_root();
 
-		xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EACCES);
+		intel_xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EACCES);
 	}
 
 	igt_waitchildren();
@@ -1206,10 +1206,10 @@ static void test_invalid_oa_metric_set_id(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	intel_xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 
 	properties[ARRAY_SIZE(properties) - 1] = 0; /* ID 0 is also be reserved as invalid */
-	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	intel_xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 
 	/* Check that we aren't just seeing false positives... */
 	properties[ARRAY_SIZE(properties) - 1] = default_test_set->perf_oa_metrics_set;
@@ -1218,7 +1218,7 @@ static void test_invalid_oa_metric_set_id(void)
 
 	/* There's no valid default OA metric set ID... */
 	param.num_properties--;
-	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	intel_xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 }
 
 /**
@@ -1243,10 +1243,10 @@ static void test_invalid_oa_format_id(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	intel_xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 
 	properties[ARRAY_SIZE(properties) - 1] = __ff(0); /* ID 0 is also be reserved as invalid */
-	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	intel_xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 
 	/* Check that we aren't just seeing false positives... */
 	properties[ARRAY_SIZE(properties) - 1] = __ff(default_test_set->perf_oa_format);
@@ -1254,7 +1254,7 @@ static void test_invalid_oa_format_id(void)
 	__perf_close(stream_fd);
 	/* There's no valid default OA format... */
 	param.num_properties--;
-	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	intel_xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 }
 
 /**
@@ -1278,7 +1278,7 @@ static void test_missing_sample_flags(void)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+	intel_xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 }
 
 static void
@@ -1937,7 +1937,7 @@ static void test_invalid_oa_exponent(void)
 
 	for (int i = 32; i < 65; i++) {
 		properties[7] = i;
-		xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
+		intel_xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EINVAL);
 	}
 }
 
@@ -3609,7 +3609,7 @@ test_stress_open_close(const struct drm_xe_engine_class_instance *hwe)
 
 static int __xe_oa_add_config(int fd, struct drm_xe_oa_config *config)
 {
-	int ret = xe_perf_ioctl(fd, DRM_XE_PERF_OP_ADD_CONFIG, config);
+	int ret = intel_xe_perf_ioctl(fd, DRM_XE_PERF_OP_ADD_CONFIG, config);
 	if (ret < 0)
 		ret = -errno;
 	return ret;
@@ -3627,13 +3627,13 @@ static int xe_oa_add_config(int fd, struct drm_xe_oa_config *config)
 
 static void xe_oa_remove_config(int fd, uint64_t config_id)
 {
-	igt_assert_eq(xe_perf_ioctl(fd, DRM_XE_PERF_OP_REMOVE_CONFIG, &config_id), 0);
+	igt_assert_eq(intel_xe_perf_ioctl(fd, DRM_XE_PERF_OP_REMOVE_CONFIG, &config_id), 0);
 }
 
 static bool has_xe_oa_userspace_config(int fd)
 {
 	uint64_t config = 0;
-	int ret = xe_perf_ioctl(fd, DRM_XE_PERF_OP_REMOVE_CONFIG, &config);
+	int ret = intel_xe_perf_ioctl(fd, DRM_XE_PERF_OP_REMOVE_CONFIG, &config);
 	igt_assert_eq(ret, -1);
 
 	igt_debug("errno=%i\n", errno);
@@ -3731,12 +3731,12 @@ test_invalid_remove_userspace_config(void)
 	igt_fork(child, 1) {
 		igt_drop_root();
 
-		xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_REMOVE_CONFIG, &config_id, EACCES);
+		intel_xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_REMOVE_CONFIG, &config_id, EACCES);
 	}
 	igt_waitchildren();
 
 	/* Removing invalid config ID should fail. */
-	xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_REMOVE_CONFIG, &wrong_config_id, ENOENT);
+	intel_xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_REMOVE_CONFIG, &wrong_config_id, ENOENT);
 
 	xe_oa_remove_config(drm_fd, config_id);
 }
@@ -3915,7 +3915,7 @@ test_whitelisted_registers_userspace_config(void)
 	config.regs_ptr = (uintptr_t) regs;
 
 	/* Create a new config */
-	ret = xe_perf_ioctl(drm_fd, DRM_XE_PERF_OP_ADD_CONFIG, &config);
+	ret = intel_xe_perf_ioctl(drm_fd, DRM_XE_PERF_OP_ADD_CONFIG, &config);
 	igt_assert(ret > 0); /* Config 0 should be used by the kernel */
 	config_id = ret;
 
@@ -4376,7 +4376,7 @@ test_oa_unit_exclusive_stream(bool exponent)
 		properties[5] = test_set->perf_oa_metrics_set;
 		properties[7] = __ff(test_set->perf_oa_format);
 		properties[9] = hwe->engine_instance;
-		perf_fd[i] = xe_perf_ioctl(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param);
+		perf_fd[i] = intel_xe_perf_ioctl(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param);
 		igt_assert(perf_fd[i] >= 0);
 		poau += sizeof(*oau) + oau->num_engines * sizeof(oau->eci[0]);
 	}
@@ -4406,7 +4406,7 @@ test_oa_unit_exclusive_stream(bool exponent)
 		properties[9] = hwe->engine_instance;
 		properties[10] = DRM_XE_OA_PROPERTY_OA_EXPONENT;
 		properties[11] = oa_exp_1_millisec;
-		xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EBUSY);
+		intel_xe_perf_ioctl_err(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param, EBUSY);
 
 		/* case 2: concurrent access to non-OAG unit should fail */
 		igt_debug("try with exec_q with c:i %d:%d\n",
@@ -4415,7 +4415,7 @@ test_oa_unit_exclusive_stream(bool exponent)
 		properties[10] = DRM_XE_OA_PROPERTY_EXEC_QUEUE_ID;
 		properties[11] = exec_q[i];
 		errno = 0;
-		err = xe_perf_ioctl(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param);
+		err = intel_xe_perf_ioctl(drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param);
 		igt_assert(err < 0);
 		igt_assert(errno == EBUSY || errno == ENODEV);
 		poau += sizeof(*oau) + oau->num_engines * sizeof(oau->eci[0]);

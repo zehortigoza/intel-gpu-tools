@@ -25,8 +25,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <xe_drm.h>
-
 #include "igt_core.h"
 #include "intel_chipset.h"
 #include "ioctl_wrappers.h"
@@ -35,7 +33,7 @@
 #include "xe/xe_oa_data.h"
 #include "xe/xe_query.h"
 
-#include "i915_perf_recorder_commands.h"
+#include "xe_perf_recorder_commands.h"
 
 #define ALIGN(v, a) (((v) + (a)-1) & ~((a)-1))
 #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof((arr)[0]))
@@ -480,7 +478,7 @@ perf_open(struct recording_context *ctx)
 		.properties_ptr = to_user_pointer(properties),
 	};
 
-	stream_fd = xe_perf_ioctl(ctx->drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param);
+	stream_fd = intel_xe_perf_ioctl(ctx->drm_fd, DRM_XE_PERF_OP_STREAM_OPEN, &param);
 	if (stream_fd < 0) {
 		errno = 0;
 		goto exit;
@@ -925,7 +923,7 @@ main(int argc, char *argv[])
 		.drm_fd = -1,
 		.perf_fd = -1,
 
-		.command_fifo = I915_PERF_RECORD_FIFO_PATH,
+		.command_fifo = XE_PERF_RECORD_FIFO_PATH,
 		.command_fifo_fd = -1,
 
 		.eci = { DRM_XE_ENGINE_CLASS_RENDER, 0 },

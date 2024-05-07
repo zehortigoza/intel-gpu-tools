@@ -3,12 +3,12 @@
  * Copyright © 2023 Intel Corporation
  */
 
-#ifndef I915_PERF_RECORDER_COMMANDS_H
-#define I915_PERF_RECORDER_COMMANDS_H
+#ifndef XE_PERF_RECORDER_COMMANDS_H
+#define XE_PERF_RECORDER_COMMANDS_H
 
 #include <stdint.h>
 
-#define I915_PERF_RECORD_FIFO_PATH "/tmp/.i915-perf-record"
+#define XE_PERF_RECORD_FIFO_PATH "/tmp/.xe-perf-record"
 
 enum recorder_command {
 	RECORDER_COMMAND_DUMP = 1,

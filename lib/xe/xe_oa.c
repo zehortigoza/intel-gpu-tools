@@ -737,7 +737,7 @@ load_metric_set_config(struct intel_xe_perf_metric_set *metric_set, int drm_fd)
 	memcpy(regs, metric_set->flex_regs, 2 * metric_set->n_flex_regs * sizeof(u32));
 	regs += 2 * metric_set->n_flex_regs * sizeof(u32);
 
-	ret = xe_perf_ioctl(drm_fd, DRM_XE_PERF_OP_ADD_CONFIG, &config);
+	ret = intel_xe_perf_ioctl(drm_fd, DRM_XE_PERF_OP_ADD_CONFIG, &config);
 	if (ret >= 0)
 		metric_set->perf_oa_metrics_set = ret;
 
@@ -1122,7 +1122,7 @@ static void xe_oa_prop_to_ext(struct intel_xe_oa_open_prop *properties,
 		ext[j].base.next_extension = (__u64)&ext[j + 1];
 }
 
-int xe_perf_ioctl(int fd, enum drm_xe_perf_op op, void *arg)
+int intel_xe_perf_ioctl(int fd, enum drm_xe_perf_op op, void *arg)
 {
 #define XE_OA_MAX_SET_PROPERTIES 16
 
@@ -1146,9 +1146,9 @@ int xe_perf_ioctl(int fd, enum drm_xe_perf_op op, void *arg)
 	return igt_ioctl(fd, DRM_IOCTL_XE_PERF, &p);
 }
 
-void xe_perf_ioctl_err(int fd, enum drm_xe_perf_op op, void *arg, int err)
+void intel_xe_perf_ioctl_err(int fd, enum drm_xe_perf_op op, void *arg, int err)
 {
-	igt_assert_eq(xe_perf_ioctl(fd, op, arg), -1);
+	igt_assert_eq(intel_xe_perf_ioctl(fd, op, arg), -1);
 	igt_assert_eq(errno, err);
 	errno = 0;
 }
