@@ -17,13 +17,13 @@ extern "C" {
 
 #include "xe_oa_data.h"
 
-struct intel_perf_timeline_item {
+struct intel_xe_perf_timeline_item {
 	uint64_t ts_start;
 	uint64_t ts_end;
 	uint64_t cpu_ts_start;
 	uint64_t cpu_ts_end;
 
-	/* Offsets into intel_perf_data_reader.records */
+	/* Offsets into intel_xe_perf_data_reader.records */
 	uint32_t record_start;
 	uint32_t record_end;
 
@@ -35,19 +35,19 @@ struct intel_perf_timeline_item {
 	void *user_data;
 };
 
-struct intel_perf_data_reader {
+struct intel_xe_perf_data_reader {
 	/* Array of pointers into the mmapped i915 perf file. */
 	const struct drm_i915_perf_record_header **records;
 	uint32_t n_records;
 	uint32_t n_allocated_records;
 
 	/**/
-	struct intel_perf_timeline_item *timelines;
+	struct intel_xe_perf_timeline_item *timelines;
 	uint32_t n_timelines;
 	uint32_t n_allocated_timelines;
 
 	/**/
-	const struct intel_perf_record_timestamp_correlation **correlations;
+	const struct intel_xe_perf_record_timestamp_correlation **correlations;
 	uint32_t n_correlations;
 	uint32_t n_allocated_correlations;
 
@@ -61,10 +61,10 @@ struct intel_perf_data_reader {
 	const char *metric_set_uuid;
 	const char *metric_set_name;
 
-	struct intel_perf_devinfo devinfo;
+	struct intel_xe_perf_devinfo devinfo;
 
-	struct intel_perf *perf;
-	struct intel_perf_metric_set *metric_set;
+	struct intel_xe_perf *perf;
+	struct intel_xe_perf_metric_set *metric_set;
 
 	char error_msg[256];
 
@@ -76,9 +76,9 @@ struct intel_perf_data_reader {
 	size_t mmap_size;
 };
 
-bool intel_perf_data_reader_init(struct intel_perf_data_reader *reader,
-				 int perf_file_fd);
-void intel_perf_data_reader_fini(struct intel_perf_data_reader *reader);
+bool intel_xe_perf_data_reader_init(struct intel_xe_perf_data_reader *reader,
+				    int perf_file_fd);
+void intel_xe_perf_data_reader_fini(struct intel_xe_perf_data_reader *reader);
 
 #ifdef __cplusplus
 };

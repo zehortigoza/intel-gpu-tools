@@ -23,7 +23,7 @@
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 static inline bool
-oa_report_ctx_is_valid(const struct intel_perf_devinfo *devinfo,
+oa_report_ctx_is_valid(const struct intel_xe_perf_devinfo *devinfo,
 		       const uint8_t *_report)
 {
 	const uint32_t *report = (const uint32_t *) _report;
@@ -41,7 +41,7 @@ oa_report_ctx_is_valid(const struct intel_perf_devinfo *devinfo,
 }
 
 static uint32_t
-oa_report_ctx_id(struct intel_perf_data_reader *reader, const uint8_t *report)
+oa_report_ctx_id(struct intel_xe_perf_data_reader *reader, const uint8_t *report)
 {
 	if (!oa_report_ctx_is_valid(&reader->devinfo, report))
 		return 0xffffffff;
@@ -53,7 +53,7 @@ oa_report_ctx_id(struct intel_perf_data_reader *reader, const uint8_t *report)
 }
 
 static void
-append_record(struct intel_perf_data_reader *reader,
+append_record(struct intel_xe_perf_data_reader *reader,
 	      const struct drm_i915_perf_record_header *header)
 {
 	if (reader->n_records >= reader->n_allocated_records) {
@@ -70,13 +70,13 @@ append_record(struct intel_perf_data_reader *reader,
 }
 
 static void
-append_timestamp_correlation(struct intel_perf_data_reader *reader,
-			     const struct intel_perf_record_timestamp_correlation *corr)
+append_timestamp_correlation(struct intel_xe_perf_data_reader *reader,
+			     const struct intel_xe_perf_record_timestamp_correlation *corr)
 {
 	if (reader->n_correlations >= reader->n_allocated_correlations) {
 		reader->n_allocated_correlations = MAX(100, 2 * reader->n_allocated_correlations);
 		reader->correlations =
-			(const struct intel_perf_record_timestamp_correlation **)
+			(const struct intel_xe_perf_record_timestamp_correlation **)
 			realloc((void *) reader->correlations,
 				reader->n_allocated_correlations *
 				sizeof(*reader->correlations));
@@ -86,10 +86,10 @@ append_timestamp_correlation(struct intel_perf_data_reader *reader,
 	reader->correlations[reader->n_correlations++] = corr;
 }
 
-static struct intel_perf_metric_set *
-find_metric_set(struct intel_perf *perf, const char *symbol_name)
+static struct intel_xe_perf_metric_set *
+find_metric_set(struct intel_xe_perf *perf, const char *symbol_name)
 {
-	struct intel_perf_metric_set *metric_set;
+	struct intel_xe_perf_metric_set *metric_set;
 
 	igt_list_for_each_entry(metric_set, &perf->metric_sets, link) {
 		if (!strcmp(symbol_name, metric_set->symbol_name))
@@ -100,10 +100,10 @@ find_metric_set(struct intel_perf *perf, const char *symbol_name)
 }
 
 static bool
-parse_data(struct intel_perf_data_reader *reader)
+parse_data(struct intel_xe_perf_data_reader *reader)
 {
-	const struct intel_perf_record_device_info *record_info;
-	const struct intel_perf_record_device_topology *record_topology;
+	const struct intel_xe_perf_record_device_info *record_info;
+	const struct intel_xe_perf_record_device_topology *record_topology;
 	const uint8_t *end = reader->mmap_data + reader->mmap_size;
 	const uint8_t *iter = reader->mmap_data;
 
@@ -121,33 +121,33 @@ parse_data(struct intel_perf_data_reader *reader)
 			assert(header->size == sizeof(*header));
 			break;
 
-		case INTEL_PERF_RECORD_TYPE_VERSION: {
-			struct intel_perf_record_version *version =
-				(struct intel_perf_record_version*) (header + 1);
-			if (version->version != INTEL_PERF_RECORD_VERSION) {
+		case INTEL_XE_PERF_RECORD_TYPE_VERSION: {
+			struct intel_xe_perf_record_version *version =
+				(struct intel_xe_perf_record_version*) (header + 1);
+			if (version->version != INTEL_XE_PERF_RECORD_VERSION) {
 				snprintf(reader->error_msg, sizeof(reader->error_msg),
 					 "Unsupported recording version (%u, expected %u)",
-					 version->version, INTEL_PERF_RECORD_VERSION);
+					 version->version, INTEL_XE_PERF_RECORD_VERSION);
 				return false;
 			}
 			break;
 		}
 
-		case INTEL_PERF_RECORD_TYPE_DEVICE_INFO: {
+		case INTEL_XE_PERF_RECORD_TYPE_DEVICE_INFO: {
 			reader->record_info = header + 1;
-			assert(header->size == (sizeof(struct intel_perf_record_device_info) +
+			assert(header->size == (sizeof(struct intel_xe_perf_record_device_info) +
 						sizeof(*header)));
 			break;
 		}
 
-		case INTEL_PERF_RECORD_TYPE_DEVICE_TOPOLOGY: {
+		case INTEL_XE_PERF_RECORD_TYPE_DEVICE_TOPOLOGY: {
 			reader->record_topology = header + 1;
 			break;
 		}
 
-		case INTEL_PERF_RECORD_TYPE_TIMESTAMP_CORRELATION: {
+		case INTEL_XE_PERF_RECORD_TYPE_TIMESTAMP_CORRELATION: {
 			append_timestamp_correlation(reader,
-						     (const struct intel_perf_record_timestamp_correlation *) (header + 1));
+						     (const struct intel_xe_perf_record_timestamp_correlation *) (header + 1));
 			break;
 		}
 		}
@@ -165,12 +165,12 @@ parse_data(struct intel_perf_data_reader *reader)
 	record_info = reader->record_info;
 	record_topology = reader->record_topology;
 
-	reader->perf = intel_perf_for_devinfo(record_info->device_id,
-					      record_info->device_revision,
-					      record_info->timestamp_frequency,
-					      record_info->gt_min_frequency,
-					      record_info->gt_max_frequency,
-					      &record_topology->topology);
+	reader->perf = intel_xe_perf_for_devinfo(record_info->device_id,
+						 record_info->device_revision,
+						 record_info->timestamp_frequency,
+						 record_info->gt_min_frequency,
+						 record_info->gt_max_frequency,
+						 &record_topology->topology);
 	if (!reader->perf) {
 		snprintf(reader->error_msg, sizeof(reader->error_msg),
 			 "Recording occured on unsupported device (0x%x)",
@@ -188,7 +188,7 @@ parse_data(struct intel_perf_data_reader *reader)
 }
 
 static uint64_t
-correlate_gpu_timestamp(struct intel_perf_data_reader *reader,
+correlate_gpu_timestamp(struct intel_xe_perf_data_reader *reader,
 			uint64_t gpu_ts)
 {
 	/* OA reports only have the lower 32bits of the timestamp
@@ -239,7 +239,7 @@ correlate_gpu_timestamp(struct intel_perf_data_reader *reader,
 }
 
 static void
-append_timeline_event(struct intel_perf_data_reader *reader,
+append_timeline_event(struct intel_xe_perf_data_reader *reader,
 		      uint64_t ts_start, uint64_t ts_end,
 		      uint32_t record_start, uint32_t record_end,
 		      uint32_t hw_id)
@@ -247,7 +247,7 @@ append_timeline_event(struct intel_perf_data_reader *reader,
 	if (reader->n_timelines >= reader->n_allocated_timelines) {
 		reader->n_allocated_timelines = MAX(100, 2 * reader->n_allocated_timelines);
 		reader->timelines =
-			(struct intel_perf_timeline_item *)
+			(struct intel_xe_perf_timeline_item *)
 			realloc((void *) reader->timelines,
 				reader->n_allocated_timelines *
 				sizeof(*reader->timelines));
@@ -267,7 +267,7 @@ append_timeline_event(struct intel_perf_data_reader *reader,
 }
 
 static void
-generate_cpu_events(struct intel_perf_data_reader *reader)
+generate_cpu_events(struct intel_xe_perf_data_reader *reader)
 {
 	uint32_t last_header_idx = 0;
 	const struct drm_i915_perf_record_header *last_header = reader->records[0],
@@ -285,10 +285,10 @@ generate_cpu_events(struct intel_perf_data_reader *reader)
 		last_ctx_id = oa_report_ctx_id(reader, start_report);
 		current_ctx_id = oa_report_ctx_id(reader, end_report);
 
-		gpu_ts_start = intel_perf_read_record_timestamp(reader->perf,
+		gpu_ts_start = intel_xe_perf_read_record_timestamp(reader->perf,
 								reader->metric_set,
 								last_header);
-		gpu_ts_end = intel_perf_read_record_timestamp(reader->perf,
+		gpu_ts_end = intel_xe_perf_read_record_timestamp(reader->perf,
 							      reader->metric_set,
 							      current_header);
 
@@ -306,7 +306,7 @@ generate_cpu_events(struct intel_perf_data_reader *reader)
 }
 
 static void
-compute_correlation_chunks(struct intel_perf_data_reader *reader)
+compute_correlation_chunks(struct intel_xe_perf_data_reader *reader)
 {
 	uint64_t mask = ~(0xffffffff);
 	uint32_t last_idx = 0;
@@ -327,8 +327,8 @@ compute_correlation_chunks(struct intel_perf_data_reader *reader)
 }
 
 bool
-intel_perf_data_reader_init(struct intel_perf_data_reader *reader,
-			    int perf_file_fd)
+intel_xe_perf_data_reader_init(struct intel_xe_perf_data_reader *reader,
+			       int perf_file_fd)
 {
 	struct stat st;
 	if (fstat(perf_file_fd, &st) != 0) {
@@ -359,9 +359,9 @@ intel_perf_data_reader_init(struct intel_perf_data_reader *reader,
 }
 
 void
-intel_perf_data_reader_fini(struct intel_perf_data_reader *reader)
+intel_xe_perf_data_reader_fini(struct intel_xe_perf_data_reader *reader)
 {
-	intel_perf_free(reader->perf);
+	intel_xe_perf_free(reader->perf);
 	free(reader->records);
 	free(reader->timelines);
 	free(reader->correlations);

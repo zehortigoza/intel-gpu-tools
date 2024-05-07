@@ -341,16 +341,16 @@ static uint32_t devid;
 
 struct drm_xe_engine_class_instance default_hwe;
 
-static struct intel_perf *intel_perf;
+static struct intel_xe_perf *intel_xe_perf;
 static uint64_t oa_exp_1_millisec;
 struct intel_mmio_data mmio_data;
 static igt_render_copyfunc_t render_copy;
 
-static struct intel_perf_metric_set *metric_set(const struct drm_xe_engine_class_instance *hwe)
+static struct intel_xe_perf_metric_set *metric_set(const struct drm_xe_engine_class_instance *hwe)
 {
 	const char *test_set_name = NULL;
-	struct intel_perf_metric_set *metric_set_iter;
-	struct intel_perf_metric_set *test_set = NULL;
+	struct intel_xe_perf_metric_set *metric_set_iter;
+	struct intel_xe_perf_metric_set *test_set = NULL;
 
 	if (hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER ||
 	    hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE)
@@ -362,7 +362,7 @@ static struct intel_perf_metric_set *metric_set(const struct drm_xe_engine_class
 	else
 		igt_assert(!"reached");
 
-	igt_list_for_each_entry(metric_set_iter, &intel_perf->metric_sets, link) {
+	igt_list_for_each_entry(metric_set_iter, &intel_xe_perf->metric_sets, link) {
 		if (strcmp(metric_set_iter->symbol_name, test_set_name) == 0) {
 			test_set = metric_set_iter;
 			break;
@@ -373,7 +373,7 @@ static struct intel_perf_metric_set *metric_set(const struct drm_xe_engine_class
 
 	/*
 	 * configuration was loaded in init_sys_info() ->
-	 * intel_perf_load_perf_configs(), and test_set->perf_oa_metrics_set
+	 * intel_xe_perf_load_perf_configs(), and test_set->perf_oa_metrics_set
 	 * should point to metric id returned by the config add ioctl. 0 is
 	 * invalid.
 	 */
@@ -702,7 +702,7 @@ oa_timestamp_delta(const uint32_t *report1,
 static uint64_t
 timebase_scale(uint64_t delta)
 {
-	return (delta * NSEC_PER_SEC) / intel_perf->devinfo.timestamp_frequency;
+	return (delta * NSEC_PER_SEC) / intel_xe_perf->devinfo.timestamp_frequency;
 }
 
 /* Returns: the largest OA exponent that will still result in a sampling period
@@ -729,7 +729,7 @@ max_oa_exponent_for_period_lte(uint64_t period)
 static uint64_t
 oa_exponent_to_ns(int exponent)
 {
-       return 1000000000ULL * (2ULL << exponent) / intel_perf->devinfo.timestamp_frequency;
+       return 1000000000ULL * (2ULL << exponent) / intel_xe_perf->devinfo.timestamp_frequency;
 }
 
 static bool
@@ -986,7 +986,7 @@ sanity_check_reports(const uint32_t *oa_report0, const uint32_t *oa_report1,
 
 	igt_debug("clock delta = %"PRIu64"\n", clock_delta);
 
-	max_delta = clock_delta * intel_perf->devinfo.n_eus;
+	max_delta = clock_delta * intel_xe_perf->devinfo.n_eus;
 
 	/* Gen8+ has some 40bit A counters... */
 	for (int j = format.first_a40; j < format.n_a40 + format.first_a40; j++) {
@@ -1104,17 +1104,17 @@ init_sys_info(void)
 {
 	igt_assert_neq(devid, 0);
 
-	intel_perf = intel_perf_for_fd(drm_fd, 0);
-	igt_require(intel_perf);
+	intel_xe_perf = intel_xe_perf_for_fd(drm_fd, 0);
+	igt_require(intel_xe_perf);
 
-	igt_debug("n_eu_slices: %"PRIu64"\n", intel_perf->devinfo.n_eu_slices);
-	igt_debug("n_eu_sub_slices: %"PRIu64"\n", intel_perf->devinfo.n_eu_sub_slices);
-	igt_debug("n_eus: %"PRIu64"\n", intel_perf->devinfo.n_eus);
+	igt_debug("n_eu_slices: %"PRIu64"\n", intel_xe_perf->devinfo.n_eu_slices);
+	igt_debug("n_eu_sub_slices: %"PRIu64"\n", intel_xe_perf->devinfo.n_eu_sub_slices);
+	igt_debug("n_eus: %"PRIu64"\n", intel_xe_perf->devinfo.n_eus);
 	igt_debug("timestamp_frequency = %"PRIu64"\n",
-		  intel_perf->devinfo.timestamp_frequency);
-	igt_assert_neq(intel_perf->devinfo.timestamp_frequency, 0);
+		  intel_xe_perf->devinfo.timestamp_frequency);
+	igt_assert_neq(intel_xe_perf->devinfo.timestamp_frequency, 0);
 
-	intel_perf_load_perf_configs(intel_perf, drm_fd);
+	intel_xe_perf_load_perf_configs(intel_xe_perf, drm_fd);
 
 	oa_exp_1_millisec = max_oa_exponent_for_period_lte(1000000);
 
@@ -1394,7 +1394,7 @@ open_and_read_2_oa_reports(int format_id,
 			   bool timer_only,
 			   const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
 
@@ -1780,7 +1780,7 @@ static bool expected_report_timing_delta(uint32_t delta, uint32_t expected_delta
  */
 static void test_oa_exponents(const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = test_set->perf_oa_format;
 
 	load_helper_init();
@@ -2006,7 +2006,7 @@ static void test_blocking(uint64_t requested_oa_period,
 	int min_iterations = (test_duration_ns / (oa_period + kernel_hrtimer + kernel_hrtimer / 5));
 	int64_t start, end;
 	int n = 0;
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	size_t format_size = get_oa_format(test_set->perf_oa_format).size;
 
 	ADD_PROPS(props, idx, SAMPLE_OA, true);
@@ -2152,7 +2152,7 @@ static void test_polling(uint64_t requested_oa_period,
 	int min_iterations = (test_duration_ns / (oa_period + (kernel_hrtimer + kernel_hrtimer / 5)));
 	int64_t start, end;
 	int n = 0;
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	size_t format_size = get_oa_format(test_set->perf_oa_format).size;
 
 	ADD_PROPS(props, idx, SAMPLE_OA, true);
@@ -2417,7 +2417,7 @@ static void
 test_oa_tlb_invalidate(const struct drm_xe_engine_class_instance *hwe)
 {
 	int oa_exponent = max_oa_exponent_for_period_lte(30000000);
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
 		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
@@ -2465,7 +2465,7 @@ test_buffer_fill(const struct drm_xe_engine_class_instance *hwe)
 	/* ~5 micro second period */
 	int oa_exponent = max_oa_exponent_for_period_lte(5000);
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = test_set->perf_oa_format;
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
@@ -2605,7 +2605,7 @@ test_non_zero_reason(const struct drm_xe_engine_class_instance *hwe)
 {
 	/* ~20 micro second period */
 	int oa_exponent = max_oa_exponent_for_period_lte(20000);
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = test_set->perf_oa_format;
 	size_t report_size = get_oa_format(fmt).size;
 	uint64_t properties[] = {
@@ -2685,7 +2685,7 @@ test_enable_disable(const struct drm_xe_engine_class_instance *hwe)
 	/* ~5 micro second period */
 	int oa_exponent = max_oa_exponent_for_period_lte(5000);
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = test_set->perf_oa_format;
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
@@ -3037,7 +3037,7 @@ test_mi_rpc(struct drm_xe_engine_class_instance *hwe)
 	uint64_t fmt = ((IS_DG2(devid) || IS_METEORLAKE(devid)) &&
 			hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE) ?
 		XE_OAC_FORMAT_A24u64_B8_C8 : oar_unit_default_format();
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
 
@@ -3163,7 +3163,7 @@ emit_stall_timestamp_and_rpc(struct intel_bb *ibb,
 
 static void single_ctx_helper(struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = oar_unit_default_format();
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
@@ -3572,7 +3572,7 @@ test_rc6_disable(void)
 static void
 test_stress_open_close(const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 
 	load_helper_init();
 	load_helper_run(HIGH);
@@ -4056,7 +4056,7 @@ static u32 oa_get_mmio_base(const struct drm_xe_engine_class_instance *hwe)
  */
 static void test_oa_regs_whitelist(const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
 		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
@@ -4104,7 +4104,7 @@ static void test_oa_regs_whitelist(const struct drm_xe_engine_class_instance *hw
 static void
 __test_mmio_triggered_reports(struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = default_test_set;
+	struct intel_xe_perf_metric_set *test_set = default_test_set;
 	int oa_exponent = max_oa_exponent_for_period_lte(2 * NSEC_PER_SEC);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
@@ -4352,7 +4352,7 @@ test_oa_unit_exclusive_stream(bool exponent)
 	uint32_t *exec_q = calloc(qoa->num_oa_units, sizeof(u32));
 	uint32_t *perf_fd = calloc(qoa->num_oa_units, sizeof(u32));
 	u32 vm = xe_vm_create(drm_fd, 0, 0);
-	struct intel_perf_metric_set *test_set;
+	struct intel_xe_perf_metric_set *test_set;
 	uint32_t i;
 
 	/* for each oa unit, open one random perf stream with sample OA */
@@ -4563,7 +4563,7 @@ static void map_oa_buffer_forked_access(const struct drm_xe_engine_class_instanc
 static void check_reports(void *oa_vaddr, uint32_t oa_size,
 			  const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t fmt = test_set->perf_oa_format;
 	struct oa_format format = get_oa_format(fmt);
 	size_t report_words = format.size >> 2;
@@ -4653,7 +4653,7 @@ typedef void (*map_oa_buffer_test_t)(const struct drm_xe_engine_class_instance *
 static void test_mapped_oa_buffer(map_oa_buffer_test_t test_with_fd_open,
 				  const struct drm_xe_engine_class_instance *hwe)
 {
-	struct intel_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
 		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
@@ -4919,8 +4919,8 @@ igt_main
 		/* leave sysctl options in their default state... */
 		write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
-		if (intel_perf)
-			intel_perf_free(intel_perf);
+		if (intel_xe_perf)
+			intel_xe_perf_free(intel_xe_perf);
 
 		drm_close_driver(drm_fd);
 	}

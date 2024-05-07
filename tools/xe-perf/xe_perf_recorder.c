@@ -32,8 +32,8 @@
 #include "ioctl_wrappers.h"
 #include "linux_scaffold.h"
 #include "xe/xe_oa.h"
+#include "xe/xe_oa_data.h"
 #include "xe/xe_query.h"
-#include "i915/perf_data.h"
 
 #include "i915_perf_recorder_commands.h"
 
@@ -342,8 +342,8 @@ struct recording_context {
 	struct drm_i915_query_topology_info *topology;
 	uint32_t topology_size;
 
-	struct intel_perf *perf;
-	struct intel_perf_metric_set *metric_set;
+	struct intel_xe_perf *perf;
+	struct intel_xe_perf_metric_set *metric_set;
 
 	uint32_t oa_exponent;
 
@@ -502,11 +502,11 @@ sigint_handler(int val)
 static bool
 write_version(FILE *output, struct recording_context *ctx)
 {
-	struct intel_perf_record_version version = {
-		.version = INTEL_PERF_RECORD_VERSION,
+	struct intel_xe_perf_record_version version = {
+		.version = INTEL_XE_PERF_RECORD_VERSION,
 	};
 	struct drm_i915_perf_record_header header = {
-		.type = INTEL_PERF_RECORD_TYPE_VERSION,
+		.type = INTEL_XE_PERF_RECORD_TYPE_VERSION,
 		.size = sizeof(header) + sizeof(version),
 	};
 
@@ -522,7 +522,7 @@ write_version(FILE *output, struct recording_context *ctx)
 static bool
 write_header(FILE *output, struct recording_context *ctx)
 {
-	struct intel_perf_record_device_info info = {
+	struct intel_xe_perf_record_device_info info = {
 		.timestamp_frequency = ctx->oa_timestamp_frequency,
 		.device_id = ctx->perf->devinfo.devid,
 		.device_revision = ctx->perf->devinfo.revision,
@@ -533,7 +533,7 @@ write_header(FILE *output, struct recording_context *ctx)
 		.engine_instance = ctx->hwe->engine_instance,
 	};
 	struct drm_i915_perf_record_header header = {
-		.type = INTEL_PERF_RECORD_TYPE_DEVICE_INFO,
+		.type = INTEL_XE_PERF_RECORD_TYPE_DEVICE_INFO,
 		.size = sizeof(header) + sizeof(info),
 	};
 
@@ -560,7 +560,7 @@ static bool
 write_topology(FILE *output, struct recording_context *ctx)
 {
 	struct drm_i915_perf_record_header header = {
-		.type = INTEL_PERF_RECORD_TYPE_DEVICE_TOPOLOGY,
+		.type = INTEL_XE_PERF_RECORD_TYPE_DEVICE_TOPOLOGY,
 	};
 
 	header.size = sizeof(header) + ctx->topology_size;
@@ -654,7 +654,7 @@ static int query_engine_cycles(int fd, struct drm_xe_query_engine_cycles *ts)
 }
 
 static bool get_correlation_timestamps(struct recording_context *ctx,
-				       struct intel_perf_record_timestamp_correlation *corr)
+				       struct intel_xe_perf_record_timestamp_correlation *corr)
 {
 	struct drm_xe_query_engine_cycles ts = {};
 
@@ -672,10 +672,10 @@ static bool get_correlation_timestamps(struct recording_context *ctx,
 
 static bool
 write_saved_correlation_timestamps(FILE *output,
-				   const struct intel_perf_record_timestamp_correlation *corr)
+				   const struct intel_xe_perf_record_timestamp_correlation *corr)
 {
 	struct drm_i915_perf_record_header header = {
-		.type = INTEL_PERF_RECORD_TYPE_TIMESTAMP_CORRELATION,
+		.type = INTEL_XE_PERF_RECORD_TYPE_TIMESTAMP_CORRELATION,
 		.size = sizeof(header) + sizeof(*corr),
 	};
 
@@ -691,7 +691,7 @@ write_saved_correlation_timestamps(FILE *output,
 static bool
 write_correlation_timestamps(struct recording_context *ctx, FILE *output)
 {
-	struct intel_perf_record_timestamp_correlation corr;
+	struct intel_xe_perf_record_timestamp_correlation corr;
 
 	if (!get_correlation_timestamps(ctx, &corr))
 		return false;
@@ -759,9 +759,9 @@ read_command_file(struct recording_context *ctx)
 }
 
 static void
-print_metric_sets(const struct intel_perf *perf)
+print_metric_sets(const struct intel_xe_perf *perf)
 {
-	struct intel_perf_metric_set *metric_set;
+	struct intel_xe_perf_metric_set *metric_set;
 	uint32_t longest_name = 0;
 
 	igt_list_for_each_entry(metric_set, &perf->metric_sets, link) {
@@ -777,7 +777,7 @@ print_metric_sets(const struct intel_perf *perf)
 }
 
 static void
-print_metric_set_counters(const struct intel_perf_metric_set *metric_set)
+print_metric_set_counters(const struct intel_xe_perf_metric_set *metric_set)
 {
 	uint32_t longest_name = 0;
 
@@ -787,7 +787,7 @@ print_metric_set_counters(const struct intel_perf_metric_set *metric_set)
 
 	fprintf(stdout, "%s (%s):\n", metric_set->symbol_name, metric_set->name);
 	for (uint32_t i = 0; i < metric_set->n_counters; i++) {
-		struct intel_perf_logical_counter *counter = &metric_set->counters[i];
+		struct intel_xe_perf_logical_counter *counter = &metric_set->counters[i];
 
 		fprintf(stdout, "  %s:%*s%s\n",
 			counter->name,
@@ -797,9 +797,9 @@ print_metric_set_counters(const struct intel_perf_metric_set *metric_set)
 }
 
 static void
-print_metric_sets_counters(struct intel_perf *perf)
+print_metric_sets_counters(struct intel_xe_perf *perf)
 {
-	struct intel_perf_metric_set *metric_set;
+	struct intel_xe_perf_metric_set *metric_set;
 
 	igt_list_for_each_entry(metric_set, &perf->metric_sets, link)
 		print_metric_set_counters(metric_set);
@@ -842,7 +842,7 @@ teardown_recording_context(struct recording_context *ctx)
 		free(ctx->topology);
 
 	if (ctx->perf)
-		intel_perf_free(ctx->perf);
+		intel_xe_perf_free(ctx->perf);
 
 	if (ctx->command_fifo)
 		unlink(ctx->command_fifo);
@@ -913,8 +913,8 @@ main(int argc, char *argv[])
 	};
 	double corr_period = 1.0, perf_period = 0.001;
 	const char *metric_name = NULL, *output_file = "i915_perf.record";
-	struct intel_perf_metric_set *metric_set;
-	struct intel_perf_record_timestamp_correlation initial_correlation;
+	struct intel_xe_perf_metric_set *metric_set;
+	struct intel_xe_perf_record_timestamp_correlation initial_correlation;
 	struct timespec now;
 	uint64_t corr_period_ns, poll_time_ns;
 	uint32_t circular_size = 0;
@@ -1027,13 +1027,13 @@ main(int argc, char *argv[])
 		goto fail;
 	}
 
-	ctx.perf = intel_perf_for_fd(ctx.drm_fd, ctx.hwe->gt_id);
+	ctx.perf = intel_xe_perf_for_fd(ctx.drm_fd, ctx.hwe->gt_id);
 	if (!ctx.perf) {
 		fprintf(stderr, "No perf data found.\n");
 		goto fail;
 	}
 
-	intel_perf_load_perf_configs(ctx.perf, ctx.drm_fd);
+	intel_xe_perf_load_perf_configs(ctx.perf, ctx.drm_fd);
 
 	if (metric_name) {
 		if (!strcmp(metric_name, "list")) {
@@ -1067,7 +1067,7 @@ main(int argc, char *argv[])
 		goto fail;
 	}
 
-	intel_perf_load_perf_configs(ctx.perf, ctx.drm_fd);
+	intel_xe_perf_load_perf_configs(ctx.perf, ctx.drm_fd);
 
 	ctx.oa_timestamp_frequency = get_device_oa_timestamp_frequency(ctx.drm_fd);
 	ctx.cs_timestamp_frequency = get_device_cs_timestamp_frequency(ctx.drm_fd);

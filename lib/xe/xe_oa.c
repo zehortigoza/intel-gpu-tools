@@ -39,12 +39,12 @@
 #include "xe_oa_metrics_mtlgt3.h"
 #include "xe_oa_metrics_lnl.h"
 
-static struct intel_perf_logical_counter_group *
-intel_perf_logical_counter_group_new(struct intel_perf *perf,
-				     struct intel_perf_logical_counter_group *parent,
-				     const char *name)
+static struct intel_xe_perf_logical_counter_group *
+intel_xe_perf_logical_counter_group_new(struct intel_xe_perf *perf,
+					struct intel_xe_perf_logical_counter_group *parent,
+					const char *name)
 {
-	struct intel_perf_logical_counter_group *group = calloc(1, sizeof(*group));
+	struct intel_xe_perf_logical_counter_group *group = calloc(1, sizeof(*group));
 
 	group->name = strdup(name);
 
@@ -60,13 +60,13 @@ intel_perf_logical_counter_group_new(struct intel_perf *perf,
 }
 
 static void
-intel_perf_logical_counter_group_free(struct intel_perf_logical_counter_group *group)
+intel_xe_perf_logical_counter_group_free(struct intel_xe_perf_logical_counter_group *group)
 {
-	struct intel_perf_logical_counter_group *child, *tmp;
+	struct intel_xe_perf_logical_counter_group *child, *tmp;
 
 	igt_list_for_each_entry_safe(child, tmp, &group->groups, link) {
 		igt_list_del(&child->link);
-		intel_perf_logical_counter_group_free(child);
+		intel_xe_perf_logical_counter_group_free(child);
 	}
 
 	free(group->name);
@@ -74,7 +74,7 @@ intel_perf_logical_counter_group_free(struct intel_perf_logical_counter_group *g
 }
 
 static void
-intel_perf_metric_set_free(struct intel_perf_metric_set *metric_set)
+intel_xe_perf_metric_set_free(struct intel_xe_perf_metric_set *metric_set)
 {
 	free(metric_set->counters);
 	free(metric_set);
@@ -105,15 +105,15 @@ eu_available(const struct drm_i915_query_topology_info *topo,
 			   eu / 8] >> (eu % 8)) & 1;
 }
 
-static struct intel_perf *
-unsupported_xe_oa_platform(struct intel_perf *perf)
+static struct intel_xe_perf *
+unsupported_xe_oa_platform(struct intel_xe_perf *perf)
 {
-	intel_perf_free(perf);
+	intel_xe_perf_free(perf);
 	return NULL;
 }
 
 static bool
-is_acm_gt1(const struct intel_perf_devinfo *devinfo)
+is_acm_gt1(const struct intel_xe_perf_devinfo *devinfo)
 {
 #undef INTEL_VGA_DEVICE
 #define INTEL_VGA_DEVICE(_id, _info) _id
@@ -131,7 +131,7 @@ is_acm_gt1(const struct intel_perf_devinfo *devinfo)
 }
 
 static bool
-is_acm_gt2(const struct intel_perf_devinfo *devinfo)
+is_acm_gt2(const struct intel_xe_perf_devinfo *devinfo)
 {
 #undef INTEL_VGA_DEVICE
 #define INTEL_VGA_DEVICE(_id, _info) _id
@@ -148,7 +148,7 @@ is_acm_gt2(const struct intel_perf_devinfo *devinfo)
 }
 
 static bool
-is_acm_gt3(const struct intel_perf_devinfo *devinfo)
+is_acm_gt3(const struct intel_xe_perf_devinfo *devinfo)
 {
 #undef INTEL_VGA_DEVICE
 #define INTEL_VGA_DEVICE(_id, _info) _id
@@ -166,7 +166,7 @@ is_acm_gt3(const struct intel_perf_devinfo *devinfo)
 }
 
 static bool
-is_mtl_gt2(const struct intel_perf_devinfo *devinfo)
+is_mtl_gt2(const struct intel_xe_perf_devinfo *devinfo)
 {
 #undef INTEL_VGA_DEVICE
 #define INTEL_VGA_DEVICE(_id, _info) _id
@@ -184,7 +184,7 @@ is_mtl_gt2(const struct intel_perf_devinfo *devinfo)
 }
 
 static bool
-is_mtl_gt3(const struct intel_perf_devinfo *devinfo)
+is_mtl_gt3(const struct intel_xe_perf_devinfo *devinfo)
 {
 #undef INTEL_VGA_DEVICE
 #define INTEL_VGA_DEVICE(_id, _info) _id
@@ -200,16 +200,16 @@ is_mtl_gt3(const struct intel_perf_devinfo *devinfo)
 	return false;
 }
 
-struct intel_perf *
-intel_perf_for_devinfo(uint32_t device_id,
-		       uint32_t revision,
-		       uint64_t timestamp_frequency,
-		       uint64_t gt_min_freq,
-		       uint64_t gt_max_freq,
-		       const struct drm_i915_query_topology_info *topology)
+struct intel_xe_perf *
+intel_xe_perf_for_devinfo(uint32_t device_id,
+			  uint32_t revision,
+			  uint64_t timestamp_frequency,
+			  uint64_t gt_min_freq,
+			  uint64_t gt_max_freq,
+			  const struct drm_i915_query_topology_info *topology)
 {
 	const struct intel_device_info *devinfo = intel_get_device_info(device_id);
-	struct intel_perf *perf;
+	struct intel_xe_perf *perf;
 	uint32_t subslice_mask_len;
 	uint32_t eu_mask_len;
 	uint32_t half_max_subslices;
@@ -220,7 +220,7 @@ intel_perf_for_devinfo(uint32_t device_id,
 		return NULL;
 
 	perf = calloc(1, sizeof(*perf));;
-	perf->root_group = intel_perf_logical_counter_group_new(perf, NULL, "");
+	perf->root_group = intel_xe_perf_logical_counter_group_new(perf, NULL, "");
 
 	IGT_INIT_LIST_HEAD(&perf->metric_sets);
 
@@ -300,21 +300,21 @@ intel_perf_for_devinfo(uint32_t device_id,
 	if (devinfo->is_tigerlake) {
 		switch (devinfo->gt) {
 		case 1:
-			intel_perf_load_metrics_tglgt1(perf);
+			intel_xe_perf_load_metrics_tglgt1(perf);
 			break;
 		case 2:
-			intel_perf_load_metrics_tglgt2(perf);
+			intel_xe_perf_load_metrics_tglgt2(perf);
 			break;
 		default:
 			return unsupported_xe_oa_platform(perf);
 		}
 	} else if (devinfo->is_rocketlake) {
-		intel_perf_load_metrics_rkl(perf);
+		intel_xe_perf_load_metrics_rkl(perf);
 	} else if (devinfo->is_dg1) {
-		intel_perf_load_metrics_dg1(perf);
+		intel_xe_perf_load_metrics_dg1(perf);
 	} else if (devinfo->is_alderlake_s || devinfo->is_alderlake_p ||
 		   devinfo->is_raptorlake_s || devinfo->is_alderlake_n) {
-		intel_perf_load_metrics_adl(perf);
+		intel_xe_perf_load_metrics_adl(perf);
 	} else if (devinfo->is_dg2) {
 		perf->devinfo.eu_threads_count = 8;
 		/* OA reports have the timestamp value shifted to the
@@ -325,11 +325,11 @@ intel_perf_for_devinfo(uint32_t device_id,
 		perf->devinfo.oa_timestamp_mask = 0x7fffffff;
 
 		if (is_acm_gt1(&perf->devinfo))
-			intel_perf_load_metrics_acmgt1(perf);
+			intel_xe_perf_load_metrics_acmgt1(perf);
 		else if (is_acm_gt2(&perf->devinfo))
-			intel_perf_load_metrics_acmgt2(perf);
+			intel_xe_perf_load_metrics_acmgt2(perf);
 		else if (is_acm_gt3(&perf->devinfo))
-			intel_perf_load_metrics_acmgt3(perf);
+			intel_xe_perf_load_metrics_acmgt3(perf);
 		else
 			return unsupported_xe_oa_platform(perf);
 	} else if (devinfo->is_meteorlake) {
@@ -342,13 +342,13 @@ intel_perf_for_devinfo(uint32_t device_id,
 		perf->devinfo.oa_timestamp_mask = 0x7fffffff;
 
 		if (is_mtl_gt2(&perf->devinfo))
-			intel_perf_load_metrics_mtlgt2(perf);
+			intel_xe_perf_load_metrics_mtlgt2(perf);
 		else if (is_mtl_gt3(&perf->devinfo))
-			intel_perf_load_metrics_mtlgt3(perf);
+			intel_xe_perf_load_metrics_mtlgt3(perf);
 		else
 			return unsupported_xe_oa_platform(perf);
 	} else if (intel_graphics_ver(device_id) >= IP_VER(20, 0)) {
-		intel_perf_load_metrics_lnl(perf);
+		intel_xe_perf_load_metrics_lnl(perf);
 	} else {
 		return unsupported_xe_oa_platform(perf);
 	}
@@ -586,7 +586,7 @@ next:
 	return i915_topo;
 }
 
-static struct intel_perf *
+static struct intel_xe_perf *
 xe_perf_for_fd(int drm_fd, int gt)
 {
 	uint32_t device_id;
@@ -595,7 +595,7 @@ xe_perf_for_fd(int drm_fd, int gt)
 	uint64_t gt_min_freq = 0;
 	uint64_t gt_max_freq = 0;
 	struct drm_i915_query_topology_info *topology;
-	struct intel_perf *ret;
+	struct intel_xe_perf *ret;
 	int sysfs_dir_fd = open_master_sysfs_dir(drm_fd);
 	char path_min[64], path_max[64];
 	struct drm_xe_query_oa_units *qoa = xe_oa_units(drm_fd);
@@ -630,22 +630,22 @@ xe_perf_for_fd(int drm_fd, int gt)
 		return NULL;
 	}
 
-	ret = intel_perf_for_devinfo(device_id,
+	ret = intel_xe_perf_for_devinfo(device_id,
 				     device_revision,
 				     oau->oa_timestamp_freq,
 				     gt_min_freq * 1000000,
 				     gt_max_freq * 1000000,
 				     topology);
 	if (!ret)
-		igt_warn("intel_perf_for_devinfo failed\n");
+		igt_warn("intel_xe_perf_for_devinfo failed\n");
 
 	free(topology);
 
 	return ret;
 }
 
-struct intel_perf *
-intel_perf_for_fd(int drm_fd, int gt)
+struct intel_xe_perf *
+intel_xe_perf_for_fd(int drm_fd, int gt)
 {
 	if (!is_xe_device(drm_fd))
 		return NULL;
@@ -654,33 +654,33 @@ intel_perf_for_fd(int drm_fd, int gt)
 }
 
 void
-intel_perf_free(struct intel_perf *perf)
+intel_xe_perf_free(struct intel_xe_perf *perf)
 {
-	struct intel_perf_metric_set *metric_set, *tmp;
+	struct intel_xe_perf_metric_set *metric_set, *tmp;
 
-	intel_perf_logical_counter_group_free(perf->root_group);
+	intel_xe_perf_logical_counter_group_free(perf->root_group);
 
 	igt_list_for_each_entry_safe(metric_set, tmp, &perf->metric_sets, link) {
 		igt_list_del(&metric_set->link);
-		intel_perf_metric_set_free(metric_set);
+		intel_xe_perf_metric_set_free(metric_set);
 	}
 
 	free(perf);
 }
 
 void
-intel_perf_add_logical_counter(struct intel_perf *perf,
-			       struct intel_perf_logical_counter *counter,
-			       const char *group_path)
+intel_xe_perf_add_logical_counter(struct intel_xe_perf *perf,
+				  struct intel_xe_perf_logical_counter *counter,
+				  const char *group_path)
 {
 	const char *group_path_end = group_path + strlen(group_path);
-	struct intel_perf_logical_counter_group *group = perf->root_group, *child_group = NULL;
+	struct intel_xe_perf_logical_counter_group *group = perf->root_group, *child_group = NULL;
 	const char *name = group_path;
 
 	while (name < group_path_end) {
 		const char *name_end = strstr(name, "/");
 		char group_name[128] = { 0, };
-		struct intel_perf_logical_counter_group *iter_group;
+		struct intel_xe_perf_logical_counter_group *iter_group;
 
 		if (!name_end)
 			name_end = group_path_end;
@@ -696,7 +696,7 @@ intel_perf_add_logical_counter(struct intel_perf *perf,
 		}
 
 		if (!child_group)
-			child_group = intel_perf_logical_counter_group_new(perf, group, group_name);
+			child_group = intel_xe_perf_logical_counter_group_new(perf, group, group_name);
 
 		name = name_end + 1;
 		group = child_group;
@@ -706,14 +706,14 @@ intel_perf_add_logical_counter(struct intel_perf *perf,
 }
 
 void
-intel_perf_add_metric_set(struct intel_perf *perf,
-			  struct intel_perf_metric_set *metric_set)
+intel_xe_perf_add_metric_set(struct intel_xe_perf *perf,
+			     struct intel_xe_perf_metric_set *metric_set)
 {
 	igt_list_add_tail(&metric_set->link, &perf->metric_sets);
 }
 
 static void
-load_metric_set_config(struct intel_perf_metric_set *metric_set, int drm_fd)
+load_metric_set_config(struct intel_xe_perf_metric_set *metric_set, int drm_fd)
 {
 	struct drm_xe_oa_config config;
 	u8 *regs;
@@ -745,13 +745,13 @@ load_metric_set_config(struct intel_perf_metric_set *metric_set, int drm_fd)
 }
 
 void
-intel_perf_load_perf_configs(struct intel_perf *perf, int drm_fd)
+intel_xe_perf_load_perf_configs(struct intel_xe_perf *perf, int drm_fd)
 {
 	int sysfs_dir_fd = open_master_sysfs_dir(drm_fd);
 	struct dirent *entry;
 	int metrics_dir_fd;
 	DIR *metrics_dir;
-	struct intel_perf_metric_set *metric_set;
+	struct intel_xe_perf_metric_set *metric_set;
 
 	if (sysfs_dir_fd < 0)
 		return;
@@ -870,11 +870,11 @@ enum xe_oa_format_name {
 	XE_OA_FORMAT_MAX,
 };
 
-void intel_perf_accumulate_reports(struct intel_perf_accumulator *acc,
-				   const struct intel_perf *perf,
-				   const struct intel_perf_metric_set *metric_set,
-				   const struct drm_i915_perf_record_header *record0,
-				   const struct drm_i915_perf_record_header *record1)
+void intel_xe_perf_accumulate_reports(struct intel_xe_perf_accumulator *acc,
+				      const struct intel_xe_perf *perf,
+				      const struct intel_xe_perf_metric_set *metric_set,
+				      const struct drm_i915_perf_record_header *record0,
+				      const struct drm_i915_perf_record_header *record1)
 {
 	const uint32_t *start = (const uint32_t *)(record0 + 1);
 	const uint32_t *end = (const uint32_t *)(record1 + 1);
@@ -986,9 +986,9 @@ void intel_perf_accumulate_reports(struct intel_perf_accumulator *acc,
 
 }
 
-uint64_t intel_perf_read_record_timestamp(const struct intel_perf *perf,
-					  const struct intel_perf_metric_set *metric_set,
-					  const struct drm_i915_perf_record_header *record)
+uint64_t intel_xe_perf_read_record_timestamp(const struct intel_xe_perf *perf,
+					     const struct intel_xe_perf_metric_set *metric_set,
+					     const struct drm_i915_perf_record_header *record)
 {
        const uint32_t *report32 = (const uint32_t *)(record + 1);
        const uint64_t *report64 = (const uint64_t *)(record + 1);
@@ -1017,9 +1017,9 @@ uint64_t intel_perf_read_record_timestamp(const struct intel_perf *perf,
        return ts;
 }
 
-uint64_t intel_perf_read_record_timestamp_raw(const struct intel_perf *perf,
-					  const struct intel_perf_metric_set *metric_set,
-					  const struct drm_i915_perf_record_header *record)
+uint64_t intel_xe_perf_read_record_timestamp_raw(const struct intel_xe_perf *perf,
+						 const struct intel_xe_perf_metric_set *metric_set,
+						 const struct drm_i915_perf_record_header *record)
 {
        const uint32_t *report32 = (const uint32_t *)(record + 1);
        const uint64_t *report64 = (const uint64_t *)(record + 1);
@@ -1048,8 +1048,8 @@ uint64_t intel_perf_read_record_timestamp_raw(const struct intel_perf *perf,
        return ts;
 }
 
-const char *intel_perf_read_report_reason(const struct intel_perf *perf,
-					  const struct drm_i915_perf_record_header *record)
+const char *intel_xe_perf_read_report_reason(const struct intel_xe_perf *perf,
+					     const struct drm_i915_perf_record_header *record)
 {
 	const uint32_t *report = (const uint32_t *) (record + 1);
 
