@@ -33,7 +33,7 @@ if libdrm_amdgpu.found()
 			  'amd_security',
 			  'amd_uvd_dec',
 			  'amd_uvd_enc',
-			  'amd_vce_dec',
+			  'amd_vce_enc',
 			  'amd_vcn',
 			  'amd_vm',
 			  'amd_vrr_range',
