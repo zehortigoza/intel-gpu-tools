@@ -81,40 +81,6 @@ def generate_metric_sets(args, gen):
 #include <stdbool.h>
 #include <assert.h>
 
-enum xe_oa_format_name {
-	XE_OA_FORMAT_C4_B8 = 1,
-
-	/* Gen8+ */
-	XE_OA_FORMAT_A12,
-	XE_OA_FORMAT_A12_B8_C8,
-	XE_OA_FORMAT_A32u40_A4u32_B8_C8,
-
-	/* DG2 */
-	XE_OAR_FORMAT_A32u40_A4u32_B8_C8,
-	XE_OA_FORMAT_A24u40_A14u32_B8_C8,
-
-        /* DG2/MTL OAC */
-        XE_OAC_FORMAT_A24u64_B8_C8,
-        XE_OAC_FORMAT_A22u32_R2u32_B8_C8,
-
-	/* MTL OAM */
-	XE_OAM_FORMAT_MPEC8u64_B8_C8,
-	XE_OAM_FORMAT_MPEC8u32_B8_C8,
-
-	/* Xe2+ */
-	XE_OA_FORMAT_PEC64u64,
-	XE_OA_FORMAT_PEC64u64_B8_C8,
-	XE_OA_FORMAT_PEC64u32,
-	XE_OA_FORMAT_PEC32u64_G1,
-	XE_OA_FORMAT_PEC32u32_G1,
-	XE_OA_FORMAT_PEC32u64_G2,
-	XE_OA_FORMAT_PEC32u32_G2,
-	XE_OA_FORMAT_PEC36u64_G1_32_G2_4,
-	XE_OA_FORMAT_PEC36u64_G1_4_G2_32,
-
-	XE_OA_FORMAT_MAX,
-};
-
         """))
 
     c("#include \"{0}\"".format(os.path.basename(args.header)))

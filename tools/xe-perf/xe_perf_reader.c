@@ -17,8 +17,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <i915_drm.h>
-
 #include "igt_core.h"
 #include "intel_chipset.h"
 #include "xe/xe_oa.h"
@@ -31,7 +29,7 @@ static void
 usage(void)
 {
 	printf("Usage: xe-perf-reader [options] file\n"
-	       "Reads the content of an i915-perf recording.\n"
+	       "Reads the content of an xe-perf recording.\n"
 	       "\n"
 	       "     --help,    -h             Print this screen\n"
 	       "     --counters, -c c1,c2,...  List of counters to display values for.\n"
@@ -151,8 +149,8 @@ get_logical_counters(struct intel_xe_perf_metric_set *metric_set,
 
 static void
 print_report_deltas(const struct intel_xe_perf_data_reader *reader,
-		    const struct drm_i915_perf_record_header *i915_report0,
-		    const struct drm_i915_perf_record_header *i915_report1,
+		    const struct intel_xe_perf_record_header *xe_report0,
+		    const struct intel_xe_perf_record_header *xe_report1,
 		    struct intel_xe_perf_logical_counter **counters,
 		    uint32_t n_counters)
 {
@@ -160,7 +158,7 @@ print_report_deltas(const struct intel_xe_perf_data_reader *reader,
 
 	intel_xe_perf_accumulate_reports(&accu,
 				      reader->perf, reader->metric_set,
-				      i915_report0, i915_report1);
+				      xe_report0, xe_report1);
 
 	for (uint32_t c = 0; c < n_counters; c++) {
 		struct intel_xe_perf_logical_counter *counter = counters[c];

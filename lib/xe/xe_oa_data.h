@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 /*
- * Copyright © 2023 Intel Corporation
+ * Copyright © 2024 Intel Corporation
  */
 
 #ifndef XE_OA_DATA_H
@@ -10,20 +10,18 @@
 extern "C" {
 #endif
 
-#include <i915_drm.h>
-
-/* The structures below are embedded in the i915-perf stream so as to
- * provide metadata. The types used in the
- * drm_i915_perf_record_header.type are defined in
- * intel_xe_perf_record_type.
- */
-
 #include <stdint.h>
 
+/* For now this enum is the same as i915 intel_perf_record_type/drm_i915_perf_record_type */
 enum intel_xe_perf_record_type {
-	/* Start at 65536, which is pretty safe since after 3years the
-	 * kernel hasn't defined more than 3 entries.
-	 */
+	/* An packet/record of OA data */
+	INTEL_XE_PERF_RECORD_TYPE_SAMPLE = 1,
+
+	/* Indicates one or more OA reports were not written by HW */
+	INTEL_XE_PERF_RECORD_OA_TYPE_REPORT_LOST,
+
+	/* An error occurred that resulted in all pending OA reports being lost */
+	INTEL_XE_PERF_RECORD_OA_TYPE_BUFFER_LOST,
 
 	INTEL_XE_PERF_RECORD_TYPE_VERSION = 1 << 16,
 
@@ -35,11 +33,13 @@ enum intel_xe_perf_record_type {
 
 	/* intel_xe_perf_record_timestamp_correlation */
 	INTEL_XE_PERF_RECORD_TYPE_TIMESTAMP_CORRELATION,
+
+	INTEL_XE_PERF_RECORD_MAX /* non-ABI */
 };
 
 /* This structure cannot ever change. */
 struct intel_xe_perf_record_version {
-	/* Version of the i915-perf file recording format (effectively
+	/* Version of the xe-perf file recording format (effectively
 	 * versioning this file).
 	 */
 	uint32_t version;
@@ -67,7 +67,7 @@ struct intel_xe_perf_record_device_info {
 	uint32_t engine_class;
 	uint32_t engine_instance;
 
-	/* enum drm_i915_oa_format */
+	/* enum intel_xe_oa_format_name */
 	uint32_t oa_format;
 
 	/* Metric set name */
@@ -79,10 +79,10 @@ struct intel_xe_perf_record_device_info {
 	uint32_t pad;
  } __attribute__((packed));
 
-/* Topology as reported by i915 (variable length, aligned by the
- * recorder). */
+/* Topology as filled by xe_fill_topology_info (variable length, aligned by
+ * the recorder). */
 struct intel_xe_perf_record_device_topology {
-	struct drm_i915_query_topology_info topology;
+	struct intel_xe_topology_info topology;
 };
 
 /* Timestamp correlation between CPU/GPU. */

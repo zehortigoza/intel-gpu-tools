@@ -105,7 +105,7 @@ circular_buffer_read(void *c, char *buf, size_t size)
 static size_t
 peek_item_size(struct circular_buffer *buffer)
 {
-	struct drm_i915_perf_record_header header;
+	struct intel_xe_perf_record_header header;
 	struct chunk chunks[2];
 
 	if (!buffer->size)
@@ -337,7 +337,7 @@ struct recording_context {
 
 	const struct intel_device_info *devinfo;
 
-	struct drm_i915_query_topology_info *topology;
+	struct intel_xe_topology_info *topology;
 	uint32_t topology_size;
 
 	struct intel_xe_perf *perf;
@@ -368,41 +368,6 @@ static void set_fd_flags(int fd, int flags)
 enum xe_oa_report_header {
 	HDR_32_BIT = 0,
 	HDR_64_BIT,
-};
-
-/*To be kept in sync with the same enum in lib/xe/oa-configs/oa-metricset-codegen.py */
-enum xe_oa_format_name {
-	XE_OA_FORMAT_C4_B8 = 1,
-
-	/* Gen8+ */
-	XE_OA_FORMAT_A12,
-	XE_OA_FORMAT_A12_B8_C8,
-	XE_OA_FORMAT_A32u40_A4u32_B8_C8,
-
-	/* DG2 */
-	XE_OAR_FORMAT_A32u40_A4u32_B8_C8,
-	XE_OA_FORMAT_A24u40_A14u32_B8_C8,
-
-	/* DG2/MTL OAC */
-	XE_OAC_FORMAT_A24u64_B8_C8,
-	XE_OAC_FORMAT_A22u32_R2u32_B8_C8,
-
-	/* MTL OAM */
-	XE_OAM_FORMAT_MPEC8u64_B8_C8,
-	XE_OAM_FORMAT_MPEC8u32_B8_C8,
-
-	/* Xe2+ */
-	XE_OA_FORMAT_PEC64u64,
-	XE_OA_FORMAT_PEC64u64_B8_C8,
-	XE_OA_FORMAT_PEC64u32,
-	XE_OA_FORMAT_PEC32u64_G1,
-	XE_OA_FORMAT_PEC32u32_G1,
-	XE_OA_FORMAT_PEC32u64_G2,
-	XE_OA_FORMAT_PEC32u32_G2,
-	XE_OA_FORMAT_PEC36u64_G1_32_G2_4,
-	XE_OA_FORMAT_PEC36u64_G1_4_G2_32,
-
-	XE_OA_FORMAT_MAX,
 };
 
 struct xe_oa_format {
@@ -503,7 +468,7 @@ write_version(FILE *output, struct recording_context *ctx)
 	struct intel_xe_perf_record_version version = {
 		.version = INTEL_XE_PERF_RECORD_VERSION,
 	};
-	struct drm_i915_perf_record_header header = {
+	struct intel_xe_perf_record_header header = {
 		.type = INTEL_XE_PERF_RECORD_TYPE_VERSION,
 		.size = sizeof(header) + sizeof(version),
 	};
@@ -530,7 +495,7 @@ write_header(FILE *output, struct recording_context *ctx)
 		.engine_class = ctx->hwe->engine_class,
 		.engine_instance = ctx->hwe->engine_instance,
 	};
-	struct drm_i915_perf_record_header header = {
+	struct intel_xe_perf_record_header header = {
 		.type = INTEL_XE_PERF_RECORD_TYPE_DEVICE_INFO,
 		.size = sizeof(header) + sizeof(info),
 	};
@@ -549,15 +514,15 @@ write_header(FILE *output, struct recording_context *ctx)
 	return true;
 }
 
-static struct drm_i915_query_topology_info *get_topology(struct recording_context *ctx)
+static struct intel_xe_topology_info *get_topology(struct recording_context *ctx)
 {
-	return xe_fill_i915_topology_info(ctx->drm_fd, ctx->devid, &ctx->topology_size);
+	return xe_fill_topology_info(ctx->drm_fd, ctx->devid, &ctx->topology_size);
 }
 
 static bool
 write_topology(FILE *output, struct recording_context *ctx)
 {
-	struct drm_i915_perf_record_header header = {
+	struct intel_xe_perf_record_header header = {
 		.type = INTEL_XE_PERF_RECORD_TYPE_DEVICE_TOPOLOGY,
 	};
 
@@ -585,7 +550,7 @@ static int get_stream_status(int perf_fd, u32 *oa_status)
 }
 
 static bool
-write_i915_perf_data(FILE *output, struct recording_context *ctx)
+write_perf_data(FILE *output, struct recording_context *ctx)
 {
 	ssize_t format_size = oa_formats[ctx->metric_set->perf_oa_format].size;
 	char data[4096];
@@ -596,8 +561,8 @@ write_i915_perf_data(FILE *output, struct recording_context *ctx)
 		assert(!(ret % format_size));
 
 		for (int i = 0; i < ret / format_size; i++) {
-			struct drm_i915_perf_record_header header = {
-				.type = DRM_I915_PERF_RECORD_SAMPLE,
+			struct intel_xe_perf_record_header header = {
+				.type = INTEL_XE_PERF_RECORD_TYPE_SAMPLE,
 				.size = sizeof(header) + format_size,
 			};
 
@@ -609,12 +574,12 @@ write_i915_perf_data(FILE *output, struct recording_context *ctx)
 		}
 
 		if (!get_stream_status(ctx->perf_fd, &oa_status)) {
-			struct drm_i915_perf_record_header header = { .size = sizeof(header) };
+			struct intel_xe_perf_record_header header = { .size = sizeof(header) };
 
 			if (oa_status & DRM_XE_OASTATUS_REPORT_LOST)
-				header.type = DRM_I915_PERF_RECORD_OA_REPORT_LOST;
+				header.type = INTEL_XE_PERF_RECORD_OA_TYPE_REPORT_LOST;
 			else if (oa_status & DRM_XE_OASTATUS_BUFFER_OVERFLOW)
-				header.type = DRM_I915_PERF_RECORD_OA_BUFFER_LOST;
+				header.type = INTEL_XE_PERF_RECORD_OA_TYPE_BUFFER_LOST;
 			else
 				continue;
 
@@ -672,7 +637,7 @@ static bool
 write_saved_correlation_timestamps(FILE *output,
 				   const struct intel_xe_perf_record_timestamp_correlation *corr)
 {
-	struct drm_i915_perf_record_header header = {
+	struct intel_xe_perf_record_header header = {
 		.type = INTEL_XE_PERF_RECORD_TYPE_TIMESTAMP_CORRELATION,
 		.size = sizeof(header) + sizeof(*corr),
 	};
@@ -808,7 +773,7 @@ usage(const char *name)
 {
 	fprintf(stdout,
 		"Usage: %s [options]\n"
-		"Recording tool for i915-perf.\n"
+		"Recording tool for xe-oa\n"
 		"\n"
 		"     --help,               -h          Print this screen\n"
 		"     --device,             -d <value>  Device to use\n"
@@ -816,16 +781,16 @@ usage(const char *name)
 		"                                        value=1 to use /dev/dri/card1)\n"
 		"     --correlation-period, -c <value>  Time period of timestamp correlation in seconds\n"
 		"                                       (default = 1.0)\n"
-		"     --perf-period,        -p <value>  Time period of i915-perf reports in seconds\n"
+		"     --perf-period,        -p <value>  Time period of xe-oa reports in seconds\n"
 		"                                       (default = 0.001)\n"
-		"     --metric,             -m <value>  i915 metric to sample with (use value=list to list all metrics)\n"
+		"     --metric,             -m <value>  xe-oa metric to sample with (use value=list to list all metrics)\n"
 		"     --counters,           -C          List counters for a given metric and exit\n"
 		"     --size,               -s <value>  Size of circular buffer to use in kilobytes\n"
 		"                                       If specified, a maximum amount of <value> data will\n"
 		"                                       be recorded.\n"
 		"     --command-fifo,       -f <path>   Path to a command fifo, implies circular buffer\n"
-		"                                       (To use with i915-perf-control)\n"
-		"     --output,             -o <path>   Output file (default = i915_perf.record)\n"
+		"                                       (To use with xe-perf-control)\n"
+		"     --output,             -o <path>   Output file (default = xe_perf.record)\n"
 		"     --cpu-clock,          -k <path>   Cpu clock to use for correlations\n"
 		"                                       Values: boot, mono, mono_raw (default = mono)\n"
 		"     --engine-class        -e <value>  Engine class used for the OA capture.\n"
@@ -910,7 +875,7 @@ main(int argc, char *argv[])
 		{ CLOCK_MONOTONIC_RAW,	"mono_raw" },
 	};
 	double corr_period = 1.0, perf_period = 0.001;
-	const char *metric_name = NULL, *output_file = "i915_perf.record";
+	const char *metric_name = NULL, *output_file = "xe_perf.record";
 	struct intel_xe_perf_metric_set *metric_set;
 	struct intel_xe_perf_record_timestamp_correlation initial_correlation;
 	struct timespec now;
@@ -1021,7 +986,7 @@ main(int argc, char *argv[])
 
 	ctx.topology = get_topology(&ctx);
 	if (!ctx.topology) {
-		fprintf(stderr, "Unable to retrieve GPU topology (requires kernel 4.17+).\n");
+		fprintf(stderr, "Unable to retrieve GPU topology\n");
 		goto fail;
 	}
 
@@ -1111,7 +1076,7 @@ main(int argc, char *argv[])
 		write_correlation_timestamps(&ctx, ctx.output_stream);
 		fprintf(stdout,
 			"Recoding in internal circular buffer.\n"
-			"Use i915-perf-control to snapshot into file.\n");
+			"Use xe-perf-control to snapshot into file.\n");
 	} else {
 		output = fopen(output_file, "w+");
 		if (!output) {
@@ -1136,7 +1101,7 @@ main(int argc, char *argv[])
 	if (ctx.metric_set->perf_oa_metrics_set == 0) {
 		fprintf(stderr,
 			"Unable to load performance configuration, consider running:\n"
-			"   sysctl dev.i915.perf_stream_paranoid=0\n");
+			"   sysctl dev.xe.perf_stream_paranoid=0\n");
 		goto fail;
 	}
 
@@ -1150,7 +1115,7 @@ main(int argc, char *argv[])
 
 	ctx.perf_fd = perf_open(&ctx);
 	if (ctx.perf_fd < 0) {
-		fprintf(stderr, "Unable to open i915 perf stream: %s\n",
+		fprintf(stderr, "Unable to open xe oa stream: %s\n",
 			strerror(errno));
 		goto fail;
 	}
@@ -1169,15 +1134,15 @@ main(int argc, char *argv[])
 		igt_gettime(&now);
 		ret = poll(pollfd, ctx.command_fifo_fd != -1 ? 2 : 1, poll_time_ns / 1000000);
 		if (ret < 0 && errno != EINTR) {
-			fprintf(stderr, "Failed to poll i915-perf stream: %s\n",
+			fprintf(stderr, "Failed to poll xe-oa stream: %s\n",
 				strerror(errno));
 			break;
 		}
 
 		if (ret > 0) {
 			if (pollfd[0].revents & POLLIN) {
-				if (!write_i915_perf_data(ctx.output_stream, &ctx)) {
-					fprintf(stderr, "Failed to write i915-perf data: %s\n",
+				if (!write_perf_data(ctx.output_stream, &ctx)) {
+					fprintf(stderr, "Failed to write xe-oa data: %s\n",
 						strerror(errno));
 					break;
 				}
@@ -1193,7 +1158,7 @@ main(int argc, char *argv[])
 			poll_time_ns = corr_period_ns;
 			if (!write_correlation_timestamps(&ctx, ctx.output_stream)) {
 				fprintf(stderr,
-					"Failed to write i915 timestamp correlation data: %s\n",
+					"Failed to write xe timestamp correlation data: %s\n",
 					strerror(errno));
 				break;
 			}
@@ -1204,14 +1169,14 @@ main(int argc, char *argv[])
 
 	fprintf(stdout, "Exiting...\n");
 
-	if (!write_i915_perf_data(ctx.output_stream, &ctx)) {
-		fprintf(stderr, "Failed to write i915-perf data: %s\n",
+	if (!write_perf_data(ctx.output_stream, &ctx)) {
+		fprintf(stderr, "Failed to write xe-oa data: %s\n",
 			strerror(errno));
 	}
 
 	if (!write_correlation_timestamps(&ctx, ctx.output_stream)) {
 		fprintf(stderr,
-			"Failed to write final i915 timestamp correlation data: %s\n",
+			"Failed to write final xe timestamp correlation data: %s\n",
 			strerror(errno));
 	}
 

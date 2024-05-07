@@ -46,7 +46,7 @@ oa_report_ctx_id(struct intel_xe_perf_data_reader *reader, const uint8_t *report
 	if (!oa_report_ctx_is_valid(&reader->devinfo, report))
 		return 0xffffffff;
 
-	if (reader->metric_set->perf_oa_format == I915_OAM_FORMAT_MPEC8u32_B8_C8)
+	if (reader->metric_set->perf_oa_format == XE_OA_FORMAT_PEC64u64)
 		return ((const uint32_t *) report)[4];
 	else
 		return ((const uint32_t *) report)[2];
@@ -54,15 +54,15 @@ oa_report_ctx_id(struct intel_xe_perf_data_reader *reader, const uint8_t *report
 
 static void
 append_record(struct intel_xe_perf_data_reader *reader,
-	      const struct drm_i915_perf_record_header *header)
+	      const struct intel_xe_perf_record_header *header)
 {
 	if (reader->n_records >= reader->n_allocated_records) {
 		reader->n_allocated_records = MAX(100, 2 * reader->n_allocated_records);
 		reader->records =
-			(const struct drm_i915_perf_record_header **)
+			(const struct intel_xe_perf_record_header **)
 			realloc((void *) reader->records,
 				reader->n_allocated_records *
-				sizeof(struct drm_i915_perf_record_header *));
+				sizeof(struct intel_xe_perf_record_header *));
 		assert(reader->records);
 	}
 
@@ -108,16 +108,16 @@ parse_data(struct intel_xe_perf_data_reader *reader)
 	const uint8_t *iter = reader->mmap_data;
 
 	while (iter < end) {
-		const struct drm_i915_perf_record_header *header =
-			(const struct drm_i915_perf_record_header *) iter;
+		const struct intel_xe_perf_record_header *header =
+			(const struct intel_xe_perf_record_header *) iter;
 
 		switch (header->type) {
-		case DRM_I915_PERF_RECORD_SAMPLE:
+		case INTEL_XE_PERF_RECORD_TYPE_SAMPLE:
 			append_record(reader, header);
 			break;
 
-		case DRM_I915_PERF_RECORD_OA_REPORT_LOST:
-		case DRM_I915_PERF_RECORD_OA_BUFFER_LOST:
+		case INTEL_XE_PERF_RECORD_OA_TYPE_REPORT_LOST:
+		case INTEL_XE_PERF_RECORD_OA_TYPE_BUFFER_LOST:
 			assert(header->size == sizeof(*header));
 			break;
 
@@ -270,7 +270,7 @@ static void
 generate_cpu_events(struct intel_xe_perf_data_reader *reader)
 {
 	uint32_t last_header_idx = 0;
-	const struct drm_i915_perf_record_header *last_header = reader->records[0],
+	const struct intel_xe_perf_record_header *last_header = reader->records[0],
 		*current_header = reader->records[0];
 	const uint8_t *start_report, *end_report;
 	uint32_t last_ctx_id, current_ctx_id;

@@ -88,47 +88,9 @@
 		*_tail++ = _value; \
 	} while (0)
 
-/*
- * If formats are added here remember to change
- * lib/xe/oa-configs/oa-metricset-codegen.py
- */
-enum xe_oa_format_name {
-	XE_OA_FORMAT_C4_B8 = 1,
-
-	/* Gen8+ */
-	XE_OA_FORMAT_A12,
-	XE_OA_FORMAT_A12_B8_C8,
-	XE_OA_FORMAT_A32u40_A4u32_B8_C8,
-
-	/* DG2 */
-	XE_OAR_FORMAT_A32u40_A4u32_B8_C8,
-	XE_OA_FORMAT_A24u40_A14u32_B8_C8,
-
-	/* DG2/MTL OAC */
-	XE_OAC_FORMAT_A24u64_B8_C8,
-	XE_OAC_FORMAT_A22u32_R2u32_B8_C8,
-
-	/* MTL OAM */
-	XE_OAM_FORMAT_MPEC8u64_B8_C8,
-	XE_OAM_FORMAT_MPEC8u32_B8_C8,
-
-	/* Xe2+ */
-	XE_OA_FORMAT_PEC64u64,
-	XE_OA_FORMAT_PEC64u64_B8_C8,
-	XE_OA_FORMAT_PEC64u32,
-	XE_OA_FORMAT_PEC32u64_G1,
-	XE_OA_FORMAT_PEC32u32_G1,
-	XE_OA_FORMAT_PEC32u64_G2,
-	XE_OA_FORMAT_PEC32u32_G2,
-	XE_OA_FORMAT_PEC36u64_G1_32_G2_4,
-	XE_OA_FORMAT_PEC36u64_G1_4_G2_32,
-
-	XE_OA_FORMAT_MAX,
-};
-
 struct accumulator {
 #define MAX_RAW_OA_COUNTERS 62
-	enum xe_oa_format_name format;
+	enum intel_xe_oa_format_name format;
 
 	uint64_t deltas[MAX_RAW_OA_COUNTERS];
 };
@@ -158,7 +120,7 @@ struct oa_format {
 	int n_b;
 	int c_off;
 	int n_c;
-	int oa_type; /* of enum xe_oa_format_name */
+	int oa_type; /* of enum intel_xe_oa_format_name */
 	bool report_hdr_64bit;
 	int counter_select;
 	int counter_size;
@@ -420,7 +382,7 @@ dump_report(const uint32_t *report, uint32_t size, const char *message) {
 }
 
 static struct oa_format
-get_oa_format(enum xe_oa_format_name format)
+get_oa_format(enum intel_xe_oa_format_name format)
 {
 	if (IS_DG2(devid))
 		return dg2_oa_formats[format];
@@ -590,7 +552,7 @@ static unsigned long rc6_residency_ms(void)
 }
 
 static uint64_t
-read_report_ticks(const uint32_t *report, enum xe_oa_format_name format)
+read_report_ticks(const uint32_t *report, enum intel_xe_oa_format_name format)
 {
 
 	struct oa_format fmt = get_oa_format(format);
@@ -620,7 +582,7 @@ elapsed_delta(uint64_t t1, uint64_t t0, uint32_t width)
 static uint64_t
 oa_tick_delta(const uint32_t *report1,
 	      const uint32_t *report0,
-	      enum xe_oa_format_name format)
+	      enum intel_xe_oa_format_name format)
 {
 	return elapsed_delta(read_report_ticks(report1, format),
 			     read_report_ticks(report0, format), 32);
@@ -681,7 +643,7 @@ cs_timebase_scale(uint32_t u32_delta)
 }
 
 static uint64_t
-oa_timestamp(const uint32_t *report, enum xe_oa_format_name format)
+oa_timestamp(const uint32_t *report, enum intel_xe_oa_format_name format)
 {
 	struct oa_format fmt = get_oa_format(format);
 
@@ -691,7 +653,7 @@ oa_timestamp(const uint32_t *report, enum xe_oa_format_name format)
 static uint64_t
 oa_timestamp_delta(const uint32_t *report1,
 		   const uint32_t *report0,
-		   enum xe_oa_format_name format)
+		   enum intel_xe_oa_format_name format)
 {
 	uint32_t width = intel_graphics_ver(devid) >= IP_VER(12, 55) ? 56 : 32;
 
@@ -819,7 +781,7 @@ oa_report_is_periodic(uint32_t oa_exponent, const uint32_t *report)
 
 static uint64_t
 read_40bit_a_counter(const uint32_t *report,
-			  enum xe_oa_format_name fmt, int a_id)
+			  enum intel_xe_oa_format_name fmt, int a_id)
 {
 	struct oa_format format = get_oa_format(fmt);
 	uint8_t *a40_high = (((uint8_t *)report) + format.a40_high_off);
@@ -831,7 +793,7 @@ read_40bit_a_counter(const uint32_t *report,
 }
 
 static uint64_t
-xehpsdv_read_64bit_a_counter(const uint32_t *report, enum xe_oa_format_name fmt, int a_id)
+xehpsdv_read_64bit_a_counter(const uint32_t *report, enum intel_xe_oa_format_name fmt, int a_id)
 {
 	struct oa_format format = get_oa_format(fmt);
 	uint64_t *a64 = (uint64_t *)(((uint8_t *)report) + format.a64_off);
@@ -864,7 +826,7 @@ static void
 accumulate_uint40(int a_index,
                   uint32_t *report0,
                   uint32_t *report1,
-		  enum xe_oa_format_name format,
+		  enum intel_xe_oa_format_name format,
                   uint64_t *delta)
 {
 	uint64_t value0 = read_40bit_a_counter(report0, format, a_index),
@@ -877,7 +839,7 @@ static void
 accumulate_uint64(int a_index,
 		  const uint32_t *report0,
 		  const uint32_t *report1,
-		  enum xe_oa_format_name format,
+		  enum intel_xe_oa_format_name format,
 		  uint64_t *delta)
 {
 	uint64_t value0 = xehpsdv_read_64bit_a_counter(report0, format, a_index),
@@ -961,7 +923,7 @@ accumulator_print(struct accumulator *accumulator, const char *title)
 /* The TestOa metric set is designed so */
 static void
 sanity_check_reports(const uint32_t *oa_report0, const uint32_t *oa_report1,
-		     enum xe_oa_format_name fmt)
+		     enum intel_xe_oa_format_name fmt)
 {
 	struct oa_format format = get_oa_format(fmt);
 	uint64_t time_delta = timebase_scale(oa_timestamp_delta(oa_report1,

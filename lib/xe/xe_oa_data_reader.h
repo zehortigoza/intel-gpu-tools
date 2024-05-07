@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 /*
- * Copyright © 2023 Intel Corporation
+ * Copyright © 2024 Intel Corporation
  */
 
 #ifndef XE_OA_DATA_READER_H
@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-/* Helper to read a i915-perf recording. */
+/* Helper to read a xe-perf recording. */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -29,15 +29,15 @@ struct intel_xe_perf_timeline_item {
 
 	uint32_t hw_id;
 
-	/* User associated data with a given item on the i915 perf
+	/* User associated data with a given item on the xe perf
 	 * timeline.
 	 */
 	void *user_data;
 };
 
 struct intel_xe_perf_data_reader {
-	/* Array of pointers into the mmapped i915 perf file. */
-	const struct drm_i915_perf_record_header **records;
+	/* Array of pointers into the mmapped xe perf file. */
+	const struct intel_xe_perf_record_header **records;
 	uint32_t n_records;
 	uint32_t n_allocated_records;
 

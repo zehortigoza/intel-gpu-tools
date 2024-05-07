@@ -17,14 +17,13 @@
 #include <unistd.h>
 
 #include "drmtest.h"
-#include "i915_pciids.h"
-#include "i915_pciids_local.h"
 #include "intel_chipset.h"
 #include "intel_hwconfig_types.h"
 #include "ioctl_wrappers.h"
 #include "linux_scaffold.h"
 #include "xe_ioctl.h"
 #include "xe_oa.h"
+#include "xe_pciids.h"
 #include "xe_query.h"
 
 #include "xe_oa_metrics_tglgt1.h"
@@ -81,14 +80,14 @@ intel_xe_perf_metric_set_free(struct intel_xe_perf_metric_set *metric_set)
 }
 
 static bool
-slice_available(const struct drm_i915_query_topology_info *topo,
+slice_available(const struct intel_xe_topology_info *topo,
 		int s)
 {
 	return (topo->data[s / 8] >> (s % 8)) & 1;
 }
 
 static bool
-subslice_available(const struct drm_i915_query_topology_info *topo,
+subslice_available(const struct intel_xe_topology_info *topo,
 		   int s, int ss)
 {
 	return (topo->data[topo->subslice_offset +
@@ -97,7 +96,7 @@ subslice_available(const struct drm_i915_query_topology_info *topo,
 }
 
 static bool
-eu_available(const struct drm_i915_query_topology_info *topo,
+eu_available(const struct intel_xe_topology_info *topo,
 	     int s, int ss, int eu)
 {
 	return (topo->data[topo->eu_offset +
@@ -118,8 +117,8 @@ is_acm_gt1(const struct intel_xe_perf_devinfo *devinfo)
 #undef INTEL_VGA_DEVICE
 #define INTEL_VGA_DEVICE(_id, _info) _id
 	static const uint32_t devids[] = {
-		INTEL_DG2_G11_IDS(NULL),
-		INTEL_ATS_M75_IDS(NULL),
+		XE_DG2_G11_IDS(INTEL_VGA_DEVICE, NULL),
+		XE_ATS_M75_IDS(INTEL_VGA_DEVICE, NULL),
 	};
 #undef INTEL_VGA_DEVICE
 	for (uint32_t i = 0; i < ARRAY_SIZE(devids); i++) {
@@ -136,7 +135,7 @@ is_acm_gt2(const struct intel_xe_perf_devinfo *devinfo)
 #undef INTEL_VGA_DEVICE
 #define INTEL_VGA_DEVICE(_id, _info) _id
 	static const uint32_t devids[] = {
-		INTEL_DG2_G12_IDS(NULL),
+		XE_DG2_G12_IDS(INTEL_VGA_DEVICE, NULL),
 	};
 #undef INTEL_VGA_DEVICE
 	for (uint32_t i = 0; i < ARRAY_SIZE(devids); i++) {
@@ -153,43 +152,8 @@ is_acm_gt3(const struct intel_xe_perf_devinfo *devinfo)
 #undef INTEL_VGA_DEVICE
 #define INTEL_VGA_DEVICE(_id, _info) _id
 	static const uint32_t devids[] = {
-		INTEL_DG2_G10_IDS(NULL),
-		INTEL_ATS_M150_IDS(NULL),
-	};
-#undef INTEL_VGA_DEVICE
-	for (uint32_t i = 0; i < ARRAY_SIZE(devids); i++) {
-		if (devids[i] == devinfo->devid)
-			return true;
-	}
-
-	return false;
-}
-
-static bool
-is_mtl_gt2(const struct intel_xe_perf_devinfo *devinfo)
-{
-#undef INTEL_VGA_DEVICE
-#define INTEL_VGA_DEVICE(_id, _info) _id
-	static const uint32_t devids[] = {
-		INTEL_MTL_M_IDS(NULL),
-		INTEL_MTL_P_GT2_IDS(NULL),
-	};
-#undef INTEL_VGA_DEVICE
-	for (uint32_t i = 0; i < ARRAY_SIZE(devids); i++) {
-		if (devids[i] == devinfo->devid)
-			return true;
-	}
-
-	return false;
-}
-
-static bool
-is_mtl_gt3(const struct intel_xe_perf_devinfo *devinfo)
-{
-#undef INTEL_VGA_DEVICE
-#define INTEL_VGA_DEVICE(_id, _info) _id
-	static const uint32_t devids[] = {
-		INTEL_MTL_P_GT3_IDS(NULL),
+		XE_DG2_G10_IDS(INTEL_VGA_DEVICE, NULL),
+		XE_ATS_M150_IDS(INTEL_VGA_DEVICE, NULL),
 	};
 #undef INTEL_VGA_DEVICE
 	for (uint32_t i = 0; i < ARRAY_SIZE(devids); i++) {
@@ -206,7 +170,7 @@ intel_xe_perf_for_devinfo(uint32_t device_id,
 			  uint64_t timestamp_frequency,
 			  uint64_t gt_min_freq,
 			  uint64_t gt_max_freq,
-			  const struct drm_i915_query_topology_info *topology)
+			  const struct intel_xe_topology_info *topology)
 {
 	const struct intel_device_info *devinfo = intel_get_device_info(device_id);
 	struct intel_xe_perf *perf;
@@ -241,7 +205,7 @@ intel_xe_perf_for_devinfo(uint32_t device_id,
 			 "%s", devinfo->codename);
 	}
 
-	/* Store i915 topology. */
+	/* Store topology. */
 	perf->devinfo.max_slices = topology->max_slices;
 	perf->devinfo.max_subslices_per_slice = topology->max_subslices;
 	perf->devinfo.max_eu_per_subslice = topology->max_eus_per_subslice;
@@ -332,21 +296,6 @@ intel_xe_perf_for_devinfo(uint32_t device_id,
 			intel_xe_perf_load_metrics_acmgt3(perf);
 		else
 			return unsupported_xe_oa_platform(perf);
-	} else if (devinfo->is_meteorlake) {
-		perf->devinfo.eu_threads_count = 8;
-		/* OA reports have the timestamp value shifted to the
-		 * right by 1 bits, it also means we cannot use the
-		 * top bit for comparison.
-		 */
-		perf->devinfo.oa_timestamp_shift = -1;
-		perf->devinfo.oa_timestamp_mask = 0x7fffffff;
-
-		if (is_mtl_gt2(&perf->devinfo))
-			intel_xe_perf_load_metrics_mtlgt2(perf);
-		else if (is_mtl_gt3(&perf->devinfo))
-			intel_xe_perf_load_metrics_mtlgt3(perf);
-		else
-			return unsupported_xe_oa_platform(perf);
 	} else if (intel_graphics_ver(device_id) >= IP_VER(20, 0)) {
 		intel_xe_perf_load_metrics_lnl(perf);
 	} else {
@@ -432,7 +381,7 @@ open_master_sysfs_dir(int drm_fd)
 }
 
 static void process_hwconfig(void *data, uint32_t len,
-			     struct drm_i915_query_topology_info *topinfo)
+			     struct intel_xe_topology_info *topinfo)
 {
 
 	uint32_t *d = (uint32_t*)data;
@@ -465,7 +414,7 @@ static void process_hwconfig(void *data, uint32_t len,
 	}
 }
 
-static void query_hwconfig(int fd, struct drm_i915_query_topology_info *topinfo)
+static void query_hwconfig(int fd, struct intel_xe_topology_info *topinfo)
 {
 	struct drm_xe_device_query query = {
 		.extensions = 0,
@@ -488,12 +437,12 @@ static void query_hwconfig(int fd, struct drm_i915_query_topology_info *topinfo)
 	free(hwconfig);
 }
 
-struct drm_i915_query_topology_info *
-xe_fill_i915_topology_info(int drm_fd, uint32_t device_id, uint32_t *topology_size)
+struct intel_xe_topology_info *
+xe_fill_topology_info(int drm_fd, uint32_t device_id, uint32_t *topology_size)
 {
 	const struct intel_device_info *devinfo = intel_get_device_info(device_id);
-	struct drm_i915_query_topology_info i915_topinfo = {};
-	struct drm_i915_query_topology_info *i915_topo;
+	struct intel_xe_topology_info topinfo = {};
+	struct intel_xe_topology_info *ptopo;
 	struct drm_xe_query_topology_mask *xe_topo;
 	int pos = 0;
 	u8 *ptr;
@@ -506,27 +455,27 @@ xe_fill_i915_topology_info(int drm_fd, uint32_t device_id, uint32_t *topology_si
 
 	/* Only ADL-P, DG2 and newer ip support hwconfig, use hardcoded values for previous */
 	if (intel_graphics_ver(device_id) >= IP_VER(12, 55) || devinfo->is_alderlake_p) {
-		query_hwconfig(drm_fd, &i915_topinfo);
+		query_hwconfig(drm_fd, &topinfo);
 	} else {
-		i915_topinfo.max_slices = 1;
-		i915_topinfo.max_subslices = 6;
-		i915_topinfo.max_eus_per_subslice = 16;
+		topinfo.max_slices = 1;
+		topinfo.max_subslices = 6;
+		topinfo.max_eus_per_subslice = 16;
 	}
 
-	i915_topinfo.subslice_offset = 1;		/* always 1 */
-	i915_topinfo.subslice_stride = DIV_ROUND_UP(i915_topinfo.max_subslices, 8);
-	i915_topinfo.eu_offset = i915_topinfo.subslice_offset + i915_topinfo.subslice_stride;
-	i915_topinfo.eu_stride = DIV_ROUND_UP(i915_topinfo.max_eus_per_subslice, 8);
+	topinfo.subslice_offset = 1;		/* always 1 */
+	topinfo.subslice_stride = DIV_ROUND_UP(topinfo.max_subslices, 8);
+	topinfo.eu_offset = topinfo.subslice_offset + topinfo.subslice_stride;
+	topinfo.eu_stride = DIV_ROUND_UP(topinfo.max_eus_per_subslice, 8);
 
 	/* Allocate and start filling the struct to return */
-	*topology_size = sizeof(i915_topinfo) + i915_topinfo.eu_offset +
-		i915_topinfo.max_subslices * i915_topinfo.eu_stride;
+	*topology_size = sizeof(topinfo) + topinfo.eu_offset +
+		topinfo.max_subslices * topinfo.eu_stride;
 	*topology_size = ALIGN(*topology_size, 8);
-	i915_topo = malloc(*topology_size);
-	igt_assert(i915_topo);
+	ptopo = malloc(*topology_size);
+	igt_assert(ptopo);
 
-	memcpy(i915_topo, &i915_topinfo, sizeof(i915_topinfo));
-	ptr = (u8 *)i915_topo + sizeof(i915_topinfo);
+	memcpy(ptopo, &topinfo, sizeof(topinfo));
+	ptr = (u8 *)ptopo + sizeof(topinfo);
 	*ptr++ = 0x1;					/* slice mask */
 
 	/* Get xe topology masks */
@@ -558,19 +507,19 @@ xe_fill_i915_topology_info(int drm_fd, uint32_t device_id, uint32_t *topology_si
 		/* Follow the same order as in xe query_gt_topology() */
 		switch (topo->type) {
 		case DRM_XE_TOPO_DSS_GEOMETRY:
-			igt_assert_lte(i915_topo->subslice_stride, 8);	/* Fit in u64 mask */
-			memcpy(&geom_mask, topo->mask, i915_topo->subslice_stride);
+			igt_assert_lte(ptopo->subslice_stride, 8);	/* Fit in u64 mask */
+			memcpy(&geom_mask, topo->mask, ptopo->subslice_stride);
 			break;
 		case DRM_XE_TOPO_DSS_COMPUTE:
-			memcpy(&compute_mask, topo->mask, i915_topo->subslice_stride);
+			memcpy(&compute_mask, topo->mask, ptopo->subslice_stride);
 			geom_mask |= compute_mask;
-			memcpy(ptr, &geom_mask, i915_topo->subslice_stride);
-			ptr += i915_topo->subslice_stride;
+			memcpy(ptr, &geom_mask, ptopo->subslice_stride);
+			ptr += ptopo->subslice_stride;
 			break;
 		case DRM_XE_TOPO_EU_PER_DSS:
-			for (i = 0; i < i915_topo->max_subslices; i++) {
-				memcpy(ptr, topo->mask, i915_topo->eu_stride);
-				ptr += i915_topo->eu_stride;
+			for (i = 0; i < ptopo->max_subslices; i++) {
+				memcpy(ptr, topo->mask, ptopo->eu_stride);
+				ptr += ptopo->eu_stride;
 			}
 			break;
 		default:
@@ -583,7 +532,7 @@ next:
 
 	free(xe_topo);
 
-	return i915_topo;
+	return ptopo;
 }
 
 static struct intel_xe_perf *
@@ -594,7 +543,7 @@ xe_perf_for_fd(int drm_fd, int gt)
 	uint32_t topology_size;
 	uint64_t gt_min_freq = 0;
 	uint64_t gt_max_freq = 0;
-	struct drm_i915_query_topology_info *topology;
+	struct intel_xe_topology_info *topology;
 	struct intel_xe_perf *ret;
 	int sysfs_dir_fd = open_master_sysfs_dir(drm_fd);
 	char path_min[64], path_max[64];
@@ -624,9 +573,9 @@ xe_perf_for_fd(int drm_fd, int gt)
 
 	device_id = intel_get_drm_devid(drm_fd);
 
-	topology = xe_fill_i915_topology_info(drm_fd, device_id, &topology_size);
+	topology = xe_fill_topology_info(drm_fd, device_id, &topology_size);
 	if (!topology) {
-		igt_warn("xe_fill_i915_topology_info failed\n");
+		igt_warn("xe_fill_topology_info failed\n");
 		return NULL;
 	}
 
@@ -836,45 +785,11 @@ accumulate_uint40(int a_index,
 	*deltas += delta;
 }
 
-enum xe_oa_format_name {
-	XE_OA_FORMAT_C4_B8 = 1,
-
-	/* Gen8+ */
-	XE_OA_FORMAT_A12,
-	XE_OA_FORMAT_A12_B8_C8,
-	XE_OA_FORMAT_A32u40_A4u32_B8_C8,
-
-	/* DG2 */
-	XE_OAR_FORMAT_A32u40_A4u32_B8_C8,
-	XE_OA_FORMAT_A24u40_A14u32_B8_C8,
-
-	/* DG2/MTL OAC */
-	XE_OAC_FORMAT_A24u64_B8_C8,
-	XE_OAC_FORMAT_A22u32_R2u32_B8_C8,
-
-	/* MTL OAM */
-	XE_OAM_FORMAT_MPEC8u64_B8_C8,
-	XE_OAM_FORMAT_MPEC8u32_B8_C8,
-
-	/* Xe2+ */
-	XE_OA_FORMAT_PEC64u64,
-	XE_OA_FORMAT_PEC64u64_B8_C8,
-	XE_OA_FORMAT_PEC64u32,
-	XE_OA_FORMAT_PEC32u64_G1,
-	XE_OA_FORMAT_PEC32u32_G1,
-	XE_OA_FORMAT_PEC32u64_G2,
-	XE_OA_FORMAT_PEC32u32_G2,
-	XE_OA_FORMAT_PEC36u64_G1_32_G2_4,
-	XE_OA_FORMAT_PEC36u64_G1_4_G2_32,
-
-	XE_OA_FORMAT_MAX,
-};
-
 void intel_xe_perf_accumulate_reports(struct intel_xe_perf_accumulator *acc,
 				      const struct intel_xe_perf *perf,
 				      const struct intel_xe_perf_metric_set *metric_set,
-				      const struct drm_i915_perf_record_header *record0,
-				      const struct drm_i915_perf_record_header *record1)
+				      const struct intel_xe_perf_record_header *record0,
+				      const struct intel_xe_perf_record_header *record1)
 {
 	const uint32_t *start = (const uint32_t *)(record0 + 1);
 	const uint32_t *end = (const uint32_t *)(record1 + 1);
@@ -921,7 +836,7 @@ void intel_xe_perf_accumulate_reports(struct intel_xe_perf_accumulator *acc,
 			accumulate_uint32(start + 48 + i, end + 48 + i, deltas + idx++);
 		break;
 
-	case I915_OAR_FORMAT_A32u40_A4u32_B8_C8:
+	case XE_OAR_FORMAT_A32u40_A4u32_B8_C8:
 	case XE_OA_FORMAT_A32u40_A4u32_B8_C8:
 		if (perf->devinfo.oa_timestamp_shift >= 0)
 			deltas[idx++] += (end[1] - start[1]) << perf->devinfo.oa_timestamp_shift;
@@ -942,18 +857,7 @@ void intel_xe_perf_accumulate_reports(struct intel_xe_perf_accumulator *acc,
 			accumulate_uint32(start + 48 + i, end + 48 + i, deltas + idx++);
 		break;
 
-	case I915_OA_FORMAT_A45_B8_C8:
-		/* timestamp */
-		if (perf->devinfo.oa_timestamp_shift >= 0)
-			deltas[0] += (end[1] - start[1]) << perf->devinfo.oa_timestamp_shift;
-		else
-			deltas[0] += (end[1] - start[1]) >> (-perf->devinfo.oa_timestamp_shift);
-
-		for (i = 0; i < 61; i++)
-			accumulate_uint32(start + 3 + i, end + 3 + i, deltas + 1 + i);
-		break;
-
-	case I915_OAM_FORMAT_MPEC8u32_B8_C8: {
+	case XE_OAM_FORMAT_MPEC8u32_B8_C8: {
 		const uint64_t *start64 = (const uint64_t *)(record0 + 1);
 		const uint64_t *end64 = (const uint64_t *)(record1 + 1);
 
@@ -983,12 +887,11 @@ void intel_xe_perf_accumulate_reports(struct intel_xe_perf_accumulator *acc,
 	default:
 		assert(0);
 	}
-
 }
 
 uint64_t intel_xe_perf_read_record_timestamp(const struct intel_xe_perf *perf,
 					     const struct intel_xe_perf_metric_set *metric_set,
-					     const struct drm_i915_perf_record_header *record)
+					     const struct intel_xe_perf_record_header *record)
 {
        const uint32_t *report32 = (const uint32_t *)(record + 1);
        const uint64_t *report64 = (const uint64_t *)(record + 1);
@@ -997,11 +900,10 @@ uint64_t intel_xe_perf_read_record_timestamp(const struct intel_xe_perf *perf,
        switch (metric_set->perf_oa_format) {
        case XE_OA_FORMAT_A24u40_A14u32_B8_C8:
        case XE_OA_FORMAT_A32u40_A4u32_B8_C8:
-       case I915_OA_FORMAT_A45_B8_C8:
                ts = report32[1];
                break;
 
-       case I915_OAM_FORMAT_MPEC8u32_B8_C8:
+       case XE_OA_FORMAT_PEC64u64:
                ts = report64[1];
                break;
 
@@ -1019,7 +921,7 @@ uint64_t intel_xe_perf_read_record_timestamp(const struct intel_xe_perf *perf,
 
 uint64_t intel_xe_perf_read_record_timestamp_raw(const struct intel_xe_perf *perf,
 						 const struct intel_xe_perf_metric_set *metric_set,
-						 const struct drm_i915_perf_record_header *record)
+						 const struct intel_xe_perf_record_header *record)
 {
        const uint32_t *report32 = (const uint32_t *)(record + 1);
        const uint64_t *report64 = (const uint64_t *)(record + 1);
@@ -1028,11 +930,10 @@ uint64_t intel_xe_perf_read_record_timestamp_raw(const struct intel_xe_perf *per
        switch (metric_set->perf_oa_format) {
        case XE_OA_FORMAT_A24u40_A14u32_B8_C8:
        case XE_OA_FORMAT_A32u40_A4u32_B8_C8:
-       case I915_OA_FORMAT_A45_B8_C8:
                ts = report32[1];
                break;
 
-       case I915_OAM_FORMAT_MPEC8u32_B8_C8:
+       case XE_OAM_FORMAT_MPEC8u32_B8_C8:
                ts = report64[1];
                break;
 
@@ -1049,7 +950,7 @@ uint64_t intel_xe_perf_read_record_timestamp_raw(const struct intel_xe_perf *per
 }
 
 const char *intel_xe_perf_read_report_reason(const struct intel_xe_perf *perf,
-					     const struct drm_i915_perf_record_header *record)
+					     const struct intel_xe_perf_record_header *record)
 {
 	const uint32_t *report = (const uint32_t *) (record + 1);
 

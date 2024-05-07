@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 /*
- * Copyright © 2023 Intel Corporation
+ * Copyright © 2024 Intel Corporation
  */
 
 #ifndef XE_OA_H
@@ -21,6 +21,40 @@ extern "C" {
 #define INTEL_XE_DEVICE_MAX_SLICES           (8)
 #define INTEL_XE_DEVICE_MAX_SUBSLICES        (32)
 #define INTEL_XE_DEVICE_MAX_EUS_PER_SUBSLICE (16) /* Maximum on gfx12 */
+
+enum intel_xe_oa_format_name {
+	XE_OA_FORMAT_C4_B8 = 1,
+
+	/* Gen8+ */
+	XE_OA_FORMAT_A12,
+	XE_OA_FORMAT_A12_B8_C8,
+	XE_OA_FORMAT_A32u40_A4u32_B8_C8,
+
+	/* DG2 */
+	XE_OAR_FORMAT_A32u40_A4u32_B8_C8,
+	XE_OA_FORMAT_A24u40_A14u32_B8_C8,
+
+	/* DG2/MTL OAC */
+	XE_OAC_FORMAT_A24u64_B8_C8,
+	XE_OAC_FORMAT_A22u32_R2u32_B8_C8,
+
+	/* MTL OAM */
+	XE_OAM_FORMAT_MPEC8u64_B8_C8,
+	XE_OAM_FORMAT_MPEC8u32_B8_C8,
+
+	/* Xe2+ */
+	XE_OA_FORMAT_PEC64u64,
+	XE_OA_FORMAT_PEC64u64_B8_C8,
+	XE_OA_FORMAT_PEC64u32,
+	XE_OA_FORMAT_PEC32u64_G1,
+	XE_OA_FORMAT_PEC32u32_G1,
+	XE_OA_FORMAT_PEC32u64_G2,
+	XE_OA_FORMAT_PEC32u32_G2,
+	XE_OA_FORMAT_PEC36u64_G1_32_G2_4,
+	XE_OA_FORMAT_PEC36u64_G1_4_G2_32,
+
+	XE_OA_FORMAT_MAX,
+};
 
 struct intel_xe_perf_devinfo {
 	char devname[20];
@@ -274,8 +308,24 @@ struct intel_xe_perf {
 	struct intel_xe_perf_devinfo devinfo;
 };
 
-struct drm_i915_perf_record_header;
-struct drm_i915_query_topology_info;
+/* This is identical to 'struct drm_i915_query_topology_info' at present */
+struct intel_xe_topology_info {
+	uint16_t flags;
+	uint16_t max_slices;
+	uint16_t max_subslices;
+	uint16_t max_eus_per_subslice;
+	uint16_t subslice_offset;
+	uint16_t subslice_stride;
+	uint16_t eu_offset;
+	uint16_t eu_stride;
+	uint8_t data[];
+};
+
+struct intel_xe_perf_record_header {
+	uint32_t type;
+	uint16_t pad;
+	uint16_t size;
+};
 
 static inline bool
 intel_xe_perf_devinfo_slice_available(const struct intel_xe_perf_devinfo *devinfo,
@@ -302,8 +352,8 @@ intel_xe_perf_devinfo_eu_available(const struct intel_xe_perf_devinfo *devinfo,
 	return (devinfo->eu_masks[subslice_offset + eu / 8] & (1U << eu % 8)) != 0;
 }
 
-struct drm_i915_query_topology_info *
-xe_fill_i915_topology_info(int drm_fd, uint32_t device_id, uint32_t *topology_size);
+struct intel_xe_topology_info *
+xe_fill_topology_info(int drm_fd, uint32_t device_id, uint32_t *topology_size);
 
 struct intel_xe_perf *intel_xe_perf_for_fd(int drm_fd, int gt);
 struct intel_xe_perf *intel_xe_perf_for_devinfo(uint32_t device_id,
@@ -311,7 +361,7 @@ struct intel_xe_perf *intel_xe_perf_for_devinfo(uint32_t device_id,
 						uint64_t timestamp_frequency,
 						uint64_t gt_min_freq,
 						uint64_t gt_max_freq,
-						const struct drm_i915_query_topology_info *topology);
+						const struct intel_xe_topology_info *topology);
 void intel_xe_perf_free(struct intel_xe_perf *perf);
 
 void intel_xe_perf_add_logical_counter(struct intel_xe_perf *perf,
@@ -333,19 +383,19 @@ struct intel_xe_oa_open_prop {
 void intel_xe_perf_accumulate_reports(struct intel_xe_perf_accumulator *acc,
 				      const struct intel_xe_perf *perf,
 				      const struct intel_xe_perf_metric_set *metric_set,
-				      const struct drm_i915_perf_record_header *record0,
-				      const struct drm_i915_perf_record_header *record1);
+				      const struct intel_xe_perf_record_header *record0,
+				      const struct intel_xe_perf_record_header *record1);
 
 uint64_t intel_xe_perf_read_record_timestamp(const struct intel_xe_perf *perf,
 					     const struct intel_xe_perf_metric_set *metric_set,
-					     const struct drm_i915_perf_record_header *record);
+					     const struct intel_xe_perf_record_header *record);
 
 uint64_t intel_xe_perf_read_record_timestamp_raw(const struct intel_xe_perf *perf,
 						 const struct intel_xe_perf_metric_set *metric_set,
-						 const struct drm_i915_perf_record_header *record);
+						 const struct intel_xe_perf_record_header *record);
 
 const char *intel_xe_perf_read_report_reason(const struct intel_xe_perf *perf,
-					     const struct drm_i915_perf_record_header *record);
+					     const struct intel_xe_perf_record_header *record);
 
 int intel_xe_perf_ioctl(int fd, enum drm_xe_perf_op op, void *arg);
 void intel_xe_perf_ioctl_err(int fd, enum drm_xe_perf_op op, void *arg, int err);
