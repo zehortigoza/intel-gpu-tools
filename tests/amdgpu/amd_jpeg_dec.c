@@ -113,13 +113,14 @@ static uint32_t jpeg_chroma_base0_0;
 #define TYPE0				0
 #define TYPE1				1
 #define TYPE3				3
-#define JPEG_DEC_DT_PITCH		0x100
-#define JPEG_DEC_BSD_SIZE		0x180
-#define JPEG_DEC_LUMA_OFFSET		0
-#define JPEG_DEC_CHROMA_OFFSET		0x1000
-#define JPEG_DEC_SUM			4096
-#define IB_SIZE				4096
-#define MAX_RESOURCES			16
+#define JPEG_DEC_DT_PITCH       0x100
+#define WIDTH                   64
+#define JPEG_DEC_BSD_SIZE       0x200
+#define JPEG_DEC_LUMA_OFFSET    0
+#define JPEG_DEC_CHROMA_OFFSET  0x4000
+#define JPEG_DEC_SUM            262144
+#define IB_SIZE                 4096
+#define MAX_RESOURCES           16
 
 static bool
 is_jpeg_tests_enable(amdgpu_device_handle device_handle,
@@ -472,7 +473,7 @@ amdgpu_cs_jpeg_decode(amdgpu_device_handle device_handle,
 	int sum = 0, i, j;
 	uint32_t idx;
 
-	size = 16 * 1024; /* 8K bitstream + 8K output */
+	size = 32 * 1024; /* 8K bitstream + 24K output */
 
 	context->num_resources = 0;
 	alloc_resource(device_handle, &dec_buf, size, AMDGPU_GEM_DOMAIN_VRAM);
@@ -486,10 +487,10 @@ amdgpu_cs_jpeg_decode(amdgpu_device_handle device_handle,
 
 	if (context->jpeg_direct_reg == true) {
 		send_cmd_bitstream_direct(context, dec_buf.addr, &idx);
-		send_cmd_target_direct(context, dec_buf.addr + (size / 2), &idx);
+		send_cmd_target_direct(context, dec_buf.addr + (size / 4), &idx);
 	} else {
 		send_cmd_bitstream(context, dec_buf.addr, &idx);
-		send_cmd_target(context, dec_buf.addr + (size / 2), &idx);
+		send_cmd_target(context, dec_buf.addr + (size / 4), &idx);
 	}
 
 	amdgpu_bo_cpu_unmap(dec_buf.handle);
@@ -499,14 +500,14 @@ amdgpu_cs_jpeg_decode(amdgpu_device_handle device_handle,
 	r = amdgpu_bo_cpu_map(dec_buf.handle, (void **)&dec_buf.ptr);
 	igt_assert_eq(r, 0);
 
-	dec = dec_buf.ptr + (size / 2);
+	dec = dec_buf.ptr + (size / 4);
 
 	/* calculate result checksum */
-	for (i = 0; i < 8; i++)
-		for (j = 0; j < 8; j++)
+	for (i = 0; i < WIDTH; i++)
+		for (j = 0; j < WIDTH; j++)
 			sum += *((dec + JPEG_DEC_LUMA_OFFSET + i * JPEG_DEC_DT_PITCH) + j);
-	for (i = 0; i < 4; i++)
-		for (j = 0; j < 8; j++)
+	for (i = 0; i < (WIDTH/2); i++)
+		for (j = 0; j < WIDTH; j++)
 			sum += *((dec + JPEG_DEC_CHROMA_OFFSET + i * JPEG_DEC_DT_PITCH) + j);
 
 	amdgpu_bo_cpu_unmap(dec_buf.handle);
