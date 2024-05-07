@@ -162,7 +162,7 @@ void xe_spin_init(struct xe_spin *spin, struct xe_spin_opts *opts)
  * xe_spin_started:
  * @spin: pointer to spinner mapped bo
  *
- * Returns: true if spinner is running, othwerwise false.
+ * Returns: true if spinner is running, otherwise false.
  */
 bool xe_spin_started(struct xe_spin *spin)
 {
@@ -262,10 +262,9 @@ void xe_spin_sync_wait(int fd, struct igt_spin *spin)
  * xe_spin_free:
  * @spin: spin state from igt_spin_new()
  *
- * Wrapper to free spinner whhich is triggered by xe_spin_create.
- * which distroys vm, exec_queue and unbinds the vm which is binded to
+ * Wrapper to free spinner created by xe_spin_create. It will
+ * destroy vm, exec_queue and unbind the vm which was binded to
  * the exec_queue and bo.
- *
  */
 void xe_spin_free(int fd, struct igt_spin *spin)
 {
