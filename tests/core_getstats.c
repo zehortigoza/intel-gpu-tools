@@ -42,6 +42,7 @@
  * Test category: GEM_Legacy
  *
  * SUBTEST:
+ * Description: Tests the DRM_IOCTL_GET_STATS ioctl.
  */
 
 /**

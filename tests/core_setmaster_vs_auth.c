@@ -50,6 +50,7 @@
  * Test category: GEM_Legacy
  *
  * SUBTEST:
+ * Description: Check that drop/setMaster correctly transfer master state
  */
 
 IGT_TEST_DESCRIPTION("Check that drop/setMaster correctly transfer master "

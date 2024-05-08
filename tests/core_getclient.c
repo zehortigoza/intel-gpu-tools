@@ -41,6 +41,7 @@
  * Test category: GEM_Legacy
  *
  * SUBTEST:
+ * Description: Tests the DRM_IOCTL_GET_CLIENT ioctl.
  */
 
 IGT_TEST_DESCRIPTION("Tests the DRM_IOCTL_GET_CLIENT ioctl.");
