@@ -120,7 +120,7 @@ igt_main
 
 	igt_fixture {
 		pf_fd = drm_open_driver(DRIVER_ANY);
-		igt_require(igt_sriov_is_pf(pf_fd));
+		igt_require(igt_sriov_vfs_supported(pf_fd));
 		igt_require(igt_sriov_get_enabled_vfs(pf_fd) == 0);
 		autoprobe = igt_sriov_is_driver_autoprobe_enabled(pf_fd);
 	}
