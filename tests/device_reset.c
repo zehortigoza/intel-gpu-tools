@@ -299,6 +299,39 @@ static bool is_sysfs_cold_reset_supported(int slot_fd)
 	return true;
 }
 
+/**
+ * has_cold_reset:
+ * @fd: opened sysfs pci slot descriptor
+ * @reason: fail description
+ *
+ * Check if device supports cold reset based on slot dir or sysfs file presence.
+ *
+ * Returns:
+ * false if cold reset not supported, also writes a reason for it
+ * true if supported
+ */
+static bool has_cold_reset(int slot_dir, const char **reason)
+{
+	static const char *no_slot = "Gfx Card does not support any pcie slot for cold reset";
+	static const char *not_supported = "Gfx Card does not support cold reset";
+
+	if (slot_dir < 0) {
+		if (reason)
+			*reason = no_slot;
+
+		return false;
+	}
+
+	if (!is_sysfs_cold_reset_supported(slot_dir)) {
+		if (reason)
+			*reason = not_supported;
+
+		return false;
+	}
+
+	return true;
+}
+
 /* Unbind the driver from the device */
 static void driver_unbind(struct device_fds *dev)
 {
@@ -424,22 +457,23 @@ igt_main
 		healthcheck(&dev);
 	}
 
-	igt_subtest_group {
-		igt_fixture {
-			igt_skip_on_f(dev.fds.slot_dir < 0, "Gfx Card does not support any "
-				      "pcie slot for cold reset\n");
-			igt_skip_on(!is_sysfs_cold_reset_supported(dev.fds.slot_dir));
-		}
 
+	igt_subtest_group {
 		igt_describe("Unbinds driver from device, initiates cold reset"
 			     " then rebinds driver to device");
 		igt_subtest("unbind-cold-reset-rebind") {
+			const char *reason;
+
+			igt_skip_on_f(!has_cold_reset(dev.fds.slot_dir, &reason), "%s\n", reason);
 			unbind_reset_rebind(&dev, COLD_RESET);
 			healthcheck(&dev);
 		}
 
 		igt_describe("Cold Resets device with bound driver");
 		igt_subtest("cold-reset-bound") {
+			const char *reason;
+
+			igt_skip_on_f(!has_cold_reset(dev.fds.slot_dir, &reason), "%s\n", reason);
 			initiate_device_reset(&dev, COLD_RESET);
 			/*
 			 * Cold reset will initiate card boot sequence again,
