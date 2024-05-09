@@ -561,6 +561,27 @@ int blt_tile_to_i915_tile(enum blt_tiling_type tiling)
 }
 
 /**
+ * i915_tile_to_blt_tile:
+ * @tiling: tiling id
+ *
+ * Returns:
+ * id of blt tiling like T_LINEAR, T_XMAJOR, etc
+ */
+enum blt_tiling_type i915_tile_to_blt_tile(uint32_t tiling)
+{
+	switch (tiling) {
+	case I915_TILING_NONE:	return T_LINEAR;
+	case I915_TILING_X:	return T_XMAJOR;
+	case I915_TILING_Y:	return T_YMAJOR;
+	case I915_TILING_4:	return T_TILE4;
+	case I915_TILING_64:	return T_TILE64;
+	case I915_TILING_Yf:	return T_YFMAJOR;
+	default:
+		igt_assert_f(0, "Unknown tiling!\n");
+	}
+}
+
+/**
  * blt_get_min_stride
  * @width: width in pixels
  * @bpp: bits per pixel
