@@ -558,6 +558,7 @@ igt_main_args("b:c:f:dl", long_options, help_str, opt_handler, NULL)
 	igt_fb_t input_fb, input_fb_10bit;
 	drmModeModeInfo mode;
 	unsigned int fb_id;
+	int ret;
 
 	memset(&display, 0, sizeof(display));
 
@@ -569,6 +570,10 @@ igt_main_args("b:c:f:dl", long_options, help_str, opt_handler, NULL)
 		igt_display_require(&display, display.drm_fd);
 
 		igt_require(display.is_atomic);
+
+		ret = drmSetClientCap(display.drm_fd, DRM_CLIENT_CAP_WRITEBACK_CONNECTORS, 1);
+
+		igt_require_f(!ret, "error setting DRM_CLIENT_CAP_WRITEBACK_CONNECTORS\n");
 
 		output = kms_writeback_get_output(&display);
 		igt_require(output);
