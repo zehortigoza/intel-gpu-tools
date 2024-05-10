@@ -199,7 +199,7 @@ static struct intel_buf *init_buf(data_t *data,
 	tiling = igt_fb_mod_to_tiling(fb->modifier);
 	bpp = fb->plane_bpp[0];
 	size = fb->size;
-	width = fb->width;
+	width = fb->strides[0] / (bpp / 8);
 	height = fb->height;
 
 	name = gem_flink(data->drm_fd, fb->gem_handle);
