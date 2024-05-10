@@ -928,7 +928,7 @@ void intel_perf_accumulate_reports(struct intel_perf_accumulator *acc,
 			deltas[idx++] += (end64[1] - start64[1]) >> (-perf->devinfo.oa_timestamp_shift);
 
 		/* 64 bit clock */
-		deltas[idx++] = end64[3] - start64[3];
+		deltas[idx++] += end64[3] - start64[3];
 
 		/* 8x 32bit MPEC counters */
 		for (i = 0; i < 8; i++)
