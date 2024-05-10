@@ -214,7 +214,7 @@ typedef enum {
 
 /* Hold deltas of raw performance counters. */
 struct intel_xe_perf_accumulator {
-#define INTEL_XE_PERF_MAX_RAW_OA_COUNTERS 64
+#define INTEL_XE_PERF_MAX_RAW_OA_COUNTERS 128
 	uint64_t deltas[INTEL_XE_PERF_MAX_RAW_OA_COUNTERS];
 };
 

@@ -793,6 +793,8 @@ void intel_xe_perf_accumulate_reports(struct intel_xe_perf_accumulator *acc,
 {
 	const uint32_t *start = (const uint32_t *)(record0 + 1);
 	const uint32_t *end = (const uint32_t *)(record1 + 1);
+	const uint64_t *start64 = (const uint64_t *)(record0 + 1);
+	const uint64_t *end64 = (const uint64_t *)(record1 + 1);
 	uint64_t *deltas = acc->deltas;
 	int idx = 0;
 	int i;
@@ -857,10 +859,7 @@ void intel_xe_perf_accumulate_reports(struct intel_xe_perf_accumulator *acc,
 			accumulate_uint32(start + 48 + i, end + 48 + i, deltas + idx++);
 		break;
 
-	case XE_OAM_FORMAT_MPEC8u32_B8_C8: {
-		const uint64_t *start64 = (const uint64_t *)(record0 + 1);
-		const uint64_t *end64 = (const uint64_t *)(record1 + 1);
-
+	case XE_OAM_FORMAT_MPEC8u32_B8_C8:
 		/* 64 bit timestamp */
 		if (perf->devinfo.oa_timestamp_shift >= 0)
 			deltas[idx++] += (end64[1] - start64[1]) << perf->devinfo.oa_timestamp_shift;
@@ -868,7 +867,7 @@ void intel_xe_perf_accumulate_reports(struct intel_xe_perf_accumulator *acc,
 			deltas[idx++] += (end64[1] - start64[1]) >> (-perf->devinfo.oa_timestamp_shift);
 
 		/* 64 bit clock */
-		deltas[idx++] = end64[3] - start64[3];
+		deltas[idx++] += end64[3] - start64[3];
 
 		/* 8x 32bit MPEC counters */
 		for (i = 0; i < 8; i++)
@@ -883,7 +882,23 @@ void intel_xe_perf_accumulate_reports(struct intel_xe_perf_accumulator *acc,
 			accumulate_uint32(start + 24 + i, end + 24 + i, deltas + idx++);
 
 		break;
-		}
+
+	case XE_OA_FORMAT_PEC64u64:
+		/* 64 bit timestamp */
+		if (perf->devinfo.oa_timestamp_shift >= 0)
+			deltas[idx++] += (end64[1] - start64[1]) << perf->devinfo.oa_timestamp_shift;
+		else
+			deltas[idx++] += (end64[1] - start64[1]) >> (-perf->devinfo.oa_timestamp_shift);
+
+		/* 64 bit clock */
+		deltas[idx++] += end64[3] - start64[3];
+
+		/* 64x 64bit PEC counters */
+		for (i = 0; i < 64; i++)
+			deltas[idx++] += end64[4 + i] - start64[4 + i];
+
+		break;
+
 	default:
 		assert(0);
 	}
