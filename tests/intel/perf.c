@@ -6049,22 +6049,24 @@ igt_main
 	}
 
 	igt_subtest_group {
-		igt_fixture igt_require(intel_gen(devid) >= 12);
-
 		igt_describe("Test MI REPORT PERF COUNT for Gen 12");
 		igt_subtest_with_dynamic("gen12-mi-rpc") {
+			igt_require(intel_gen(devid) >= 12);
 			igt_require(has_class_instance(drm_fd, I915_ENGINE_CLASS_RENDER, 0));
 			__for_each_render_engine(drm_fd, e)
 				gen12_test_mi_rpc(e);
 		}
 
 		igt_describe("Test OA TLB invalidate");
-		igt_subtest_with_dynamic("gen12-oa-tlb-invalidate")
+		igt_subtest_with_dynamic("gen12-oa-tlb-invalidate") {
+			igt_require(intel_gen(devid) >= 12);
 			__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
 				gen12_test_oa_tlb_invalidate(e);
+		}
 
 		igt_describe("Measure performance for a specific context using OAR in Gen 12");
 		igt_subtest_with_dynamic("gen12-unprivileged-single-ctx-counters") {
+			igt_require(intel_gen(devid) >= 12);
 			igt_require(has_class_instance(drm_fd, I915_ENGINE_CLASS_RENDER, 0));
 			igt_require_f(render_copy, "no render-copy function\n");
 			__for_each_render_engine(drm_fd, e)
@@ -6073,11 +6075,11 @@ igt_main
 	}
 
 	igt_subtest_group {
-		igt_fixture igt_require(i915_perf_revision(drm_fd) >= 6);
-
 		igt_describe("Verify invalid class instance");
-		igt_subtest("gen12-invalid-class-instance")
+		igt_subtest("gen12-invalid-class-instance") {
+			igt_require(i915_perf_revision(drm_fd) >= 6);
 			test_invalid_class_instance();
+		}
 
 		/*
 		 * OAR and OAG use cases can be separately opened only on gen12
@@ -6096,8 +6098,10 @@ igt_main
 		}
 
 		igt_describe("Verify concurrent reads from OA buffers in different groups");
-		igt_subtest("gen12-group-concurrent-oa-buffer-read")
+		igt_subtest("gen12-group-concurrent-oa-buffer-read") {
+			igt_require(i915_perf_revision(drm_fd) >= 6);
 			test_group_concurrent_oa_buffer_read();
+		}
 	}
 
 	igt_subtest("rc6-disable")
@@ -6109,20 +6113,23 @@ igt_main
 			test_stress_open_close(e);
 
 	igt_subtest_group {
-		igt_fixture {
+		igt_describe("Verify invalid SSEU opening parameters");
+		igt_subtest_with_dynamic("global-sseu-config-invalid") {
 			igt_require(i915_perf_revision(drm_fd) >= 4);
 			igt_require(intel_graphics_ver(devid) < IP_VER(12, 50));
-		}
 
-		igt_describe("Verify invalid SSEU opening parameters");
-		igt_subtest_with_dynamic("global-sseu-config-invalid")
 			__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
 				test_global_sseu_config_invalid(ctx, e);
+		}
 
 		igt_describe("Verify specifying SSEU opening parameters");
-		igt_subtest_with_dynamic("global-sseu-config")
+		igt_subtest_with_dynamic("global-sseu-config") {
+			igt_require(i915_perf_revision(drm_fd) >= 4);
+			igt_require(intel_graphics_ver(devid) < IP_VER(12, 50));
+
 			__for_random_engine_in_each_group(perf_oa_groups, ctx, e)
 				test_global_sseu_config(ctx, e);
+		}
 	}
 
 	igt_subtest("invalid-create-userspace-config")
