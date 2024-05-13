@@ -22,7 +22,8 @@
 /**
  * TEST: Test to validate copy commands on xe
  * Category: Software building block
- * Sub-category: Blitter
+ * Mega feature: General Core features
+ * Sub-category: Blitter tests
  * Functionality: copy
  */
 

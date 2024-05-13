@@ -40,11 +40,12 @@
  * Sub-category: Synchronization
  *
  * SUBTEST: live@blt
- * Category: Selftest
  * Description: Blitter validation
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Blitter tests
  * Functionality: command streamer
  * Test category: i915 / HW
- * Sub-category: Blitter
  *
  * SUBTEST: live@client
  * Category: Selftest
@@ -376,11 +377,12 @@
  * Test category: i915
  *
  * SUBTEST: live@win_blt_copy
- * Category: Selftest
  * Description: Validation of migration interface
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Blitter tests
  * Functionality: migration interface
  * Test category: i915 / HW
- * Sub-category: Blitter
  *
  * SUBTEST: live@workarounds
  * Category: Selftest

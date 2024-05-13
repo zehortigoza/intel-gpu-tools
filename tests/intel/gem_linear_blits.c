@@ -51,11 +51,12 @@
 #include "intel_blt.h"
 /**
  * TEST: gem linear blits
- * Category: Infrastructure
  * Description: Test doing many blits with a working set larger than the aperture size.
- * Feature: blitter feature
+ * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: Blitter tests
  * Functionality: linear blits
- * Sub-category: Blitter
+ * Feature: blitter
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic

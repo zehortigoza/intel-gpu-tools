@@ -35,10 +35,11 @@
 #include "sw_sync.h"
 /**
  * TEST: gen9 exec parse
- * Feature: blitter feature, command_parser
- * Sub-category: Blitter
- * Functionality: command parser
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Blitter tests
+ * Functionality: command parser
+ * Feature: blitter, command_parser
  *
  * SUBTEST: allowed-all
  *

@@ -15,7 +15,8 @@
 /**
  * TEST: xe exercise blt
  * Category: Hardware building block
- * Sub-category: Blitter
+ * Mega feature: General Core features
+ * Sub-category: Blitter tests
  * Functionality: flat_ccs
  * Description: Exercise blitter commands on Xe
  * Test category: functionality test

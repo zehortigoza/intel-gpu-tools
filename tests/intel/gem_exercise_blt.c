@@ -13,10 +13,11 @@
 /**
  * TEST: gem exercise blt
  * Description: Exercise blitter commands
- * Feature: blitter feature
- * Sub-category: Blitter
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Blitter tests
  * Functionality: fast-copy
+ * Feature: blitter
  * Test category: GEM_Legacy
  *
  * SUBTEST: fast-copy

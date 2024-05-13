@@ -60,10 +60,11 @@
 /**
  * TEST: gem set tiling vs blt
  * Description: Check for proper synchronization of tiling changes vs. tiled gpu access.
- * Feature: blitter feature, gtt
- * Functionality: tiling
- * Sub-category: Blitter
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Blitter tests
+ * Functionality: tiling
+ * Feature: blitter, gtt
  *
  * SUBTEST: tiled-to-tiled
  * Description: Check for proper synchronization of tiled->tiled transition.

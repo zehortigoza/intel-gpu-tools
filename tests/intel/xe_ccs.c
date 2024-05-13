@@ -21,7 +21,8 @@
 /**
  * TEST: xe ccs
  * Category: Hardware building block
- * Sub-category: Blitter
+ * Mega feature: General Core features
+ * Sub-category: Blitter tests
  * Functionality: flat_ccs
  * Description: Exercise gen12 blitter with and without flatccs compression on Xe
  * Test category: functionality test
