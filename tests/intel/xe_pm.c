@@ -251,10 +251,6 @@ static void close_fw_handle(int sig)
  * Description: suspend/autoresume on %arg[1] state and exec after RPM
  * Functionality: pm - %arg[1]
  *
- * SUBTEST: %s-mocs
- * Description: test checks for mocs state before and after %arg[1] state
- * Functionality: pm - %arg[1]
- *
  * arg[1]:
  *
  * @s2idle:	s2idle
@@ -623,6 +619,17 @@ static void test_mmap(device_t device, uint32_t placement, uint32_t flags)
  *
  * Functionality: mocs
  * Run type: FULL
+ */
+/**
+ * SUBTEST: %s-mocs
+ * Description: test checks for mocs state before and after %arg[1] state
+ * Functionality: pm - %arg[1]
+ *
+ * arg[1]:
+ *
+ * @s2idle:	s2idle
+ * @s3:		s3
+ * @s4:		s4
  */
 static void test_mocs_suspend_resume(device_t device, int s_state)
 {
