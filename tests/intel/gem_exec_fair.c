@@ -29,10 +29,11 @@
 /**
  * TEST: gem exec fair
  * Description: Check that GPU time and execution order is fairly distributed across clients
- * Feature: cmd_submission
- * Sub-category: CMD submission
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: multi-client systems
+ * Feature: cmd_submission
  *
  * SUBTEST: basic-deadline
  *

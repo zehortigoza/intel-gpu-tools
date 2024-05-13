@@ -37,10 +37,11 @@
 #include "sw_sync.h"
 /**
  * TEST: gem watchdog
- * Feature: gem_core
- * Sub-category: CMD submission
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: fences
+ * Feature: gem_core
  *
  * SUBTEST: default-physical
  *

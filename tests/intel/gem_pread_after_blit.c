@@ -50,8 +50,9 @@
 /**
  * TEST: gem pread after blit
  * Description: Test pread behavior when getting values out of just-drawn-to buffers.
- * Sub-category: CMD submission
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: pread
  *
  * SUBTEST: default-hang

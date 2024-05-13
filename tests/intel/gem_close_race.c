@@ -52,9 +52,10 @@
  * TEST: gem close race
  * Description: Test try to race gem_close against workload submission.
  * Category: Infrastructure
- * Feature: synchronization feature
- * Functionality: driver handler
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: buffer management
+ * Feature: synchronization
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic-process

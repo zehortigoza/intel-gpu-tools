@@ -53,8 +53,9 @@
  * Description: Run a large nop batch to stress test the error capture code.
  * Feature: cmd_submission
  * Category: Infrastructure
- * Functionality: large nop batch
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: large nop batch
  * Test category: GEM_Legacy
  *
  * SUBTEST: exhaustive

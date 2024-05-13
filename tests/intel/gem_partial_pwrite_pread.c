@@ -41,10 +41,11 @@
 /**
  * TEST: gem partial pwrite pread
  * Description: Test pwrite/pread consistency when touching partial cachelines.
- * Feature: caching, mapping
- * Sub-category: CMD submission
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: pread/pwrite
+ * Feature: caching, mapping
  *
  * SUBTEST: reads
  * Description:

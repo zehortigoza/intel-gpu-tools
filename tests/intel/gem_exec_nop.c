@@ -51,9 +51,10 @@
 /**
  * TEST: gem exec nop
  * Category: Infrastructure
- * Feature: cmd_submission
- * Functionality: execbuf
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: execbuf
+ * Feature: cmd_submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic-parallel

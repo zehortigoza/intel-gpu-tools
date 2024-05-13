@@ -51,10 +51,11 @@
 #include "igt.h"
 /**
  * TEST: gem render linear blits
- * Feature: mapping
- * Sub-category: CMD submission
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: render blits
+ * Feature: mapping
  *
  * SUBTEST: aperture-shrink
  *

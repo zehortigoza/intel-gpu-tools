@@ -47,11 +47,12 @@
 #include "igt_types.h"
 /**
  * TEST: gem exec alignment
- * Category: Desktop client
  * Description: Exercises the basic execbuffer using object alignments
- * Feature: cmd_submission
- * Functionality: execbuf
+ * Category: Desktop client
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: execbuf
+ * Feature: cmd_submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: forked

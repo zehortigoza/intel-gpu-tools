@@ -6,6 +6,7 @@
 /**
  * TEST: Basic tests for execbuf functionality
  * Category: Hardware building block
+ * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: multi-threads
  * Test category: functionality test

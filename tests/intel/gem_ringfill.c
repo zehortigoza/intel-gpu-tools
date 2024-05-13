@@ -43,14 +43,15 @@
 #include <sys/ioctl.h>
 /**
  * TEST: gem ringfill
- * Category: Infrastructure
  * Description:
  *   Exercise many tiny batchbuffer operations, in the hope of catching failure to manage the ring
  *   properly near full.
- * Feature: cmd_submission
- * Functionality: execbuf
+ * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: execbuf
  * Test category: GEM_Legacy
+ * Feature: cmd_submission
  *
  * SUBTEST: basic-all
  * Description: Basic check to fill the ring up to maximum on all engines

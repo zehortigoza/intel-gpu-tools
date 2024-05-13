@@ -85,53 +85,59 @@
  * Sub-category: Memory management
  *
  * SUBTEST: live@execlists
- * Category: Selftest
  * Description: command submission backend
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: execlists
  * Test category: i915
- * Sub-category: CMD submission
  *
  * SUBTEST: live@gem
  * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: execbuf
  * Test category: i915
- * Sub-category: CMD submission
  *
  * SUBTEST: live@gem_contexts
- * Category: Selftest
  * Description: User isolation and execution at the context level
- * Functionality: context
+ * Category: Selftest
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: context
  * Test category: GEM_Legacy
- * Test category: i915 / HW
  *
  * SUBTEST: live@gem_execbuf
- * Category: Selftest
  * Description: command submission support
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: execbuf
  * Test category: i915
- * Sub-category: CMD submission
  *
  * SUBTEST: live@gt_ccs_mode
- * Category: Selftest
  * Description: Multi-ccs internal validation
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: multii-ccs
  * Test category: i915
- * Sub-category: CMD submission
  *
  * SUBTEST: live@gt_contexts
- * Category: Selftest
  * Description: HW isolation and HW context validation
- * Functionality: context
+ * Category: Selftest
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: context
  * Test category: HW
  *
  * SUBTEST: live@gt_engines
- * Category: Selftest
  * Description: command submission topology validation
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: command submission topology
  * Test category: i915
- * Sub-category: CMD submission
  *
  * SUBTEST: live@gt_gtt
  * Category: Selftest
@@ -148,10 +154,11 @@
  * Sub-category: Reset
  *
  * SUBTEST: live@gt_lrc
- * Category: Selftest
  * Description: HW isolation and HW context validation
- * Functionality: context
+ * Category: Selftest
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: context
  * Test category: HW
  *
  * SUBTEST: live@gt_mocs
@@ -259,6 +266,7 @@
  *
  * SUBTEST: live@memory_region_cross_tile
  * Category: Selftest
+ * Mega feature: General Core features
  * Description: Multi-tile memory topology validation
  * Functionality: memory topology
  * Sub-category: MultiTile
@@ -298,11 +306,12 @@
  * Sub-category: MultiTile
  *
  * SUBTEST: live@requests
- * Category: Selftest
  * Description: Validation of internal i915 command submission interface
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: command submission interface
  * Test category: i915
- * Sub-category: CMD submission
  *
  * SUBTEST: live@reset
  * Category: Selftest
@@ -320,6 +329,7 @@
  *
  * SUBTEST: live@scheduler
  * Category: Selftest
+ * Mega feature: General Core features
  * Sub-category: CMD Submission
  * Functionality: scheduler
  *

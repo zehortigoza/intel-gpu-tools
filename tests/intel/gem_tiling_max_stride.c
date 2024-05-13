@@ -42,10 +42,11 @@
 /**
  * TEST: gem tiling max stride
  * Description: Check that max fence stride works.
- * Feature: gtt, mapping
- * Sub-category: Memory management
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: fences
+ * Feature: gtt, mapping
  *
  * SUBTEST:
  */

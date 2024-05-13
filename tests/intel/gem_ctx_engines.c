@@ -46,9 +46,10 @@
 /**
  * TEST: gem ctx engines
  * Category: Infrastructure
- * Feature: cmd_submission
- * Functionality: context
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: context
+ * Feature: context
  * Test category: GEM_Legacy
  *
  * SUBTEST: execute-allforone

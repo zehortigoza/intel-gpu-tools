@@ -22,6 +22,7 @@
  * Description: Exercise engine barriers and their interaction with other subsystems
  * Feature: core
  * Category: Desktop client
+ * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: barrier
  * Test category: GEM_Legacy

@@ -39,10 +39,11 @@
 /**
  * TEST: gem exec suspend
  * Description: Exercise simple execbufs runs across various suspend/resume cycles.
- * Feature: cmd_submission, suspend feature
- * Sub-category: CMD submission
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: suspend
+ * Feature: cmd_submission, suspend
  *
  * SUBTEST: basic
  * Description: Check basic functionality without any suspend/resume cycle.

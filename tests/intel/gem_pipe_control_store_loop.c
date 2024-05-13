@@ -46,10 +46,11 @@
 /**
  * TEST: gem pipe control store loop
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
+ * Functionality: coherency
  * Description: Test (TLB-)Coherency of pipe_control QW writes.
  * Feature: cmd_submission
- * Functionality: coherency
- * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: fresh-buffer

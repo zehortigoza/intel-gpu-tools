@@ -36,11 +36,12 @@
 #include "igt_gt.h"
 /**
  * TEST: gem exec store
- * Category: Infrastructure
  * Description: Exercise store dword functionality using execbuf-ioctl
- * Feature: cmd_submission
- * Functionality: coherency
+ * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: coherency
+ * Feature: cmd_submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic

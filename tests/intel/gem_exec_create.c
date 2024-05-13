@@ -49,12 +49,13 @@
 /**
  * TEST: gem exec create
  * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
+ * Functionality: buffer management
  * Description: This test overloads the driver with transient active objects
  *		and checks if we don't kill the system under the memory pressure
  *		some of the symptoms this test look for include mysterious hangs.
  * Feature: cmd_submission
- * Functionality: buffer management
- * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic

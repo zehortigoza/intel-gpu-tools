@@ -37,8 +37,9 @@
  * TEST: gem shrink
  * Feature: mapping
  * Category: Desktop client
- * Functionality: buffer management
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: buffer management
  * Test category: GEM_Legacy
  *
  * SUBTEST: execbuf1

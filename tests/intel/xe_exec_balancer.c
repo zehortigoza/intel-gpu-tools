@@ -6,6 +6,7 @@
 /**
  * TEST: Basic tests for execbuf functionality for virtual and parallel exec_queues
  * Category: Hardware building block
+ * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: virtual and parallel exec_queues
  * Test category: functionality test
@@ -357,7 +358,6 @@ test_exec(int fd, int gt, int class, int n_exec_queues, int n_execs,
  * SUBTEST: many-execqueues-cm-%s
  * Description: Run compute mode virtual exec_queue arg[1] test on many exec_queues
  * Test category: stress test
- *
  *
  * SUBTEST: no-exec-cm-%s
  * Description: Run compute mode virtual exec_queue arg[1] no-exec test

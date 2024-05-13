@@ -43,11 +43,12 @@
 #include "i915/gem_create.h"
 /**
  * TEST: gem unref active buffers
- * Category: Infrastructure
  * Description: Test unreferencing of active buffers.
- * Feature: cmd_submission
- * Functionality: buffer management
+ * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: buffer management
+ * Feature: cmd_submission
  * Test category: GEM_Legacy
  *
  * SUBTEST:

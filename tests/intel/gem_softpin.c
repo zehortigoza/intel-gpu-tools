@@ -33,14 +33,15 @@
 #include "intel_allocator.h"
 /**
  * TEST: gem softpin
- * Category: Infrastructure
  * Description:
  *   Tests softpin feature with normal usage, invalid inputs scenarios and couple of eviction
  *   tests which copy buffers between CPU and GPU.
- * Feature: mapping
- * Functionality: softpin
+ * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: softpin
  * Test category: GEM_Legacy
+ * Feature: mapping
  *
  * SUBTEST: 32b-excludes-last-page
  * Description: Check the last 32b page is excluded.

@@ -6,8 +6,9 @@
 /**
  * TEST: Basic tests for execbuf functionality for virtual and parallel exec_queues
  * Category: Hardware building block
- * Sub-category: Reset
- * Functionality: gt reset
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
+ * Functionality: reset
  * Test category: functionality test
  */
 

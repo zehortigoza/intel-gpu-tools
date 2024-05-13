@@ -47,9 +47,10 @@
 /**
  * TEST: gem exec params
  * Category: Desktop client
- * Feature: cmd_submission
- * Functionality: execbuf
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: execbuf
+ * Feature: cmd_submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: DR1-dirt

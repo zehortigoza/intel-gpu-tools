@@ -6,6 +6,7 @@
 /**
  * TEST: Basic tests for execbuf functionality for virtual and parallel exec_queues
  * Category: Hardware building block
+ * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: fault mode
  * GPU requirements: GPU needs support for DRM_XE_VM_CREATE_FLAG_FAULT_MODE

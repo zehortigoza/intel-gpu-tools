@@ -45,10 +45,11 @@
  * TEST: gem bad reloc
  * Description: Simulates SNA behaviour using negative self-relocations for
  *		STATE_BASE_ADDRESS command packets.
- * Feature: cmd_submission
- * Sub-category: CMD submission
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: relocations
+ * Feature: cmd_submission
  *
  * SUBTEST: negative-reloc
  * Description: SNA behaviour is compressing batch buffer which leads to

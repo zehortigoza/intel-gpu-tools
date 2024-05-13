@@ -30,8 +30,9 @@
 /**
  * TEST: gem vm create
  * Category: Server
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: context
- * Sub-category: Compute
  * Feature: mapping
  * Test category: GEM_Legacy
  *

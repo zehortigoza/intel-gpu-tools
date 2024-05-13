@@ -49,8 +49,9 @@
 /**
  * TEST: gem pwrite
  * Feature: mapping
- * Sub-category: CMD submission
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: pwrite
  *
  * SUBTEST: basic-exhaustion

@@ -27,10 +27,11 @@
 /**
  * TEST: gem exec async
  * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
+ * Functionality: concurent writes
  * Description: Check that we can issue concurrent writes across the engines.
  * Feature: cmd_submission
- * Functionality: concurent writes
- * Sub-category: CMD submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: concurrent-writes

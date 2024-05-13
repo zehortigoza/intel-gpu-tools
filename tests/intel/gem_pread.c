@@ -47,10 +47,11 @@
 #include "igt_vgem.h"
 /**
  * TEST: gem pread
- * Feature: mapping
- * Sub-category: CMD submission
+ * Mega feature: General Core features
  * Category: Desktop client
+ * Sub-category: CMD submission
  * Functionality: pread
+ * Feature: mapping
  *
  * SUBTEST: bench
  *

@@ -28,9 +28,10 @@
 /**
  * TEST: gem close
  * Category: Infrastructure
- * Feature: mapping
+ * Mega feature: General Core features
+ * Sub-category: driver
  * Functionality: driver handler
- * Sub-category: Memory management
+ * Feature: mapping
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic

@@ -30,9 +30,10 @@
  * TEST: gem exec gttfill
  * Description: Fill the GTT with batches.
  * Category: Infrastructure
- * Feature: cmd_submission, gtt
- * Functionality: execbuf
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: execbuf
+ * Feature: cmd_submission, gtt
  * Test category: GEM_Legacy
  *
  * SUBTEST: all-engines
@@ -45,8 +46,9 @@
  * Description: Checks the correctness of handling enough batches to fill gtt for each engine
  *
  * SUBTEST: multigpu-basic
+ * Sub-category: MultiGPU
+ * Functionality: execbuf on multiGPU
  * Feature: cmd_submission, gtt, multigpu
- * Test category: MultiGPU
  */
 
 IGT_TEST_DESCRIPTION("Fill the GTT with batches.");

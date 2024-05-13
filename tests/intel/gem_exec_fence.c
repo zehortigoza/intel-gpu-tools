@@ -39,9 +39,10 @@
  * TEST: gem exec fence
  * Description: Check that execbuf waits for explicit fences
  * Category: Infrastructure
- * Feature: cmd_submission, synchronization feature
+ * Mega feature: General Core features
+ * Sub-category: Synchronization
  * Functionality: semaphore
- * Sub-category: CMD submission
+ * Feature: cmd_submission, synchronization
  * Test category: GEM_Legacy
  *
  * SUBTEST: await-hang

@@ -46,9 +46,10 @@
 /**
  * TEST: gem exec await
  * Category: Infrastructure
- * Feature: cmd_submission
- * Functionality: requests
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: requests
+ * Feature: cmd_submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: wide-all

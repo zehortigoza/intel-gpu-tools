@@ -41,8 +41,9 @@
  * TEST: gem exec whisper
  * Feature: cmd_submission
  * Category: Infrastructure
- * Functionality: execbuf
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: execbuf
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic-contexts

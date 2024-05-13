@@ -15,6 +15,7 @@
 /**
  * TEST: Tests to verify store dword functionality.
  * Category: Software building block
+ * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: intel-bb
  * Test category: functionality test

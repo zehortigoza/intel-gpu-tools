@@ -65,6 +65,7 @@
  * TEST: gem stress
  * Description: General gem coherency test.
  * Category: Desktop client
+ * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: coherency
  *

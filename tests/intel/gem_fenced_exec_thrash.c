@@ -37,6 +37,7 @@
  * TEST: gem fenced exec thrash
  * Description: Test execbuf fence accounting.
  * Category: Desktop client
+ * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: fences
  * Feature: gtt, synchronization feature

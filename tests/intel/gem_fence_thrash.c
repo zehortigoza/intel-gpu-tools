@@ -45,10 +45,11 @@
 #include "igt_x86.h"
 /**
  * TEST: gem fence thrash
- * Feature: gtt, synchronization feature
- * Sub-category: CMD submission
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: fences
+ * Feature: gtt, synchronization
  *
  * SUBTEST: bo-copy
  *

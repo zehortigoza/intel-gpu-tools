@@ -31,6 +31,7 @@
 /**
  * TEST: gem exec flush
  * Description: Basic check of flushing after batches
+ * Mega feature: General Core features
  * Sub-category: CMD submission
  * Category: Desktop client
  * Functionality: execbuf

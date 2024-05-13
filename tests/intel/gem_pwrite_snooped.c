@@ -46,6 +46,7 @@
  * Functionality: pwrite
  *
  * SUBTEST:
+ * Mega feature: General Core features
  */
 
 IGT_TEST_DESCRIPTION(

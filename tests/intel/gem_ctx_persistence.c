@@ -49,8 +49,9 @@
  * TEST: gem ctx persistence
  * Feature: context feature
  * Category: Server
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: context
- * Sub-category: Compute
  * Test category: GEM_Legacy
  *
  * SUBTEST: engines-cleanup

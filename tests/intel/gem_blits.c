@@ -31,9 +31,10 @@
 /**
  * TEST: gem blits
  * Category: Infrastructure
- * Feature: blitter
- * Functionality: command streamer
+ * Mega feature: General Core features
  * Sub-category: CMD submission
+ * Functionality: command streamer
+ * Feature: blitter
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic
