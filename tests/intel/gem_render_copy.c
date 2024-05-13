@@ -51,10 +51,11 @@
 /**
  * TEST: gem render copy
  * Description: Basic test for the render_copy() function.
- * Feature: mapping
- * Sub-category: Render copy
  * Category: Desktop client
+ * Mega feature: Render
+ * Sub-category: Render copy
  * Functionality: render_copy
+ * Feature: mapping
  *
  * SUBTEST: linear
  * Description: Test render_copy() from a mixed-tiled to a linear buffer.
