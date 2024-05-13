@@ -74,9 +74,10 @@
  *
  * SUBTEST: live@display
  * Category: Selftest
+ * Mega feature: General Display Features
+ * Sub-category: Display tests
  * Functionality: display sanity
  * Test category: i915
- * Sub-category: Display tests
  *
  * SUBTEST: live@dmabuf
  * Category: Selftest

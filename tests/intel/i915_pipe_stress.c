@@ -20,13 +20,13 @@
 #include "i915/gem.h"
 /**
  * TEST: i915 pipe stress
- * Category: Display
  * Description: Stress test how gpu and cpu behaves if maximum amount of
  *              planes, cpu and gpu utilization is achieved in order to reveal
  *              possible bandwidth/watermark and similar problems.
- * Functionality: kms_core
+ * Category: Display
  * Mega feature: General Display Features
  * Sub-category: Display Tests
+ * Functionality: kms_core
  * Test category: stress test
  *
  * SUBTEST: stress-xrgb8888-untiled
