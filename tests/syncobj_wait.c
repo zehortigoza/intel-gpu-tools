@@ -32,11 +32,12 @@
 #include "drm.h"
 /**
  * TEST: syncobj wait
- * Category: Infrastructure
  * Description: Tests for the drm sync object wait API
- * Feature: synchronization feature
- * Functionality: object wait
- * Sub-category: uapi
+ * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: Synchronization
+ * Functionality: semaphore
+ * Feature: synchronization
  * Test category: GEM_Legacy
  *
  * SUBTEST: invalid-multi-wait-all-unsubmitted

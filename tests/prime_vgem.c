@@ -32,11 +32,12 @@
 #include "intel_batchbuffer.h"	/* igt_blitter_copy() */
 /**
  * TEST: prime vgem
- * Category: Infrastructure
  * Description: Basic check of polling for prime/vgem fences.
- * Feature: prime
+ * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: Core
  * Functionality: mock device
- * Sub-category: DRM
+ * Feature: prime
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic-blt

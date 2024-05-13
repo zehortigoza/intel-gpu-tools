@@ -33,11 +33,12 @@
 
 /**
  * TEST: core getclient
- * Category: Desktop client
  * Description: Tests the DRM_IOCTL_GET_CLIENT ioctl.
- * Feature: core
- * Functionality: permission management for clients
+ * Category: Desktop client
+ * Mega feature: General Core features
  * Sub-category: DRM
+ * Functionality: permission management for clients
+ * Feature: core
  * Test category: GEM_Legacy
  *
  * SUBTEST:

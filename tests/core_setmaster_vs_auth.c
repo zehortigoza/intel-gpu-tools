@@ -42,11 +42,12 @@
 #include "igt_device.h"
 /**
  * TEST: core setmaster vs auth
- * Category: Desktop client
  * Description: Check that drop/setMaster correctly transfer master state
- * Feature: core
- * Functionality: permission management for clients
+ * Category: Desktop client
+ * Mega feature: General Core features
  * Sub-category: DRM
+ * Functionality: permission management for clients
+ * Feature: core
  * Test category: GEM_Legacy
  *
  * SUBTEST:

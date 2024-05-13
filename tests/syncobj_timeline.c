@@ -32,11 +32,12 @@
 #include "drm.h"
 /**
  * TEST: syncobj timeline
- * Category: Infrastructure
  * Description: Tests for the drm timeline sync object API
- * Feature: synchronization feature
- * Functionality: sync_object
- * Sub-category: uapi
+ * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: Synchronization
+ * Functionality: semaphore
+ * Feature: synchronization
  * Test category: GEM_Legacy
  *
  * SUBTEST: 32bits-limit

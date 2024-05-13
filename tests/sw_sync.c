@@ -40,11 +40,12 @@
 
 /**
  * TEST: sw sync
- * Category: Infrastructure
  * Description: Test SW Sync Framework
- * Feature: semaphore
- * Functionality: sw sync framework
- * Sub-category: uapi
+ * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: Synchronization
+ * Functionality: semaphore
+ * Feature: synchronization
  * Test category: GEM_Legacy
  *
  * SUBTEST: alloc_fence

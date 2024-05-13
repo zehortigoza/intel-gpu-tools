@@ -28,11 +28,12 @@
 #include "drm.h"
 /**
  * TEST: syncobj basic
- * Category: Infrastructure
  * Description: Basic check for drm sync objects.
- * Feature: semaphore
- * Functionality: drm sync object
+ * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: Synchronization
+ * Functionality: semaphore
+ * Feature: synchronization
  * Test category: GEM_Legacy
  *
  * SUBTEST: bad-create-flags

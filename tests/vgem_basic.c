@@ -33,10 +33,11 @@
 #include <dirent.h>
 /**
  * TEST: vgem basic
- * Category: Infrastructure
  * Description: Basic sanity check of Virtual GEM module (vGEM).
- * Functionality: mock device
+ * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: Core
+ * Functionality: mock device
  * Test category: GEM_Legacy
  * Feature: vgem
  *

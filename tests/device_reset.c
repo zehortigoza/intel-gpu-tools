@@ -16,12 +16,12 @@
 #include "igt_kmod.h"
 /**
  * TEST: device reset
- * Category: Hardware building block
  * Description: Examine behavior of a driver on device sysfs reset
- * Category: Server
- * Feature: reset
+ * Category: Hardware building block
+ * Mega feature: General Core features
+ * Sub-category: Reset tests
  * Functionality: sysfs reset
- * Sub-category: Reset
+ * Feature: reset
  * Test category: GEM_Legacy
  *
  * SUBTEST: cold-reset-bound
@@ -38,7 +38,6 @@
  *   Unbinds driver from device, initiates reset then rebinds driver to device
  *   validating device resets
  * Category: Infrastructure
- * Sub-category: SysMan
  * Feature: reset, sriov-reset
  */
 

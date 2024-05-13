@@ -154,6 +154,8 @@
  * SUBTEST: live@gt_heartbeat
  * Category: Selftest
  * Description: Stall detection interface validation
+ * Mega feature: General Core features
+ * Sub-category: Reset tests
  * Functionality: heartbeat
  * Test category: i915
  * Sub-category: Reset
@@ -242,7 +244,7 @@
  * Description: reset handling after stall detection
  * Functionality: hangcheck
  * Test category: i915
- * Sub-category: Reset
+ * Sub-category: Reset tests
  *
  * SUBTEST: live@hugepages
  * Description: Large page support validation
@@ -328,11 +330,12 @@
  * Test category: i915
  *
  * SUBTEST: live@reset
- * Category: Selftest
  * Description: engine/GT resets
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Reset tests
  * Functionality: engine/GT reset
  * Test category: HW
- * Sub-category: Reset
  *
  * SUBTEST: live@sanitycheck
  * Description: Checks the selftest infrastructure itself

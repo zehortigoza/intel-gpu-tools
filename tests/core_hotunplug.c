@@ -42,11 +42,12 @@
 /**
  * TEST: core hotunplug
  * Description: Examine behavior of a driver on device hot unplug
- * Feature: SMI, core
- * Test category: functionality test
  * Category: Software building block
+ * Mega feature: General Core features
  * Sub-category: driver
  * Functionality: device hotplug
+ * Feature: SMI, core
+ * Test category: functionality test
  *
  * SUBTEST: hotrebind
  * Description: Check if the driver can be cleanly rebound to a device with a

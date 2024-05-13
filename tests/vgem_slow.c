@@ -32,11 +32,12 @@
 #include <dirent.h>
 /**
  * TEST: vgem slow
- * Category: Infrastructure
  * Description: Extended sanity check of Virtual GEM module (vGEM).
- * Feature: vgem
+ * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: Core
  * Functionality: mock device
- * Sub-category: DRM
+ * Feature: vgem
  * Test category: GEM_Legacy
  *
  * SUBTEST: nohang
