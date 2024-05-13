@@ -12,7 +12,8 @@
  * TEST: intel hwmon
  * Description: Tests for intel hwmon
  * Category: Software Building Block
- * Sub-category: RAS
+ * Mega feature: RAS
+ * Sub-category: RAS tests
  * Functionality: hwmon
  * Test category: functionality
  *
