@@ -48,11 +48,12 @@
 /**
  * TEST: perf
  * Description: Test the i915 perf metrics streaming interface
+ * Category: Desktop client
+ * Mega feature: Performance interface
+ * Sub-category: Performance tests
+ * Functionality: oa
  * Feature: i915 streaming interface, oa
  * Test category: Perf
- * Functionality: oa
- * Sub-category: Performance
- * Category: Desktop client
  *
  * SUBTEST: blocking
  * Description: Test blocking read with default hrtimer frequency

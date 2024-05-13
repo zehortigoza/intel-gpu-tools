@@ -52,11 +52,12 @@
 /**
  * TEST: perf pmu
  * Description: Test the i915 pmu perf interface
- * Feature: i915 pmu perf interface, pmu feature
- * Test category: Perf
- * Sub-category: Performance
  * Category: Desktop client
+ * Mega feature: Performance interface
+ * Sub-category: Performance tests
  * Functionality: pmu
+ * Feature: i915 pmu perf interface, pmu
+ * Test category: Perf
  *
  * SUBTEST: all-busy-check-all
  * Description: Test the i915 pmu perf interface

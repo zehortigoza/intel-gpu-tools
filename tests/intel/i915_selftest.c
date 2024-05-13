@@ -322,11 +322,12 @@
  * Test category: i915
  *
  * SUBTEST: live@perf
- * Category: Selftest
- * Feature: i915 perf selftests
  * Description: Basic i915 module perf unit selftests
+ * Category: Selftest
+ * Mega feature: Performance interface
+ * Sub-category: Performance tests
  * Functionality: perf
- * Sub-category: Performance
+ * Feature: i915 perf selftests
  *
  * SUBTEST: live@remote_tiles
  * Description: Tile meta data validation
@@ -590,42 +591,48 @@
  *
  * SUBTEST: perf
  * Category: Selftest
- * Feature: i915 perf selftests
+ * Mega feature: Performance interface
+ * Sub-category: Performance tests
  * Functionality: oa
- * Sub-category: Performance
+ * Feature: oa
  *
  * SUBTEST: perf@blt
- * Category: Selftest
- * Feature: i915 perf selftests
  * Description: Basic i915 module perf unit selftests
+ * Category: Selftest
+ * Mega feature: Performance interface
+ * Sub-category: Performance tests
  * Functionality: perf
- * Sub-category: Performance
+ * Feature: i915 perf selftests
  *
  * SUBTEST: perf@engine_cs
- * Category: Selftest
- * Feature: i915 perf selftests
  * Description: Basic i915 module perf unit selftests
+ * Category: Selftest
+ * Mega feature: Performance interface
+ * Sub-category: Performance tests
  * Functionality: perf
- * Sub-category: Performance
+ * Feature: i915 perf selftests
  *
  * SUBTEST: perf@region
- * Category: Selftest
- * Feature: i915 perf selftests
  * Description: Basic i915 module perf unit selftests
+ * Category: Selftest
+ * Mega feature: Performance interface
+ * Sub-category: Performance tests
  * Functionality: perf
- * Sub-category: Performance
+ * Feature: i915 perf selftests
  *
  * SUBTEST: perf@request
- * Category: Selftest
  * Description: Basic i915 module perf unit selftests
+ * Category: Selftest
+ * Mega feature: Performance interface
+ * Sub-category: Performance tests
  * Functionality: perf
- * Sub-category: Performance
  *
  * SUBTEST: perf@scheduler
- * Category: Selftest
  * Description: Basic i915 module perf unit selftests
+ * Category: Selftest
+ * Mega feature: Performance interface
+ * Sub-category: Performance tests
  * Functionality: perf
- * Sub-category: Performance
  */
 
 IGT_TEST_DESCRIPTION("Basic unit tests for i915.ko");
