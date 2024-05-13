@@ -15,6 +15,7 @@
 /**
  * TEST: Tests to verify atomic functionality.
  * Category: Software building block
+ * Mega feature: General Core features
  * Sub-category: HW
  * Functionality: intel-bb
  * Test category: functionality test

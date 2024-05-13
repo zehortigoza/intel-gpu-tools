@@ -5,11 +5,12 @@
 
 /**
  * TEST: Check debugfs userspace API
+ * Description: Validate debugfs entries
  * Category: Software building block
+ * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: debugfs
  * Test category: functionality test
- * Description: Validate debugfs entries
  */
 
 #include <fcntl.h>

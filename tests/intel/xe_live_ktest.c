@@ -5,6 +5,7 @@
  * TEST: Xe driver live kunit tests
  * Description: Xe driver live dmabuf unit tests
  * Category: Software building block
+ * Mega feature: General Core features
  * Sub-category: kunit
  * Functionality: kunit test
  * Test category: functionality test

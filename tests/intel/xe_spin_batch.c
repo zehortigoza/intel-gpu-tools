@@ -9,6 +9,7 @@
 /**
  * TEST: Tests for spin batch submissons.
  * Category: Software building block
+ * Mega feature: General Core features
  * Sub-category: IGT Lib
  * Functionality: parallel execution
  * Test category: functionality test
