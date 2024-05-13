@@ -51,8 +51,9 @@
 /**
  * TEST: gem gpgpu fill
  * Category: Server
+ * Mega feature: Compute
+ * Sub-category: GPGPU tests
  * Functionality: gpgpu_fill
- * Sub-category: GPGPU
  * Test category: GEM_Legacy
  * Feature: compute
  *
