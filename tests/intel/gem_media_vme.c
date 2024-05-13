@@ -38,10 +38,11 @@
 /**
  * TEST: gem media vme
  * Description: A very simple workload for the VME media block.
- * Feature: media feature
- * Sub-category: Media
  * Category: Desktop client
+ * Mega feature: Media
+ * Sub-category: Media tests
  * Functionality: vme media block
+ * Feature: media
  *
  * SUBTEST:
  */

@@ -48,10 +48,11 @@
 /**
  * TEST: gem media fill
  * Description: Basic test for the media_fill() function, a very simple workload for the Media pipeline.
- * Feature: media feature
- * Sub-category: Media
  * Category: Desktop client
- * Functionality: fill media
+ * Mega feature: Media
+ * Sub-category: Media tests
+ * Functionality: fill surface with media block
+ * Feature: media
  *
  * SUBTEST: media-fill
  */
