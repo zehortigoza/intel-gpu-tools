@@ -617,14 +617,14 @@ static void test_mmap(device_t device, uint32_t placement, uint32_t flags)
 }
 
 /**
- * SUBTEST: mocs_suspend_resume
+ * SUBTEST: mocs-rpm
  * Description:
  *     Validate mocs register contents over suspend resume
  *
  * Functionality: mocs
  * Run type: FULL
  */
-static void test_mocs_suspend_resume(device_t device, bool runtime_sr, enum igt_suspend_state state)
+static void test_mocs_suspend_resume(device_t device, int s_state)
 {
 	int gt;
 
@@ -639,16 +639,16 @@ static void test_mocs_suspend_resume(device_t device, bool runtime_sr, enum igt_
 		igt_debugfs_dump(device.fd_xe, path);
 		igt_debugfs_read(device.fd_xe, path, mocs_content_pre);
 
-		if (runtime_sr) {
+		if (s_state == NO_SUSPEND) {
 			fw_handle = igt_debugfs_open(device.fd_xe, "forcewake_all", O_RDONLY);
 			igt_assert(fw_handle >= 0);
 			igt_assert(igt_get_runtime_pm_status() == IGT_RUNTIME_PM_STATUS_ACTIVE);
 
-			/* Runtime suspend  */
+			/* Make sure runtime pm goes back to suspended status after closing forcewake_all */
 			close(fw_handle);
 			igt_assert(igt_wait_for_pm_status(IGT_RUNTIME_PM_STATUS_SUSPENDED));
 		} else {
-			igt_system_suspend_autoresume(state, SUSPEND_TEST_NONE);
+			igt_system_suspend_autoresume(s_state, SUSPEND_TEST_NONE);
 		}
 		igt_assert(igt_debugfs_exists(device.fd_xe, path, O_RDONLY));
 		igt_debugfs_dump(device.fd_xe, path);
@@ -758,7 +758,7 @@ igt_main
 		}
 
 		igt_subtest_f("%s-mocs", s->name)
-			test_mocs_suspend_resume(device, 0, s->state);
+			test_mocs_suspend_resume(device, s->state);
 	}
 
 	for (const struct d_state *d = d_states; d->name; d++) {
@@ -824,8 +824,8 @@ igt_main
 			igt_pm_set_autosuspend_delay(device.pci_xe, delay_ms);
 		}
 
-		igt_subtest("mocs_suspend_resume")
-			test_mocs_suspend_resume(device, 1, 0);
+		igt_subtest("mocs-rpm")
+			test_mocs_suspend_resume(device, NO_SUSPEND);
 	}
 
 	igt_fixture {
