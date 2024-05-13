@@ -6,7 +6,8 @@
 /**
  * TEST: Check compute-related preemption functionality
  * Category: Hardware building block
- * Sub-category: Compute
+ * Mega feature: Compute
+ * Sub-category: Compute tests
  * Functionality: OpenCL kernel
  * Test category: functionality test
  */

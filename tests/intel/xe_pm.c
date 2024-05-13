@@ -618,7 +618,7 @@ static void test_mmap(device_t device, uint32_t placement, uint32_t flags)
  * Description:
  *     Validate mocs register contents over suspend resume
  *
- * Functionality: mocs
+ * Functionality: mocs registers
  * Run type: FULL
  */
 /**

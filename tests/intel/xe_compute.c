@@ -6,7 +6,8 @@
 /**
  * TEST: Check compute-related functionality
  * Category: Hardware building block
- * Sub-category: Compute
+ * Mega feature: Compute
+ * Sub-category: Compute tests
  * Test category: functionality test
  */
 

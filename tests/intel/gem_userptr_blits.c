@@ -70,9 +70,10 @@
 /**
  * TEST: gem userptr blits
  * Category: Server
+ * Mega feature: Compute
+ * Sub-category: Compute tests
+ * Functionality: userptr blits
  * Feature: userptr
- * Functionality: buffer management
- * Sub-category: Compute
  * Test category: GEM_Legacy
  *
  * SUBTEST: access-control
