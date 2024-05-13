@@ -655,7 +655,10 @@ static void test_mocs_suspend_resume(device_t device, int s_state)
 			close(fw_handle);
 			igt_assert(igt_wait_for_pm_status(IGT_RUNTIME_PM_STATUS_SUSPENDED));
 		} else {
-			igt_system_suspend_autoresume(s_state, SUSPEND_TEST_NONE);
+			enum igt_suspend_test test = s_state == SUSPEND_STATE_DISK ?
+				SUSPEND_TEST_DEVICES : SUSPEND_TEST_NONE;
+
+			igt_system_suspend_autoresume(s_state, test);
 		}
 		igt_assert(igt_debugfs_exists(device.fd_xe, path, O_RDONLY));
 		igt_debugfs_dump(device.fd_xe, path);
