@@ -43,8 +43,9 @@
 /**
  * TEST: gem streaming writes
  * Description: Test of streaming writes into active GPU sources
- * Sub-category: Memory management
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: barrier
  *
  * SUBTEST: batch-cpu

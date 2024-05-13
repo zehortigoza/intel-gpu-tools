@@ -50,10 +50,11 @@
  * Description:
  *   Tests fence management problems related to tiled blits by performing many blits on tiled
  *   buffer objects with fences enabled and with working set larger than the aperture size.
- * Feature: gtt, mapping
- * Sub-category: Memory management
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: tiled blits
+ * Feature: gtt, mapping
  *
  * SUBTEST: basic
  * Description: Check basic functionality.

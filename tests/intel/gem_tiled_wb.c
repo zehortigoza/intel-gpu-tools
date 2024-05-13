@@ -50,10 +50,11 @@
  * Description:
  *   This is a test of write-combining mmap's behavior on tiled objects with respect to the reported
  *   swizzling value.
- * Feature: caching, gtt
- * Sub-category: Memory management
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: cache
+ * Feature: caching, gtt
  *
  * SUBTEST:
  */

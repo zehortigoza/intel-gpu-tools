@@ -44,8 +44,9 @@
 #include "igt.h"
 /**
  * TEST: gem gtt hog
- * Sub-category: Memory management
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: gtt
  *
  * SUBTEST:

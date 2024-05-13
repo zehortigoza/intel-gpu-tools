@@ -41,10 +41,11 @@
 /**
  * TEST: gem mmap
  * Description: Basic MMAP IOCTL tests for memory regions.
- * Feature: mapping
- * Sub-category: Memory management
  * Category: Desktop client
- * Functionality: mmap
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
+ * Functionality: mapping
+ * Feature: mapping
  *
  * SUBTEST: bad-object
  * Description: Verify mapping to invalid gem objects won't be created.

@@ -61,10 +61,11 @@
 /**
  * TEST: gem tiled swapping
  * Description: Exercise swizzle code for swapping.
- * Feature: gtt, mapping
- * Sub-category: Memory management
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: swapping
+ * Feature: gtt, mapping
  *
  * SUBTEST: non-threaded
  *

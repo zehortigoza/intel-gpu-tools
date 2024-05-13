@@ -40,12 +40,13 @@
 #include "i915/gem_create.h"
 /**
  * TEST: gem madvise
- * Category: Desktop client
  * Description: Checks that the kernel reports EFAULT when trying to use purged bo.
- * Feature: caching, mapping
- * Functionality: buffer management
- * Sub-category: Memory management
+ * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
+ * Functionality: madvise
  * Test category: GEM_Legacy
+ * Feature: caching, mapping
  *
  * SUBTEST: dontneed-after-mmap
  * Description: Check signal for Segmentation Fault and bus error after

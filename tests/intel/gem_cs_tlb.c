@@ -54,11 +54,12 @@
 #include "igt.h"
 /**
  * TEST: gem cs tlb
- * Category: Infrastructure
  * Description: Check whether we correctly invalidate the cs tlb.
- * Feature: mapping
+ * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: tlb
- * Sub-category: Memory management
+ * Feature: mapping
  * Test category: GEM_Legacy
  *
  * SUBTEST: engines

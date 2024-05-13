@@ -42,10 +42,11 @@
 /**
  * TEST: gem ppgtt
  * Category: Desktop client
- * Feature: mapping, xorg_dri2
- * Functionality: buffer management
- * Sub-category: Memory management
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
+ * Functionality: ppgtt
  * Test category: GEM_Legacy
+ * Feature: mapping, xorg_dri2
  *
  * SUBTEST: blt-vs-render-ctx0
  *

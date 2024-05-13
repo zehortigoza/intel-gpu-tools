@@ -47,10 +47,11 @@
 #include "i915/gem_create.h"
 /**
  * TEST: gem tiled wc
- * Feature: caching, gtt
- * Sub-category: Memory management
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: cache
+ * Feature: caching, gtt
  *
  * SUBTEST:
  */

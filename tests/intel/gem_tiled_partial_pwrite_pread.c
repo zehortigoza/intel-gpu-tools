@@ -41,10 +41,11 @@
 /**
  * TEST: gem tiled partial pwrite pread
  * Description: Test pwrite/pread consistency when touching partial cachelines.
- * Feature: gtt, mapping
- * Sub-category: Memory management
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: tiled pread/pwrite
+ * Feature: gtt, mapping
  *
  * SUBTEST: reads
  *

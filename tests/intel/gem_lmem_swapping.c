@@ -26,11 +26,12 @@
 #include "intel_mocs.h"
 /**
  * TEST: gem lmem swapping
- * Category: Server
  * Description: Exercise local memory swapping.
+ * Category: Server
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
+ * Functionality: local memory
  * Feature: local_memory
- * Functionality: buffer management
- * Sub-category: Memory management
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic

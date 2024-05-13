@@ -6,7 +6,8 @@
 /**
  * TEST: Test if the driver is capable of doing mmap on different memory regions
  * Category: Software building block
- * Sub-category: Memory management
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: mmap
  */
 

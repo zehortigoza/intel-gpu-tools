@@ -40,10 +40,11 @@
 #include "i915/gem_create.h"
 /**
  * TEST: gem readwrite
- * Feature: mapping
- * Sub-category: Memory management
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: read/write memory
+ * Feature: mapping
  *
  * SUBTEST: beyond-EOB
  *

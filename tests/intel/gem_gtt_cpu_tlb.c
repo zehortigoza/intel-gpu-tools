@@ -46,10 +46,12 @@
 /**
  * TEST: gem gtt cpu tlb
  * Description: Check whether gtt tlbs for cpu access are correctly invalidated.
- * Feature: gtt, mapping
- * Sub-category: Memory management
  * Category: Desktop client
- * Functionality: mmap
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
+ * Functionality: mapping
+ * Feature: gtt, mapping
+ *
  *
  * SUBTEST:
  */

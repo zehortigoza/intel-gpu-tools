@@ -40,9 +40,10 @@ IGT_TEST_DESCRIPTION(
 /**
  * TEST: prime mmap kms
  * Category: Infrastructure
- * Feature: prime
- * Functionality: prime
+ * Mega feature: General Core features
  * Sub-category: DRM
+ * Functionality: prime
+ * Feature: prime
  * Test category: GEM_Legacy
  *
  * SUBTEST: buffer-sharing

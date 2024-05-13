@@ -26,11 +26,11 @@
 /**
  * TEST: dmabuf
  * Description: Kernel selftests for the dmabuf API
- * Feature: mapping, prime
  * Category: Infrastructure
- * Description: drm_mm range manager SW validation
+ * Mega feature: General Core features
  * Functionality: drm_mm
- * Sub-category: Memory management
+ * Sub-category: Memory management tests
+ * Feature: mapping, prime
  * Test category: GEM_Legacy
  *
  * SUBTEST: all-tests

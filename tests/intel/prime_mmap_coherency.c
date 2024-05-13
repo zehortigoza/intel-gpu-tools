@@ -33,13 +33,14 @@
 #include "igt.h"
 /**
  * TEST: prime mmap coherency
- * Category: Infrastructure
  * Description:
  *   Test dma-buf mmap on !llc platforms mostly and provoke coherency bugs so we know for sure where
  *   we need the sync ioctls.
+ * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
+ * Functionality: prime
  * Feature: prime
- * Functionality: prime mmap
- * Sub-category: Memory management
  * Test category: GEM_Legacy
  *
  * SUBTEST: ioctl-errors

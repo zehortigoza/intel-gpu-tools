@@ -10,10 +10,11 @@
 /**
  * TEST: gem lmem evict
  * Description: Force tiny lmem size for easily testing eviction scenarios.
- * Feature: local_memory
- * Sub-category: Memory management
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: local memory eviction
+ * Feature: local_memory
  * Test category: GEM_Legacy
  *
  * SUBTEST: dontneed-evict-race

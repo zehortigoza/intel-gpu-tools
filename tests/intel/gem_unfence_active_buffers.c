@@ -55,10 +55,11 @@
 /**
  * TEST: gem unfence active buffers
  * Description: Check for use-after-free in the fence stealing code.
- * Feature: synchronization feature
- * Sub-category: Memory management
  * Category: Desktop client
- * Functionality: fences
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
+ * Functionality: use-after-free
+ * Feature: synchronization
  *
  * SUBTEST:
  */

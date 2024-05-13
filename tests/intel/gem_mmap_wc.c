@@ -41,10 +41,11 @@
 #include "i915/gem_create.h"
 /**
  * TEST: gem mmap wc
- * Feature: caching, mapping
- * Sub-category: Memory management
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: cache
+ * Feature: caching, mapping
  *
  * SUBTEST: bad-object
  * SUBTEST: bad-offset

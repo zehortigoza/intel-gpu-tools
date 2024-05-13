@@ -26,10 +26,11 @@
 /**
  * TEST: drm mm
  * Description: Basic sanity check of DRM's range manager (struct drm_mm)
- * Feature: mapping
  * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: drm_mm
- * Sub-category: Memory management
+ * Feature: mapping
  * Test category: GEM_Legacy
  *
  * SUBTEST: drm_mm

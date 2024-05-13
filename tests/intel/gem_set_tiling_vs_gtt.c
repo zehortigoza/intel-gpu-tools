@@ -41,10 +41,11 @@
 /**
  * TEST: gem set tiling vs gtt
  * Description: Check set_tiling vs gtt mmap coherency.
- * Feature: gtt
- * Sub-category: Memory management
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: tiling vs gtt coherency
+ * Feature: gtt
  *
  * SUBTEST:
  */

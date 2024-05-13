@@ -54,11 +54,12 @@
  * Sub-category: uapi
  *
  * SUBTEST: live@coherency
- * Category: Selftest
  * Description: Cache management
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: cache
  * Test category: i915 / HW
- * Sub-category: Memory management
  *
  * SUBTEST: live@debugger
  * Category: Selftest
@@ -74,15 +75,17 @@
  *
  * SUBTEST: live@dmabuf
  * Category: Selftest
- * Functionality: buffer management
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
+ * Functionality: dmabuf test
  * Test category: i915
- * Sub-category: Memory management
  *
  * SUBTEST: live@evict
  * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: GTT eviction
  * Test category: i915
- * Sub-category: Memory management
  *
  * SUBTEST: live@execlists
  * Description: command submission backend
@@ -140,11 +143,12 @@
  * Test category: i915
  *
  * SUBTEST: live@gt_gtt
- * Category: Selftest
  * Description: Validation of virtual address management and execution
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: gtt
  * Test category: HW
- * Sub-category: Memory management
  *
  * SUBTEST: live@gt_heartbeat
  * Category: Selftest
@@ -183,16 +187,18 @@
  *
  * SUBTEST: live@gt_tlb
  * Category: Selftest
- * Test category: Memory Management
- * Sub-category: Memory management
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: tlb
+ * Test category: Memory Management
  *
  * SUBTEST: live@gtt
- * Category: Selftest
  * Description: Virtual address management interface validation
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: virtual address
  * Test category: i915
- * Sub-category: Memory management
  *
  * SUBTEST: live@gtt_l4wa
  * Category: Selftest
@@ -237,11 +243,12 @@
  * Sub-category: Reset
  *
  * SUBTEST: live@hugepages
- * Category: Selftest
  * Description: Large page support validation
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: large page
  * Test category: i915
- * Sub-category: Memory management
  *
  * SUBTEST: live@late_gt_pm
  * Category: Selftest
@@ -251,32 +258,36 @@
  * Sub-category: Power management
  *
  * SUBTEST: live@lmem
- * Category: Selftest
- * Feature: local_memory
  * Description: Basic i915 driver module selftests
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
+ * Feature: local_memory
  * Functionality: local memory
- * Sub-category: Memory management
  *
  * SUBTEST: live@memory_region
- * Category: Selftest
  * Description: memory topology validation and migration checks
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: memory topology
  * Test category: i915 / HW
- * Sub-category: Memory management
  *
  * SUBTEST: live@memory_region_cross_tile
  * Category: Selftest
  * Mega feature: General Core features
  * Description: Multi-tile memory topology validation
- * Functionality: memory topology
+ * Category: Selftest
  * Sub-category: MultiTile
+ * Functionality: memory topology
  *
  * SUBTEST: live@mman
- * Category: Selftest
  * Description: memory management validation
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: mapping
  * Test category: i915
- * Sub-category: Memory management
  *
  * SUBTEST: live@obj_lock
  * Category: Selftest
@@ -357,11 +368,12 @@
  * Sub-category: Power management
  *
  * SUBTEST: live@vma
- * Category: Selftest
  * Description: Per-object virtual address management
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: virtual address
  * Test category: i915
- * Sub-category: Memory management
  *
  * SUBTEST: live@win_blt_copy
  * Category: Selftest
@@ -384,11 +396,12 @@
  * Feature: gem_core
  *
  * SUBTEST: mock@buddy
- * Category: Selftest
  * Description: Buddy allocation
+ * Category: Selftest
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: buddy allocation
  * Test category: DRM
- * Sub-category: Memory management
  *
  * SUBTEST: mock@contexts
  * Category: Selftest
@@ -511,9 +524,10 @@
  *
  * SUBTEST: mock@tlb
  * Category: Selftest
- * Test category: Memory Management
- * Sub-category: Memory management
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
  * Functionality: tlb
+ * Test category: Memory Management
  *
  * SUBTEST: mock@uncore
  * Category: Selftest

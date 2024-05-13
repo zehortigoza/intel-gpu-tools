@@ -53,10 +53,11 @@
 /**
  * TEST: prime mmap
  * Category: Infrastructure
- * Feature: prime
- * Functionality: prime mmap
- * Sub-category: Memory management
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
+ * Functionality: prime
  * Test category: GEM_Legacy
+ * Feature: prime
  *
  * SUBTEST: test_aperture_limit
  *

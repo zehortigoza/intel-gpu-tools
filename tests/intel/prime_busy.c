@@ -28,12 +28,13 @@
 #include "igt.h"
 /**
  * TEST: prime busy
- * Category: Infrastructure
  * Description: Basic check of polling for prime fences.
- * Feature: prime
- * Functionality: buffer management
- * Sub-category: Memory management
+ * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: Memory management tests
+ * Functionality: prime
  * Test category: GEM_Legacy
+ * Feature: prime
  *
  * SUBTEST: after
  *

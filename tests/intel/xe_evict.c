@@ -6,6 +6,7 @@
 /**
  * TEST: Check VMA eviction
  * Category: Software building block
+ * Mega feature: General Core features
  * Sub-category: VMA
  * Functionality: eviction
  * GPU requirements: GPU needs to have dedicated VRAM
@@ -486,6 +487,7 @@ static uint64_t calc_bo_size(uint64_t vram_size, int mul, int div)
  * @beng-large-multi-vm:	large multi VM bind exec_queue
  */
 /**
+ *
  * SUBTEST: evict-%s
  * Description:  %arg[1] evict test.
  * Feature: compute machine
