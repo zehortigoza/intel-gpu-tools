@@ -42,11 +42,12 @@
 #include <sys/stat.h>
 /**
  * TEST: i915 pm rpm
- * Feature: pm_rpm
- * Functionality: D3 state entry-exit
- * Sub-category: Power management
  * Category: Desktop client
+ * Mega feature: Power management
+ * Sub-category: Power management tests
+ * Functionality: D3 state entry-exit
  * Test category: pm_rpm
+ * Feature: pm_rpm
  *
  * SUBTEST: debugfs-forcewake-user
  * SUBTEST: debugfs-read

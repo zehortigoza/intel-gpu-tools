@@ -46,12 +46,12 @@
 #include "igt_device_scan.h"
 /**
  * TEST: i915 suspend
- * Feature: suspend feature
+ * Category: Desktop client
+ * Mega feature: Power management
+ * Sub-category: Power management tests
  * Functionality: s2idle w/o i915
  * Test category: suspend
- * Functionality: suspend
- * Sub-category: Power management
- * Category: Desktop client
+ * Feature: suspend
  *
  * SUBTEST: basic-s2idle-without-i915
  * Description: Validate suspend-to-idle without i915 module

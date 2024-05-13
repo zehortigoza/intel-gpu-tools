@@ -38,10 +38,11 @@
 /**
  * TEST: i915 pm sseu
  * Description: Tests slice/subslice/EU power gating functionality.
- * Feature: pm_sseu
- * Sub-category: Power management
  * Category: Desktop client
+ * Mega feature: Power management
+ * Sub-category: Power management tests
  * Functionality: sseu
+ * Feature: pm_sseu
  *
  * SUBTEST: full-enable
  */

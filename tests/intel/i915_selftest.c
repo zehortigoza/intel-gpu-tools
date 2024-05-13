@@ -174,10 +174,11 @@
  * Sub-category: Mocs
  *
  * SUBTEST: live@gt_pm
- * Category: Selftest
  * Description: Basic i915 driver module selftests
+ * Category: Selftest
+ * Mega feature: Power management
+ * Sub-category: Power management tests
  * Functionality: rps, rc6
- * Sub-category: Power management
  *
  * SUBTEST: live@gt_timelines
  * Category: Selftest
@@ -252,11 +253,12 @@
  * Test category: i915
  *
  * SUBTEST: live@late_gt_pm
+ * Description: Basic i915 driver module selftests
  * Category: Selftest
- * Feature: rc6 feature
- * Functionality: Basic i915 driver module selftests
- * Test category: rc6
- * Sub-category: Power management
+ * Mega feature: Power management
+ * Sub-category: Power management tests
+ * Feature: rc6
+ * Functionality: rc6
  *
  * SUBTEST: live@lmem
  * Description: Basic i915 driver module selftests
@@ -353,20 +355,20 @@
  * Sub-category: Synchronization
  *
  * SUBTEST: live@slpc
- * Category: Selftest
- * Feature: slpc feature/ pm_rps
- * Test category: slpc / pm_rps
  * Description: Basic i915 driver module selftests
+ * Category: Selftest
+ * Mega feature: Power management
+ * Sub-category: Power management tests
  * Functionality: slpc
- * Sub-category: Power management
+ * Feature: slpc / pm_rps
  *
  * SUBTEST: live@uncore
- * Category: Selftest
  * Description: Basic i915 driver module selftests
- * Feature: forcewake feature
- * Test category: forcewake
+ * Category: Selftest
+ * Mega feature: Power management
+ * Sub-category: Power management tests
  * Functionality: forcewake
- * Sub-category: Power management
+ * Feature: forcewake
  *
  * SUBTEST: live@vma
  * Description: Per-object virtual address management
@@ -532,12 +534,12 @@
  * Test category: Memory Management
  *
  * SUBTEST: mock@uncore
- * Category: Selftest
  * Description: Basic i915 driver module selftests
- * Feature: forcewake feature
- * Test category: forcewake
+ * Category: Selftest
+ * Mega feature: Power management
+ * Sub-category: Power management tests
  * Functionality: forcewake
- * Sub-category: Power management
+ * Feature: forcewake
  *
  * SUBTEST: mock@vma
  * Category: Selftest

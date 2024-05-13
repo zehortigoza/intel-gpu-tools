@@ -6,7 +6,8 @@
 /**
  * TEST: Test gtidle properties
  * Category: Software building block
- * Sub-category: Power management
+ * Mega feature: Power management
+ * Sub-category: Power management tests
  * Functionality: GT C States
  * Test category: functionality test
  */

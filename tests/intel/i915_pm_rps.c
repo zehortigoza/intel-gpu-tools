@@ -47,11 +47,12 @@
 /**
  * TEST: i915 pm rps
  * Description: Render P-States tests - verify GPU frequency changes
+ * Category: Desktop client
+ * Mega feature: Power management
+ * Sub-category: Power management tests
+ * Functionality: pm_rps
  * Feature: pm_rps
  * Test category: pm_rps
- * Functionality: rps
- * Sub-category: Power management
- * Category: Desktop client
  *
  * SUBTEST: basic-api
  *

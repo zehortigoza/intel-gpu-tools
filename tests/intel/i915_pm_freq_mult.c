@@ -14,10 +14,11 @@
  * TEST: i915 pm freq mult
  * Description: Tests for sysfs controls (or multipliers) for IP blocks which
  *		run at frequencies different from the main GT frequency.
- * Category: Firmware building block
- * Functionality: freq multipliers
+ * Category: Firmware
+ * Mega feature: Power management
+ * Sub-category: Power management tests
+ * Functionality: freg multipliers
  * Test category: i915
- * Sub-category: Power management
  *
  * SUBTEST: media-freq
  * Description: Tests for media frequency factor sysfs

@@ -6,7 +6,8 @@
 /**
  * TEST: Test Xe GT frequency request functionality
  * Category: Infrastructure
- * Sub-category: Power management
+ * Mega feature: Power management
+ * Sub-category: Power management tests
  * Functionality: frequency request
  * Test category: functionality test
  */

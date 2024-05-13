@@ -10,11 +10,12 @@
 /**
  * TEST: i915 power
  * Description: i915 power measurement tests
+ * Category: Desktop client
+ * Mega feature: Power management
+ * Sub-category: Power management tests
+ * Functionality: hwmon
  * Feature: hwmon
  * Test category: GEM_Legacy
- * Sub-category: Power management
- * Category: Desktop client
- * Functionality: hwmon
  *
  * SUBTEST: sanity
  * Description: Sanity check gpu power measurement

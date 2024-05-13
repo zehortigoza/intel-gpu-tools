@@ -40,9 +40,10 @@
 /**
  * TEST: gem ctx freq
  * Category: Server
- * Feature: context feature
+ * Mega feature: Power management
+ * Sub-category: Power management tests
  * Functionality: frequency management
- * Sub-category: Performance
+ * Feature: context feature
  * Test category: GEM_Legacy
  *
  * SUBTEST: sysfs
