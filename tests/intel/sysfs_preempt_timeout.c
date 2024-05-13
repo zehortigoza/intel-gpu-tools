@@ -42,11 +42,12 @@
 #include "sw_sync.h"
 /**
  * TEST: sysfs preempt timeout
+ * Category: Desktop \ Server
+ * Mega feature: SysMan
+ * Sub-category: SysMan tests
+ * Functionality: sysfs preempt timeout
  * Feature: SMI, context
  * Test category: SysMan
- * Sub-category: SysMan
- * Category: Desktop \ Server
- * Functionality: sysfs preempt timeout
  *
  * SUBTEST: idempotent
  * Description: Test to check whether the preempt_timeout parameter reports the

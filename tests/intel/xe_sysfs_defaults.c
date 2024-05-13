@@ -5,12 +5,14 @@
 
 /**
  * TEST: xe sysfs defaults
- * Category: Infrastructure
- * Functionality: sysman defaults
- * Sub-category: SysMan
- * Test category: functionality test
- * SUBTEST: engine-defaults
  * Description: check if the sysfs engine .defaults node has all values.
+ * Category: Infrastructure
+ * Mega feature: SysMan
+ * Sub-category: SysMan tests
+ * Functionality: sysman defaults
+ * Test category: functionality test
+ *
+ * SUBTEST: engine-defaults
  */
 
 #include <dirent.h>

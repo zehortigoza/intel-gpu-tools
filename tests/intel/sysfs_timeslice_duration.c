@@ -45,11 +45,12 @@
 #include "sw_sync.h"
 /**
  * TEST: sysfs timeslice duration
+ * Category: Desktop \ Server
+ * Mega feature: SysMan
+ * Sub-category: SysMan tests
+ * Functionality: timeslise sysfs
  * Feature: SMI, cmd_submission
  * Test category: SysMan
- * Functionality: timeslise sysfs
- * Sub-category: SysMan
- * Category: Desktop \ Server
  *
  * SUBTEST: duration
  * Description: Test to measure the timeslice duration by watching the

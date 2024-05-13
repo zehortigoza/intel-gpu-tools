@@ -43,11 +43,12 @@
 #include "sw_sync.h"
 /**
  * TEST: sysfs heartbeat interval
+ * Category: Desktop \ Server
+ * Mega feature: SysMan
+ * Sub-category: SysMan tests
+ * Functionality: sysfs heartbeat
  * Feature: SMI, cmd_submission
  * Test category: SysMan
- * Sub-category: SysMan
- * Category: Desktop \ Server
- * Functionality: sysfs heartbeat
  *
  * SUBTEST: idempotent
  * Description: Test to check whether the heartbeat parameter reports the values set.

@@ -6,7 +6,8 @@
 /**
  * TEST: xe sysfs scheduler
  * Category: Infrastructure
- * Sub-category: SysMan
+ * Mega feature: SysMan
+ * Sub-category: SysMan tests
  * Functionality: scheduler control interface
  *
  * SUBTEST: %s-invalid
