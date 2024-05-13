@@ -19,10 +19,11 @@
 /**
  * TEST: gem ccs
  * Description: Exercise gen12 blitter with and without flatccs compression
- * Feature: flat_ccs_mapping
- * Sub-category: Flat-ccs
  * Category: Desktop \ Server
+ * Mega feature: Compression
+ * Sub-category: Flat-ccs tests
  * Functionality: block-copy
+ * Feature: flat_ccs_mapping
  *
  * SUBTEST: block-copy-compressed
  * Description: Check block-copy flatccs compressed blit
