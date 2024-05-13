@@ -567,13 +567,16 @@ igt_main_args("b:c:f:dl", long_options, help_str, opt_handler, NULL)
 
 		kmstest_set_vt_graphics_mode();
 
-		igt_display_require(&display, display.drm_fd);
-
-		igt_require(display.is_atomic);
+		if (drmSetClientCap(display.drm_fd, DRM_CLIENT_CAP_ATOMIC, 1) == 0)
+			display.is_atomic = 1;
 
 		ret = drmSetClientCap(display.drm_fd, DRM_CLIENT_CAP_WRITEBACK_CONNECTORS, 1);
 
 		igt_require_f(!ret, "error setting DRM_CLIENT_CAP_WRITEBACK_CONNECTORS\n");
+
+		igt_display_require(&display, display.drm_fd);
+
+		igt_require(display.is_atomic);
 
 		output = kms_writeback_get_output(&display);
 		igt_require(output);
