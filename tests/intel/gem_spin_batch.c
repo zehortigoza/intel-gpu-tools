@@ -27,11 +27,12 @@
 #include "igt.h"
 /**
  * TEST: gem spin batch
- * Test category: GEM_Legacy
  * Category: Infrastructure
- * Feature: context, igt_core
- * Functionality: dummy workload
+ * Mega feature: General Core features
  * Sub-category: IGT Lib
+ * Functionality: dummy workload
+ * Feature: context, igt_core
+ * Test category: GEM_Legacy
  *
  * SUBTEST: engines
  * SUBTEST: legacy

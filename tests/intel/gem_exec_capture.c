@@ -35,10 +35,11 @@
 /**
  * TEST: gem exec capture
  * Description: Check that we capture the user specified objects on a hang
- * Feature: cmd_submission
  * Category: Server
- * Functionality: offline debugging
+ * Mega feature: General Core features
  * Sub-category: Debugging
+ * Functionality: offline debugging
+ * Feature: cmd_submission
  * Test category: GEM_Legacy
  *
  * SUBTEST: capture

@@ -40,11 +40,12 @@
 #include "igt_types.h"
 /**
  * TEST: gem flink basic
- * Category: Desktop client
  * Description: Tests for flink - a way to export a gem object by name
- * Feature: xorg_dri2
- * Functionality: buffer management
+ * Category: Desktop client
+ * Mega feature: General Core features
  * Sub-category: DRM
+ * Functionality: flink
+ * Feature: xorg_dri2
  * Test category: GEM_Legacy
  *
  * SUBTEST: bad-flink

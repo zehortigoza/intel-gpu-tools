@@ -49,9 +49,10 @@
 #include "sw_sync.h"
 /**
  * TEST: gem reset stats
- * Sub-category: uapi
  * Category: Desktop client
- * Functionality: sysfs reset
+ * Mega feature: General Core features
+ * Sub-category: uapi
+ * Functionality: reset
  *
  * SUBTEST: ban-blt
  *

@@ -42,11 +42,12 @@
 #include "intel_blt.h"
 /**
  * TEST: gem caching
- * Category: Desktop client
  * Description: Test snoop consistency when touching partial cachelines.
- * Feature: caching feature
+ * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: CMD submission
  * Functionality: coherency
- * Sub-category: Memory management
+ * Feature: caching
  * Test category: GEM_Legacy
  *
  * SUBTEST: read-writes

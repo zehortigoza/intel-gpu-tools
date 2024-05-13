@@ -36,10 +36,11 @@
 /**
  * TEST: drm fdinfo
  * Description: Test the i915 drm fdinfo data
- * Feature: client busyness
- * Functionality: Per client memory statistics
- * Sub-category: driver
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: driver
+ * Functionality: Per client memory statistics
+ * Feature: client_busyness
  *
  * SUBTEST: all-busy-check-all
  *

@@ -32,11 +32,12 @@
 #include <i915_drm.h>
 /**
  * TEST: i915 getparams basic
- * Category: Infrastructure
  * Description: Tests the export of parameters via DRM_IOCTL_I915_GETPARAM
- * Feature: gem_core
- * Functionality: device topology
+ * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: uapi
+ * Functionality: device topology
+ * Feature: gem_core
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic-eu-total

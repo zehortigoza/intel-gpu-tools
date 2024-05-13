@@ -42,11 +42,12 @@
 #include "sw_sync.h"
 /**
  * TEST: i915 hangman
- * Category: Server
  * Description: Tests for hang detection and recovery
- * Feature: reset
- * Functionality: error handling
+ * Category: Server
+ * Mega feature: General Core features
  * Sub-category: Debugging
+ * Functionality: error handling
+ * Feature: reset
  * Test category: GEM_Legacy
  *
  * SUBTEST: detector

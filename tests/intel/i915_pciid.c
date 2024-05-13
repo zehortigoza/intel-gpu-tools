@@ -30,11 +30,12 @@
 #include "intel_chipset.h"
 /**
  * TEST: i915 pciid
- * Category: Infrastructure
  * Description: Check that igt/i915 know about this PCI-ID
- * Feature: core
- * Functionality: device management
+ * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: Core
+ * Functionality: device management
+ * Feature: core
  * Test category: GEM_Legacy
  *
  * SUBTEST:

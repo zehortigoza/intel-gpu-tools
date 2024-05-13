@@ -33,6 +33,7 @@
 /**
  * TEST: gem exec endless
  * Category: Server
+ * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: compute test
  * Test category: Compute

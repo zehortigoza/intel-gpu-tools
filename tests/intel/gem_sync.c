@@ -34,11 +34,12 @@
 #include "igt_sysfs.h"
 /**
  * TEST: gem sync
- * Category: Infrastructure
  * Description: Basic check of ring<->ring write synchronisation.
- * Feature: synchronization feature
- * Functionality: semaphore
+ * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: Synchronization
+ * Functionality: semaphore
+ * Feature: synchronization
  * Test category: GEM_Legacy
  *
  * SUBTEST: active

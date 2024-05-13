@@ -75,13 +75,15 @@
  *
  * SUBTEST: multigpu-basic-process
  * Description: Basic workload submission on multi-GPU machine.
+ * Sub-category: MultiGPU
+ * Functionality: buffer management on MultiGPU
  * Feature: multigpu, synchronization
- * Test category: MultiGPU
  *
  * SUBTEST: multigpu-basic-threads
  * Description: Run basic-threads race on multi-GPU machine.
+ * Sub-category: MultiGPU
+ * Functionality: buffer management on MultiGPU
  * Feature: multigpu, synchronization
- * Test category: MultiGPU
  *
  * SUBTEST: process-exit
  * Description: Test try to race gem_close against submission of continuous workload.

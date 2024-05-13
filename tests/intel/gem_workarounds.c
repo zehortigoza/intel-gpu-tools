@@ -35,9 +35,10 @@
 /**
  * TEST: gem workarounds
  * Category: Infrastructure
- * Feature: workaround
- * Functionality: context
+ * Mega feature: General Core features
  * Sub-category: Workarounds
+ * Functionality: workaround registers
+ * Feature: workarounds
  * Test category: GEM_Legacy
  *
  * SUBTEST: basic-read

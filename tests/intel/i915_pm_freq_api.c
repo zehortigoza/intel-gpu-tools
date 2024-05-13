@@ -12,6 +12,7 @@
  * TEST: i915 pm freq api
  * Description: Test SLPC freq API
  * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: slpc
  *

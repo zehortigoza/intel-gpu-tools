@@ -45,9 +45,10 @@
  * TEST: gem basic
  * Description: Tests basic gem_create and gem_close IOCTLs
  * Category: Infrastructure
- * Feature: gem_core
- * Functionality: driver handler
+ * Mega feature: General Core features
  * Sub-category: uapi
+ * Functionality: create/close IOCTLs
+ * Feature: gem_core
  * Test category: GEM_Legacy
  *
  * SUBTEST: bad-close
@@ -61,8 +62,8 @@
  *
  * SUBTEST: multigpu-create-close
  * Description: Verify basic functionality of gem_create and gem_close on multi-GPU.
+ * Functionality: IOCTLs & multiGPU
  * Feature: gem_core, multigpu
- * Test category: MultiGPU
  */
 
 IGT_TEST_DESCRIPTION("Tests basic gem_create and gem_close IOCTLs");

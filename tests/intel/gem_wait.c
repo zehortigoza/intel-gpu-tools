@@ -33,11 +33,12 @@
 #include "igt_vgem.h"
 /**
  * TEST: gem wait
- * Category: Infrastructure
  * Description: Tests the GEM_WAIT ioctl
- * Feature: synchronization feature
- * Functionality: GEM_WAIT ioctl
- * Sub-category: uapi
+ * Category: Infrastructure
+ * Mega feature: General Core features
+ * Sub-category: Synchronization
+ * Functionality: semaphore
+ * Feature: synchronization
  * Test category: GEM_Legacy
  *
  * SUBTEST: await

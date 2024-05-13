@@ -6,7 +6,8 @@
 /**
  * TEST: Test HuC copy firmware.
  * Category: Firmware building block
- * Sub-category: Firmware
+ * Mega feature: General Core features
+ * Sub-category: Firmware tests
  * Functionality: huc copy
  * Test category: functionality test
  * TODO: make the test more generic, getting rid of the PCI ID list

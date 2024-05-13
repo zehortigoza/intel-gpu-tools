@@ -29,9 +29,10 @@
 /**
  * TEST: gem ctx isolation
  * Category: Infrastructure
- * Feature: context
- * Functionality: priv/non-priv registers
+ * Mega feature: General Core features
  * Sub-category: Security
+ * Functionality: priv/non-priv registers
+ * Feature: context
  * Test category: GEM_Legacy
  *
  * SUBTEST: clean

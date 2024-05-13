@@ -29,11 +29,12 @@
 #include <limits.h>
 /**
  * TEST: i915 query
- * Category: Infrastructure
  * Description: Testing the i915 query uAPI.
- * Feature: gem_core
- * Functionality: device topology
+ * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: uapi
+ * Functionality: device topology
+ * Feature: gem_core
  * Test category: GEM_Legacy
  *
  * SUBTEST: engine-info

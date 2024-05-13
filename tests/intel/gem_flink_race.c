@@ -37,11 +37,12 @@
 #include "igt_stats.h"
 /**
  * TEST: gem flink race
- * Category: Desktop client
  * Description: Check for flink/open vs. gem close races.
- * Feature: xorg_dri2
- * Functionality: buffer management
+ * Category: Desktop client
+ * Mega feature: General Core features
  * Sub-category: DRM
+ * Functionality: flink
+ * Feature: xorg_dri2
  * Test category: GEM_Legacy
  *
  * SUBTEST: flink_close

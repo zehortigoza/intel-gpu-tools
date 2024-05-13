@@ -25,11 +25,12 @@
 #include <sys/utsname.h>
 /**
  * TEST: i915 module load
- * Category: Infrastructure
  * Description: Tests the i915 module loading.
- * Feature: core
- * Functionality: driver handler
+ * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: driver
+ * Functionality: driver handler
+ * Feature: core
  * Test category: GEM_Legacy
  *
  * SUBTEST: load

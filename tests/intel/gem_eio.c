@@ -56,10 +56,11 @@
 /**
  * TEST: gem eio
  * Description: Test that specific ioctls report a wedged GPU (EIO).
+ * Mega feature: General Core features
  * Category: Infrastructure
- * Feature: reset uapi
- * Functionality: sysfs reset
  * Sub-category: uapi
+ * Functionality: reset
+ * Feature: reset
  * Test category: GEM_Legacy
  *
  * SUBTEST: banned

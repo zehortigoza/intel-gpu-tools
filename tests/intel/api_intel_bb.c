@@ -43,11 +43,12 @@
 #include "intel_blt.h"
 /**
  * TEST: api intel bb
- * Category: Infrastructure
  * Description: checking dummy buffer creation & submission
- * Feature: igt_core
- * Functionality: dummy buffer creation & submission
+ * Category: Infrastructure
+ * Mega feature: General Core features
  * Sub-category: IGT Lib
+ * Functionality: dummy buffer creation & submission
+ * Feature: igt_core
  * Test category: GEM_Legacy
  *
  * SUBTEST: add-remove-objects

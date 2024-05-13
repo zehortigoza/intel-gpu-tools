@@ -50,6 +50,7 @@
 /**
  * TEST: gen3 render linear blits
  * Category: Obsolete
+ * Mega feature: General Core features
  * Sub-category: Obsolete_gen3
  * Functionality: obsolete_test
  * Feature: obsolete test

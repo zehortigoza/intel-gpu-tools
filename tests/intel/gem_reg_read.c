@@ -34,10 +34,11 @@
 
 /**
  * TEST: gem reg read
- * Feature: gem_core
- * Sub-category: uapi
  * Category: Desktop client
+ * Mega feature: General Core features
+ * Sub-category: uapi
  * Functionality: ioctl
+ * Feature: gem_core
  *
  * SUBTEST: bad-register
  *

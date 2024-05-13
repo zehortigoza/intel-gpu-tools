@@ -67,9 +67,10 @@
  * Description: Ensure that basic gem_create and gem_create_ext works and that
  *		invalid input combinations are rejected.
  * Category: Infrastructure
- * Feature: mapping
- * Functionality: buffer management
+ * Mega feature: General Core features
  * Sub-category: uapi
+ * Functionality: gem_create IOCTL
+ * Feature: mapping
  * Test category: GEM_Legacy
  *
  * SUBTEST: busy-create

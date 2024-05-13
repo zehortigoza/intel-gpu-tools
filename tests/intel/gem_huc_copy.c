@@ -38,10 +38,11 @@
 /**
  * TEST: gem huc copy
  * Description: A very simple workload for the HuC.
- * Feature: firmware feature
- * Sub-category: Firmware
  * Category: Desktop client
- * Functionality: huc copy
+ * Mega feature: General Core features
+ * Sub-category: Firmware tests
+ * Functionality: HUC
+ * Feature: huc
  *
  * SUBTEST: huc-copy
  * Description:

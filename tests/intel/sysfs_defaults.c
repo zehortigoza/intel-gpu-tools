@@ -36,9 +36,10 @@
 /**
  * TEST: sysfs defaults
  * Category: Infrastructure
- * Feature: gem_core
- * Functionality: sysfs
+ * Mega feature: General Core features
  * Sub-category: uapi
+ * Functionality: sysfs
+ * Feature: gem_core
  * Test category: GEM_Legacy
  *
  * SUBTEST: readonly
