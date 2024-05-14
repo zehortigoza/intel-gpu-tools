@@ -406,8 +406,20 @@ igt_main
 	int fd;
 
 	igt_fixture {
+		struct timespec tv = {};
+		bool supports_faults;
+		int ret = 0;
+		int timeout = igt_run_in_simulation() ? 20 : 2;
+
 		fd = drm_open_driver(DRIVER_XE);
-		igt_require(xe_supports_faults(fd));
+		do {
+			if (ret)
+				usleep(5000);
+			ret = xe_supports_faults(fd);
+		} while (ret == -EBUSY && igt_seconds_elapsed(&tv) < timeout);
+
+		supports_faults = !ret;
+		igt_require(supports_faults);
 	}
 
 	for (const struct section *s = sections; s->name; s++) {
