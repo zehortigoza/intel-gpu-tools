@@ -300,27 +300,28 @@ void xe_device_put(int fd)
  * xe_supports_faults:
  * @fd: xe device fd
  *
- * Returns true if xe device @fd allows creating vm in fault mode otherwise
- * false.
+ * Returns the return value of the ioctl.  This can either be 0 if the
+ * xe device @fd allows creating a vm in fault mode, or an error value
+ * if it does not.
  *
  * NOTE: This function temporarily creates a VM in fault mode. Hence, while
  * this function is executing, no non-fault mode VMs can be created.
  */
-bool xe_supports_faults(int fd)
+int xe_supports_faults(int fd)
 {
-	bool supports_faults;
+	int ret;
 
 	struct drm_xe_vm_create create = {
 		.flags = DRM_XE_VM_CREATE_FLAG_LR_MODE |
 			 DRM_XE_VM_CREATE_FLAG_FAULT_MODE,
 	};
 
-	supports_faults = !igt_ioctl(fd, DRM_IOCTL_XE_VM_CREATE, &create);
+	ret = igt_ioctl(fd, DRM_IOCTL_XE_VM_CREATE, &create);
 
-	if (supports_faults)
+	if (!ret)
 		xe_vm_destroy(fd, create.vm_id);
 
-	return supports_faults;
+	return ret;
 }
 
 static void xe_device_destroy_cache(void)
