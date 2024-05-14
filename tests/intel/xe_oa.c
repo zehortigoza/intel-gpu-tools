@@ -2087,11 +2087,13 @@ static void test_polling(uint64_t requested_oa_period,
 			 const struct drm_xe_engine_class_instance *hwe)
 {
 	int oa_exponent = max_oa_exponent_for_period_lte(requested_oa_period);
+	//int oa_exponent = 31;
 	uint64_t oa_period = oa_exponent_to_ns(oa_exponent);
 	uint64_t props[DRM_XE_OA_PROPERTY_MAX * 2];
 	uint64_t *idx = props;
 	struct intel_xe_oa_open_prop param;
 	uint8_t buf[1024 * 1024];
+	uint8_t buf2[1024 * 1024];
 	struct tms start_times;
 	struct tms end_times;
 	int64_t user_ns, kernel_ns;
@@ -2124,6 +2126,7 @@ static void test_polling(uint64_t requested_oa_period,
 	ADD_PROPS(props, idx, OA_DISABLED, true);
 	ADD_PROPS(props, idx, OA_UNIT_ID, 0);
 	ADD_PROPS(props, idx, OA_ENGINE_INSTANCE, hwe->engine_instance);
+	igt_info("oa_exponent=%i\n", oa_exponent);
 
 	param.num_properties = (idx - props) / 2;
 	param.properties_ptr = to_user_pointer(props);
@@ -2162,20 +2165,27 @@ static void test_polling(uint64_t requested_oa_period,
 	start = get_time();
 	do_ioctl(stream_fd, DRM_XE_PERF_IOCTL_ENABLE, 0);
 	for (/* nop */; ((end = get_time()) - start) < test_duration_ns; /* nop */) {
-		struct pollfd pollfd = { .fd = stream_fd, .events = POLLIN };
+		//struct pollfd pollfd = { .fd = stream_fd, .events = POLLIN };
 		bool timer_report_read = false;
 		bool non_timer_report_read = false;
-		int ret;
+		int ret, ret2;
 
+		/*
 		while ((ret = poll(&pollfd, 1, -1)) < 0 &&
 		       errno == EINTR)
 			;
 		igt_assert_eq(ret, 1);
 		igt_assert(pollfd.revents & POLLIN);
+		*/
+		do {
+			ret = read(stream_fd, buf, sizeof(buf));
+			igt_info("ret=%i\n", ret);
+		} while (ret < 0 || errno == EINTR);
 
-		while ((ret = read(stream_fd, buf, sizeof(buf))) < 0 &&
-		       errno == EINTR)
-			;
+		do {
+			ret2 = read(stream_fd, buf2, sizeof(buf2));
+			igt_info("ret2=%i\n", ret2);
+		} while (ret2 > 0 || errno == EINTR);
 
 		/* Don't expect to see EAGAIN if we've had a POLLIN event
 		 *
