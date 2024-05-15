@@ -896,7 +896,9 @@ static void __intel_buf_init(struct buf_ops *bops,
 
 	size = buf->surface[0].size = buf->surface[0].stride * aligned_height;
 
-	if (compression) {
+	if (compression && !HAS_FLATCCS(buf_ops_get_devid(bops))) {
+		int aux_width, aux_height;
+
 		igt_require(bops->intel_gen >= 9);
 		igt_assert(req_tiling == I915_TILING_Y ||
 			   req_tiling == I915_TILING_Yf ||
@@ -907,17 +909,12 @@ static void __intel_buf_init(struct buf_ops *bops,
 		 * CCS units, that is 4 * 64 bytes. These 4 CCS units are in
 		 * turn mapped by one L1 AUX page table entry.
 		 */
+		aux_width = intel_buf_ccs_width(bops->intel_gen, buf);
+		aux_height = intel_buf_ccs_height(bops->intel_gen, buf);
 
-		if (!HAS_FLATCCS(intel_get_drm_devid(bops->fd))) {
-			int aux_width, aux_height;
-
-			aux_width = intel_buf_ccs_width(bops->intel_gen, buf);
-			aux_height = intel_buf_ccs_height(bops->intel_gen, buf);
-
-			buf->ccs[0].offset = buf->surface[0].stride * ALIGN(height, 32);
-			buf->ccs[0].stride = aux_width;
-			size = buf->ccs[0].offset + aux_width * aux_height;
-		}
+		buf->ccs[0].offset = buf->surface[0].stride * ALIGN(height, 32);
+		buf->ccs[0].stride = aux_width;
+		size = buf->ccs[0].offset + aux_width * aux_height;
 	}
 
 	/* Store buffer size to avoid mistakes in calculating it again */
