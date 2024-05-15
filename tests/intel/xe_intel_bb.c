@@ -18,6 +18,7 @@
 
 #include "igt.h"
 #include "igt_crc.h"
+#include "intel_blt.h"
 #include "intel_bufops.h"
 #include "intel_mocs.h"
 #include "intel_pat.h"
@@ -979,18 +980,9 @@ const char *help_str =
 
 igt_main_args("dpib", NULL, help_str, opt_handler, NULL)
 {
-	int xe, i;
+	int xe;
 	struct buf_ops *bops;
 	uint32_t width;
-
-	struct test {
-		uint32_t tiling;
-		const char *tiling_name;
-	} tests[] = {
-		{ I915_TILING_NONE, "none" },
-		{ I915_TILING_X, "x" },
-		{ I915_TILING_4, "4" },
-	};
 
 	igt_fixture {
 		xe = drm_open_driver(DRIVER_XE);
@@ -1054,14 +1046,19 @@ igt_main_args("dpib", NULL, help_str, opt_handler, NULL)
 		delta_check(bops);
 
 	igt_subtest_with_dynamic("render") {
+		int tiling;
+
 		igt_require(xe_has_engine_class(xe, DRM_XE_ENGINE_CLASS_RENDER));
 
-		for (i = 0; i < ARRAY_SIZE(tests); i++) {
-			const struct test *t = &tests[i];
+		for_each_tiling(tiling) {
+			if (!render_supports_tiling(xe, tiling, false))
+				continue;
 
 			for (width = 512; width <= 1024; width += 512)
-				igt_dynamic_f("render-%s-%u", t->tiling_name, width)
-					render(bops, t->tiling, width, width);
+				igt_dynamic_f("render-%s-%u",
+					      blt_tiling_name(tiling), width)
+					render(bops, blt_tile_to_i915_tile(tiling),
+					       width, width);
 		}
 	}
 
