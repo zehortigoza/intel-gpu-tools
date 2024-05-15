@@ -264,7 +264,7 @@ gen9_bind_buf(struct intel_bb *ibb, const struct intel_buf *buf, int is_dst,
 			igt_assert(__builtin_ctzl(address + buf->cc.offset) >= 6 &&
 				   (__builtin_clzl(address + buf->cc.offset) >= 16));
 
-			ss->ss12.clear_address = (address + buf->cc.offset) >> 6;
+			ss->ss12.dg2.clear_address = (address + buf->cc.offset) >> 6;
 			ss->ss13.clear_address_hi = (address + buf->cc.offset) >> 32;
 		}
 
@@ -274,13 +274,21 @@ gen9_bind_buf(struct intel_bb *ibb, const struct intel_buf *buf, int is_dst,
 			ss->ss7.dg2.disable_support_for_multi_gpu_partial_writes = 1;
 			ss->ss7.dg2.disable_support_for_multi_gpu_atomics = 1;
 
-			/*
-			 * For now here is coming only 32bpp rgb format
-			 * which is marked below as B8G8R8X8_UNORM = '8'
-			 * If here ever arrive other formats below need to be
-			 * fixed to take that into account.
-			 */
-			ss->ss12.compression_format = 8;
+			if (AT_LEAST_GEN(ibb->devid, 20)) {
+				/*
+				 * For Xe2+ R8G8B8A8 best compression ratio is
+				 * achieved with compression format = '2'
+				 */
+				ss->ss12.lnl.compression_format = 2;
+			} else {
+				/*
+				 * For now here is coming only 32bpp rgb format
+				 * which is marked below as B8G8R8X8_UNORM = '8'
+				 * If here ever arrive other formats below need to be
+				 * fixed to take that into account.
+				 */
+				ss->ss12.dg2.compression_format = 8;
+			}
 		}
 	}
 

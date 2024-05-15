@@ -154,16 +154,27 @@ struct gen9_surface_state {
 		uint32_t aux_base_addr_hi;
 	} ss11;
 
-	struct {
-		/*
-		 * compression_format is used only dg2 onward.
-		 * prior to dg2 full ss12 is used for the address
-		 * but due to alignments bits 0..6 will be zero
-		 * and asserted in code to be so
-		 */
-		uint32_t compression_format:5;
-		uint32_t pad0:1;
-		uint32_t clear_address:26;
+	union {
+		struct {
+			/*
+			 * compression_format is used only dg2 onward.
+			 * prior to dg2 full ss12 is used for the address
+			 * but due to alignments bits 0..6 will be zero
+			 * and asserted in code to be so
+			 */
+			uint32_t compression_format:5;
+			uint32_t pad0:1;
+			uint32_t clear_address:26;
+		} dg2;
+
+		struct {
+			/*
+			 * On Xe2+ compression format is 4-bit long.
+			 */
+			uint32_t compression_format:4;
+			uint32_t mip_region_depth_in_log:4;
+			uint32_t pad0:24;
+		} lnl;
 	} ss12;
 
 	struct {
