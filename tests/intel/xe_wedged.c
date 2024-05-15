@@ -277,6 +277,10 @@ igt_main
 			igt_debugfs_write(fd, "fail_gt_reset/probability", "0");
 			igt_debugfs_write(fd, "fail_gt_reset/times", "1");
 		}
+
+		/* Tests might have failed, force a rebind before exiting */
+		fd = rebind_xe(fd);
+
 		drm_close_driver(fd);
 	}
 }
