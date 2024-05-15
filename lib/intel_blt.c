@@ -496,6 +496,35 @@ bool blt_uses_extended_block_copy(int fd)
 }
 
 /**
+ * render_supports_tiling
+ * @fd: drm fd
+ * @tiling: tiling format
+ * @compression: check tiling which will be compressed
+ *
+ * Check if render provided by @fd device supports @tiling format wrt
+ * @compression
+ *
+ * Returns:
+ * true if it does, false otherwise.
+ */
+bool render_supports_tiling(int fd, enum blt_tiling_type tiling, bool compression)
+{
+	const struct intel_cmds_info *cmds_info = GET_CMDS_INFO(fd);
+
+	igt_assert(cmds_info);
+
+	if (!cmds_info->render_tilings) {
+		igt_warn("Render tilings are not defined\n");
+		return false;
+	}
+
+	if (!compression)
+		return cmds_info->render_tilings->supported_tiling & BIT(tiling);
+
+	return cmds_info->render_tilings->supported_compressed_tiling & BIT(tiling);
+}
+
+/**
  * blt_tiling_name:
  * @tiling: tiling id
  *
