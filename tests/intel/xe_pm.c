@@ -835,8 +835,11 @@ igt_main
 			igt_pm_set_autosuspend_delay(device.pci_xe, delay_ms);
 		}
 
-		igt_subtest("mocs-rpm")
+		igt_subtest("mocs-rpm") {
+			dpms_on_off(device, DRM_MODE_DPMS_OFF);
 			test_mocs_suspend_resume(device, NO_SUSPEND);
+			dpms_on_off(device, DRM_MODE_DPMS_ON);
+		}
 	}
 
 	igt_fixture {
