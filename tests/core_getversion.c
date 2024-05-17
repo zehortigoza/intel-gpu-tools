@@ -40,6 +40,9 @@
  *
  * SUBTEST: basic
  * Description: Tests GET_VERSION ioctl of the first device.
+ *
+ * SUBTEST: all-cards
+ * Description: Tests GET_VERSION ioctl for all drm devices.
  */
 
 IGT_TEST_DESCRIPTION("Tests the DRM_IOCTL_GET_VERSION ioctl and libdrm's "
@@ -62,6 +65,22 @@ static void check(int fd, char *dst, int len)
 	drmFree(v);
 }
 
+static void check_all_drm(void)
+{
+	char info[256];
+	int fd2;
+
+	for (int i = 0; ; i++) {
+		fd2 = __drm_open_driver_another(i, DRIVER_ANY);
+		if (fd2 == -1)
+			break;
+
+		check(fd2, info, sizeof(info));
+		igt_info("%d: %s\n", i, info);
+		drm_close_driver(fd2);
+	}
+}
+
 igt_main
 {
 	char info[256];
@@ -77,6 +96,10 @@ igt_main
 		check(fd, info, sizeof(info));
 		igt_info("0: %s\n", info);
 	}
+
+	igt_describe("Check GET_VERSION ioctl for all drm devices.");
+	igt_subtest("all-cards")
+		check_all_drm();
 
 	igt_fixture
 		drm_close_driver(fd);
