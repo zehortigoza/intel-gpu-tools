@@ -443,6 +443,7 @@ static bool test_plane(data_t *data)
 	struct igt_fb *big_fb = &data->big_fb;
 	int w = data->big_fb_width - small_fb->width;
 	int h = data->big_fb_height - small_fb->height;
+	bool run_in_simulation = igt_run_in_simulation();
 	struct {
 		int x, y;
 	} coords[] = {
@@ -467,8 +468,13 @@ static bool test_plane(data_t *data)
 
 	for (int i = 0; i < ARRAY_SIZE(coords); i++) {
 		igt_crc_t small_crc, big_crc;
-		int x = coords[i].x;
-		int y = coords[i].y;
+		int x, y;
+
+		if (run_in_simulation)
+			i = ARRAY_SIZE(coords) - 1;
+
+		x = coords[i].x;
+		y = coords[i].y;
 
 		/* Hardware limitation */
 		if (data->format == DRM_FORMAT_RGB565 &&
@@ -540,6 +546,7 @@ static bool test_pipe(data_t *data)
 	drmModeModeInfo *mode;
 	igt_plane_t *primary;
 	bool ret = false;
+	bool run_in_simulation = igt_run_in_simulation();
 
 	igt_info("Using (pipe %s + %s) to run the subtest.\n",
 		 kmstest_pipe_name(data->pipe), igt_output_name(data->output));
@@ -597,7 +604,7 @@ static bool test_pipe(data_t *data)
 
 	for_each_plane_on_pipe(&data->display, data->pipe, data->plane) {
 		ret = test_plane(data);
-		if (ret)
+		if (ret || run_in_simulation)
 			break;
 	}
 
