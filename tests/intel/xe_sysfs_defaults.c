@@ -13,6 +13,7 @@
  * Test category: functionality test
  *
  * SUBTEST: engine-defaults
+ * Description: check each engine defaults in sysfs.
  */
 
 #include <dirent.h>
