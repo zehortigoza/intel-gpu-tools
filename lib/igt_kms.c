@@ -5386,7 +5386,10 @@ void igt_wait_for_vblank(int drm_fd, int crtc_offset)
  */
 void igt_enable_connectors(int drm_fd)
 {
+#define MAX_TRIES	10
+#define SLEEP_DURATION	50000
 	drmModeRes *res;
+	int tries;
 
 	res = drmModeGetResources(drm_fd);
 	if (!res)
@@ -5395,10 +5398,28 @@ void igt_enable_connectors(int drm_fd)
 	for (int i = 0; i < res->count_connectors; i++) {
 		drmModeConnector *c;
 
-		/* Do a probe. This may be the first action after booting */
-		c = drmModeGetConnector(drm_fd, res->connectors[i]);
-		if (!c) {
-			igt_warn("Could not read connector %u: %m\n", res->connectors[i]);
+		/*
+		 * The kernel returns the count of connectors before
+		 * they're all fully set up, so we can have a race
+		 * condition where we try to get the connector when
+		 * it's not fully set up yet.  To avoid failing here
+		 * in these cases, retry a few times.
+		 */
+		for (tries = 0; tries < MAX_TRIES; tries++) {
+			/* Do a probe. This may be the first action after booting */
+			c = drmModeGetConnector(drm_fd, res->connectors[i]);
+			if (c)
+				break;
+
+			igt_debug("Could not read connector %u: %m (try %d of %d)\n",
+				  res->connectors[i], tries + 1, MAX_TRIES);
+
+			usleep(SLEEP_DURATION);
+		}
+
+		if (tries == MAX_TRIES) {
+			igt_warn("Could not read connector %u after %d tries, skipping\n",
+				 res->connectors[i], MAX_TRIES);
 			continue;
 		}
 
