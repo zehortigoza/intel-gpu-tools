@@ -31,6 +31,11 @@
 #include "igt_drm_fdinfo.h"
 #include "drmtest.h"
 
+enum utilization_type {
+	UTILIZATION_TYPE_ENGINE_TIME,
+	UTILIZATION_TYPE_TOTAL_CYCLES,
+};
+
 static const char *bars[] = { " ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█" };
 
 static void n_spaces(const unsigned int n)
@@ -174,13 +179,33 @@ print_client(struct igt_drm_client *c, struct igt_drm_client **prevc,
 	     double t, int lines, int con_w, int con_h,
 	     unsigned int period_us, int *engine_w)
 {
+	enum utilization_type utilization_type;
 	unsigned int i;
 	uint64_t sz;
 	int len;
 
+	if (c->utilization_mask & IGT_DRM_CLIENT_UTILIZATION_TOTAL_CYCLES &&
+	    c->utilization_mask & IGT_DRM_CLIENT_UTILIZATION_CYCLES)
+		utilization_type = UTILIZATION_TYPE_TOTAL_CYCLES;
+	else if (c->utilization_mask & IGT_DRM_CLIENT_UTILIZATION_ENGINE_TIME)
+		utilization_type = UTILIZATION_TYPE_ENGINE_TIME;
+	else
+		return 0;
+
+	if (c->samples < 2)
+		return 0;
+
 	/* Filter out idle clients. */
-	if (!c->total_engine_time || c->samples < 2)
-		return lines;
+	switch (utilization_type) {
+	case UTILIZATION_TYPE_ENGINE_TIME:
+	       if (!c->total_engine_time)
+		       return 0;
+	       break;
+	case UTILIZATION_TYPE_TOTAL_CYCLES:
+	       if (!c->total_total_cycles)
+		       return 0;
+	       break;
+	}
 
 	/* Print header when moving to a different DRM card. */
 	if (newheader(c, *prevc)) {
@@ -211,8 +236,16 @@ print_client(struct igt_drm_client *c, struct igt_drm_client **prevc,
 		if (!c->engines->capacity[i])
 			continue;
 
-		pct = (double)c->utilization[i].delta_engine_time / period_us / 1e3 * 100 /
-		      c->engines->capacity[i];
+		switch (utilization_type) {
+		case UTILIZATION_TYPE_ENGINE_TIME:
+			pct = (double)c->utilization[i].delta_engine_time / period_us / 1e3 * 100 /
+				c->engines->capacity[i];
+			break;
+		case UTILIZATION_TYPE_TOTAL_CYCLES:
+			pct = (double)c->utilization[i].delta_cycles / c->utilization[i].delta_total_cycles * 100 /
+				c->engines->capacity[i];
+			break;
+		}
 
 		/*
 		 * Guard against fluctuations between our scanning period and
