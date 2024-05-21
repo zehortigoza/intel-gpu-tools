@@ -597,8 +597,7 @@ static void check_scaling_pipe_plane_rot(data_t *d, igt_plane_t *plane,
 	w = ALIGN(w, 2);
 	h = ALIGN(h, 2);
 
-	igt_create_color_fb(display->drm_fd, w, h,
-			    pixel_format, modifier, 0.0, 1.0, 0.0, &d->fb[0]);
+	igt_create_fb(display->drm_fd, w, h, pixel_format, modifier, &d->fb[0]);
 
 	igt_plane_set_fb(plane, &d->fb[0]);
 	igt_fb_set_position(&d->fb[0], plane, 0, 0);
@@ -1050,18 +1049,14 @@ static void test_scaler_with_multi_pipe_plane(data_t *d)
 	plane[3] = igt_output_get_plane(output2, 1);
 	igt_require(plane[3]);
 
-	igt_create_pattern_fb(d->drm_fd, 600, 600,
-			      DRM_FORMAT_XRGB8888,
-			      DRM_FORMAT_MOD_LINEAR, &d->fb[0]);
-	igt_create_pattern_fb(d->drm_fd, 500, 500,
-			      DRM_FORMAT_XRGB8888,
-			      DRM_FORMAT_MOD_LINEAR, &d->fb[1]);
-	igt_create_pattern_fb(d->drm_fd, 700, 700,
-			      DRM_FORMAT_XRGB8888,
-			      DRM_FORMAT_MOD_LINEAR, &d->fb[2]);
-	igt_create_pattern_fb(d->drm_fd, 400, 400,
-			      DRM_FORMAT_XRGB8888,
-			      DRM_FORMAT_MOD_LINEAR, &d->fb[3]);
+	igt_create_fb(d->drm_fd, 600, 600, DRM_FORMAT_XRGB8888,
+		      DRM_FORMAT_MOD_LINEAR, &d->fb[0]);
+	igt_create_fb(d->drm_fd, 500, 500, DRM_FORMAT_XRGB8888,
+		      DRM_FORMAT_MOD_LINEAR, &d->fb[1]);
+	igt_create_fb(d->drm_fd, 700, 700, DRM_FORMAT_XRGB8888,
+		      DRM_FORMAT_MOD_LINEAR, &d->fb[2]);
+	igt_create_fb(d->drm_fd, 400, 400, DRM_FORMAT_XRGB8888,
+		      DRM_FORMAT_MOD_LINEAR, &d->fb[3]);
 
 	igt_plane_set_fb(plane[0], &d->fb[0]);
 	igt_plane_set_fb(plane[1], &d->fb[1]);
