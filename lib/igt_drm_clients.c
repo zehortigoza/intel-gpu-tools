@@ -109,13 +109,14 @@ igt_drm_client_update(struct igt_drm_client *c, unsigned int pid, char *name,
 	for (i = 0; i <= c->engines->max_engine_id; i++) {
 		assert(i < ARRAY_SIZE(info->engine_time));
 
-		if (info->engine_time[i] < c->last_engine_time[i])
+		if (info->engine_time[i] < c->utilization[i].last_engine_time)
 			continue; /* It will catch up soon. */
 
 		c->total_engine_time += info->engine_time[i];
-		c->delta_engine_time[i] = info->engine_time[i] - c->last_engine_time[i];
-		c->agg_delta_engine_time += c->delta_engine_time[i];
-		c->last_engine_time[i] = info->engine_time[i];
+		c->utilization[i].delta_engine_time =
+			info->engine_time[i] - c->utilization[i].last_engine_time;
+		c->agg_delta_engine_time += c->utilization[i].delta_engine_time;
+		c->utilization[i].last_engine_time = info->engine_time[i];
 	}
 
 	/* Memory regions */
@@ -183,11 +184,9 @@ igt_drm_client_add(struct igt_drm_clients *clients,
 		c->engines->max_engine_id = i;
 	}
 
-	c->delta_engine_time = calloc(c->engines->max_engine_id + 1,
-			       sizeof(*c->delta_engine_time));
-	c->last_engine_time = calloc(c->engines->max_engine_id + 1,
-			      sizeof(*c->last_engine_time));
-	assert(c->delta_engine_time && c->last_engine_time);
+	c->utilization = calloc(c->engines->max_engine_id + 1,
+				sizeof(*c->utilization));
+	assert(c->utilization);
 
 	/* Memory regions */
 	c->regions = calloc(1, sizeof(*c->regions));
@@ -225,8 +224,7 @@ void igt_drm_client_free(struct igt_drm_client *c, bool clear)
 	}
 	free(c->engines);
 
-	free(c->delta_engine_time);
-	free(c->last_engine_time);
+	free(c->utilization);
 
 	if (c->regions) {
 		for (i = 0; i <= c->regions->max_region_id; i++)

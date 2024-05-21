@@ -211,7 +211,7 @@ print_client(struct igt_drm_client *c, struct igt_drm_client **prevc,
 		if (!c->engines->capacity[i])
 			continue;
 
-		pct = (double)c->delta_engine_time[i] / period_us / 1e3 * 100 /
+		pct = (double)c->utilization[i].delta_engine_time / period_us / 1e3 * 100 /
 		      c->engines->capacity[i];
 
 		/*

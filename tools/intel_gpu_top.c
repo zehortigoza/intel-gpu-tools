@@ -893,9 +893,9 @@ static struct igt_drm_clients *display_clients(struct igt_drm_clients *clients)
 			strcpy(ac->pid_str, c->pid_str);
 			strcpy(ac->print_name, c->print_name);
 			ac->engines = c->engines;
-			ac->delta_engine_time = calloc(c->engines->max_engine_id + 1,
-						sizeof(ac->delta_engine_time[0]));
-			assert(ac->delta_engine_time);
+			ac->utilization = calloc(c->engines->max_engine_id + 1,
+						 sizeof(*ac->utilization));
+			assert(ac->utilization);
 			ac->regions = c->regions;
 			ac->memory = calloc(c->regions->max_region_id + 1,
 					    sizeof(ac->memory[0]));
@@ -912,7 +912,7 @@ static struct igt_drm_clients *display_clients(struct igt_drm_clients *clients)
 		ac->agg_delta_engine_time += c->agg_delta_engine_time;
 
 		for (i = 0; i <= c->engines->max_engine_id; i++)
-			ac->delta_engine_time[i] += c->delta_engine_time[i];
+			ac->utilization[i].delta_engine_time += c->utilization[i].delta_engine_time;
 
 		for (i = 0; i <= c->regions->max_region_id; i++) {
 			ac->memory[i].total += c->memory[i].total;
@@ -946,7 +946,7 @@ static void free_display_clients(struct igt_drm_clients *clients)
 	 * or borrowed fields which we don't want the library to try and free.
 	 */
 	igt_for_each_drm_client(clients, c, tmp) {
-		free(c->delta_engine_time);
+		free(c->utilization);
 		free(c->memory);
 	}
 
@@ -2161,7 +2161,7 @@ print_client(struct igt_drm_client *c, struct engines *engines, double t, int li
 				continue;
 			}
 
-			pct = (double)c->delta_engine_time[i] / period_us / 1e3 * 100;
+			pct = (double)c->utilization[i].delta_engine_time / period_us / 1e3 * 100;
 
 			/*
 			 * Guard against possible time-drift between sampling
@@ -2235,7 +2235,7 @@ print_client(struct igt_drm_client *c, struct engines *engines, double t, int li
 					 iclients->classes.names[i]);
 				pops->open_struct(buf);
 
-				pct = (double)c->delta_engine_time[i] / period_us / 1e3 * 100;
+				pct = (double)c->utilization[i].delta_engine_time / period_us / 1e3 * 100;
 				snprintf(buf, sizeof(buf), "%f", pct);
 				__json_add_member("busy", buf);
 

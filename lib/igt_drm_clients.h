@@ -63,10 +63,14 @@ struct igt_drm_client {
 	char name[24]; /* Process name of the owning PID. */
 	char print_name[24]; /* Name without any non-printable characters. */
 	unsigned int samples; /* Count of times scanning updated this client. */
-	unsigned long total_engine_time; /* Aggregate of @agg_delta_engine_time, i.e. engine time on all engines since client start. */
-	unsigned long agg_delta_engine_time; /* Aggregate of @delta_engine_time, i.e. engine time on all engines since previous scan. */
-	unsigned long *delta_engine_time; /* Array of engine time data, relative to previous scan. */
-	uint64_t *last_engine_time; /* Array of engine time data as parsed from fdinfo. */
+
+	unsigned long total_engine_time; /* Aggregate of @utilization.agg_delta_engine_time, i.e. engine time on all engines since client start. */
+	unsigned long agg_delta_engine_time; /* Aggregate of @utilization.delta_engine_time, i.e. engine time on all engines since previous scan. */
+	struct igt_drm_client_utilization {
+		unsigned long delta_engine_time; /* Engine time data, relative to previous scan. */
+		uint64_t last_engine_time; /* Engine time data as parsed from fdinfo. */
+	} *utilization; /* Array of engine utilization */
+
 	struct drm_client_meminfo *memory; /* Array of region memory utilisation as parsed from fdinfo. */
 };
 
