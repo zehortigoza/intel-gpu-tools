@@ -193,14 +193,14 @@ static void end_spin(int fd, igt_spin_t *spin, unsigned int flags)
 	}
 }
 
-static uint64_t read_busy(int i915, unsigned int class)
+static uint64_t read_engine_time(int i915, unsigned int class)
 {
 	struct drm_client_fdinfo info = { };
 
 	igt_assert(igt_parse_drm_fdinfo(i915, &info, engine_map,
 					ARRAY_SIZE(engine_map), NULL, 0));
 
-	return info.busy[class];
+	return info.engine_time[class];
 }
 
 static void
@@ -230,11 +230,11 @@ single(int gem_fd, const intel_ctx_t *ctx,
 	else
 		spin = NULL;
 
-	val = read_busy(gem_fd, e->class);
+	val = read_engine_time(gem_fd, e->class);
 	slept = measured_usleep(batch_duration_ns / 1000);
 	if (flags & TEST_TRAILING_IDLE)
 		end_spin(spin_fd, spin, flags);
-	val = read_busy(gem_fd, e->class) - val;
+	val = read_engine_time(gem_fd, e->class) - val;
 
 	if (flags & FLAG_HANG)
 		igt_force_gpu_reset(spin_fd);
@@ -251,9 +251,9 @@ single(int gem_fd, const intel_ctx_t *ctx,
 		gem_quiescent_gpu(spin_fd);
 		igt_assert(!gem_bo_busy(spin_fd, spin->handle));
 
-		val = read_busy(gem_fd, e->class);
+		val = read_engine_time(gem_fd, e->class);
 		slept = measured_usleep(batch_duration_ns / 1000);
-		val = read_busy(gem_fd, e->class) - val;
+		val = read_engine_time(gem_fd, e->class) - val;
 
 		assert_within_epsilon(val, 0, tolerance);
 	}
@@ -283,14 +283,14 @@ static void log_busy(unsigned int num_engines, uint64_t *val)
 	igt_info("%s", buf);
 }
 
-static void read_busy_all(int i915, uint64_t *val)
+static void read_engine_time_all(int i915, uint64_t *val)
 {
 	struct drm_client_fdinfo info = { };
 
 	igt_assert(igt_parse_drm_fdinfo(i915, &info, engine_map,
 					ARRAY_SIZE(engine_map), NULL, 0));
 
-	memcpy(val, info.busy, sizeof(info.busy));
+	memcpy(val, info.engine_time, sizeof(info.engine_time));
 }
 
 static void
@@ -313,11 +313,11 @@ busy_check_all(int gem_fd, const intel_ctx_t *ctx,
 
 	spin = igt_sync_spin(gem_fd, ahnd, ctx, e);
 
-	read_busy_all(gem_fd, tval[0]);
+	read_engine_time_all(gem_fd, tval[0]);
 	slept = measured_usleep(batch_duration_ns / 1000);
 	if (flags & TEST_TRAILING_IDLE)
 		end_spin(gem_fd, spin, flags);
-	read_busy_all(gem_fd, tval[1]);
+	read_engine_time_all(gem_fd, tval[1]);
 
 	end_spin(gem_fd, spin, FLAG_SYNC);
 	igt_spin_free(gem_fd, spin);
@@ -389,11 +389,11 @@ most_busy_check_all(int gem_fd, const intel_ctx_t *ctx,
 	/* Small delay to allow engines to start. */
 	usleep(__igt_sync_spin_wait(gem_fd, spin) * num_engines / 1e3);
 
-	read_busy_all(gem_fd, tval[0]);
+	read_engine_time_all(gem_fd, tval[0]);
 	slept = measured_usleep(batch_duration_ns / 1000);
 	if (flags & TEST_TRAILING_IDLE)
 		end_spin(gem_fd, spin, flags);
-	read_busy_all(gem_fd, tval[1]);
+	read_engine_time_all(gem_fd, tval[1]);
 
 	end_spin(gem_fd, spin, FLAG_SYNC);
 	igt_spin_free(gem_fd, spin);
@@ -444,11 +444,11 @@ all_busy_check_all(int gem_fd, const intel_ctx_t *ctx,
 	/* Small delay to allow engines to start. */
 	usleep(__igt_sync_spin_wait(gem_fd, spin) * num_engines / 1e3);
 
-	read_busy_all(gem_fd, tval[0]);
+	read_engine_time_all(gem_fd, tval[0]);
 	slept = measured_usleep(batch_duration_ns / 1000);
 	if (flags & TEST_TRAILING_IDLE)
 		end_spin(gem_fd, spin, flags);
-	read_busy_all(gem_fd, tval[1]);
+	read_engine_time_all(gem_fd, tval[1]);
 
 	end_spin(gem_fd, spin, FLAG_SYNC);
 	igt_spin_free(gem_fd, spin);
@@ -590,11 +590,11 @@ virtual(int i915, const intel_ctx_cfg_t *base_cfg, unsigned int flags)
 			else
 				spin = NULL;
 
-			val = read_busy(i915, class);
+			val = read_engine_time(i915, class);
 			slept = measured_usleep(batch_duration_ns / 1000);
 			if (flags & TEST_TRAILING_IDLE)
 				end_spin(i915, spin, flags);
-			val = read_busy(i915, class) - val;
+			val = read_engine_time(i915, class) - val;
 
 			if (flags & FLAG_HANG)
 				igt_force_gpu_reset(i915);
@@ -611,10 +611,10 @@ virtual(int i915, const intel_ctx_cfg_t *base_cfg, unsigned int flags)
 				gem_quiescent_gpu(i915);
 				igt_assert(!gem_bo_busy(i915, spin->handle));
 
-				val = read_busy(i915, class);
+				val = read_engine_time(i915, class);
 				slept = measured_usleep(batch_duration_ns /
 							1000);
-				val = read_busy(i915, class) - val;
+				val = read_engine_time(i915, class) - val;
 
 				assert_within_epsilon(val, 0, tolerance);
 			}
@@ -701,11 +701,11 @@ virtual_all(int i915, const intel_ctx_cfg_t *base_cfg, unsigned int flags)
 		/* Small delay to allow engines to start. */
 		usleep(__igt_sync_spin_wait(i915, spin) * count / 1e3);
 
-		val = read_busy(i915, class);
+		val = read_engine_time(i915, class);
 		slept = measured_usleep(batch_duration_ns / 1000);
 		if (flags & TEST_TRAILING_IDLE)
 			end_spin(i915, spin, flags);
-		val = read_busy(i915, class) - val;
+		val = read_engine_time(i915, class) - val;
 
 		if (flags & FLAG_HANG)
 			igt_force_gpu_reset(i915);
@@ -719,10 +719,10 @@ virtual_all(int i915, const intel_ctx_cfg_t *base_cfg, unsigned int flags)
 			gem_quiescent_gpu(i915);
 			igt_assert(!gem_bo_busy(i915, spin->handle));
 
-			val = read_busy(i915, class);
+			val = read_engine_time(i915, class);
 			slept = measured_usleep(batch_duration_ns /
 						1000);
-			val = read_busy(i915, class) - val;
+			val = read_engine_time(i915, class) - val;
 
 			assert_within_epsilon(val, 0, tolerance);
 		}

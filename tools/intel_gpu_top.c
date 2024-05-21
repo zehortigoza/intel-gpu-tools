@@ -793,7 +793,7 @@ static int client_last_cmp(const void *_a, const void *_b, void *unused)
 {
 	const struct igt_drm_client *a = _a;
 	const struct igt_drm_client *b = _b;
-	long val_a = a->last_runtime, val_b = b->last_runtime;
+	long val_a = a->agg_delta_engine_time, val_b = b->agg_delta_engine_time;
 
 	/*
 	 * Sort clients in descending order of runtime in the previous sampling
@@ -812,7 +812,7 @@ static int client_total_cmp(const void *_a, const void *_b, void *unused)
 {
 	const struct igt_drm_client *a = _a;
 	const struct igt_drm_client *b = _b;
-	long val_a = a->total_runtime, val_b = b->total_runtime;
+	long val_a = a->total_engine_time, val_b = b->total_engine_time;
 
 	if (val_a == val_b)
 		return __client_id_cmp(a, b);
@@ -893,9 +893,9 @@ static struct igt_drm_clients *display_clients(struct igt_drm_clients *clients)
 			strcpy(ac->pid_str, c->pid_str);
 			strcpy(ac->print_name, c->print_name);
 			ac->engines = c->engines;
-			ac->val = calloc(c->engines->max_engine_id + 1,
-					 sizeof(ac->val[0]));
-			assert(ac->val);
+			ac->delta_engine_time = calloc(c->engines->max_engine_id + 1,
+						sizeof(ac->delta_engine_time[0]));
+			assert(ac->delta_engine_time);
 			ac->regions = c->regions;
 			ac->memory = calloc(c->regions->max_region_id + 1,
 					    sizeof(ac->memory[0]));
@@ -908,11 +908,11 @@ static struct igt_drm_clients *display_clients(struct igt_drm_clients *clients)
 			continue;
 
 		ac->samples = 2; /* All what matters for display. */
-		ac->total_runtime += c->total_runtime;
-		ac->last_runtime += c->last_runtime;
+		ac->total_engine_time += c->total_engine_time;
+		ac->agg_delta_engine_time += c->agg_delta_engine_time;
 
 		for (i = 0; i <= c->engines->max_engine_id; i++)
-			ac->val[i] += c->val[i];
+			ac->delta_engine_time[i] += c->delta_engine_time[i];
 
 		for (i = 0; i <= c->regions->max_region_id; i++) {
 			ac->memory[i].total += c->memory[i].total;
@@ -946,7 +946,7 @@ static void free_display_clients(struct igt_drm_clients *clients)
 	 * or borrowed fields which we don't want the library to try and free.
 	 */
 	igt_for_each_drm_client(clients, c, tmp) {
-		free(c->val);
+		free(c->delta_engine_time);
 		free(c->memory);
 	}
 
@@ -2120,7 +2120,7 @@ print_client(struct igt_drm_client *c, struct engines *engines, double t, int li
 	int len;
 
 	if (output_mode == INTERACTIVE) {
-		if (filter_idle && (!c->total_runtime || c->samples < 2))
+		if (filter_idle && (!c->total_engine_time || c->samples < 2))
 			return lines;
 
 		lines++;
@@ -2161,7 +2161,7 @@ print_client(struct igt_drm_client *c, struct engines *engines, double t, int li
 				continue;
 			}
 
-			pct = (double)c->val[i] / period_us / 1e3 * 100;
+			pct = (double)c->delta_engine_time[i] / period_us / 1e3 * 100;
 
 			/*
 			 * Guard against possible time-drift between sampling
@@ -2235,7 +2235,7 @@ print_client(struct igt_drm_client *c, struct engines *engines, double t, int li
 					 iclients->classes.names[i]);
 				pops->open_struct(buf);
 
-				pct = (double)c->val[i] / period_us / 1e3 * 100;
+				pct = (double)c->delta_engine_time[i] / period_us / 1e3 * 100;
 				snprintf(buf, sizeof(buf), "%f", pct);
 				__json_add_member("busy", buf);
 

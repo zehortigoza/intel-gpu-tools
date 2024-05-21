@@ -60,7 +60,7 @@ struct drm_client_fdinfo {
 	unsigned int utilization_mask;
 
 	/* drm-engine-<engine> values */
-	uint64_t busy[DRM_CLIENT_FDINFO_MAX_ENGINES];
+	uint64_t engine_time[DRM_CLIENT_FDINFO_MAX_ENGINES];
 	/* drm-cycles-<engine> values */
 	uint64_t cycles[DRM_CLIENT_FDINFO_MAX_ENGINES];
 

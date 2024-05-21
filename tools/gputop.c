@@ -179,7 +179,7 @@ print_client(struct igt_drm_client *c, struct igt_drm_client **prevc,
 	int len;
 
 	/* Filter out idle clients. */
-	if (!c->total_runtime || c->samples < 2)
+	if (!c->total_engine_time || c->samples < 2)
 		return lines;
 
 	/* Print header when moving to a different DRM card. */
@@ -211,7 +211,7 @@ print_client(struct igt_drm_client *c, struct igt_drm_client **prevc,
 		if (!c->engines->capacity[i])
 			continue;
 
-		pct = (double)c->val[i] / period_us / 1e3 * 100 /
+		pct = (double)c->delta_engine_time[i] / period_us / 1e3 * 100 /
 		      c->engines->capacity[i];
 
 		/*
@@ -260,8 +260,8 @@ static int client_cmp(const void *_a, const void *_b, void *unused)
 	 * Within buckets sort by last sampling period aggregated runtime, with
 	 * client id as a tie-breaker.
 	 */
-	val_a = a->last_runtime;
-	val_b = b->last_runtime;
+	val_a = a->agg_delta_engine_time;
+	val_b = b->agg_delta_engine_time;
 	if (val_a == val_b)
 		return __client_id_cmp(a, b);
 	else if (val_b > val_a)
