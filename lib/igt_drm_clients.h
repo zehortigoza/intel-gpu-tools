@@ -33,6 +33,11 @@ enum igt_drm_client_status {
 	IGT_DRM_CLIENT_PROBE
 };
 
+enum igt_drm_client_utilization_type {
+	IGT_DRM_CLIENT_UTILIZATION_ENGINE_TIME	= 1U << 0,
+	IGT_DRM_CLIENT_UTILIZATION_CYCLES	= 1U << 1,
+};
+
 struct igt_drm_client_engines {
 	unsigned int num_engines; /* Number of discovered active engines. */
 	unsigned int max_engine_id; /* Largest engine index discovered.
@@ -64,11 +69,16 @@ struct igt_drm_client {
 	char print_name[24]; /* Name without any non-printable characters. */
 	unsigned int samples; /* Count of times scanning updated this client. */
 
+	uint32_t utilization_mask; /* mask of enum igt_drm_client_utilization_type */
 	unsigned long total_engine_time; /* Aggregate of @utilization.agg_delta_engine_time, i.e. engine time on all engines since client start. */
 	unsigned long agg_delta_engine_time; /* Aggregate of @utilization.delta_engine_time, i.e. engine time on all engines since previous scan. */
+	unsigned long total_cycles; /* Aggregate of @utilization.agg_delta_cycles, i.e. engine time on all engines since client start. */
+	unsigned long agg_delta_cycles; /* Aggregate of @utilization.delta_cycles, i.e. engine time on all engines since previous scan. */
 	struct igt_drm_client_utilization {
 		unsigned long delta_engine_time; /* Engine time data, relative to previous scan. */
+		unsigned long delta_cycles; /* Engine cycles data, relative to previous scan. */
 		uint64_t last_engine_time; /* Engine time data as parsed from fdinfo. */
+		uint64_t last_cycles; /* Engine cycles data as parsed from fdinfo. */
 	} *utilization; /* Array of engine utilization */
 
 	struct drm_client_meminfo *memory; /* Array of region memory utilisation as parsed from fdinfo. */

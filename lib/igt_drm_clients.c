@@ -105,18 +105,32 @@ igt_drm_client_update(struct igt_drm_client *c, unsigned int pid, char *name,
 
 	c->agg_delta_engine_time = 0;
 	c->total_engine_time = 0;
+	c->agg_delta_cycles = 0;
+	c->total_cycles = 0;
 
 	for (i = 0; i <= c->engines->max_engine_id; i++) {
 		assert(i < ARRAY_SIZE(info->engine_time));
+		assert(i < ARRAY_SIZE(info->cycles));
 
-		if (info->engine_time[i] < c->utilization[i].last_engine_time)
-			continue; /* It will catch up soon. */
+		if (info->utilization_mask & DRM_FDINFO_UTILIZATION_ENGINE_TIME &&
+		    info->engine_time[i] >= c->utilization[i].last_engine_time) {
+			c->utilization_mask |= IGT_DRM_CLIENT_UTILIZATION_ENGINE_TIME;
+			c->total_engine_time += info->engine_time[i];
+			c->utilization[i].delta_engine_time =
+				info->engine_time[i] - c->utilization[i].last_engine_time;
+			c->agg_delta_engine_time += c->utilization[i].delta_engine_time;
+			c->utilization[i].last_engine_time = info->engine_time[i];
+		}
 
-		c->total_engine_time += info->engine_time[i];
-		c->utilization[i].delta_engine_time =
-			info->engine_time[i] - c->utilization[i].last_engine_time;
-		c->agg_delta_engine_time += c->utilization[i].delta_engine_time;
-		c->utilization[i].last_engine_time = info->engine_time[i];
+		if (info->utilization_mask & DRM_FDINFO_UTILIZATION_CYCLES &&
+		    info->cycles[i] >= c->utilization[i].last_cycles) {
+			c->utilization_mask |= IGT_DRM_CLIENT_UTILIZATION_CYCLES;
+			c->total_cycles += info->cycles[i];
+			c->utilization[i].delta_cycles =
+				info->cycles[i] - c->utilization[i].last_cycles;
+			c->agg_delta_cycles += c->utilization[i].delta_cycles;
+			c->utilization[i].last_cycles = info->cycles[i];
+		}
 	}
 
 	/* Memory regions */
