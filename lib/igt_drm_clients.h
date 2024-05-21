@@ -36,6 +36,7 @@ enum igt_drm_client_status {
 enum igt_drm_client_utilization_type {
 	IGT_DRM_CLIENT_UTILIZATION_ENGINE_TIME	= 1U << 0,
 	IGT_DRM_CLIENT_UTILIZATION_CYCLES	= 1U << 1,
+	IGT_DRM_CLIENT_UTILIZATION_TOTAL_CYCLES	= 1U << 2,
 };
 
 struct igt_drm_client_engines {
@@ -74,11 +75,15 @@ struct igt_drm_client {
 	unsigned long agg_delta_engine_time; /* Aggregate of @utilization.delta_engine_time, i.e. engine time on all engines since previous scan. */
 	unsigned long total_cycles; /* Aggregate of @utilization.agg_delta_cycles, i.e. engine time on all engines since client start. */
 	unsigned long agg_delta_cycles; /* Aggregate of @utilization.delta_cycles, i.e. engine time on all engines since previous scan. */
+	unsigned long total_total_cycles; /* Aggregate of @utilization.agg_delta_total_cycles, i.e. engine time on all engines since client start. */
+	unsigned long agg_delta_total_cycles; /* Aggregate of @utilization.delta_total_cycles, i.e. engine time on all engines since previous scan. */
 	struct igt_drm_client_utilization {
 		unsigned long delta_engine_time; /* Engine time data, relative to previous scan. */
 		unsigned long delta_cycles; /* Engine cycles data, relative to previous scan. */
+		unsigned long delta_total_cycles; /* Engine total cycles data, relative to previous scan. */
 		uint64_t last_engine_time; /* Engine time data as parsed from fdinfo. */
 		uint64_t last_cycles; /* Engine cycles data as parsed from fdinfo. */
+		uint64_t last_total_cycles; /* Engine total cycles data as parsed from fdinfo. */
 	} *utilization; /* Array of engine utilization */
 
 	struct drm_client_meminfo *memory; /* Array of region memory utilisation as parsed from fdinfo. */
