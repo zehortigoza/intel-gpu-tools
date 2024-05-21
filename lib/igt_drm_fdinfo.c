@@ -265,6 +265,10 @@ __igt_parse_drm_fdinfo(int dir, const char *fd, struct drm_client_fdinfo *info,
 			idx = parse_engine(l + keylen, info,
 					   name_map, map_entries, &val);
 			UPDATE_ENGINE(idx, cycles, val, DRM_FDINFO_UTILIZATION_CYCLES);
+		} else if (strstartswith(l, "drm-total-cycles-", &keylen)) {
+			idx = parse_engine(l + keylen, info,
+					   name_map, map_entries, &val);
+			UPDATE_ENGINE(idx, total_cycles, val, DRM_FDINFO_UTILIZATION_TOTAL_CYCLES);
 		} else if (strstartswith(l, "drm-total-", &keylen)) {
 			idx = parse_region(l + keylen, info,
 					   region_map, region_entries, &val);

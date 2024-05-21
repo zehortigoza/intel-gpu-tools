@@ -44,6 +44,7 @@ struct drm_client_meminfo {
 enum drm_fdinfo_utilization {
 	DRM_FDINFO_UTILIZATION_ENGINE_TIME	= 1U << 0,
 	DRM_FDINFO_UTILIZATION_CYCLES		= 1U << 1,
+	DRM_FDINFO_UTILIZATION_TOTAL_CYCLES	= 1U << 2,
 };
 
 struct drm_client_fdinfo {
@@ -63,6 +64,8 @@ struct drm_client_fdinfo {
 	uint64_t engine_time[DRM_CLIENT_FDINFO_MAX_ENGINES];
 	/* drm-cycles-<engine> values */
 	uint64_t cycles[DRM_CLIENT_FDINFO_MAX_ENGINES];
+	/* drm-total-cycles-<engine> values */
+	uint64_t total_cycles[DRM_CLIENT_FDINFO_MAX_ENGINES];
 
 	unsigned int num_regions;
 	unsigned int last_region_index;
