@@ -539,8 +539,8 @@ static const struct pci_id_match intel_device_match[] = {
 	INTEL_G45_IDS(&intel_g45_info),
 	INTEL_GM45_IDS(&intel_gm45_info),
 
-	INTEL_IRONLAKE_D_IDS(&intel_ironlake_info),
-	INTEL_IRONLAKE_M_IDS(&intel_ironlake_m_info),
+	INTEL_ILK_D_IDS(&intel_ironlake_info),
+	INTEL_ILK_M_IDS(&intel_ironlake_m_info),
 
 	INTEL_SNB_D_IDS(&intel_sandybridge_info),
 	INTEL_SNB_M_IDS(&intel_sandybridge_m_info),
