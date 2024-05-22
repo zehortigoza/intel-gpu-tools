@@ -155,16 +155,15 @@ unsupported_i915_perf_platform(struct intel_perf *perf)
 	return NULL;
 }
 
+#define ID(id) (id)
+
 static bool
 is_acm_gt1(const struct intel_perf_devinfo *devinfo)
 {
-#undef INTEL_VGA_DEVICE
-#define INTEL_VGA_DEVICE(_id, _info) _id
 	static const uint32_t devids[] = {
-		INTEL_DG2_G11_IDS(NULL),
-		INTEL_ATS_M75_IDS(NULL),
+		INTEL_DG2_G11_IDS(ID),
+		INTEL_ATS_M75_IDS(ID),
 	};
-#undef INTEL_VGA_DEVICE
 	for (uint32_t i = 0; i < ARRAY_SIZE(devids); i++) {
 		if (devids[i] == devinfo->devid)
 			return true;
@@ -176,12 +175,9 @@ is_acm_gt1(const struct intel_perf_devinfo *devinfo)
 static bool
 is_acm_gt2(const struct intel_perf_devinfo *devinfo)
 {
-#undef INTEL_VGA_DEVICE
-#define INTEL_VGA_DEVICE(_id, _info) _id
 	static const uint32_t devids[] = {
-		INTEL_DG2_G12_IDS(NULL),
+		INTEL_DG2_G12_IDS(ID),
 	};
-#undef INTEL_VGA_DEVICE
 	for (uint32_t i = 0; i < ARRAY_SIZE(devids); i++) {
 		if (devids[i] == devinfo->devid)
 			return true;
@@ -193,13 +189,10 @@ is_acm_gt2(const struct intel_perf_devinfo *devinfo)
 static bool
 is_acm_gt3(const struct intel_perf_devinfo *devinfo)
 {
-#undef INTEL_VGA_DEVICE
-#define INTEL_VGA_DEVICE(_id, _info) _id
 	static const uint32_t devids[] = {
-		INTEL_DG2_G10_IDS(NULL),
-		INTEL_ATS_M150_IDS(NULL),
+		INTEL_DG2_G10_IDS(ID),
+		INTEL_ATS_M150_IDS(ID),
 	};
-#undef INTEL_VGA_DEVICE
 	for (uint32_t i = 0; i < ARRAY_SIZE(devids); i++) {
 		if (devids[i] == devinfo->devid)
 			return true;
