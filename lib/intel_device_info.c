@@ -599,8 +599,8 @@ static const struct pci_id_match intel_device_match[] = {
 	INTEL_EHL_IDS(&intel_elkhartlake_info),
 	INTEL_JSL_IDS(&intel_jasperlake_info),
 
-	INTEL_TGL_12_GT1_IDS(&intel_tigerlake_gt1_info),
-	INTEL_TGL_12_GT2_IDS(&intel_tigerlake_gt2_info),
+	INTEL_TGL_GT1_IDS(&intel_tigerlake_gt1_info),
+	INTEL_TGL_GT2_IDS(&intel_tigerlake_gt2_info),
 	INTEL_RKL_IDS(&intel_rocketlake_info),
 
 	INTEL_DG1_IDS(&intel_dg1_info),
