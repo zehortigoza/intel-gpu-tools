@@ -488,10 +488,10 @@ static bool support_dc6(int debugfs_fd)
 	return strstr(buf, "DC5 -> DC6 count");
 }
 
-static int read_runtime_suspended_time(int drm_fd)
+static uint64_t read_runtime_suspended_time(int drm_fd)
 {
 	struct pci_device *i915;
-	int ret;
+	uint64_t ret;
 
 	i915 = igt_device_get_pci_device(drm_fd);
 	ret = igt_pm_get_runtime_suspended_time(i915);
@@ -500,7 +500,7 @@ static int read_runtime_suspended_time(int drm_fd)
 	return ret;
 }
 
-static bool dc9_wait_entry(data_t *data, int dc_target, int prev_dc, int prev_rpm, int msecs)
+static bool dc9_wait_entry(data_t *data, int dc_target, int prev_dc, uint64_t prev_rpm, int msecs)
 {
 	/*
 	 * Runtime suspended residency should increment once DC9 is achieved;
@@ -522,7 +522,8 @@ static void check_dc9(data_t *data, int dc_target, int prev_dc, int prev_rpm)
 
 static void setup_dc9_dpms(data_t *data, int dc_target)
 {
-	int prev_dc = 0, prev_rpm, sysfs_fd;
+	uint64_t prev_rpm;
+	int prev_dc = 0, sysfs_fd;
 
 	igt_require((sysfs_fd = open(KMS_HELPER, O_RDONLY)) >= 0);
 	__igt_sysfs_get_boolean(sysfs_fd, "poll", &kms_poll_saved_state);
