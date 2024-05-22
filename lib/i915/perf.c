@@ -204,13 +204,10 @@ is_acm_gt3(const struct intel_perf_devinfo *devinfo)
 static bool
 is_mtl_gt2(const struct intel_perf_devinfo *devinfo)
 {
-#undef INTEL_VGA_DEVICE
-#define INTEL_VGA_DEVICE(_id, _info) _id
 	static const uint32_t devids[] = {
-		INTEL_MTL_M_IDS(NULL),
-		INTEL_MTL_P_GT2_IDS(NULL),
+		INTEL_MTL_M_IDS(ID),
+		INTEL_MTL_P_GT2_IDS(ID),
 	};
-#undef INTEL_VGA_DEVICE
 	for (uint32_t i = 0; i < ARRAY_SIZE(devids); i++) {
 		if (devids[i] == devinfo->devid)
 			return true;
@@ -222,12 +219,9 @@ is_mtl_gt2(const struct intel_perf_devinfo *devinfo)
 static bool
 is_mtl_gt3(const struct intel_perf_devinfo *devinfo)
 {
-#undef INTEL_VGA_DEVICE
-#define INTEL_VGA_DEVICE(_id, _info) _id
 	static const uint32_t devids[] = {
-		INTEL_MTL_P_GT3_IDS(NULL),
+		INTEL_MTL_P_GT3_IDS(ID),
 	};
-#undef INTEL_VGA_DEVICE
 	for (uint32_t i = 0; i < ARRAY_SIZE(devids); i++) {
 		if (devids[i] == devinfo->devid)
 			return true;

@@ -617,7 +617,7 @@ static const struct pci_id_match intel_device_match[] = {
 
 	INTEL_MTL_IDS(INTEL_VGA_DEVICE, &intel_meteorlake_info),
 
-	INTEL_PVC_IDS(&intel_pontevecchio_info),
+	INTEL_PVC_IDS(INTEL_VGA_DEVICE, &intel_pontevecchio_info),
 
 	XE_LNL_IDS(INTEL_VGA_DEVICE, &intel_lunarlake_info),
 
