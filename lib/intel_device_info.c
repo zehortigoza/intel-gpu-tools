@@ -530,8 +530,8 @@ static const struct pci_id_match intel_device_match[] = {
 	INTEL_I945GM_IDS(&intel_i945m_info),
 
 	INTEL_G33_IDS(&intel_g33_info),
-	INTEL_PINEVIEW_G_IDS(&intel_pineview_g_info),
-	INTEL_PINEVIEW_M_IDS(&intel_pineview_m_info),
+	INTEL_PNV_G_IDS(&intel_pineview_g_info),
+	INTEL_PNV_M_IDS(&intel_pineview_m_info),
 
 	INTEL_I965G_IDS(&intel_i965_info),
 	INTEL_I965GM_IDS(&intel_i965m_info),
