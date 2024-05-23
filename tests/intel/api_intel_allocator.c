@@ -16,7 +16,7 @@
 /**
  * TEST: api intel allocator
  * Description: checking the virtual address ranges
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: IGT Lib
  * Functionality: virtual address

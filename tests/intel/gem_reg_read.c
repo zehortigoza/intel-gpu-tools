@@ -34,7 +34,7 @@
 
 /**
  * TEST: gem reg read
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: ioctl

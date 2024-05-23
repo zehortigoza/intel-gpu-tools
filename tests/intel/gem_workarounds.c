@@ -34,7 +34,7 @@
 #include "igt_types.h"
 /**
  * TEST: gem workarounds
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Workarounds
  * Functionality: workaround registers

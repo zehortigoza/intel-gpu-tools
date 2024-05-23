@@ -10,7 +10,7 @@
 /**
  * TEST: i915 power
  * Description: i915 power measurement tests
- * Category: Desktop client
+ * Category: Core
  * Mega feature: Power management
  * Sub-category: Power management tests
  * Functionality: hwmon

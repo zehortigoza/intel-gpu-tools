@@ -52,7 +52,7 @@
 /**
  * TEST: gem linear blits
  * Description: Test doing many blits with a working set larger than the aperture size.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Blitter tests
  * Functionality: linear blits

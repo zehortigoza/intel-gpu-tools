@@ -48,7 +48,7 @@
 #include "i915/intel_memory_region.h"
 /**
  * TEST: gem exec create
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: buffer management

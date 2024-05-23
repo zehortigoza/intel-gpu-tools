@@ -50,7 +50,7 @@
 /**
  * TEST: gem ctx shared
  * Description: Test shared contexts.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: shared contex

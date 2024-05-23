@@ -26,7 +26,7 @@
 /**
  * TEST: i915 module load
  * Description: Tests the i915 module loading.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: driver
  * Functionality: driver handler

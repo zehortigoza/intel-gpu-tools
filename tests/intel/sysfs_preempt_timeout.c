@@ -42,7 +42,7 @@
 #include "sw_sync.h"
 /**
  * TEST: sysfs preempt timeout
- * Category: Desktop \ Server
+ * Category: Core
  * Mega feature: SysMan
  * Sub-category: SysMan tests
  * Functionality: sysfs preempt timeout

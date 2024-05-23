@@ -11,7 +11,7 @@ IGT_TEST_DESCRIPTION("Basic tests for enabling SR-IOV Virtual Functions");
 
 /**
  * TEST: sriov_basic
- * Category: Software building block
+ * Category: Core
  * Mega feature: SR-IOV
  * Sub-category: VFs enabling
  * Functionality: configure / enable VFs

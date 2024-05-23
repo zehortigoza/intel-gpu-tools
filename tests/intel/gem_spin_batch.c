@@ -27,7 +27,7 @@
 #include "igt.h"
 /**
  * TEST: gem spin batch
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: IGT Lib
  * Functionality: dummy workload

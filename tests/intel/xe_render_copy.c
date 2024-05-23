@@ -17,7 +17,7 @@
 
 /**
  * TEST: Copy memory using 3d engine
- * Category: Software building block
+ * Category: Core
  * Mega feature: Render
  * Sub-category: 3d
  * Functionality: render_copy

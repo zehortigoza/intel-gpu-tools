@@ -47,7 +47,7 @@
 /**
  * TEST: gem ctx sseu
  * Description: Test context render powergating programming.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: sseu api

@@ -33,7 +33,7 @@
 /**
  * TEST: gem busy
  * Description: Basic check of busy-ioctl ABI.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: busy IOCTL

@@ -48,7 +48,7 @@
 /**
  * TEST: perf
  * Description: Test the i915 perf metrics streaming interface
- * Category: Desktop client
+ * Category: Core
  * Mega feature: Performance interface
  * Sub-category: Performance tests
  * Functionality: oa

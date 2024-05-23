@@ -33,7 +33,7 @@
 /**
  * TEST: syncobj timeline
  * Description: Tests for the drm timeline sync object API
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Synchronization
  * Functionality: semaphore

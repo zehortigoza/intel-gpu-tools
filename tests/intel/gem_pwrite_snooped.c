@@ -42,7 +42,7 @@
  * Description: pwrite to a snooped bo then make it uncached and check that the GPU sees the data.
  * Feature: gtt, mapping
  * Sub-category: CMD submission
- * Category: Desktop client
+ * Category: Core
  * Functionality: pwrite
  *
  * SUBTEST:

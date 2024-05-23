@@ -27,7 +27,7 @@
 
 /**
  * TEST: Check whether prime import/export works on the same device
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: DRM
  * Functionality: prime import/export

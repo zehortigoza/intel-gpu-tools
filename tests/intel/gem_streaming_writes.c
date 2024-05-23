@@ -43,7 +43,7 @@
 /**
  * TEST: gem streaming writes
  * Description: Test of streaming writes into active GPU sources
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: barrier

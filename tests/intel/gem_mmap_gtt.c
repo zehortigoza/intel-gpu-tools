@@ -49,7 +49,7 @@
 /**
  * TEST: gem mmap gtt
  * Description: Ensure that all operations around MMAP_GTT ioctl works.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: map gtt

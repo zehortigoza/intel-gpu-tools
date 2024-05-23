@@ -34,7 +34,7 @@
 /**
  * TEST: gem exec reloc
  * Description: Basic sanity check of execbuf-ioctl relocations.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: relocations

@@ -27,7 +27,7 @@
 
 /**
  * TEST: Basic tests for intel-bb xe functionality
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: IGT Lib
  * Functionality: intel-bb

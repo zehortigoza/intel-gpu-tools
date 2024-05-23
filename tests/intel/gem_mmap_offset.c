@@ -40,7 +40,7 @@
 /**
  * TEST: gem mmap offset
  * Description: Basic MMAP_OFFSET IOCTL tests for mem regions
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: mapping

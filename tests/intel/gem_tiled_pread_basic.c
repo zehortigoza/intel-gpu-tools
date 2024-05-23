@@ -51,7 +51,7 @@
 /**
  * TEST: gem tiled pread basic
  * Description: Test pread behavior on tiled objects with respect to the reported swizzling value.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: tiled pread/pwrite

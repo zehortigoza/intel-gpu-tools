@@ -48,7 +48,7 @@
 /**
  * TEST: prime self import
  * Description: Check whether prime import/export works on the same device... but with different fds.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: prime import/export

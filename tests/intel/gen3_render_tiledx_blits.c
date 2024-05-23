@@ -50,7 +50,7 @@
 #include "igt.h"
 /**
  * TEST: gen3 render tiledx blits
- * Category: Obsolete
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Obsolete_gen3
  * Functionality: obsolete_test

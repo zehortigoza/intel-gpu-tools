@@ -43,7 +43,7 @@
 #include "i915/gem_create.h"
 /**
  * TEST: gem fence upload
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: fences

@@ -5,7 +5,7 @@
 
 /**
  * TEST: Check Power Management functionality
- * Category: Software building block
+ * Category: Core
  * Mega feature: Power management
  * Sub-category: Power management tests
  * Test category: functionality test

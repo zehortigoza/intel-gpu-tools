@@ -36,7 +36,7 @@
 /**
  * TEST: gem exec parallel
  * Description: Exercise filling buffers by many clients working in parallel.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: parallel clients

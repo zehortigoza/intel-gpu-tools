@@ -48,7 +48,7 @@
 /**
  * TEST: gem pread
  * Mega feature: General Core features
- * Category: Desktop client
+ * Category: Core
  * Sub-category: CMD submission
  * Functionality: pread
  * Feature: mapping

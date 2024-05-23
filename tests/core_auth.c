@@ -45,7 +45,7 @@
 /**
  * TEST: core auth
  * Description: Call drmGetMagic() and drmAuthMagic() and see if it behaves.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: DRM
  * Functionality: permission management for clients

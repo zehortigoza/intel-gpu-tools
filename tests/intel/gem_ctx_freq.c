@@ -39,7 +39,7 @@
 #include "sw_sync.h"
 /**
  * TEST: gem ctx freq
- * Category: Server
+ * Category: Core
  * Mega feature: Power management
  * Sub-category: Power management tests
  * Functionality: frequency management

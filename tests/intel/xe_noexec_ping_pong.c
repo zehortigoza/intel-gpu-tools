@@ -17,7 +17,7 @@
 
 /**
  * TEST: Expose compute VM's unnecessary rebinds
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: Compute
  * Sub-category: Compute tests
  * Functionality: VM rebind

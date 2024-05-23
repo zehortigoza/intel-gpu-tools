@@ -57,7 +57,7 @@
 /**
  * TEST: gem tiled blits
  * Description: Test doing many tiled blits, with a working set larger than the aperture size.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: tiled blits

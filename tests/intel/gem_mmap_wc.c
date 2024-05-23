@@ -41,7 +41,7 @@
 #include "i915/gem_create.h"
 /**
  * TEST: gem mmap wc
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: cache

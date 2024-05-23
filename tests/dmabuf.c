@@ -26,7 +26,7 @@
 /**
  * TEST: dmabuf
  * Description: Kernel selftests for the dmabuf API
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Functionality: drm_mm
  * Sub-category: Memory management tests

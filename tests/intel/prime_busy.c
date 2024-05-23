@@ -29,7 +29,7 @@
 /**
  * TEST: prime busy
  * Description: Basic check of polling for prime fences.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: prime

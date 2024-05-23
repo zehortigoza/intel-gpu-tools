@@ -28,7 +28,7 @@
 #include "igt_types.h"
 /**
  * TEST: gem ctx isolation
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Security
  * Functionality: priv/non-priv registers

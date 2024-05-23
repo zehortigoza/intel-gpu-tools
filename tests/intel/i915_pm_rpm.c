@@ -42,7 +42,7 @@
 #include <sys/stat.h>
 /**
  * TEST: i915 pm rpm
- * Category: Desktop client
+ * Category: Core
  * Mega feature: Power management
  * Sub-category: Power management tests
  * Functionality: D3 state entry-exit

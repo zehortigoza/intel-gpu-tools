@@ -45,7 +45,7 @@
 #include "sw_sync.h"
 /**
  * TEST: sysfs timeslice duration
- * Category: Desktop \ Server
+ * Category: Core
  * Mega feature: SysMan
  * Sub-category: SysMan tests
  * Functionality: timeslise sysfs

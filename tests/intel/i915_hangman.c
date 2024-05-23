@@ -43,7 +43,7 @@
 /**
  * TEST: i915 hangman
  * Description: Tests for hang detection and recovery
- * Category: Server
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Debugging
  * Functionality: error handling

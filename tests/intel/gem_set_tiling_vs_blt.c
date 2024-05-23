@@ -60,7 +60,7 @@
 /**
  * TEST: gem set tiling vs blt
  * Description: Check for proper synchronization of tiling changes vs. tiled gpu access.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Blitter tests
  * Functionality: tiling

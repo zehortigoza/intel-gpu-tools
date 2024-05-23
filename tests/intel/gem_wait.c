@@ -34,7 +34,7 @@
 /**
  * TEST: gem wait
  * Description: Tests the GEM_WAIT ioctl
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Synchronization
  * Functionality: semaphore

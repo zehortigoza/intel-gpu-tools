@@ -33,7 +33,7 @@
 /**
  * TEST: vgem slow
  * Description: Extended sanity check of Virtual GEM module (vGEM).
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Core
  * Functionality: mock device

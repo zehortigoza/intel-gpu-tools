@@ -42,7 +42,7 @@
 /**
  * TEST: gem lut handle
  * Description: Exercises the basic execbuffer using the handle LUT interface.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: execbuf

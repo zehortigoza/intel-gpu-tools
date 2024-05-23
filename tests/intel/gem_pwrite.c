@@ -49,7 +49,7 @@
 /**
  * TEST: gem pwrite
  * Feature: mapping
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: pwrite

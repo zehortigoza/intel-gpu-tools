@@ -36,7 +36,7 @@
 /**
  * TEST: drm fdinfo
  * Description: Test the i915 drm fdinfo data
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: driver
  * Functionality: Per client memory statistics

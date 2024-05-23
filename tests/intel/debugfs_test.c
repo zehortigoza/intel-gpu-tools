@@ -32,7 +32,7 @@
 /**
  * TEST: debugfs test
  * Description: Read entries from debugfs, hwmon and sysfs paths.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: debugfs

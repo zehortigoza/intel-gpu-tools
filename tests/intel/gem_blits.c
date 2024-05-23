@@ -30,7 +30,7 @@
 #include "intel_blt.h"
 /**
  * TEST: gem blits
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: command streamer

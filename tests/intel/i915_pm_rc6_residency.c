@@ -43,7 +43,7 @@
 #include "sw_sync.h"
 /**
  * TEST: i915 pm rc6 residency
- * Category: Desktop client
+ * Category: Core
  * Mega feature: Power management
  * Sub-category: Power management tests
  * Functionality: rc6

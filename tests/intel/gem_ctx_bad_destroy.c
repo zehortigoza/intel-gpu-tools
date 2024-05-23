@@ -37,7 +37,7 @@
 /**
  * TEST: gem ctx bad destroy
  * Description: Negative test cases for destroy contexts.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: context

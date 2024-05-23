@@ -38,7 +38,7 @@
 /**
  * TEST: gem exec fence
  * Description: Check that execbuf waits for explicit fences
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Synchronization
  * Functionality: semaphore
@@ -89,7 +89,7 @@
  * Description: Check blocking bonded fences on each engine.
  *
  * SUBTEST: expired-history
- * Category: Infrastructure
+ * Category: Core
  * Description: Verifies long history of fences are expired.
  *
  * SUBTEST: invalid-fence-array

@@ -41,7 +41,7 @@
 #include "igt_debugfs.h"
 /**
  * TEST: gem ppgtt
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: ppgtt

@@ -45,7 +45,7 @@
  * TEST: gem bad reloc
  * Description: Simulates SNA behaviour using negative self-relocations for
  *		STATE_BASE_ADDRESS command packets.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: relocations

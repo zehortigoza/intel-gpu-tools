@@ -40,7 +40,7 @@
 /**
  * TEST: gem exec whisper
  * Feature: cmd_submission
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: execbuf

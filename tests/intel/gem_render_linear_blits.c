@@ -51,7 +51,7 @@
 #include "igt.h"
 /**
  * TEST: gem render linear blits
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: render blits

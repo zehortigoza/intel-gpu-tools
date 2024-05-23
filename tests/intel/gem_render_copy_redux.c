@@ -51,7 +51,7 @@
 /**
  * TEST: gem render copy redux
  * Description: Advanced test for the render_copy() function.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: Render
  * Sub-category: Render copy
  * Functionality: render_copy

@@ -27,7 +27,7 @@
 /**
  * TEST: gem lmem swapping
  * Description: Exercise local memory swapping.
- * Category: Server
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: local memory

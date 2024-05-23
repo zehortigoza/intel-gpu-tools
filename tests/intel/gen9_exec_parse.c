@@ -35,7 +35,7 @@
 #include "sw_sync.h"
 /**
  * TEST: gen9 exec parse
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Blitter tests
  * Functionality: command parser

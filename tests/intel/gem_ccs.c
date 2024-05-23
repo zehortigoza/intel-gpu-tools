@@ -19,7 +19,7 @@
 /**
  * TEST: gem ccs
  * Description: Exercise gen12 blitter with and without flatccs compression
- * Category: Desktop \ Server
+ * Category: Core
  * Mega feature: Compression
  * Sub-category: Flat-ccs tests
  * Functionality: block-copy

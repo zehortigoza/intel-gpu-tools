@@ -29,7 +29,7 @@
 #include "igt_dummyload.h"
 /**
  * TEST: gem vm create
- * Category: Server
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: context

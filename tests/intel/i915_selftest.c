@@ -28,14 +28,14 @@
  * Description: Basic unit tests for i915.ko
  *
  * SUBTEST: live
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Selftest subcategory
  * Functionality: live selftest
  * Feature: gem_core
  *
  * SUBTEST: live@active
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Synchronization
  * Functionality: semaphore
@@ -43,7 +43,7 @@
  *
  * SUBTEST: live@blt
  * Description: Blitter validation
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Blitter tests
  * Functionality: command streamer
@@ -51,7 +51,7 @@
  *
  * SUBTEST: live@client
  * Description: Internal API over blitter
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: blitter api
@@ -59,35 +59,35 @@
  *
  * SUBTEST: live@coherency
  * Description: Cache management
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: cache
  * Test category: i915 / HW
  *
  * SUBTEST: live@debugger
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Debugging
  * Functionality: device management
  * Test category: debugger
  *
  * SUBTEST: live@display
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Display Features
  * Sub-category: Display tests
  * Functionality: display sanity
  * Test category: i915
  *
  * SUBTEST: live@dmabuf
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: dmabuf test
  * Test category: i915
  *
  * SUBTEST: live@evict
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: GTT eviction
@@ -95,14 +95,14 @@
  *
  * SUBTEST: live@execlists
  * Description: command submission backend
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: execlists
  * Test category: i915
  *
  * SUBTEST: live@gem
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: execbuf
@@ -110,7 +110,7 @@
  *
  * SUBTEST: live@gem_contexts
  * Description: User isolation and execution at the context level
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: context
@@ -118,7 +118,7 @@
  *
  * SUBTEST: live@gem_execbuf
  * Description: command submission support
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: execbuf
@@ -126,7 +126,7 @@
  *
  * SUBTEST: live@gt_ccs_mode
  * Description: Multi-ccs internal validation
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: multii-ccs
@@ -134,7 +134,7 @@
  *
  * SUBTEST: live@gt_contexts
  * Description: HW isolation and HW context validation
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: context
@@ -142,7 +142,7 @@
  *
  * SUBTEST: live@gt_engines
  * Description: command submission topology validation
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: command submission topology
@@ -150,7 +150,7 @@
  *
  * SUBTEST: live@gt_gtt
  * Description: Validation of virtual address management and execution
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: gtt
@@ -158,7 +158,7 @@
  *
  * SUBTEST: live@gt_heartbeat
  * Description: Stall detection interface validation
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Reset tests
  * Functionality: heartbeat
@@ -166,7 +166,7 @@
  *
  * SUBTEST: live@gt_lrc
  * Description: HW isolation and HW context validation
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: context
@@ -174,7 +174,7 @@
  *
  * SUBTEST: live@gt_mocs
  * Description: Verification of mocs registers
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Mocs
  * Functionality: mocs registers
@@ -182,21 +182,21 @@
  *
  * SUBTEST: live@gt_pm
  * Description: Basic i915 driver module selftests
- * Category: Selftest
+ * Category: Core
  * Mega feature: Power management
  * Sub-category: Power management tests
  * Functionality: rps, rc6
  *
  * SUBTEST: live@gt_timelines
  * Description: semaphore tracking
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Synchronization
  * Functionality: semaphore
  * Test category: i915
  *
  * SUBTEST: live@gt_tlb
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: tlb
@@ -204,7 +204,7 @@
  *
  * SUBTEST: live@gtt
  * Description: Virtual address management interface validation
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: virtual address
@@ -212,14 +212,14 @@
  *
  * SUBTEST: live@gtt_l4wa
  * Description: Check the L4WA is enabled when it was required
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Workarounds
  * Functionality: L4WA
  * Test category: i915
  *
  * SUBTEST: live@guc
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Firmware tests
  * Functionality: GUC
@@ -227,7 +227,7 @@
  * Test category: GuC
  *
  * SUBTEST: live@guc_doorbells
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Firmware tests
  * Functionality: GUC
@@ -235,7 +235,7 @@
  * Test category: GuC
  *
  * SUBTEST: live@guc_hang
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Firmware tests
  * Functionality: GUC
@@ -243,7 +243,7 @@
  * Test category: GuC
  *
  * SUBTEST: live@guc_multi_lrc
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Firmware tests
  * Functionality: GUC
@@ -252,7 +252,7 @@
  *
  * SUBTEST: live@hangcheck
  * Description: reset handling after stall detection
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Functionality: hangcheck
  * Test category: i915
@@ -260,7 +260,7 @@
  *
  * SUBTEST: live@hugepages
  * Description: Large page support validation
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: large page
@@ -268,7 +268,7 @@
  *
  * SUBTEST: live@late_gt_pm
  * Description: Basic i915 driver module selftests
- * Category: Selftest
+ * Category: Core
  * Mega feature: Power management
  * Sub-category: Power management tests
  * Feature: rc6
@@ -276,7 +276,7 @@
  *
  * SUBTEST: live@lmem
  * Description: Basic i915 driver module selftests
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Feature: local_memory
@@ -284,23 +284,23 @@
  *
  * SUBTEST: live@memory_region
  * Description: memory topology validation and migration checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: memory topology
  * Test category: i915 / HW
  *
  * SUBTEST: live@memory_region_cross_tile
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Description: Multi-tile memory topology validation
- * Category: Selftest
+ * Category: Core
  * Sub-category: MultiTile
  * Functionality: memory topology
  *
  * SUBTEST: live@mman
  * Description: memory management validation
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: mapping
@@ -308,7 +308,7 @@
  *
  * SUBTEST: live@obj_lock
  * Description: Validation of per-object locking patterns
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Core
  * Functionality: per-object locking
@@ -316,7 +316,7 @@
  *
  * SUBTEST: live@objects
  * Description: User object allocation and isolation checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Core
  * Functionality: objects
@@ -324,7 +324,7 @@
  *
  * SUBTEST: live@perf
  * Description: Basic i915 module perf unit selftests
- * Category: Selftest
+ * Category: Core
  * Mega feature: Performance interface
  * Sub-category: Performance tests
  * Functionality: perf
@@ -332,14 +332,14 @@
  *
  * SUBTEST: live@remote_tiles
  * Description: Tile meta data validation
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: MultiTile
  * Functionality: meta data
  *
  * SUBTEST: live@requests
  * Description: Validation of internal i915 command submission interface
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: command submission interface
@@ -347,7 +347,7 @@
  *
  * SUBTEST: live@reset
  * Description: engine/GT resets
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Reset tests
  * Functionality: engine/GT reset
@@ -355,21 +355,21 @@
  *
  * SUBTEST: live@sanitycheck
  * Description: Checks the selftest infrastructure itself
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Core
  * Functionality: sanitycheck
  * Test category: i915
  *
  * SUBTEST: live@scheduler
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD Submission
  * Functionality: scheduler
  *
  * SUBTEST: live@semaphores
  * Description: GuC semaphore management
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Synchronization
  * Functionality: semaphore
@@ -377,7 +377,7 @@
  *
  * SUBTEST: live@slpc
  * Description: Basic i915 driver module selftests
- * Category: Selftest
+ * Category: Core
  * Mega feature: Power management
  * Sub-category: Power management tests
  * Functionality: slpc
@@ -385,7 +385,7 @@
  *
  * SUBTEST: live@uncore
  * Description: Basic i915 driver module selftests
- * Category: Selftest
+ * Category: Core
  * Mega feature: Power management
  * Sub-category: Power management tests
  * Functionality: forcewake
@@ -393,7 +393,7 @@
  *
  * SUBTEST: live@vma
  * Description: Per-object virtual address management
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: virtual address
@@ -401,7 +401,7 @@
  *
  * SUBTEST: live@win_blt_copy
  * Description: Validation of migration interface
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Blitter tests
  * Functionality: migration interface
@@ -409,14 +409,14 @@
  *
  * SUBTEST: live@workarounds
  * Description: Check workarounds persist or are reapplied after resets and other power management events
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Workarounds
  * Functionality: driver workarounds
  * Test category: HW
  *
  * SUBTEST: mock
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Feature: gem_core
  * Sub-category: Selftest subcategory
@@ -425,7 +425,7 @@
  *
  * SUBTEST: mock@buddy
  * Description: Buddy allocation
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: buddy allocation
@@ -433,7 +433,7 @@
  *
  * SUBTEST: mock@contexts
  * Description: GEM context internal API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: context
@@ -441,7 +441,7 @@
  *
  * SUBTEST: mock@dmabuf
  * Description: dma-buf (buffer management) API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: dmabuf test
@@ -449,7 +449,7 @@
  *
  * SUBTEST: mock@engine
  * Description: Engine topology API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: engine topology
@@ -457,7 +457,7 @@
  *
  * SUBTEST: mock@evict
  * Description: GTT eviction API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: gtt eviction
@@ -465,7 +465,7 @@
  *
  * SUBTEST: mock@fence
  * Description: semaphore API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: semaphore api
@@ -473,7 +473,7 @@
  *
  * SUBTEST: mock@gtt
  * Description: Virtual address management API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: gtt
@@ -481,7 +481,7 @@
  *
  * SUBTEST: mock@hugepages
  * Description: Hugepage API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: huge page
@@ -489,7 +489,7 @@
  *
  * SUBTEST: mock@memory_region
  * Description: Memory region API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: memory region
@@ -497,7 +497,7 @@
  *
  * SUBTEST: mock@objects
  * Description: Buffer object API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: buffer object
@@ -505,7 +505,7 @@
  *
  * SUBTEST: mock@phys
  * Description: legacy physical object API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: physical object
@@ -513,7 +513,7 @@
  *
  * SUBTEST: mock@requests
  * Description: Internal command submission API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: requests
@@ -521,7 +521,7 @@
  *
  * SUBTEST: mock@ring
  * Description: Ringbuffer management API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: ringbuffer
@@ -529,7 +529,7 @@
  *
  * SUBTEST: mock@sanitycheck
  * Description: Selftest for the selftest
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Core
  * Functionality: sanitycheck
@@ -537,7 +537,7 @@
  *
  * SUBTEST: mock@scatterlist
  * Description: Scatterlist API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: scatterlist
@@ -545,7 +545,7 @@
  *
  * SUBTEST: mock@shmem
  * Description: SHM utils API checks
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: shm
@@ -553,7 +553,7 @@
  *
  * SUBTEST: mock@syncmap
  * Description: API checks for the contracted radixtree
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: contracted radixtree
@@ -561,14 +561,14 @@
  *
  * SUBTEST: mock@timelines
  * Description: API checks for semaphore tracking
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: semaphore api
  * Test category: i915
  *
  * SUBTEST: mock@tlb
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: tlb
@@ -576,7 +576,7 @@
  *
  * SUBTEST: mock@uncore
  * Description: Basic i915 driver module selftests
- * Category: Selftest
+ * Category: Core
  * Mega feature: Power management
  * Sub-category: Power management tests
  * Functionality: forcewake
@@ -584,14 +584,14 @@
  *
  * SUBTEST: mock@vma
  * Description: API checks for virtual address management
- * Category: Selftest
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: virtual address
  * Test category: i915
  *
  * SUBTEST: perf
- * Category: Selftest
+ * Category: Core
  * Mega feature: Performance interface
  * Sub-category: Performance tests
  * Functionality: oa
@@ -599,7 +599,7 @@
  *
  * SUBTEST: perf@blt
  * Description: Basic i915 module perf unit selftests
- * Category: Selftest
+ * Category: Core
  * Mega feature: Performance interface
  * Sub-category: Performance tests
  * Functionality: perf
@@ -607,7 +607,7 @@
  *
  * SUBTEST: perf@engine_cs
  * Description: Basic i915 module perf unit selftests
- * Category: Selftest
+ * Category: Core
  * Mega feature: Performance interface
  * Sub-category: Performance tests
  * Functionality: perf
@@ -615,7 +615,7 @@
  *
  * SUBTEST: perf@region
  * Description: Basic i915 module perf unit selftests
- * Category: Selftest
+ * Category: Core
  * Mega feature: Performance interface
  * Sub-category: Performance tests
  * Functionality: perf
@@ -623,14 +623,14 @@
  *
  * SUBTEST: perf@request
  * Description: Basic i915 module perf unit selftests
- * Category: Selftest
+ * Category: Core
  * Mega feature: Performance interface
  * Sub-category: Performance tests
  * Functionality: perf
  *
  * SUBTEST: perf@scheduler
  * Description: Basic i915 module perf unit selftests
- * Category: Selftest
+ * Category: Core
  * Mega feature: Performance interface
  * Sub-category: Performance tests
  * Functionality: perf

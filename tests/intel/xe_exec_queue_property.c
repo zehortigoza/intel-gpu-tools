@@ -5,7 +5,7 @@
 
 /**
  * TEST: Basic tests to check exec_queue set/get property functionality
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: exec queue set property

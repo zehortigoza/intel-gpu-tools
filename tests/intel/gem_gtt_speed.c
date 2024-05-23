@@ -44,7 +44,7 @@
 #include "i915/gem_create.h"
 /**
  * TEST: gem gtt speed
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: gtt

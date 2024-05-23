@@ -26,7 +26,7 @@
 /**
  * TEST: drm mm
  * Description: Basic sanity check of DRM's range manager (struct drm_mm)
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: drm_mm

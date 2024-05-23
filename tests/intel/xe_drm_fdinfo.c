@@ -15,7 +15,7 @@
 /**
  * TEST: xe drm fdinfo
  * Description: Read and verify drm client memory consumption using fdinfo
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: driver
  * Functionality: Per client memory statistics

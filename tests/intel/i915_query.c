@@ -30,7 +30,7 @@
 /**
  * TEST: i915 query
  * Description: Testing the i915 query uAPI.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: device topology

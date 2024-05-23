@@ -5,7 +5,7 @@
 
 /**
  * TEST: cause fake gt reset failure which put Xe device in wedged state
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: driver
  * Functionality: wedged

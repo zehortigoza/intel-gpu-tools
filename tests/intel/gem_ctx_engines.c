@@ -45,7 +45,7 @@
 #include "sw_sync.h"
 /**
  * TEST: gem ctx engines
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: context

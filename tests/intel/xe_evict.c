@@ -5,7 +5,7 @@
 
 /**
  * TEST: Check VMA eviction
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: VMA
  * Functionality: eviction

@@ -28,7 +28,7 @@
 /**
  * TEST: xe media fill
  * Description: Basic tests for the media_fill() function.
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: Media
  * Sub-category: Media tests
  * Functionality: fill surface with media block

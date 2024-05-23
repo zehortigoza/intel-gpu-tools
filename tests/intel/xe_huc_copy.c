@@ -5,7 +5,7 @@
 
 /**
  * TEST: Test HuC copy firmware.
- * Category: Firmware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Firmware tests
  * Functionality: huc copy

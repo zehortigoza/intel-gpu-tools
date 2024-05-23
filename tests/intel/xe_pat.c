@@ -5,7 +5,7 @@
 
 /**
  * TEST: Test for selecting per-VMA pat_index
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: VMA
  * Functionality: pat_index

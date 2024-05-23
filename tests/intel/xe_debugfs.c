@@ -6,7 +6,7 @@
 /**
  * TEST: Check debugfs userspace API
  * Description: Validate debugfs entries
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: debugfs

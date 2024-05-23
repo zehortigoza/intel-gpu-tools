@@ -5,7 +5,7 @@
 
 /**
  * TEST: Basic tests for gpgpu functionality
- * Category: Software building block
+ * Category: Core
  * Mega feature: Compute
  * Sub-category: GPGPU tests
  * Functionality: gpgpu_fill

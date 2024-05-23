@@ -44,7 +44,7 @@
 /**
  * TEST: gem unref active buffers
  * Description: Test unreferencing of active buffers.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: buffer management

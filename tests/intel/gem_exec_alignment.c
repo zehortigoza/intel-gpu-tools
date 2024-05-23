@@ -48,7 +48,7 @@
 /**
  * TEST: gem exec alignment
  * Description: Exercises the basic execbuffer using object alignments
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: execbuf

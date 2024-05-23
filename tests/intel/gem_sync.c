@@ -35,7 +35,7 @@
 /**
  * TEST: gem sync
  * Description: Basic check of ring<->ring write synchronisation.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Synchronization
  * Functionality: semaphore

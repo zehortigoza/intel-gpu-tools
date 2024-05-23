@@ -41,7 +41,7 @@
 /**
  * TEST: core setmaster
  * Description: Check that Drop/SetMaster behaves correctly wrt root/user access
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: DRM
  * Functionality: permission management for clients

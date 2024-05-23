@@ -38,7 +38,7 @@
 /**
  * TEST: gem media vme
  * Description: A very simple workload for the VME media block.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: Media
  * Sub-category: Media tests
  * Functionality: vme media block

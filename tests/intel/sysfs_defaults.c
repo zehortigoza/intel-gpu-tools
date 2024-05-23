@@ -35,7 +35,7 @@
 #include "igt_sysfs.h"
 /**
  * TEST: sysfs defaults
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: sysfs

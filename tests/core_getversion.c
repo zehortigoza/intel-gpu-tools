@@ -31,7 +31,7 @@
 /**
  * TEST: core getversion
  * Description: Tests the DRM_IOCTL_GET_VERSION ioctl and libdrm's drmGetVersion() interface to it.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: DRM
  * Functionality: permission management for clients

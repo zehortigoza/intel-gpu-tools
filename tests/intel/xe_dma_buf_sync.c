@@ -5,7 +5,7 @@
 
 /**
  * TEST: Check dmabuf functionality
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: dmabuf
  * Test category: functionality test

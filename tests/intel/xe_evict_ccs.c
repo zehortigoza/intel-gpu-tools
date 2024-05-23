@@ -5,7 +5,7 @@
 
 /**
  * TEST: Check flat-ccs eviction
- * Category: Software building block
+ * Category: Core
  * Mega feature: Compression
  * Sub-category: Flat-ccs tests
  * Functionality: ccs-evict

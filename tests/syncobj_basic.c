@@ -29,7 +29,7 @@
 /**
  * TEST: syncobj basic
  * Description: Basic check for drm sync objects.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Synchronization
  * Functionality: semaphore

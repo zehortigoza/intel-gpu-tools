@@ -21,7 +21,7 @@
  * TEST: gem barrier race
  * Description: Exercise engine barriers and their interaction with other subsystems
  * Feature: core
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: barrier

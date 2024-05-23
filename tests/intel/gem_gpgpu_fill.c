@@ -50,7 +50,7 @@
 #include "i915/intel_memory_region.h"
 /**
  * TEST: gem gpgpu fill
- * Category: Server
+ * Category: Core
  * Mega feature: Compute
  * Sub-category: GPGPU tests
  * Functionality: gpgpu_fill

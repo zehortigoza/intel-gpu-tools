@@ -44,7 +44,7 @@
 /**
  * TEST: gem basic
  * Description: Tests basic gem_create and gem_close IOCTLs
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: create/close IOCTLs

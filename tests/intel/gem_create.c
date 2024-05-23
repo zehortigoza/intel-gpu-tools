@@ -66,7 +66,7 @@
  * TEST: gem create
  * Description: Ensure that basic gem_create and gem_create_ext works and that
  *		invalid input combinations are rejected.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: gem_create IOCTL
@@ -88,7 +88,7 @@
  *		I915_GEM_CREATE_EXT_FLAG_NEEDS_CPU_ACCESS
  *
  * SUBTEST: create-ext-placement-all
- * Category: Infrastructure
+ * Category: Core
  * Description: Create objects in every memory region using create_ext.
  *
  * SUBTEST: create-ext-placement-each

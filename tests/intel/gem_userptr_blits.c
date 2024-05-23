@@ -69,7 +69,7 @@
 #include "intel_blt.h"
 /**
  * TEST: gem userptr blits
- * Category: Server
+ * Category: Core
  * Mega feature: Compute
  * Sub-category: Compute tests
  * Functionality: userptr blits

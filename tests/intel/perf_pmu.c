@@ -52,7 +52,7 @@
 /**
  * TEST: perf pmu
  * Description: Test the i915 pmu perf interface
- * Category: Desktop client
+ * Category: Core
  * Mega feature: Performance interface
  * Sub-category: Performance tests
  * Functionality: pmu

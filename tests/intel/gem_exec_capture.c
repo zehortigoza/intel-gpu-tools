@@ -35,7 +35,7 @@
 /**
  * TEST: gem exec capture
  * Description: Check that we capture the user specified objects on a hang
- * Category: Server
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Debugging
  * Functionality: offline debugging

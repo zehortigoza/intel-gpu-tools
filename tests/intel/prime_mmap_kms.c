@@ -39,7 +39,7 @@ IGT_TEST_DESCRIPTION(
 
 /**
  * TEST: prime mmap kms
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: DRM
  * Functionality: prime

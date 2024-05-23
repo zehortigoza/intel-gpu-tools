@@ -20,7 +20,7 @@
 #include "xe/xe_util.h"
 /**
  * TEST: xe ccs
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Blitter tests
  * Functionality: flat_ccs

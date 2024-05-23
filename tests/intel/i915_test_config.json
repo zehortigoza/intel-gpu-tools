@@ -39,8 +39,7 @@
             },
             "Category": {
                 "_properties_": {
-                    "mandatory": true,
-                    "description": "Contains the major group for the tested functionality, being hardware, software or firmware"
+                    "description": "Contains the major group for the tested functionality 'Core'"
                 },
                 "Mega feature": {
                     "_properties_": {

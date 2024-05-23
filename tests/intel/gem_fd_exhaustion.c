@@ -36,7 +36,7 @@
 #include "i915/gem_create.h"
 /**
  * TEST: gem fd exhaustion
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: fd exhaustion

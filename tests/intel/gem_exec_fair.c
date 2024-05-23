@@ -29,7 +29,7 @@
 /**
  * TEST: gem exec fair
  * Description: Check that GPU time and execution order is fairly distributed across clients
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: multi-client systems

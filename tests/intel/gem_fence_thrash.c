@@ -45,7 +45,7 @@
 #include "igt_x86.h"
 /**
  * TEST: gem fence thrash
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: fences

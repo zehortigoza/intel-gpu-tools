@@ -6,7 +6,7 @@
 /**
  * TEST: xe sysfs defaults
  * Description: check if the sysfs engine .defaults node has all values.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: SysMan
  * Sub-category: SysMan tests
  * Functionality: sysman defaults

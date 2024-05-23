@@ -43,7 +43,7 @@
 #include "sw_sync.h"
 /**
  * TEST: sysfs heartbeat interval
- * Category: Desktop \ Server
+ * Category: Core
  * Mega feature: SysMan
  * Sub-category: SysMan tests
  * Functionality: sysfs heartbeat

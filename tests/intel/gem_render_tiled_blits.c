@@ -54,7 +54,7 @@
  *   Tests performs cyclic forward, backward and random blits on tiled buffer
  *   objects using render engine with various working set sizes and compares
  *   outputs with expected ones.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: render blits

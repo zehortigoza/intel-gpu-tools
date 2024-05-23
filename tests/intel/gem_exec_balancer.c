@@ -41,7 +41,7 @@
 /**
  * TEST: gem exec balancer
  * Description: Exercise in-kernel load-balancing
- * Category: Desktop \ Server
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: load balancing

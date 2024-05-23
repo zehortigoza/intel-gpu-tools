@@ -44,7 +44,7 @@
 /**
  * TEST: api intel bb
  * Description: checking dummy buffer creation & submission
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: IGT Lib
  * Functionality: dummy buffer creation & submission

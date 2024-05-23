@@ -38,7 +38,7 @@
 /**
  * TEST: gem ctx create
  * Description: Test the context create ioctls
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: context

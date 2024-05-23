@@ -17,7 +17,7 @@
 /**
  * TEST: device reset
  * Description: Examine behavior of a driver on device sysfs reset
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Reset tests
  * Functionality: sysfs reset
@@ -37,7 +37,7 @@
  * Description:
  *   Unbinds driver from device, initiates reset then rebinds driver to device
  *   validating device resets
- * Category: Infrastructure
+ * Category: Core
  * Feature: reset, sriov-reset
  */
 

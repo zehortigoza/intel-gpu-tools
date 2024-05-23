@@ -5,7 +5,7 @@
 
 /**
  * TEST: Check if VMA functionality is working
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: VMA
  */

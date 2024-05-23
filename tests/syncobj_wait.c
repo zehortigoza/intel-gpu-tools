@@ -33,7 +33,7 @@
 /**
  * TEST: syncobj wait
  * Description: Tests for the drm sync object wait API
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Synchronization
  * Functionality: semaphore

@@ -52,7 +52,7 @@
 /**
  * TEST: gem request retire
  * Description: Collection of tests targeting request retirement code paths.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: requests

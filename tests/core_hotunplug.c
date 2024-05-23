@@ -42,7 +42,7 @@
 /**
  * TEST: core hotunplug
  * Description: Examine behavior of a driver on device hot unplug
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: driver
  * Functionality: device hotplug

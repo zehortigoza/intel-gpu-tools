@@ -28,7 +28,7 @@
 /**
  * TEST: gem exec basic
  * Description: Basic sanity check of execbuf-ioctl rings.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: execbuf

@@ -27,7 +27,7 @@
 #include "igt_types.h"
 /**
  * TEST: gem close
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: driver
  * Functionality: driver handler

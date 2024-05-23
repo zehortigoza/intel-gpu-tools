@@ -41,7 +41,7 @@
 /**
  * TEST: gem madvise
  * Description: Checks that the kernel reports EFAULT when trying to use purged bo.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: madvise

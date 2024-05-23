@@ -50,7 +50,7 @@
 #include "i915/gem_create.h"
 /**
  * TEST: gem exec latency
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: execbuf

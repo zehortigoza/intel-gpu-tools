@@ -5,7 +5,7 @@
 
 /**
  * TEST: Tests the xe module loading
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: driver
  * Functionality: module load

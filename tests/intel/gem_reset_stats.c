@@ -49,7 +49,7 @@
 #include "sw_sync.h"
 /**
  * TEST: gem reset stats
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: reset

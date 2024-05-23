@@ -31,7 +31,7 @@
 /**
  * TEST: i915 pciid
  * Description: Check that igt/i915 know about this PCI-ID
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Core
  * Functionality: device management

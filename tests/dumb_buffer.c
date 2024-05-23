@@ -52,7 +52,7 @@
 /**
  * TEST: dumb buffer
  * Description: This is a test for the generic dumb buffer interface.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: ioctl

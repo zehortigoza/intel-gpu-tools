@@ -55,7 +55,7 @@
 /**
  * TEST: gem cs tlb
  * Description: Check whether we correctly invalidate the cs tlb.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: tlb

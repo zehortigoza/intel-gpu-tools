@@ -5,7 +5,7 @@
 
 /**
  * TEST: Check bo create ioctl
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  */

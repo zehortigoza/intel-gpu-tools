@@ -52,7 +52,7 @@
 #include "i915/intel_memory_region.h"
 /**
  * TEST: prime mmap
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: prime

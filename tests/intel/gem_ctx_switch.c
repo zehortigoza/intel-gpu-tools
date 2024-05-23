@@ -48,7 +48,7 @@
 /**
  * TEST: gem ctx switch
  * Feature: context feature
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD Submission
  * Functionality: context switching

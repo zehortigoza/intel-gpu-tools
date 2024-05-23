@@ -26,7 +26,7 @@
 #include "igt.h"
 /**
  * TEST: gem exec async
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: concurent writes

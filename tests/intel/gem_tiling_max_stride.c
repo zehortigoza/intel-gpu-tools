@@ -42,7 +42,7 @@
 /**
  * TEST: gem tiling max stride
  * Description: Check that max fence stride works.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: fences

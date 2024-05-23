@@ -33,7 +33,7 @@
 /**
  * TEST: i915 getparams basic
  * Description: Tests the export of parameters via DRM_IOCTL_I915_GETPARAM
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: device topology

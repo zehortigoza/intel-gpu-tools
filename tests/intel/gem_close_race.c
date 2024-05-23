@@ -51,7 +51,7 @@
 /**
  * TEST: gem close race
  * Description: Test try to race gem_close against workload submission.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: buffer management

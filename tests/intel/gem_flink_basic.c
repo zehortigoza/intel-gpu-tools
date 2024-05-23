@@ -41,7 +41,7 @@
 /**
  * TEST: gem flink basic
  * Description: Tests for flink - a way to export a gem object by name
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: DRM
  * Functionality: flink

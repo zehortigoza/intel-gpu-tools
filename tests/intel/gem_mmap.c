@@ -41,7 +41,7 @@
 /**
  * TEST: gem mmap
  * Description: Basic MMAP IOCTL tests for memory regions.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Memory management tests
  * Functionality: mapping

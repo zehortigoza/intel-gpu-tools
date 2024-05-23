@@ -10,7 +10,7 @@
 /**
  * TEST: gem pxp
  * Description: Test PXP that manages protected content through arbitrated HW-PXP-session
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: driver
  * Functionality: pxp

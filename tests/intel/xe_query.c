@@ -5,7 +5,7 @@
 
 /**
  * TEST: Check device configuration query
- * Category: Software building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: ioctl
@@ -179,7 +179,7 @@ const char *get_topo_name(int value)
  *
  * SUBTEST: multigpu-query-engines
  * Description: Display engine classes available for all Xe devices.
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: MultiGPU
  * Test category: functionality test
@@ -208,7 +208,7 @@ test_query_engines(int fd)
  *
  * SUBTEST: multigpu-query-mem-usage
  * Description: Display memory information for all Xe devices.
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: MultiGPU
  * Test category: functionality test
@@ -274,7 +274,7 @@ test_query_mem_regions(int fd)
  *
  * SUBTEST: multigpu-query-gt-list
  * Description: Display information about GT components for all Xe devices.
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: MultiGPU
  * Test category: functionality test
@@ -346,7 +346,7 @@ test_query_gt_list(int fd)
  *
  * SUBTEST: multigpu-query-topology
  * Description: Display topology information of GT for all Xe devices.
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: MultiGPU
  * Test category: functionality test
@@ -469,7 +469,7 @@ test_query_gt_topology_l3_bank_mask(int fd)
  *
  * SUBTEST: multigpu-query-config
  * Description: Display config information for all Xe devices.
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: MultiGPU
  * Test category: functionality test
@@ -525,7 +525,7 @@ test_query_config(int fd)
  *
  * SUBTEST: multigpu-query-hwconfig
  * Description: Display hardware configuration for all Xe devices.
- * Category: Hardware building block
+ * Category: Core
  * Sub-category: MultiGPU
  * Mega feature: General Core features
  * Test category: functionality test
@@ -566,7 +566,7 @@ test_query_hwconfig(int fd)
  *
  * SUBTEST: multigpu-query-invalid-query
  * Description: Check query with invalid arguments for all Xe devices.
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: MultiGPU
  * Test category: negative test
@@ -591,7 +591,7 @@ test_query_invalid_query(int fd)
  *
  * SUBTEST: multigpu-query-invalid-size
  * Description: Check query with invalid size for all Xe devices.
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: MultiGPU
  * Test category: negative test
@@ -616,7 +616,7 @@ test_query_invalid_size(int fd)
  *
  * SUBTEST: multigpu-query-invalid-extension
  * Description: Check query with invalid extension for all Xe devices.
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: MultiGPU
  * Test category: negative test
@@ -782,7 +782,7 @@ __engine_cycles(int fd, struct drm_xe_engine_class_instance *hwe)
  *
  * SUBTEST: multigpu-query-cs-cycles
  * Description: Query CPU-GPU timestamp correlation for all Xe devices.
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: MultiGPU
  */
@@ -804,7 +804,7 @@ static void test_query_engine_cycles(int fd)
  *
  * SUBTEST: multigpu-query-invalid-cs-cycles
  * Description: Check query with invalid arguments for all Xe devices.
- * Category: Hardware building block
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: MultiGPU
  */

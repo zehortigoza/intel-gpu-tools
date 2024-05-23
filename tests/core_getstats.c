@@ -35,7 +35,7 @@
 /**
  * TEST: core getstats
  * Description: Tests the DRM_IOCTL_GET_STATS ioctl.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: uapi
  * Functionality: DRM memory management

@@ -47,7 +47,7 @@
 #include "sw_sync.h"
 /**
  * TEST: gem ctx persistence
- * Category: Server
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: context

@@ -38,7 +38,7 @@
 /**
  * TEST: gem flink race
  * Description: Check for flink/open vs. gem close races.
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: DRM
  * Functionality: flink

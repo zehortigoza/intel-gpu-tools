@@ -32,7 +32,7 @@
 #include "sw_sync.h"
 /**
  * TEST: gem exec endless
- * Category: Server
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: compute test

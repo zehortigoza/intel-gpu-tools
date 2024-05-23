@@ -46,7 +46,7 @@
 #include "igt_device_scan.h"
 /**
  * TEST: i915 suspend
- * Category: Desktop client
+ * Category: Core
  * Mega feature: Power management
  * Sub-category: Power management tests
  * Functionality: s2idle w/o i915

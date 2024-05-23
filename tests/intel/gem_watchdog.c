@@ -37,7 +37,7 @@
 #include "sw_sync.h"
 /**
  * TEST: gem watchdog
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: fences

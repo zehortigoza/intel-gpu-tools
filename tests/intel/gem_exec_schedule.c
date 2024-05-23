@@ -47,7 +47,7 @@
 /**
  * TEST: gem exec schedule
  * Description: Check that we can control the order of execution
- * Category: Desktop \ Server
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: CMD submission
  * Functionality: execution order

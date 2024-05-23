@@ -13,7 +13,7 @@
 
 /**
  * TEST: syncobj eventfd
- * Category: Infrastructure
+ * Category: Core
  * Description: Tests for the drm sync object eventfd API
  * Feature: synchronization
  * Functionality: semaphore

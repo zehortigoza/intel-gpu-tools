@@ -43,7 +43,7 @@
 /**
  * TEST: core setmaster vs auth
  * Description: Check that drop/setMaster correctly transfer master state
- * Category: Desktop client
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: DRM
  * Functionality: permission management for clients

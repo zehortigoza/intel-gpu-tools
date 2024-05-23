@@ -33,7 +33,7 @@
 /**
  * TEST: prime vgem
  * Description: Basic check of polling for prime/vgem fences.
- * Category: Infrastructure
+ * Category: Core
  * Mega feature: General Core features
  * Sub-category: Core
  * Functionality: mock device
