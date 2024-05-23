@@ -31,6 +31,7 @@
                 },
                 "Mega feature": {
                     "_properties_": {
+                        "mandatory": true,
                         "description": "Contains the mega feature for end to end use case, e. g. the 'sellable' feature."
                     },
                     "Sub-category": {
