@@ -50,7 +50,7 @@
 #define THRESHOLD_PER_CONNECTOR		150
 #define THRESHOLD_PER_CONNECTOR_MEAN	140
 #define THRESHOLD_ALL_CONNECTORS_MEAN	100
-#define CHECK_TIMES			15
+#define CHECK_TIMES			16
 
 IGT_TEST_DESCRIPTION("This test checks the time it takes to reprobe each "
 		     "connector and fails if either the time it takes for "
@@ -89,15 +89,28 @@ igt_simple_main
 		for (i = 0; i < CHECK_TIMES; i++) {
 			struct timespec ts = {};
 			int fd;
+			uint64_t current;
 
 			if ((fd = open(path, O_WRONLY)) < 0)
 				continue;
 
+			igt_kmsg(KMSG_DEBUG "%s: start detect\n", path);
 			igt_nsec_elapsed(&ts);
 			igt_ignore_warn(write(fd, "detect\n", 7));
-			igt_mean_add(&mean, igt_nsec_elapsed(&ts));
-
+			current = igt_nsec_elapsed(&ts);
+			igt_kmsg(KMSG_DEBUG "%s: end detect\n", path);
 			close(fd);
+
+			/*
+			 * Skip first detect to account for slower PPS or
+			 * misbehaving panel that has non-standard HPDs behavior
+			 */
+			if (i == 0)
+				continue;
+
+			igt_mean_add(&mean, current);
+			igt_debug("%s: i=%d current=%02fdms mean.max=%02fms mean.min=%02fms\n",
+				de->d_name, i, current/1e6,  mean.max/1e6, mean.min/1e6);
 		}
 
 		igt_debug("%s: mean.max %.2fns, %.2fus, %.2fms, "
