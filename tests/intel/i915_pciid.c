@@ -33,7 +33,7 @@
  * Description: Check that igt/i915 know about this PCI-ID
  * Category: Core
  * Mega feature: General Core features
- * Sub-category: Core
+ * Sub-category: driver
  * Functionality: device management
  * Feature: core
  * Test category: GEM_Legacy

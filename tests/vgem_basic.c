@@ -36,7 +36,7 @@
  * Description: Basic sanity check of Virtual GEM module (vGEM).
  * Category: Core
  * Mega feature: General Core features
- * Sub-category: Core
+ * Sub-category: DRM
  * Functionality: mock device
  * Test category: GEM_Legacy
  * Feature: vgem

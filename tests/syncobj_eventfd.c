@@ -13,11 +13,12 @@
 
 /**
  * TEST: syncobj eventfd
- * Category: Core
  * Description: Tests for the drm sync object eventfd API
- * Feature: synchronization
- * Functionality: semaphore
+ * Category: Core
+ * Mega feature: General Core features
  * Sub-category: DRM
+ * Functionality: semaphore
+ * Feature: synchronization
  * Test category: GEM_Legacy
  */
 

@@ -35,7 +35,7 @@
  * Description: Basic check of polling for prime/vgem fences.
  * Category: Core
  * Mega feature: General Core features
- * Sub-category: Core
+ * Sub-category: DRM
  * Functionality: mock device
  * Feature: prime
  * Test category: GEM_Legacy

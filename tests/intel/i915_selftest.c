@@ -310,7 +310,7 @@
  * Description: Validation of per-object locking patterns
  * Category: Core
  * Mega feature: General Core features
- * Sub-category: Core
+ * Sub-category: CMD submission
  * Functionality: per-object locking
  * Test category: i915
  *
@@ -318,7 +318,7 @@
  * Description: User object allocation and isolation checks
  * Category: Core
  * Mega feature: General Core features
- * Sub-category: Core
+ * Sub-category: CMD submission
  * Functionality: objects
  * Test category: i915
  *
@@ -357,7 +357,7 @@
  * Description: Checks the selftest infrastructure itself
  * Category: Core
  * Mega feature: General Core features
- * Sub-category: Core
+ * Sub-category: driver
  * Functionality: sanitycheck
  * Test category: i915
  *
@@ -531,7 +531,7 @@
  * Description: Selftest for the selftest
  * Category: Core
  * Mega feature: General Core features
- * Sub-category: Core
+ * Sub-category: driver
  * Functionality: sanitycheck
  * Test category: i915
  *
