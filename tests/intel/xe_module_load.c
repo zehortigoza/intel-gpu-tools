@@ -140,11 +140,13 @@ igt_main
 		}
 
 		load_and_check_xe("force_probe=*");
+		igt_xe_driver_unload();
 	}
 
 	igt_subtest("reload-no-display") {
 		igt_xe_driver_unload();
 		load_and_check_xe("enable_display=0");
+		igt_xe_driver_unload();
 	}
 
 	igt_subtest("many-reload") {
