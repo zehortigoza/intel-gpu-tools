@@ -4401,7 +4401,8 @@ static void create_cairo_surface__convert(int fd, struct igt_fb *fb)
 		setup_linear_mapping(&blit->base);
 
 		/* speed things up by working from a copy in system memory */
-		cvt.src.slow_reads = is_i915_device(fd) && !gem_has_mappable_ggtt(fd);
+		cvt.src.slow_reads = (is_i915_device(fd) && !gem_has_mappable_ggtt(fd)) ||
+			is_xe_device(fd);
 	} else {
 		blit->base.linear.fb = *fb;
 		blit->base.linear.fb.gem_handle = 0;
@@ -4409,7 +4410,7 @@ static void create_cairo_surface__convert(int fd, struct igt_fb *fb)
 		igt_assert(blit->base.linear.map);
 
 		/* reading via gtt mmap is slow */
-		cvt.src.slow_reads = is_i915_device(fd);
+		cvt.src.slow_reads = is_intel_device(fd);
 	}
 
 	cvt.dst.ptr = blit->shadow_ptr;
