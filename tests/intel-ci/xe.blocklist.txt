@@ -36,7 +36,6 @@ igt@device_reset
 igt@drm_fdinfo
 igt@drm_read
 igt@dumb.*
-igt@fbdev
 igt@prime_.*
 igt@sw_sync
 igt@syncobj_.*
