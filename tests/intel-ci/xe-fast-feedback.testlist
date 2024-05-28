@@ -1,6 +1,12 @@
 # Should be the first test
 igt@xe_module_load@load
 
+igt@fbdev@eof
+igt@fbdev@info
+igt@fbdev@nullptr
+igt@fbdev@read
+igt@fbdev@write
+
 igt@kms_addfb_basic@addfb25-4-tiled
 igt@kms_addfb_basic@addfb25-bad-modifier
 igt@kms_addfb_basic@addfb25-modifier-no-flag
