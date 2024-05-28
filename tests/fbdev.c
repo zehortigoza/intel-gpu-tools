@@ -443,6 +443,6 @@ igt_main
 	}
 
 	igt_fixture {
-		drm_close_driver(fd);
+		close(fd);
 	}
 }
