@@ -21,6 +21,15 @@
  * IN THE SOFTWARE.
  */
 
+/**
+ * TEST: fbdev
+ * Category: Display
+ * Description: Sanity test for framebuffer device.
+ * Driver requirement: i915, xe
+ * Functionality: fbdev
+ * Mega feature: General Display Features
+ * Test category: functionality test
+ */
 #include "config.h"
 
 #include "igt.h"
@@ -38,6 +47,36 @@
 #include <linux/fb.h>
 
 #include "igt.h"
+
+/**
+ * SUBTEST: eof
+ * Description: Check framebuffer access near EOF
+ *
+ * SUBTEST: info
+ * Description: Check if screeninfo is valid
+ *
+ * SUBTEST: nullptr
+ * Description: Check framebuffer access with NULL
+ *
+ * SUBTEST: pan
+ * Description: Check panning / page flipping
+ *
+ * SUBTEST: read
+ * Description: Check read operations on framebuffer memory
+ *
+ * SUBTEST: write
+ * Description: Check write operations on framebuffer memory
+ */
+
+/**
+ * SUBTEST: unaligned-%s
+ * Description: Check %arg[1] operations on unaligned locations in framebuffer memory
+ *
+ * arg[1]:
+ *
+ * @read:	read
+ * @write:	write
+ */
 
 #define PANSTEP(panstep_) \
 	((panstep_) ? (panstep_) : 1)
