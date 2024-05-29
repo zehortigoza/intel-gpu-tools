@@ -63,6 +63,17 @@ Sending Patches
 
   on its first invocation.
 
+- Place relevant prefix in subject, for example when your change is in one
+  testfile, use its name without '.c' nor '.h' suffix, like:
+  tests/simple_test: short description
+  Consider sending cover letter with your patch, so if you decide to change
+  subject it can still be linked into same patchseries on patchwork.
+
+- Look into some guides from Linux and Open Source community:
+  https://kernelnewbies.org/PatchPhilosophy
+  https://www.kernel.org/doc/html/latest/process/submitting-patches.html
+  https://www.kernel.org/doc/html/latest/process/submit-checklist.html
+
 - Patches need to be reviewed on the mailing list. Exceptions only apply for
   testcases and tooling for drivers with just a single contributor (e.g. vc4).
   In this case patches must still be submitted to the mailing list first.
@@ -75,8 +86,17 @@ Sending Patches
   contact one of the maintainers (listed in the MAINTAINERS file) and cc the
   igt-dev mailing list.
 
+- Before sending use Linux kernel script 'checkpatch.pl' for checking your
+  patchset. You could ignore some of them like 'line too long' or 'typedef'
+  but most of the time its log is accurate. Useful options you could use:
+  --emacs --strict --show-types --max-line-length=100 \
+  --ignore=BIT_MACRO,SPLIT_STRING,LONG_LINE_STRING,BOOL_MEMBER
+
 - Changes to the testcases are automatically tested. Take the results into
-  account before merging.
+  account before merging.  Please also reply to CI failures if you think they
+  are unrelated, add also to Cc CI e-mail which is present in message.  This
+  can help our bug-filing team. When replying, you can cut a message after
+  'Known bugs' to keep it in reasonable size.
 
 
 Commit Rights
