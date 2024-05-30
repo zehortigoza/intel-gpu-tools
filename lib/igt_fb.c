@@ -2760,21 +2760,18 @@ static void copy_with_engine(struct fb_blit_upload *blit,
 	fini_buf(src);
 }
 
-static struct blt_copy_object *blt_fb_init(const struct igt_fb *fb,
-					   uint32_t plane, uint32_t memregion)
+static struct blt_copy_object *allocate_and_initialize_blt(const struct igt_fb *fb,
+							   uint32_t handle,
+							   uint32_t memregion,
+							   enum blt_tiling_type blt_tile,
+							   uint32_t plane)
 {
-	uint32_t name, handle;
-	struct blt_copy_object *blt;
-	enum blt_tiling_type blt_tile;
 	uint64_t stride;
+	struct blt_copy_object *blt = calloc(1, sizeof(*blt));
 
-	blt = malloc(sizeof(*blt));
-	igt_assert(blt);
+	if (!blt)
+		return NULL;
 
-	name = gem_flink(fb->fd, fb->gem_handle);
-	handle = gem_open(fb->fd, name);
-
-	blt_tile = fb_tile_to_blt_tile(fb->modifier);
 	stride = blt_tile == T_LINEAR ? fb->strides[plane] : fb->strides[plane] / 4;
 
 	blt_set_object(blt, handle, fb->size, memregion,
@@ -2785,17 +2782,48 @@ static struct blt_copy_object *blt_fb_init(const struct igt_fb *fb,
 		       is_gen12_mc_ccs_modifier(fb->modifier) ? COMPRESSION_TYPE_MEDIA : COMPRESSION_TYPE_3D);
 
 	blt_set_geom(blt, stride, 0, 0, fb->width, fb->plane_height[plane], 0, 0);
-
 	blt->plane_offset = fb->offsets[plane];
 
-	igt_assert(fb->size);
+	return blt;
+}
 
-	if (is_xe_device(fb->fd))
-		blt->ptr = xe_bo_mmap_ext(fb->fd, handle, fb->size,
-					  PROT_READ | PROT_WRITE);
+static void *map_buffer(int fd, uint32_t handle, size_t size)
+{
+	if (is_xe_device(fd))
+		return xe_bo_mmap_ext(fd, handle, size, PROT_READ | PROT_WRITE);
 	else
-		blt->ptr = gem_mmap__device_coherent(fb->fd, handle, 0, fb->size,
-						     PROT_READ | PROT_WRITE);
+		return gem_mmap__device_coherent(fd, handle, 0, size,
+						 PROT_READ | PROT_WRITE);
+}
+
+static struct blt_copy_object *blt_fb_init(const struct igt_fb *fb,
+					   uint32_t plane, uint32_t memregion)
+{
+	uint32_t name, handle;
+	enum blt_tiling_type blt_tile;
+	struct blt_copy_object *blt;
+
+	if (!fb)
+		return NULL;
+
+	name = gem_flink(fb->fd, fb->gem_handle);
+	handle = gem_open(fb->fd, name);
+
+	if (!handle)
+		return NULL;
+
+	blt_tile = fb_tile_to_blt_tile(fb->modifier);
+	blt = allocate_and_initialize_blt(fb, handle, memregion, blt_tile, plane);
+
+	if (!blt)
+		return NULL;
+
+	blt->ptr = map_buffer(fb->fd, handle, fb->size);
+	if (!blt->ptr) {
+		free(blt);
+		return NULL;
+	}
+
 	return blt;
 }
 
