@@ -76,6 +76,10 @@
  *
  * SUBTEST: dc9-dpms
  * Description: This test validates display engine entry to DC9 state
+ *
+ * SUBTEST: deep-pkgc
+ * Description: This test validates display engine entry to PKGC10 state for extended vblank
+ * Functionality: pm_dc
  */
 
 /* DC State Flags */
@@ -89,6 +93,7 @@
 #define PACKAGE_CSTATE_PATH  "pmc_core/package_cstate_show"
 #define KMS_POLL_DISABLE 0
 #define DC9_RESETS_DC_COUNTERS(devid) (!(IS_DG1(devid) || IS_DG2(devid) || AT_LEAST_DISPLAY(devid, 14)))
+#define MSECS (1000000ul)
 
 IGT_TEST_DESCRIPTION("Tests to validate display power DC states.");
 
@@ -584,6 +589,63 @@ static unsigned int read_pkgc_counter(int debugfs_root_fd)
 	return get_dc_counter(str);
 }
 
+static void test_deep_pkgc_state(data_t *data)
+{
+	unsigned int pre_val = 0, cur_val = 0;
+	time_t start = time(NULL), duration = 2, delay;
+	enum pipe pipe;
+	bool pkgc_flag = false;
+	bool vrr_supported = false, flip = true;
+
+	igt_display_t *display = &data->display;
+	igt_plane_t *primary;
+	igt_output_t *output = NULL;
+
+	for_each_pipe_with_valid_output(display, pipe, output) {
+		/* Check VRR capabilities before setting up */
+		if (igt_output_has_prop(output, IGT_CONNECTOR_VRR_CAPABLE) &&
+		    igt_output_get_prop(output, IGT_CONNECTOR_VRR_CAPABLE)) {
+			vrr_supported = true;
+			break;
+		}
+	}
+
+	/* Skip the test if no VRR capable output is found */
+	if (!vrr_supported)
+		igt_skip("No VRR capable output found, skipping the test.\n");
+
+	igt_display_reset(display);
+
+	igt_output_set_pipe(output, pipe);
+
+	data->output = output;
+	data->mode = igt_output_get_mode(output);
+	setup_videoplayback(data);
+
+	primary = igt_output_get_plane_type(data->output, DRM_PLANE_TYPE_PRIMARY);
+	pre_val = read_pkgc_counter(data->debugfs_root_fd);
+	delay = 1 * (MSECS / (data->mode->vrefresh - 10));
+
+	igt_plane_set_fb(primary, &data->fb_rgb);
+	igt_display_commit(&data->display);
+
+	while (time(NULL) - start < duration) {
+		flip = !flip;
+		igt_plane_set_fb(primary, flip ? &data->fb_rgb : &data->fb_rgr);
+		igt_display_commit(&data->display);
+
+		cur_val = read_pkgc_counter(data->debugfs_root_fd);
+		if (cur_val > pre_val) {
+			pkgc_flag = true;
+			break;
+		}
+		usleep(delay);
+	}
+
+	cleanup_dc3co_fbs(data);
+	igt_assert_f(pkgc_flag, "PKGC10 is not achieved.\n");
+}
+
 static void test_pkgc_state_dpms(data_t *data)
 {
 	unsigned int timeout_sec = 6;
@@ -685,6 +747,15 @@ igt_main
 			test_pkgc_state_psr(&data);
 		else
 			test_dc_state_psr(&data, CHECK_DC6);
+	}
+
+	igt_describe("This test validates display engine entry to PKGC10 state "
+		     "during extended vblank");
+	igt_subtest("deep-pkgc") {
+		igt_require_f(igt_pm_pc8_plus_residencies_enabled(data.msr_fd),
+			      "PC8+ residencies not supported\n");
+		igt_require(intel_display_ver(data.devid) >= 20);
+		test_deep_pkgc_state(&data);
 	}
 
 	igt_describe("This test validates display engine entry to DC5 state "
