@@ -326,7 +326,7 @@ static size_t block_min_size(const struct context *context, int section_id)
 		return sizeof(struct bdb_driver_features);
 	case BDB_SDVO_LVDS_OPTIONS:
 		return sizeof(struct bdb_sdvo_lvds_options);
-	case BDB_SDVO_PANEL_DTDS:
+	case BDB_SDVO_LVDS_DTD:
 		/* FIXME? */
 		return 0;
 	case BDB_EDP:
@@ -2723,7 +2723,7 @@ struct dumper dumpers[] = {
 		.dump = dump_sdvo_lvds_options,
 	},
 	{
-		.id = BDB_SDVO_PANEL_DTDS,
+		.id = BDB_SDVO_LVDS_DTD,
 		.name = "SDVO panel dtds",
 		.dump = dump_sdvo_panel_dtds,
 	},
