@@ -2958,35 +2958,68 @@ static void cleanup_blt_resources(uint32_t ctx, uint64_t ahnd, bool is_xe,
 	intel_ctx_destroy(fd, ictx);
 }
 
+static void do_block_copy(const struct igt_fb *src_fb,
+			  const struct igt_fb *dst_fb,
+			  uint32_t mem_region, uint32_t i, uint64_t ahnd,
+			  uint32_t xe_bb, uint64_t bb_size,
+			  const intel_ctx_t *ctx,
+			  struct intel_execution_engine2 *e)
+{
+	struct blt_copy_data blt = {};
+	struct blt_copy_object *src = blt_fb_init(src_fb, i, mem_region);
+	struct blt_copy_object *dst = blt_fb_init(dst_fb, i, mem_region);
+	struct blt_block_copy_data_ext ext = {}, *pext = NULL;
+
+	igt_assert(src && dst);
+
+	blt_copy_init(src_fb->fd, &blt);
+	blt.color_depth = blt_get_bpp(src_fb);
+	blt_set_copy_object(&blt.src, src);
+	blt_set_copy_object(&blt.dst, dst);
+
+	if (blt_uses_extended_block_copy(src_fb->fd)) {
+		blt_set_object_ext(&ext.src,
+				   blt_compression_format(&blt, src_fb),
+				   src_fb->width, src_fb->height,
+				   SURFACE_TYPE_2D);
+
+		blt_set_object_ext(&ext.dst,
+				   blt_compression_format(&blt, dst_fb),
+				   dst_fb->width, dst_fb->height,
+				   SURFACE_TYPE_2D);
+		pext = &ext;
+	}
+
+	blt_set_batch(&blt.bb, xe_bb, bb_size, mem_region);
+	blt_block_copy(src_fb->fd, ctx, e, ahnd, &blt, pext);
+
+	if (e)
+		gem_sync(src_fb->fd, blt.dst.handle);
+
+	blt_destroy_object(src_fb->fd, src);
+	blt_destroy_object(dst_fb->fd, dst);
+}
+
 static void blitcopy(const struct igt_fb *dst_fb,
 		     const struct igt_fb *src_fb)
 {
-	uint32_t src_tiling, dst_tiling;
-	uint32_t ctx = 0;
-	uint64_t ahnd = 0;
+	uint32_t src_tiling = igt_fb_mod_to_tiling(src_fb->modifier);
+	uint32_t dst_tiling = igt_fb_mod_to_tiling(dst_fb->modifier);
+	uint32_t ctx = 0, bb, mem_region, vm, exec_queue;
+	uint64_t ahnd = 0, bb_size = 4096;
 	const intel_ctx_t *ictx = NULL;
+	intel_ctx_t *xe_ctx = NULL;
 	struct intel_execution_engine2 *e;
-	uint32_t bb, xe_bb;
-	uint64_t bb_size = 4096;
-	struct blt_copy_data blt = {};
-	struct blt_copy_object *src, *dst;
-	struct blt_block_copy_data_ext ext = {}, *pext = NULL;
-	uint32_t mem_region;
 	/* To ignore CC plane */
 	uint32_t src_cc = src_fb->modifier == I915_FORMAT_MOD_4_TILED_DG2_RC_CCS_CC ? 1 : 0;
 	uint32_t dst_cc = dst_fb->modifier == I915_FORMAT_MOD_4_TILED_DG2_RC_CCS_CC ? 1 : 0;
-	intel_ctx_t *xe_ctx;
-	uint32_t vm, exec_queue;
 	bool is_xe = is_xe_device(dst_fb->fd);
 
 	igt_assert_eq(dst_fb->fd, src_fb->fd);
 	igt_assert_eq(dst_fb->num_planes - dst_cc, src_fb->num_planes - src_cc);
 
-	src_tiling = igt_fb_mod_to_tiling(src_fb->modifier);
-	dst_tiling = igt_fb_mod_to_tiling(dst_fb->modifier);
-
 	setup_context_and_memory_region(dst_fb, &ctx, &ahnd, &mem_region,
-					&vm, &xe_bb, &bb_size, &ictx,
+					&vm, &bb, &bb_size, &ictx,
 					&exec_queue, &xe_ctx);
 
 	for (int i = 0; i < dst_fb->num_planes - dst_cc; i++) {
@@ -2995,34 +3028,8 @@ static void blitcopy(const struct igt_fb *dst_fb,
 		igt_assert_eq(dst_fb->plane_height[i], src_fb->plane_height[i]);
 
 		if (is_xe) {
-			src = blt_fb_init(src_fb, i, mem_region);
-			dst = blt_fb_init(dst_fb, i, mem_region);
-
-			blt_copy_init(src_fb->fd, &blt);
-			blt.color_depth = blt_get_bpp(src_fb);
-			blt_set_copy_object(&blt.src, src);
-			blt_set_copy_object(&blt.dst, dst);
-
-			if (blt_uses_extended_block_copy(src_fb->fd)) {
-				blt_set_object_ext(&ext.src,
-						blt_compression_format(&blt, src_fb),
-						src_fb->width, src_fb->height,
-						SURFACE_TYPE_2D);
-
-				blt_set_object_ext(&ext.dst,
-						blt_compression_format(&blt, dst_fb),
-						dst_fb->width, dst_fb->height,
-						SURFACE_TYPE_2D);
-
-				pext = &ext;
-			}
-
-			blt_set_batch(&blt.bb, xe_bb, bb_size, mem_region);
-
-			blt_block_copy(src_fb->fd, xe_ctx, NULL, ahnd, &blt, pext);
-
-			blt_destroy_object(src_fb->fd, src);
-			blt_destroy_object(dst_fb->fd, dst);
+			do_block_copy(src_fb, dst_fb, mem_region, i, ahnd,
+				      bb, bb_size, xe_ctx, NULL);
 		} else if (fast_blit_ok(src_fb) && fast_blit_ok(dst_fb)) {
 			igt_blitter_fast_copy__raw(dst_fb->fd,
 						   ahnd, ctx, NULL,
@@ -3048,35 +3055,8 @@ static void blitcopy(const struct igt_fb *dst_fb,
 			}
 			igt_assert_f(e, "No block copy capable engine found!\n");
 
-			src = blt_fb_init(src_fb, i, mem_region);
-			dst = blt_fb_init(dst_fb, i, mem_region);
-
-			blt_copy_init(src_fb->fd, &blt);
-			blt.color_depth = blt_get_bpp(src_fb);
-			blt_set_copy_object(&blt.src, src);
-			blt_set_copy_object(&blt.dst, dst);
-
-			if (HAS_FLATCCS(intel_get_drm_devid(src_fb->fd))) {
-				blt_set_object_ext(&ext.src,
-						   blt_compression_format(&blt, src_fb),
-						   src_fb->width, src_fb->height,
-						   SURFACE_TYPE_2D);
-
-				blt_set_object_ext(&ext.dst,
-						   blt_compression_format(&blt, dst_fb),
-						   dst_fb->width, dst_fb->height,
-						   SURFACE_TYPE_2D);
-
-				pext = &ext;
-			}
-
-			blt_set_batch(&blt.bb, bb, bb_size, mem_region);
-
-			blt_block_copy(src_fb->fd, ictx, e, ahnd, &blt, pext);
-			gem_sync(src_fb->fd, blt.dst.handle);
-
-			blt_destroy_object(src_fb->fd, src);
-			blt_destroy_object(dst_fb->fd, dst);
+			do_block_copy(src_fb, dst_fb, mem_region, i, ahnd,
+				      bb, bb_size, ictx, e);
 		} else {
 			igt_blitter_src_copy(dst_fb->fd,
 					     ahnd, ctx, NULL,
