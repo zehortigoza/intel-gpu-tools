@@ -524,6 +524,11 @@ static bool wait_for_connected_state(int drm_fd,
 			drmModeConnector *connector =
 				drmModeGetConnector(drm_fd, connectors[i]);
 
+			if (!connector) {
+				connected = false;
+				break;
+			}
+
 			connected = connector->connection == DRM_MODE_CONNECTED;
 
 			drmModeFreeConnector(connector);
