@@ -515,6 +515,12 @@ static void init_mode_set_data(struct mode_set_data *data)
 			data->connectors[i] =
 				drmModeGetConnector(drm_fd,
 						    data->res->connectors[i]);
+			if (!data->connectors[i]) {
+				igt_warn("Could not read connector %u\n",
+					 data->res->connectors[i]);
+				continue;
+			}
+
 			data->edids[i] = get_connector_edid(data->connectors[i], i);
 		}
 
