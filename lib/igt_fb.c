@@ -2939,6 +2939,25 @@ static void setup_context_and_memory_region(const struct igt_fb *fb, uint32_t *c
 	}
 }
 
+static void cleanup_blt_resources(uint32_t ctx, uint64_t ahnd, bool is_xe,
+				  uint32_t xe_bb, uint32_t exec_queue,
+				  uint32_t vm, intel_ctx_t *xe_ctx,
+				  int fd, const intel_ctx_t *ictx)
+{
+	if (ctx)
+		gem_context_destroy(fd, ctx);
+	put_ahnd(ahnd);
+
+	if (is_xe) {
+		gem_close(fd, xe_bb);
+		xe_exec_queue_destroy(fd, exec_queue);
+		xe_vm_destroy(fd, vm);
+		free(xe_ctx);
+	}
+
+	intel_ctx_destroy(fd, ictx);
+}
+
 static void blitcopy(const struct igt_fb *dst_fb,
 		     const struct igt_fb *src_fb)
 {
@@ -3079,18 +3098,8 @@ static void blitcopy(const struct igt_fb *dst_fb,
 		}
 	}
 
-	if (ctx)
-		gem_context_destroy(dst_fb->fd, ctx);
-	put_ahnd(ahnd);
-
-	if(is_xe) {
-		gem_close(dst_fb->fd, xe_bb);
-		xe_exec_queue_destroy(dst_fb->fd, exec_queue);
-		xe_vm_destroy(dst_fb->fd, vm);
-		free(xe_ctx);
-	}
-
-	intel_ctx_destroy(src_fb->fd, ictx);
+	cleanup_blt_resources(ctx, ahnd, is_xe, bb, exec_queue, vm, xe_ctx,
+			      src_fb->fd, ictx);
 }
 
 static void free_linear_mapping(struct fb_blit_upload *blit)
