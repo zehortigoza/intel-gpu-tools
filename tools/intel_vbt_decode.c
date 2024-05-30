@@ -86,7 +86,7 @@ struct context {
 
 struct edid {
 	uint8_t header[8];
-	struct lvds_pnp_id pnpid;
+	struct bdb_edid_pnp_id pnpid;
 	/* ... */
 } __packed;
 
@@ -251,8 +251,8 @@ static void *generate_lvds_data_ptrs(const struct context *context)
 
 	size = block_size;
 
-	size = fp_timing_size + sizeof(struct lvds_dvo_timing) +
-		sizeof(struct lvds_pnp_id);
+	size = fp_timing_size + sizeof(struct bdb_edid_dtd) +
+		sizeof(struct bdb_edid_pnp_id);
 	if (size * 16 > block_size)
 		return NULL;
 
@@ -264,10 +264,10 @@ static void *generate_lvds_data_ptrs(const struct context *context)
 	*(uint16_t *)(ptrs_block + 1) = sizeof(*ptrs);
 	ptrs = ptrs_block + 3;
 
-	table_size = sizeof(struct lvds_pnp_id);
+	table_size = sizeof(struct bdb_edid_pnp_id);
 	size = make_lvds_data_ptr(&ptrs->ptr[0].panel_pnp_id, table_size, size);
 
-	table_size = sizeof(struct lvds_dvo_timing);
+	table_size = sizeof(struct bdb_edid_dtd);
 	size = make_lvds_data_ptr(&ptrs->ptr[0].dvo_timing, table_size, size);
 
 	table_size = fp_timing_size;
@@ -283,15 +283,15 @@ static void *generate_lvds_data_ptrs(const struct context *context)
 	if (size != 0 || ptrs->lvds_entries != 3)
 		return NULL;
 
-	size = fp_timing_size + sizeof(struct lvds_dvo_timing) +
-		sizeof(struct lvds_pnp_id);
+	size = fp_timing_size + sizeof(struct bdb_edid_dtd) +
+		sizeof(struct bdb_edid_pnp_id);
 	for (int i = 1; i < 16; i++) {
 		next_lvds_data_ptr(&ptrs->ptr[i].fp_timing, &ptrs->ptr[i-1].fp_timing, size);
 		next_lvds_data_ptr(&ptrs->ptr[i].dvo_timing, &ptrs->ptr[i-1].dvo_timing, size);
 		next_lvds_data_ptr(&ptrs->ptr[i].panel_pnp_id, &ptrs->ptr[i-1].panel_pnp_id, size);
 	}
 
-	table_size = sizeof(struct lvds_lfp_panel_name);
+	table_size = sizeof(struct bdb_edid_product_name);
 
 	if (16 * (size + table_size) <= block_size) {
 		ptrs->panel_name.table_size = table_size;
@@ -382,13 +382,13 @@ static bool validate_lfp_data_ptrs(const struct context *context,
 
 	/* fp_timing has variable size */
 	if (fp_timing_size < 32 ||
-	    dvo_timing_size != sizeof(struct lvds_dvo_timing) ||
-	    panel_pnp_id_size != sizeof(struct lvds_pnp_id))
+	    dvo_timing_size != sizeof(struct bdb_edid_dtd) ||
+	    panel_pnp_id_size != sizeof(struct bdb_edid_pnp_id))
 		return false;
 
 	/* panel_name is not present in old VBTs */
 	if (panel_name_size != 0 &&
-	    panel_name_size != sizeof(struct lvds_lfp_panel_name))
+	    panel_name_size != sizeof(struct bdb_edid_product_name))
 		return false;
 
 	lfp_data_size = ptrs->ptr[1].fp_timing.offset - ptrs->ptr[0].fp_timing.offset;
@@ -1417,7 +1417,7 @@ static void dump_lvds_data(struct context *context,
 			block_data(block) + ptrs->ptr[i].fp_timing.offset;
 		const uint8_t *timing_data =
 			block_data(block) + ptrs->ptr[i].dvo_timing.offset;
-		const struct lvds_pnp_id *pnp_id =
+		const struct bdb_edid_pnp_id *pnp_id =
 			block_data(block) + ptrs->ptr[i].panel_pnp_id.offset;
 		const struct bdb_lvds_lfp_data_tail *tail =
 			block_data(block) + ptrs->panel_name.offset;
@@ -1922,7 +1922,7 @@ static void dump_lfp_power(struct context *context,
 }
 
 static void
-print_detail_timing_data(const struct lvds_dvo_timing *dvo_timing)
+print_detail_timing_data(const struct bdb_edid_dtd *dvo_timing)
 {
 	int display, sync_start, sync_end, total;
 
@@ -1956,10 +1956,10 @@ print_detail_timing_data(const struct lvds_dvo_timing *dvo_timing)
 static void dump_sdvo_panel_dtds(struct context *context,
 				 const struct bdb_block *block)
 {
-	const struct lvds_dvo_timing *dvo_timing = block_data(block);
+	const struct bdb_edid_dtd *dvo_timing = block_data(block);
 	int n, count;
 
-	count = block->size / sizeof(struct lvds_dvo_timing);
+	count = block->size / sizeof(struct bdb_edid_dtd);
 	for (n = 0; n < count; n++) {
 		printf("%d:\n", n);
 		print_detail_timing_data(dvo_timing++);
@@ -2573,7 +2573,7 @@ static int get_panel_type_pnpid(const struct context *context,
 	struct bdb_block *ptrs_block, *data_block;
 	const struct bdb_lvds_lfp_data *data;
 	const struct bdb_lvds_lfp_data_ptrs *ptrs;
-	struct lvds_pnp_id edid_id, edid_id_nodate;
+	struct bdb_edid_pnp_id edid_id, edid_id_nodate;
 	const struct edid *edid;
 	int fd, best = -1;
 
@@ -2608,7 +2608,7 @@ static int get_panel_type_pnpid(const struct context *context,
 	data = block_data(data_block);
 
 	for (int i = 0; i < 16; i++) {
-		const struct lvds_pnp_id *vbt_id =
+		const struct bdb_edid_pnp_id *vbt_id =
 			(const void*)data + ptrs->ptr[i].panel_pnp_id.offset;
 
 		/* full match? */
