@@ -201,7 +201,7 @@ struct bdb_general_features {
 #define DEVICE_HANDLE_EFP1	0x0004
 #define DEVICE_HANDLE_EFP2	0x0040
 #define DEVICE_HANDLE_EFP3	0x0020
-#define DEVICE_HANDLE_EFP4	0x0010 /* 194+ */
+#define DEVICE_HANDLE_EFP4	0x0010
 #define DEVICE_HANDLE_EFP5	0x0002 /* 215+ */
 #define DEVICE_HANDLE_EFP6	0x0001 /* 217+ */
 #define DEVICE_HANDLE_EFP7	0x0100 /* 217+ */
@@ -749,6 +749,7 @@ struct bdb_edp {
 	struct edp_apical_params apical_params[16];		/* 203+ */
 	u16 edp_fast_link_training_rate[16];			/* 224+ */
 	u16 edp_max_port_link_rate[16];				/* 244+ */
+	u16 edp_dsc_disable;					/* 251+ */
 } __packed;
 
 /*
@@ -898,11 +899,6 @@ struct lfp_brightness_level {
 	u16 level;
 	u16 reserved;
 } __packed;
-
-#define EXP_BDB_LFP_BL_DATA_SIZE_REV_191 \
-	offsetof(struct bdb_lfp_backlight_data, brightness_level)
-#define EXP_BDB_LFP_BL_DATA_SIZE_REV_234 \
-	offsetof(struct bdb_lfp_backlight_data, brightness_precision_bits)
 
 struct bdb_lfp_backlight_data {
 	u8 entry_size;
