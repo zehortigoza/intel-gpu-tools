@@ -2900,6 +2900,45 @@ static uint32_t blt_compression_format(struct blt_copy_data *blt,
 	igt_assert_f(0, "unknown compression\n");
 }
 
+static void setup_context_and_memory_region(const struct igt_fb *fb, uint32_t *ctx,
+					    uint64_t *ahnd, uint32_t *mem_region,
+					    uint32_t *vm, uint32_t *bb,
+					    uint64_t *bb_size,
+					    const intel_ctx_t **ictx,
+					    uint32_t *exec_queue,
+					    intel_ctx_t **xe_ctx)
+{
+	struct drm_xe_engine_class_instance inst = {
+		.engine_class = DRM_XE_ENGINE_CLASS_COPY,
+	};
+
+	if (is_i915_device(fb->fd) && !gem_has_relocations(fb->fd)) {
+		igt_require(gem_has_contexts(fb->fd));
+		*ictx = intel_ctx_create_all_physical(fb->fd);
+		*mem_region = HAS_FLATCCS(intel_get_drm_devid(fb->fd)) ?
+			REGION_LMEM(0) : REGION_SMEM;
+		*ctx = gem_context_create(fb->fd);
+		*ahnd = get_reloc_ahnd(fb->fd, *ctx);
+
+		igt_assert(__gem_create_in_memory_regions(fb->fd,
+							  bb,
+							  bb_size,
+							  *mem_region) == 0);
+	} else if (is_xe_device(fb->fd)) {
+		*vm = xe_vm_create(fb->fd, 0, 0);
+		*exec_queue = xe_exec_queue_create(fb->fd, *vm, &inst, 0);
+		*xe_ctx = intel_ctx_xe(fb->fd, *vm, *exec_queue, 0, 0, 0);
+		*mem_region = vram_if_possible(fb->fd, 0);
+
+		*ahnd = intel_allocator_open_full(fb->fd, (*xe_ctx)->vm, 0, 0,
+						  INTEL_ALLOCATOR_SIMPLE,
+						  ALLOC_STRATEGY_LOW_TO_HIGH, 0);
+
+		*bb_size = xe_bb_size(fb->fd, *bb_size);
+		*bb = xe_bo_create(fb->fd, 0, *bb_size, *mem_region, 0);
+	}
+}
+
 static void blitcopy(const struct igt_fb *dst_fb,
 		     const struct igt_fb *src_fb)
 {
@@ -2920,11 +2959,6 @@ static void blitcopy(const struct igt_fb *dst_fb,
 	intel_ctx_t *xe_ctx;
 	uint32_t vm, exec_queue;
 	bool is_xe = is_xe_device(dst_fb->fd);
-	bool is_i915 = is_i915_device(dst_fb->fd);
-
-	struct drm_xe_engine_class_instance inst = {
-		.engine_class = DRM_XE_ENGINE_CLASS_COPY,
-	};
 
 	igt_assert_eq(dst_fb->fd, src_fb->fd);
 	igt_assert_eq(dst_fb->num_planes - dst_cc, src_fb->num_planes - src_cc);
@@ -2932,32 +2966,9 @@ static void blitcopy(const struct igt_fb *dst_fb,
 	src_tiling = igt_fb_mod_to_tiling(src_fb->modifier);
 	dst_tiling = igt_fb_mod_to_tiling(dst_fb->modifier);
 
-	if (is_i915 && !gem_has_relocations(dst_fb->fd)) {
-		igt_require(gem_has_contexts(dst_fb->fd));
-		mem_region = HAS_FLATCCS(intel_get_drm_devid(src_fb->fd))
-			? REGION_LMEM(0) : REGION_SMEM;
-
-		ictx = intel_ctx_create_all_physical(src_fb->fd);
-		ctx = gem_context_create(dst_fb->fd);
-		ahnd = get_reloc_ahnd(dst_fb->fd, ctx);
-
-		igt_assert(__gem_create_in_memory_regions(src_fb->fd,
-							  &bb,
-							  &bb_size,
-							  mem_region) == 0);
-	} else if (is_xe) {
-		vm = xe_vm_create(dst_fb->fd, 0, 0);
-		exec_queue = xe_exec_queue_create(dst_fb->fd, vm, &inst, 0);
-		xe_ctx = intel_ctx_xe(dst_fb->fd, vm, exec_queue, 0, 0, 0);
-		mem_region = vram_if_possible(dst_fb->fd, 0);
-
-		ahnd = intel_allocator_open_full(dst_fb->fd, xe_ctx->vm, 0, 0,
-						 INTEL_ALLOCATOR_SIMPLE,
-						 ALLOC_STRATEGY_LOW_TO_HIGH, 0);
-
-		bb_size = xe_bb_size(dst_fb->fd, bb_size);
-		xe_bb = xe_bo_create(dst_fb->fd, 0, bb_size, mem_region, 0);
-	}
+	setup_context_and_memory_region(dst_fb, &ctx, &ahnd, &mem_region,
+					&vm, &xe_bb, &bb_size, &ictx,
+					&exec_queue, &xe_ctx);
 
 	for (int i = 0; i < dst_fb->num_planes - dst_cc; i++) {
 		igt_assert_eq(dst_fb->plane_bpp[i], src_fb->plane_bpp[i]);
