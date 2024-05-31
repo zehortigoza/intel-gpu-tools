@@ -275,8 +275,8 @@ test_plane_position_with_output(data_t *data,
 	drmModeModeInfo *mode;
 	igt_crc_t crc, crc2;
 
-	igt_info("Testing connector %s using pipe %s plane %d\n",
-		 igt_output_name(output), kmstest_pipe_name(pipe), plane);
+	igt_debug("Testing connector %s using pipe %s plane %d\n", igt_output_name(output),
+		  kmstest_pipe_name(pipe), plane);
 
 	igt_output_set_pipe(output, pipe);
 
@@ -285,8 +285,8 @@ test_plane_position_with_output(data_t *data,
 	sprite = igt_output_get_plane(output, plane);
 
 	if (primary->drm_plane->plane_id > sprite->drm_plane->plane_id) {
-		igt_info("primary plane ID (%d) > sprite plane ID (%d), skipping plane %d\n",
-				primary->drm_plane->plane_id, sprite->drm_plane->plane_id, plane);
+		igt_debug("primary plane ID (%d) > sprite plane ID (%d), skipping plane %d\n",
+			  primary->drm_plane->plane_id, sprite->drm_plane->plane_id, plane);
 		return;
 	}
 
@@ -415,8 +415,8 @@ test_plane_panning_with_output(data_t *data,
 	mode = igt_output_get_mode(output);
 	primary = igt_output_get_plane(output, 0);
 
-	igt_info("Testing connector %s using pipe %s, mode %s\n",
-		 igt_output_name(output), kmstest_pipe_name(pipe), mode->name);
+	igt_debug("Testing connector %s using pipe %s, mode %s\n", igt_output_name(output),
+		  kmstest_pipe_name(pipe), mode->name);
 
 	create_fb_for_mode_panning(data, mode, &primary_fb);
 	igt_plane_set_fb(primary, &primary_fb);
@@ -889,9 +889,9 @@ static bool test_format_plane_rgb(data_t *data, enum pipe pipe,
 				  igt_crc_t ref_crc[],
 				  struct igt_fb *fb)
 {
-	igt_info("Testing format " IGT_FORMAT_FMT " / modifier " IGT_MODIFIER_FMT " on %s.%u\n",
-		 IGT_FORMAT_ARGS(format), IGT_MODIFIER_ARGS(modifier),
-		 kmstest_pipe_name(pipe), plane->index);
+	igt_debug("Testing format " IGT_FORMAT_FMT " / modifier " IGT_MODIFIER_FMT " on %s.%u\n",
+		  IGT_FORMAT_ARGS(format), IGT_MODIFIER_ARGS(modifier),
+		  kmstest_pipe_name(pipe), plane->index);
 
 	return test_format_plane_colors(data, pipe, plane,
 					format, modifier,
@@ -927,11 +927,13 @@ static bool test_format_plane_yuv(data_t *data, enum pipe pipe,
 						     igt_color_range_to_str(r)))
 				continue;
 
-			igt_info("Testing format " IGT_FORMAT_FMT " / modifier " IGT_MODIFIER_FMT " (%s, %s) on %s.%u\n",
-				 IGT_FORMAT_ARGS(format), IGT_MODIFIER_ARGS(modifier),
-				 igt_color_encoding_to_str(e),
-				 igt_color_range_to_str(r),
-				 kmstest_pipe_name(pipe), plane->index);
+			igt_debug("Testing format " IGT_FORMAT_FMT " / modifier " IGT_MODIFIER_FMT
+				" (%s, %s) on %s.%u\n", IGT_FORMAT_ARGS(format),
+				IGT_MODIFIER_ARGS(modifier),
+				igt_color_encoding_to_str(e),
+				igt_color_range_to_str(r),
+				kmstest_pipe_name(pipe),
+				plane->index);
 
 			result &= test_format_plane_colors(data, pipe, plane,
 							   format, modifier,
@@ -1043,9 +1045,9 @@ static bool test_format_plane(data_t *data, enum pipe pipe,
 
 	igt_pipe_crc_start(data->pipe_crc);
 
-	igt_info("Testing format " IGT_FORMAT_FMT " / modifier " IGT_MODIFIER_FMT " on %s.%u\n",
-		 IGT_FORMAT_ARGS(ref.format), IGT_MODIFIER_ARGS(ref.modifier),
-		 kmstest_pipe_name(pipe), plane->index);
+	igt_debug("Testing format " IGT_FORMAT_FMT " / modifier " IGT_MODIFIER_FMT " on %s.%u\n",
+		  IGT_FORMAT_ARGS(ref.format), IGT_MODIFIER_ARGS(ref.modifier),
+		  kmstest_pipe_name(pipe), plane->index);
 
 	check_allowed_plane_size_64x64(data, plane, &width, &height, ref.format);
 
@@ -1089,9 +1091,12 @@ static bool test_format_plane(data_t *data, enum pipe pipe,
 			};
 
 			if (igt_vec_index(&tested_formats, &rf) >= 0) {
-				igt_info("Skipping format " IGT_FORMAT_FMT " / modifier " IGT_MODIFIER_FMT " on %s.%u\n",
-					 IGT_FORMAT_ARGS(f.format), IGT_MODIFIER_ARGS(f.modifier),
-					 kmstest_pipe_name(pipe), plane->index);
+				igt_debug("Skipping format " IGT_FORMAT_FMT " / modifier "
+					IGT_MODIFIER_FMT " on %s.%u\n",
+					IGT_FORMAT_ARGS(f.format),
+					IGT_MODIFIER_ARGS(f.modifier),
+					kmstest_pipe_name(pipe),
+					plane->index);
 				continue;
 			}
 
