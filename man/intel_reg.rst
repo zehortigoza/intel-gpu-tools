@@ -41,8 +41,13 @@ Some options are global, and some specific to commands.
 --binary
     Output binary values.
 
+--decode
+    Decode registers. By default it only uses the raw offsets, unless
+    it's a command that would otherwise not work without it or another
+    option forces it enabled. See COMMANDS below for details.
+
 --all
-    Decode registers for all known platforms.
+    Decode registers for all known platforms. This option implies --decode.
 
 --mmio=FILE
     Use MMIO bar from FILE.
@@ -53,7 +58,7 @@ Some options are global, and some specific to commands.
 
 --spec=PATH
     Read register spec from directory or file specified by PATH; see REGISTER
-    SPEC DEFINITIONS below for details.
+    SPEC DEFINITIONS below for details. This option implies --decode.
 
 --help
     Show brief help.
@@ -76,23 +81,18 @@ Write each VALUE to corresponding REGISTER.
 dump [--mmio=FILE --devid=DEVID]
 --------------------------------
 
-Dump all registers specified in the register spec.
+Dump all registers specified in the register spec. The option
+--decode is implicitly enabled.
 
 decode REGISTER VALUE
 ---------------------
 
-Decode REGISTER VALUE.
-
-snapshot
---------
-
-Output the MMIO bar to stdout. The output can be used for a later invocation of
-dump or read with the --mmio=FILE and --devid=DEVID parameters.
+Decode REGISTER VALUE. The option --decode is implicitly enabled.
 
 list
 ----
 
-List the known registers.
+List the known registers. The option --decode is implicitly enabled.
 
 help
 ----
