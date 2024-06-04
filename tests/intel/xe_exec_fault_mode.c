@@ -448,11 +448,8 @@ igt_main
 	}
 
 	igt_subtest("invalid-va")
-		xe_for_each_engine(fd, hwe) {
-			if (hwe->engine_class == DRM_XE_ENGINE_CLASS_COPY)
-			       continue;	
+		xe_for_each_engine(fd, hwe)
 			test_exec(fd, hwe, 1, 1, INVALID_VA);
-		}
 
 	igt_subtest("invalid-va-scratch-nopagefault")
 		xe_for_each_engine(fd, hwe)
