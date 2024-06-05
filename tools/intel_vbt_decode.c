@@ -2016,12 +2016,9 @@ static void dump_mipi_config(struct context *context,
 	const struct bdb_mipi_config *start = block_data(block);
 
 	for (int i = 0; i < ARRAY_SIZE(start->config); i++) {
-		const struct mipi_config *config =
-			&start->config[context->panel_type];
-		const struct mipi_pps_data *pps =
-			&start->pps[context->panel_type];
-		const struct edp_pwm_delays *pwm_delays =
-			&start->pwm_delays[context->panel_type];
+		const struct mipi_config *config = &start->config[i];
+		const struct mipi_pps_data *pps = &start->pps[i];
+		const struct edp_pwm_delays *pwm_delays = &start->pwm_delays[i];
 
 		if (!dump_panel(context, i))
 			continue;
