@@ -529,7 +529,7 @@ int64_t xe_wait_ufence(int fd, uint64_t *addr, uint64_t value,
 	return timeout;
 }
 
-void xe_force_gt_reset(int fd, int gt)
+static void xe_force_gt_reset(int fd, int gt, bool sync)
 {
 	char reset_string[128];
 	struct stat st;
@@ -537,7 +537,17 @@ void xe_force_gt_reset(int fd, int gt)
 	igt_assert_eq(fstat(fd, &st), 0);
 
 	snprintf(reset_string, sizeof(reset_string),
-		 "cat /sys/kernel/debug/dri/%d/gt%d/force_reset",
-		 minor(st.st_rdev), gt);
+		 "cat /sys/kernel/debug/dri/%d/gt%d/force_reset%s",
+		 minor(st.st_rdev), gt, sync ? "_sync" : "");
 	system(reset_string);
+}
+
+void xe_force_gt_reset_async(int fd, int gt)
+{
+	xe_force_gt_reset(fd, gt, false);
+}
+
+void xe_force_gt_reset_sync(int fd, int gt)
+{
+	xe_force_gt_reset(fd, gt, true);
 }

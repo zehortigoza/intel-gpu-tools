@@ -69,7 +69,7 @@ void xe_force_gt_reset_all(int xe_fd)
 	int gt;
 
 	xe_for_each_gt(xe_fd, gt)
-		xe_force_gt_reset(xe_fd, gt);
+		xe_force_gt_reset_async(xe_fd, gt);
 }
 
 /**

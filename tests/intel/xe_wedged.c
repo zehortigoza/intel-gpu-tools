@@ -31,7 +31,7 @@ static void force_wedged(int fd)
 	igt_debugfs_write(fd, "fail_gt_reset/probability", "100");
 	igt_debugfs_write(fd, "fail_gt_reset/times", "2");
 
-	xe_force_gt_reset(fd, 0);
+	xe_force_gt_reset_async(fd, 0);
 	sleep(1);
 }
 
