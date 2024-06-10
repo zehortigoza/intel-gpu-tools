@@ -238,9 +238,14 @@ static void create_execqueues(int fd, enum exec_queue_destroy ed,
 	}
 
 	seconds = igt_seconds_elapsed(&tv);
-	igt_assert_f(seconds < real_timeout,
-		     "Creating %d exec_queues tooks too long: %d [limit: %d]\n",
-		     MAXEXECQUEUES, seconds, real_timeout);
+	if (seconds > real_timeout) {
+		if (igt_run_in_simulation())
+			igt_info("Creating %d exec_queues took too long: %d [limit: %d] seconds\n",
+				 MAXEXECQUEUES, seconds, real_timeout);
+		else
+			igt_assert_f(false, "Creating %d exec_queues took too long: %d [limit: %d] seconds\n",
+				     MAXEXECQUEUES, seconds, real_timeout);
+	}
 }
 
 /**
