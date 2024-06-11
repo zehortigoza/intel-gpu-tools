@@ -92,6 +92,10 @@ bool intel_fbc_is_enabled(int device, enum pipe pipe, int log_level)
 bool intel_fbc_wait_until_enabled(int device, enum pipe pipe)
 {
 	char last_fbc_buf[FBC_STATUS_BUF_LEN] = {'\0'};
+	bool enabled = igt_wait(_intel_fbc_is_enabled(device, pipe, IGT_LOG_DEBUG, last_fbc_buf), 2000, 1);
 
-	return igt_wait(_intel_fbc_is_enabled(device, pipe, IGT_LOG_DEBUG, last_fbc_buf), 2000, 1);
+	if (!enabled)
+		igt_info("FBC is not enabled: \n%s\n", last_fbc_buf);
+
+	return enabled;
 }
