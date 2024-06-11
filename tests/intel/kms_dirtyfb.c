@@ -169,7 +169,10 @@ static void check_feature(data_t *data)
 static void disable_features(data_t *data)
 {
 	intel_fbc_disable(data->drm_fd);
-	psr_disable(data->drm_fd, data->debugfs_fd, NULL);
+
+	if (psr_sink_support(data->drm_fd, data->debugfs_fd, PSR_MODE_1, NULL))
+		psr_disable(data->drm_fd, data->debugfs_fd, NULL);
+
 	intel_drrs_disable(data->drm_fd, data->pipe);
 }
 
