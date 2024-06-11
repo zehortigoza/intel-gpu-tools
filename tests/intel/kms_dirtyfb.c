@@ -102,7 +102,12 @@ static bool check_support(data_t *data)
 	case FEATURE_NONE:
 		return true;
 	case FEATURE_FBC:
-		return intel_fbc_supported_on_chipset(data->drm_fd, data->pipe);
+		if (!intel_fbc_supported_on_chipset(data->drm_fd, data->pipe))
+			return false;
+
+		return intel_fbc_plane_size_supported(data->drm_fd,
+						      data->mode->hdisplay,
+						      data->mode->vdisplay);
 	case FEATURE_PSR:
 		if (data->output->config.connector->connector_type !=
 		    DRM_MODE_CONNECTOR_eDP)
