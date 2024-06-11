@@ -125,7 +125,6 @@ static void prepare_crtc(data_t *data)
 	igt_output_t *output = data->output;
 	drmModeModeInfo *mode;
 
-	igt_display_reset(display);
 	/* select the pipe we want to use */
 	igt_output_set_pipe(output, data->pipe);
 
@@ -161,7 +160,7 @@ static void cleanup_crtc(data_t *data)
 
 	igt_plane_set_fb(data->primary, NULL);
 
-	igt_output_set_pipe(output, PIPE_ANY);
+	igt_output_set_pipe(output, PIPE_NONE);
 	igt_display_commit(display);
 
 	igt_remove_fb(data->drm_fd, &data->fb[0]);
@@ -196,14 +195,14 @@ static data_t data;
 igt_simple_main
 {
 	data.drm_fd = drm_open_driver_master(DRIVER_INTEL);
-
-	data.devid = intel_get_drm_devid(data.drm_fd);
-
 	kmstest_set_vt_graphics_mode();
 
+	igt_display_require(&data.display, data.drm_fd);
+	igt_display_require_output(&data.display);
 	igt_require_pipe_crc(data.drm_fd);
 
-	igt_display_require(&data.display, data.drm_fd);
+	data.devid = intel_get_drm_devid(data.drm_fd);
+	data.pipe_crc = NULL;
 
 	run_test(&data);
 
