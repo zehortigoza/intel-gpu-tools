@@ -180,8 +180,6 @@ static void prepare(data_t *data)
 {
 	igt_plane_t *primary;
 
-	data->mode = igt_output_get_mode(data->output);
-
 	igt_output_set_pipe(data->output, data->pipe);
 
 	data->pipe_crc = igt_pipe_crc_new(data->drm_fd, data->pipe,
@@ -328,6 +326,8 @@ igt_main
 				for_each_valid_output_on_pipe(&data.display,
 							      data.pipe,
 							      data.output) {
+					data.mode = igt_output_get_mode(data.output);
+
 					if (!check_support(&data))
 						continue;
 
