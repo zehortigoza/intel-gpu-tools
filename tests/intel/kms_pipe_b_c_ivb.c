@@ -164,7 +164,7 @@ find_outputs(data_t *data, igt_output_t **output1, igt_output_t **output2)
 		if (pipe == PIPE_C && output != *output1 && !*output2)
 			*output2 = output;
 
-		igt_output_set_pipe(output, PIPE_ANY);
+		igt_output_set_pipe(output, PIPE_NONE);
 	}
 
 	igt_skip_on_f(!*output1 || !*output2, "Not enough connected outputs\n");
@@ -176,6 +176,7 @@ test_dpms(data_t *data)
 	igt_output_t *output1, *output2;
 	int ret;
 
+	igt_display_reset(&data->display);
 	find_outputs(data, &output1, &output2);
 
 	igt_info("Pipe %s will use connector %s\n",
@@ -197,6 +198,8 @@ test_lane_reduction(data_t *data)
 {
 	igt_output_t *output1, *output2;
 	int ret;
+
+	igt_display_reset(&data->display);
 
 	find_outputs(data, &output1, &output2);
 
@@ -221,6 +224,7 @@ test_disable_pipe_B(data_t *data)
 	igt_output_t *output1, *output2;
 	int ret;
 
+	igt_display_reset(&data->display);
 	find_outputs(data, &output1, &output2);
 
 	igt_info("Pipe %s will use connector %s\n",
@@ -247,6 +251,7 @@ test_from_C_to_B_with_3_lanes(data_t *data)
 	igt_output_t *output1, *output2;
 	int ret;
 
+	igt_display_reset(&data->display);
 	find_outputs(data, &output1, &output2);
 
 	igt_info("Pipe %s will use connector %s\n",
@@ -270,6 +275,7 @@ test_fail_enable_pipe_C_while_B_has_3_lanes(data_t *data)
 	igt_output_t *output1, *output2;
 	int ret;
 
+	igt_display_reset(&data->display);
 	find_outputs(data, &output1, &output2);
 
 	igt_info("Pipe %s will use connector %s\n",
@@ -296,6 +302,7 @@ igt_main
 
 		kmstest_set_vt_graphics_mode();
 		igt_display_require(&data.display, data.drm_fd);
+		igt_display_require_output(&data.display);
 	}
 
 	igt_describe("Tests pipe-B and pipe-C interactions in IVB by enabling pipe-B with mode "
