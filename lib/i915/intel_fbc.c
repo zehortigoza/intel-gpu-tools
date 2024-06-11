@@ -99,3 +99,58 @@ bool intel_fbc_wait_until_enabled(int device, enum pipe pipe)
 
 	return enabled;
 }
+
+/**
+ * intel_fbc_max_plane_size
+ *
+ * @fd: fd of the device
+ * @width: To get the max supported width
+ * @height: To get the max supported height
+ *
+ * Function to update maximum plane size supported by FBC per platform
+ *
+ * Returns:
+ * None
+ */
+void intel_fbc_max_plane_size(int fd, uint32_t *width, uint32_t *height)
+{
+	const uint32_t dev_id = intel_get_drm_devid(fd);
+	const struct intel_device_info *info = intel_get_device_info(dev_id);
+	int ver = info->graphics_ver;
+
+	if (ver >= 10) {
+		*width = 5120;
+		*height = 4096;
+	} else if (ver >= 8 || IS_HASWELL(fd)) {
+		*width = 4096;
+		*height = 4096;
+	} else if (IS_G4X(fd) || ver >= 5) {
+		*width = 4096;
+		*height = 2048;
+	} else {
+		*width = 2048;
+		*height = 1536;
+	}
+}
+
+
+/**
+ * intel_fbc_plane_size_supported
+ *
+ * @fd: fd of the device
+ * @width: width of the plane to be checked
+ * @height: height of the plane to be checked
+ *
+ * Checks if the plane size is supported for FBC
+ *
+ * Returns:
+ * true if plane size is within the range as per the FBC supported size restrictions per platform
+ */
+bool intel_fbc_plane_size_supported(int fd, uint32_t width, uint32_t height)
+{
+	unsigned int max_w, max_h;
+
+	intel_fbc_max_plane_size(fd, &max_w, &max_h);
+
+	return width <= max_w && height <= max_h;
+}
