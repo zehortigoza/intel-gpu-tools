@@ -80,14 +80,15 @@ static drmModeConnector *
 get_connector(int drm_fd, drmModeRes *res)
 {
 	int i;
-	drmModeConnector *connector;
+	drmModeConnector *connector = NULL;
 
 	for (i = 0; i < res->count_connectors; i++) {
 
 		connector =
 			drmModeGetConnectorCurrent(drm_fd, res->connectors[i]);
 
-		if (connector->connector_type == DRM_MODE_CONNECTOR_HDMIA)
+		if (connector->connector_type == DRM_MODE_CONNECTOR_HDMIA ||
+		    connector->connector_type == DRM_MODE_CONNECTOR_HDMIB)
 			break;
 
 		drmModeFreeConnector(connector);
@@ -243,6 +244,7 @@ igt_main
 
 	igt_fixture {
 		drmModeFreeConnector(connector);
+		drmModeFreeResources(res);
 		drm_close_driver(drm_fd);
 	}
 }
