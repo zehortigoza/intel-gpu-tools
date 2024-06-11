@@ -99,6 +99,7 @@ igt_main
 
 	igt_fixture {
 		drmModeFreeConnector(tv_connector);
+		drmModeFreeResources(res);
 		drm_close_driver(drm_fd);
 	}
 }
