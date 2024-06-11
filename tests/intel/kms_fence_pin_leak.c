@@ -199,7 +199,7 @@ static void run_single_test(data_t *data, enum pipe pipe, igt_output_t *output)
 	}
 
 	igt_plane_set_fb(primary, NULL);
-	igt_output_set_pipe(output, PIPE_ANY);
+	igt_output_set_pipe(output, PIPE_NONE);
 	igt_display_commit(display);
 
 	igt_remove_fb(data->drm_fd, &fb[1]);
@@ -234,17 +234,16 @@ igt_simple_main
 	data_t data = {};
 
 	data.drm_fd = drm_open_driver_master(DRIVER_INTEL);
+	kmstest_set_vt_graphics_mode();
+	igt_display_require(&data.display, data.drm_fd);
+	igt_display_require_output(&data.display);
+
 	igt_require_gem(data.drm_fd);
 	igt_require(gem_available_fences(data.drm_fd) > 0);
 	igt_require(gem_has_contexts(data.drm_fd));
 
 	data.devid = intel_get_drm_devid(data.drm_fd);
-
-	kmstest_set_vt_graphics_mode();
-
 	data.bops = buf_ops_create(data.drm_fd);
-
-	igt_display_require(&data.display, data.drm_fd);
 
 	alloc_fence_objs(&data);
 
