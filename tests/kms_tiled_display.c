@@ -79,7 +79,6 @@ typedef struct {
 	igt_fb_t fb_test_pattern;
 	igt_display_t display;
 	data_connector_t *conns;
-	enum igt_commit_style commit;
 	struct timeval first_ts;
 	int linetime_us;
 
@@ -188,23 +187,10 @@ reset_plane(igt_output_t *output)
 	igt_plane_set_fb(primary, NULL);
 }
 
-static void reset_output(igt_output_t *output)
-{
-	igt_output_set_pipe(output, PIPE_NONE);
-}
-
 static void reset_mode(data_t *data)
 {
-	int count;
-	igt_output_t *output;
-	data_connector_t *conns = data->conns;
-
-	for (count = 0; count < data->num_h_tiles; count++) {
-		output = igt_output_from_connector(&data->display,
-						   conns[count].connector);
-		igt_output_set_pipe(output, PIPE_NONE);
-	}
-	igt_display_commit2(&data->display, data->commit);
+	igt_display_reset(&data->display);
+	igt_display_commit2(&data->display, COMMIT_ATOMIC);
 }
 
 static void test_cleanup(data_t *data)
@@ -215,11 +201,11 @@ static void test_cleanup(data_t *data)
 	for (count = 0; count < data->num_h_tiles; count++) {
 		if (conns[count].output) {
 			reset_plane(conns[count].output);
-			reset_output(conns[count].output);
+			igt_output_set_pipe(conns[count].output, PIPE_NONE);
 		}
 	}
 	igt_remove_fb(data->drm_fd, &data->fb_test_pattern);
-	igt_display_commit2(&data->display, data->commit);
+	igt_display_commit2(&data->display, COMMIT_ATOMIC);
 	memset(conns, 0, sizeof(data_connector_t) * data->num_h_tiles);
 }
 
@@ -529,7 +515,6 @@ static void override_edid(data_t *data)
 	igt_output_t *output;
 	int num_outputs = 0;
 	int num_tiles = 0;
-	drmModeResPtr res;
 
 	igt_require(data->display.n_pipes >= 2);
 
@@ -551,10 +536,7 @@ static void override_edid(data_t *data)
 	num_tiles = min(num_outputs, data->display.n_pipes);
 
 	/* disable everything so that we are sure to get a full modeset */
-	res = drmModeGetResources(data->drm_fd);
-	igt_require(res);
-	kmstest_unset_all_crtcs(data->drm_fd, res);
-	drmModeFreeResources(res);
+	igt_display_reset(&data->display);
 
 	for (int i = 0; i < num_tiles; i++)
 		force_edid_with_tile(data, outputs[i],
@@ -563,28 +545,28 @@ static void override_edid(data_t *data)
 
 static void basic_test(data_t *data, drmEventContext *drm_event, struct pollfd *pfd)
 {
-		int ret;
+	int ret;
 
-		get_number_of_h_tiles(data);
-		igt_debug("Number of Horizontal Tiles: %d\n",
-			  data->num_h_tiles);
-		igt_require(data->num_h_tiles > 0);
-		data->conns = calloc(data->num_h_tiles,
-				     sizeof(data_connector_t));
-		igt_assert(data->conns);
+	get_number_of_h_tiles(data);
+	igt_debug("Number of Horizontal Tiles: %d\n",
+		  data->num_h_tiles);
+	igt_require(data->num_h_tiles > 0);
+	data->conns = calloc(data->num_h_tiles,
+			     sizeof(data_connector_t));
+	igt_assert(data->conns);
 
-		get_connectors(data);
-		setup_mode(data);
-		setup_framebuffer(data);
-		timerclear(&data->first_ts);
-		igt_display_commit_atomic(&data->display,
-			DRM_MODE_ATOMIC_NONBLOCK |
-			DRM_MODE_PAGE_FLIP_EVENT, data);
-		while (!got_all_page_flips(data)) {
-			ret = poll(pfd, 1, 1000);
-			igt_assert(ret == 1);
-			drmHandleEvent(data->drm_fd, drm_event);
-		}
+	get_connectors(data);
+	setup_mode(data);
+	setup_framebuffer(data);
+	timerclear(&data->first_ts);
+	igt_display_commit_atomic(&data->display,
+		DRM_MODE_ATOMIC_NONBLOCK |
+		DRM_MODE_PAGE_FLIP_EVENT, data);
+	while (!got_all_page_flips(data)) {
+		ret = poll(pfd, 1, 1000);
+		igt_assert(ret == 1);
+		drmHandleEvent(data->drm_fd, drm_event);
+	}
 }
 
 igt_main
@@ -596,14 +578,15 @@ igt_main
 		data.drm_fd = drm_open_driver_master(DRIVER_ANY);
 		kmstest_set_vt_graphics_mode();
 		igt_display_require(&data.display, data.drm_fd);
+		igt_require(data.display.is_atomic);
+		igt_display_require_output(&data.display);
+
 		igt_display_reset(&data.display);
 
 		pfd.fd = data.drm_fd;
 		pfd.events = POLLIN;
 		drm_event.version = 3;
 		drm_event.page_flip_handler2 = page_flip_handler;
-		data.commit = data.display.is_atomic ? COMMIT_ATOMIC : COMMIT_LEGACY;
-		igt_require(data.commit == COMMIT_ATOMIC);
 
 		get_number_of_h_tiles(&data);
 		igt_debug("Number of real horizontal tiles: %d\n", data.num_h_tiles);
