@@ -506,7 +506,7 @@ static drmModePropertyBlobPtr get_connector_edid(drmModeConnectorPtr connector,
 	return blob;
 }
 
-static void init_mode_set_data(struct mode_set_data *data)
+static bool init_mode_set_data(struct mode_set_data *data)
 {
 	data->res = drmModeGetResources(drm_fd);
 	if (data->res) {
@@ -518,7 +518,7 @@ static void init_mode_set_data(struct mode_set_data *data)
 			if (!data->connectors[i]) {
 				igt_warn("Could not read connector %u\n",
 					 data->res->connectors[i]);
-				continue;
+				return false;
 			}
 
 			data->edids[i] = get_connector_edid(data->connectors[i], i);
@@ -529,6 +529,8 @@ static void init_mode_set_data(struct mode_set_data *data)
 	}
 
 	init_modeset_cached_params(&ms_data);
+
+	return true;
 }
 
 static void fini_mode_set_data(struct mode_set_data *data)
@@ -598,8 +600,15 @@ static bool setup_environment(bool display_enabled)
 
 	ms_data.devid = intel_get_drm_devid(drm_fd);
 
-	if (display_enabled)
-		init_mode_set_data(&ms_data);
+	/*
+	 * Fail test requirements if we can't set the initial data.
+	 * This is usually caused by not being able to retrieve a
+	 * connector due to possible race-conditions.  In this case,
+	 * we should have issued a warning to cause the test to fail
+	 * and not just skip.
+	 */
+	if (display_enabled && !init_mode_set_data(&ms_data))
+		return false;
 
 	igt_pm_enable_sata_link_power_management();
 
