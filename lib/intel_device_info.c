@@ -515,6 +515,16 @@ static const struct intel_device_info intel_lunarlake_info = {
 	.cmds_info = &xe2_cmds_info,
 };
 
+static const struct intel_device_info intel_battlemage_info = {
+	.graphics_ver = 20,
+	.graphics_rel = 1,
+	.display_ver = 14,
+	.has_4tile = true,
+	.has_flatccs = true,
+	.is_battlemage = true,
+	.codename = "battlemage"
+};
+
 static const struct pci_id_match intel_device_match[] = {
 	INTEL_I810_IDS(INTEL_VGA_DEVICE, &intel_i810_info),
 	INTEL_I815_IDS(INTEL_VGA_DEVICE, &intel_i815_info),
@@ -620,6 +630,8 @@ static const struct pci_id_match intel_device_match[] = {
 	INTEL_PVC_IDS(INTEL_VGA_DEVICE, &intel_pontevecchio_info),
 
 	XE_LNL_IDS(INTEL_VGA_DEVICE, &intel_lunarlake_info),
+
+	XE_BMG_IDS(INTEL_VGA_DEVICE, &intel_battlemage_info),
 
 	INTEL_VGA_DEVICE(PCI_MATCH_ANY, &intel_generic_info),
 };
