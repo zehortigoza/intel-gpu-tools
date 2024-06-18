@@ -794,22 +794,20 @@ run_vrr_test(data_t *data, test_t test, uint32_t flags)
 			continue;
 
 		for_each_pipe(&data->display, pipe) {
-			if (igt_pipe_connector_valid(pipe, output)) {
-				igt_output_set_pipe(output, pipe);
+			igt_output_set_pipe(output, pipe);
 
-				if (!intel_pipe_output_combo_valid(&data->display)) {
-					igt_output_set_pipe(output, PIPE_NONE);
-					continue;
-				}
-
-				igt_dynamic_f("pipe-%s-%s",
-					      kmstest_pipe_name(pipe), output->name)
-					test(data, pipe, output, flags);
-
-				test_cleanup(data, pipe, output);
-
-				break;
+			if (!intel_pipe_output_combo_valid(&data->display)) {
+				igt_output_set_pipe(output, PIPE_NONE);
+				continue;
 			}
+
+			igt_dynamic_f("pipe-%s-%s",
+				      kmstest_pipe_name(pipe), output->name)
+				test(data, pipe, output, flags);
+
+			test_cleanup(data, pipe, output);
+
+			break;
 		}
 	}
 }

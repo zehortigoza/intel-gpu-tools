@@ -337,9 +337,6 @@ static void connector_properties(igt_display_t *display, bool atomic)
 		bool found = false;
 
 		for_each_pipe(display, pipe) {
-			if (!igt_pipe_connector_valid(pipe, output))
-				continue;
-
 			igt_display_reset(display);
 
 			igt_output_set_pipe(output, pipe);
