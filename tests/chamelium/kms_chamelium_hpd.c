@@ -345,10 +345,9 @@ static void test_hotplug_for_each_pipe(chamelium_data_t *data,
 		output = chamelium_get_output_for_port(data, port);
 
 		/* If pipe is valid for output then set it */
-		if (igt_pipe_connector_valid(pipe, output)) {
-			igt_output_set_pipe(output, pipe);
+		igt_output_set_pipe(output, pipe);
+		if (intel_pipe_output_combo_valid(&data->display))
 			igt_display_commit2(&data->display, COMMIT_ATOMIC);
-		}
 
 		chamelium_unplug(data->chamelium, port);
 		chamelium_wait_for_connector_after_hotplug(
