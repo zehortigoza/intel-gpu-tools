@@ -1695,8 +1695,6 @@ static struct buf_ops *__buf_ops_create(int fd, bool check_idempotency)
 		bops->x_to_linear = copy_x_to_linear;
 		bops->linear_to_y = copy_linear_to_y;
 		bops->y_to_linear = copy_y_to_linear;
-		bops->linear_to_tile4 = copy_linear_to_tile4;
-		bops->tile4_to_linear = copy_tile4_to_linear;
 
 		return bops;
 	}
