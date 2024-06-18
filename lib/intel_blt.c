@@ -555,6 +555,7 @@ static int __block_tiling(enum blt_tiling_type tiling)
 	case T_XMAJOR: return 1;
 	case T_YMAJOR: return 1;
 	case T_TILE4:  return 2;
+	case T_YFMAJOR: return 2;
 	case T_TILE64: return 3;
 	default:
 		break;
