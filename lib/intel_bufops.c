@@ -804,6 +804,10 @@ void intel_buf_to_linear(struct buf_ops *bops, struct intel_buf *buf,
 		igt_assert(bops->ys_to_linear);
 		bops->ys_to_linear(bops, buf, linear);
 		break;
+	case I915_TILING_4:
+		igt_assert(bops->tile4_to_linear);
+		bops->tile4_to_linear(bops, buf, linear);
+		break;
 	}
 
 	if (buf->compression)
@@ -835,6 +839,10 @@ void linear_to_intel_buf(struct buf_ops *bops, struct intel_buf *buf,
 	case I915_TILING_Ys:
 		igt_assert(bops->linear_to_ys);
 		bops->linear_to_ys(bops, buf, linear);
+		break;
+	case I915_TILING_4:
+		igt_assert(bops->linear_to_tile4);
+		bops->linear_to_tile4(bops, buf, linear);
 		break;
 	}
 
@@ -1940,6 +1948,10 @@ bool buf_ops_set_software_tiling(struct buf_ops *bops,
 				was_changed = false;
 			}
 		}
+		break;
+
+	case I915_TILING_4:
+		igt_debug("-> use SW on tiling 4\n");
 		break;
 
 	default:
