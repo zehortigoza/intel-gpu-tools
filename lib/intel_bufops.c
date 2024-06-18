@@ -292,6 +292,17 @@ static unsigned long swizzle_addr(void *ptr, uint32_t swizzle)
 	}
 }
 
+static void *linear_ptr(void *ptr,
+			unsigned int x, unsigned int y,
+			unsigned int stride, unsigned int cpp)
+{
+	int pos;
+
+	pos = (stride/cpp * y + x) * cpp;
+
+	return ptr + pos;
+}
+
 static void *x_ptr(void *ptr,
 		   unsigned int x, unsigned int y,
 		   unsigned int stride, unsigned int cpp)
@@ -418,6 +429,9 @@ static tile_fn __get_tile_fn_ptr(int tiling)
 	tile_fn fn = NULL;
 
 	switch (tiling) {
+	case I915_TILING_NONE:
+		fn = linear_ptr;
+		break;
 	case I915_TILING_X:
 		fn = x_ptr;
 		break;
@@ -598,6 +612,13 @@ static void __copy_linear_to(int fd, struct intel_buf *buf,
 	munmap(map, buf->surface[0].size);
 }
 
+static void copy_linear_to_none(struct buf_ops *bops, struct intel_buf *buf,
+				uint32_t *linear)
+{
+	DEBUGFN();
+	__copy_linear_to(bops->fd, buf, linear, I915_TILING_NONE, 0);
+}
+
 static void copy_linear_to_x(struct buf_ops *bops, struct intel_buf *buf,
 			     uint32_t *linear)
 {
@@ -653,6 +674,13 @@ static void __copy_to_linear(int fd, struct intel_buf *buf,
 	}
 
 	munmap(map, buf->surface[0].size);
+}
+
+static void copy_none_to_linear(struct buf_ops *bops, struct intel_buf *buf,
+				uint32_t *linear)
+{
+	DEBUGFN();
+	__copy_to_linear(bops->fd, buf, linear, I915_TILING_NONE, 0);
 }
 
 static void copy_x_to_linear(struct buf_ops *bops, struct intel_buf *buf,
@@ -1653,13 +1681,14 @@ static struct buf_ops *__buf_ops_create(int fd, bool check_idempotency)
 		  bops->driver == INTEL_DRIVER_I915 ? "i915" : "xe");
 
 	if (bops->driver == INTEL_DRIVER_XE) {
+		bops->linear_to = copy_linear_to_none;
+		bops->to_linear = copy_none_to_linear;
 		bops->linear_to_x = copy_linear_to_x;
 		bops->x_to_linear = copy_x_to_linear;
 		bops->linear_to_y = copy_linear_to_y;
 		bops->y_to_linear = copy_y_to_linear;
 		bops->linear_to_tile4 = copy_linear_to_tile4;
 		bops->tile4_to_linear = copy_tile4_to_linear;
-
 		bops->linear_to_yf = NULL;
 		bops->yf_to_linear = NULL;
 		bops->linear_to_ys = NULL;
@@ -1869,6 +1898,10 @@ bool buf_ops_set_software_tiling(struct buf_ops *bops,
 	}
 
 	switch (tiling) {
+	case I915_TILING_NONE:
+		igt_debug("-> use SW on tiling NONE\n");
+		break;
+
 	case I915_TILING_X:
 		if (use_software_tiling) {
 			bool supported = buf_ops_has_tiling_support(bops, tiling);
