@@ -1720,7 +1720,7 @@ static struct buf_ops *__buf_ops_create(int fd, bool check_idempotency)
 		bool supported = probe_hw_tiling(bops, I915_TILING_X,
 						 &swizzling_supported);
 
-		if (!swizzling_supported) {
+		if (!swizzling_supported && bops->intel_gen < 12) {
 			igt_debug("Swizzling for X is not supported\n");
 			bops->supported_tiles &= ~TILE_X;
 		}
@@ -1738,7 +1738,7 @@ static struct buf_ops *__buf_ops_create(int fd, bool check_idempotency)
 		bool supported = probe_hw_tiling(bops, I915_TILING_Y,
 						 &swizzling_supported);
 
-		if (!swizzling_supported) {
+		if (!swizzling_supported && bops->intel_gen < 12) {
 			igt_debug("Swizzling for Y is not supported\n");
 			bops->supported_tiles &= ~TILE_Y;
 		}
