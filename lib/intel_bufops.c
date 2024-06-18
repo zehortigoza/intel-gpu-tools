@@ -1697,8 +1697,6 @@ static struct buf_ops *__buf_ops_create(int fd, bool check_idempotency)
 		bops->y_to_linear = copy_y_to_linear;
 		bops->linear_to_tile4 = copy_linear_to_tile4;
 		bops->tile4_to_linear = copy_tile4_to_linear;
-		bops->linear_to_yf = NULL;
-		bops->yf_to_linear = NULL;
 		bops->linear_to_ys = NULL;
 		bops->ys_to_linear = NULL;
 
@@ -1952,6 +1950,10 @@ bool buf_ops_set_software_tiling(struct buf_ops *bops,
 
 	case I915_TILING_4:
 		igt_debug("-> use SW on tiling 4\n");
+		break;
+
+	case I915_TILING_Yf:
+		igt_debug("-> use SW on tiling Yf\n");
 		break;
 
 	default:
