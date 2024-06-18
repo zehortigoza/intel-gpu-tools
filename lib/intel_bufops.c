@@ -121,7 +121,6 @@ struct buf_ops {
 	uint32_t supported_hw_tiles;
 	uint32_t swizzle_x;
 	uint32_t swizzle_y;
-	uint32_t swizzle_tile4;
 	bo_copy linear_to;
 	bo_copy linear_to_x;
 	bo_copy linear_to_y;
@@ -654,7 +653,7 @@ static void copy_linear_to_tile4(struct buf_ops *bops, struct intel_buf *buf,
 				 uint32_t *linear)
 {
 	DEBUGFN();
-	__copy_linear_to(bops->fd, buf, linear, I915_TILING_4, bops->swizzle_tile4);
+	__copy_linear_to(bops->fd, buf, linear, I915_TILING_4, 0);
 }
 
 static void __copy_to_linear(int fd, struct intel_buf *buf,
@@ -1531,7 +1530,7 @@ void intel_buf_draw_pattern(struct buf_ops *bops, struct intel_buf *buf,
 #define DEFAULT_BUFOPS(__gen_start, __gen_end) \
 	.gen_start          = __gen_start, \
 	.gen_end            = __gen_end, \
-	.supported_hw_tiles = TILE_X | TILE_Y | TILE_4, \
+	.supported_hw_tiles = TILE_X | TILE_Y, \
 	.linear_to          = copy_linear_to_wc, \
 	.linear_to_x        = copy_linear_to_gtt, \
 	.linear_to_y        = copy_linear_to_gtt, \
@@ -1586,8 +1585,6 @@ static bool probe_hw_tiling(struct buf_ops *bops, uint32_t tiling,
 			bops->swizzle_x = buf_swizzle;
 		else if (tiling == I915_TILING_Y)
 			bops->swizzle_y = buf_swizzle;
-		else if (tiling == I915_TILING_4)
-			bops->swizzle_tile4 = buf_swizzle;
 
 		*swizzling_supported = buf_swizzle == phys_swizzle;
 	}
@@ -1754,36 +1751,15 @@ static struct buf_ops *__buf_ops_create(int fd, bool check_idempotency)
 		}
 	}
 
-	if (is_hw_tiling_supported(bops, I915_TILING_4)) {
-		bool swizzling_supported;
-		bool supported = probe_hw_tiling(bops, I915_TILING_4,
-						 &swizzling_supported);
-
-		if (!swizzling_supported) {
-			igt_debug("Swizzling for 4 is not supported\n");
-			bops->supported_tiles &= ~TILE_4;
-		}
-
-		igt_debug("4 fence support: %s\n", bool_str(supported));
-		if (!supported) {
-			bops->supported_hw_tiles &= ~TILE_4;
-			bops->linear_to_tile4 = copy_linear_to_tile4;
-			bops->tile4_to_linear = copy_tile4_to_linear;
-		}
-	}
-
 	/* Disable other tiling format functions if not supported */
-	if (!is_tiling_supported(bops, I915_TILING_Yf)) {
+	if (!is_tiling_supported(bops, I915_TILING_Yf))
 		igt_debug("Yf format not supported\n");
-		bops->linear_to_yf = NULL;
-		bops->yf_to_linear = NULL;
-	}
 
-	if (!is_tiling_supported(bops, I915_TILING_Ys)) {
+	if (!is_tiling_supported(bops, I915_TILING_Ys))
 		igt_debug("Ys format not supported\n");
-		bops->linear_to_ys = NULL;
-		bops->ys_to_linear = NULL;
-	}
+
+	if (!is_tiling_supported(bops, I915_TILING_4))
+		igt_debug("Tile4 format not supported\n");
 
 	if (check_idempotency) {
 		idempotency_selftest(bops, I915_TILING_X);
