@@ -36,6 +36,7 @@ tools_progs = [
 	'intel_reg_checker',
 	'intel_residency',
 	'intel_stepping',
+	'intel_tiling_detect',
 	'intel_vbt_decode',
 	'intel_watermark',
 	'intel_gem_info',
