@@ -93,6 +93,7 @@
 #undef TILE_Yf
 #undef TILE_Ys
 #undef TILE_4
+#undef TILE_64
 
 #define TILE_DEF(x) (1 << (x))
 #define TILE_NONE   TILE_DEF(I915_TILING_NONE)
@@ -101,6 +102,7 @@
 #define TILE_Yf     TILE_DEF(I915_TILING_Yf)
 #define TILE_Ys     TILE_DEF(I915_TILING_Ys)
 #define TILE_4      TILE_DEF(I915_TILING_4)
+#define TILE_64     TILE_DEF(I915_TILING_64)
 
 #define CCS_OFFSET(buf) (buf->ccs[0].offset)
 #define CCS_SIZE(gen, buf) \
@@ -143,6 +145,7 @@ static const char *tiling_str(uint32_t tiling)
 	case I915_TILING_Yf:   return "Yf";
 	case I915_TILING_Ys:   return "Ys";
 	case I915_TILING_4:    return "4";
+	case I915_TILING_64:   return "64";
 	default:               return "UNKNOWN";
 	}
 }
