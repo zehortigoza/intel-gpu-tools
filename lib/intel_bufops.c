@@ -1232,37 +1232,46 @@ void intel_buf_destroy(struct intel_buf *buf)
 
 void *intel_buf_cpu_map(struct intel_buf *buf, bool write)
 {
-	int i915 = buf_ops_get_fd(buf->bops);
+	int fd = buf_ops_get_fd(buf->bops);
 
 	igt_assert(buf);
 	igt_assert(buf->ptr == NULL); /* already mapped */
 
 	buf->cpu_write = write;
-	buf->ptr = gem_mmap__cpu_coherent(i915, buf->handle, 0,
-					  buf->surface[0].size,
-					  write ? PROT_WRITE : PROT_READ);
 
-	gem_set_domain(i915, buf->handle,
-		       I915_GEM_DOMAIN_CPU,
-		       write ? I915_GEM_DOMAIN_CPU : 0);
+	if (is_xe_device(fd)) {
+		buf->ptr = xe_bo_map(fd, buf->handle, buf->bo_size);
+	} else {
+		buf->ptr = gem_mmap__cpu_coherent(fd, buf->handle, 0,
+						  buf->bo_size,
+						  write ? PROT_WRITE : PROT_READ);
+
+		gem_set_domain(fd, buf->handle,
+			       I915_GEM_DOMAIN_CPU,
+			       write ? I915_GEM_DOMAIN_CPU : 0);
+	}
 
 	return buf->ptr;
 }
 
 void *intel_buf_device_map(struct intel_buf *buf, bool write)
 {
-	int i915 = buf_ops_get_fd(buf->bops);
+	int fd = buf_ops_get_fd(buf->bops);
 
 	igt_assert(buf);
 	igt_assert(buf->ptr == NULL); /* already mapped */
 
-	buf->ptr = gem_mmap__device_coherent(i915, buf->handle, 0,
-					     buf->surface[0].size,
-					     write ? PROT_WRITE : PROT_READ);
+	if (is_xe_device(fd)) {
+		buf->ptr = xe_bo_map(fd, buf->handle, buf->bo_size);
+	} else {
+		buf->ptr = gem_mmap__device_coherent(fd, buf->handle, 0,
+						     buf->bo_size,
+						     write ? PROT_WRITE : PROT_READ);
 
-	gem_set_domain(i915, buf->handle,
-		       I915_GEM_DOMAIN_WC,
-		       write ? I915_GEM_DOMAIN_WC : 0);
+		gem_set_domain(fd, buf->handle,
+			       I915_GEM_DOMAIN_WC,
+			       write ? I915_GEM_DOMAIN_WC : 0);
+	}
 
 	return buf->ptr;
 }
@@ -1272,7 +1281,7 @@ void intel_buf_unmap(struct intel_buf *buf)
 	igt_assert(buf);
 	igt_assert(buf->ptr);
 
-	munmap(buf->ptr, buf->surface[0].size);
+	munmap(buf->ptr, buf->bo_size);
 	buf->ptr = NULL;
 }
 
