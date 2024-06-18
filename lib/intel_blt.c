@@ -540,6 +540,7 @@ const char *blt_tiling_name(enum blt_tiling_type tiling)
 	case T_TILE4:  return "tile4";
 	case T_TILE64: return "tile64";
 	case T_YFMAJOR: return "yfmajor";
+	case T_YSMAJOR: return "ysmajor";
 	default:
 		break;
 	}
@@ -582,6 +583,7 @@ int blt_tile_to_i915_tile(enum blt_tiling_type tiling)
 	case T_TILE4:  return I915_TILING_4;
 	case T_TILE64: return I915_TILING_64;
 	case T_YFMAJOR: return I915_TILING_Yf;
+	case T_YSMAJOR: return I915_TILING_Ys;
 	default:
 		break;
 	}
@@ -606,6 +608,7 @@ enum blt_tiling_type i915_tile_to_blt_tile(uint32_t tiling)
 	case I915_TILING_4:	return T_TILE4;
 	case I915_TILING_64:	return T_TILE64;
 	case I915_TILING_Yf:	return T_YFMAJOR;
+	case I915_TILING_Ys:	return T_YSMAJOR;
 	default:
 		igt_assert_f(0, "Unknown tiling!\n");
 	}

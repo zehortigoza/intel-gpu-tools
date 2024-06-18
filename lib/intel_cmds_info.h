@@ -14,6 +14,7 @@ enum blt_tiling_type {
 	T_YMAJOR,
 	T_TILE4,
 	T_YFMAJOR,
+	T_YSMAJOR,
 	T_TILE64,
 	__BLT_MAX_TILING
 };
