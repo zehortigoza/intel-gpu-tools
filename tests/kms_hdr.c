@@ -261,6 +261,8 @@ static void test_bpc_switch(data_t *data, uint32_t flags)
 	igt_display_t *display = &data->display;
 	igt_output_t *output;
 
+	igt_display_reset(display);
+
 	for_each_connected_output(display, output) {
 		enum pipe pipe;
 
@@ -271,26 +273,30 @@ static void test_bpc_switch(data_t *data, uint32_t flags)
 			continue;
 
 		for_each_pipe(display, pipe) {
-			if (igt_pipe_connector_valid(pipe, output)) {
-				prepare_test(data, output, pipe);
+			igt_output_set_pipe(output, pipe);
+			if (intel_pipe_output_combo_valid(display)) {
+				igt_output_set_pipe(output, PIPE_NONE);
+				continue;
+			}
 
-				if (is_intel_device(data->fd) &&
-				    !igt_max_bpc_constraint(display, pipe, output, 10)) {
-					test_fini(data);
-					break;
-				}
+			prepare_test(data, output, pipe);
 
-				data->mode = igt_output_get_mode(output);
-				data->w = data->mode->hdisplay;
-				data->h = data->mode->vdisplay;
-
-				igt_dynamic_f("pipe-%s-%s",
-					      kmstest_pipe_name(pipe), output->name)
-					test_bpc_switch_on_output(data, pipe, output, flags);
-
-				/* One pipe is enough */
+			if (is_intel_device(data->fd) &&
+			    !igt_max_bpc_constraint(display, pipe, output, 10)) {
+				test_fini(data);
 				break;
 			}
+
+			data->mode = igt_output_get_mode(output);
+			data->w = data->mode->hdisplay;
+			data->h = data->mode->vdisplay;
+
+			igt_dynamic_f("pipe-%s-%s",
+				      kmstest_pipe_name(pipe), output->name)
+				test_bpc_switch_on_output(data, pipe, output, flags);
+
+			/* One pipe is enough */
+			break;
 		}
 	}
 }
@@ -614,6 +620,8 @@ static void test_hdr(data_t *data, uint32_t flags)
 	igt_display_t *display = &data->display;
 	igt_output_t *output;
 
+	igt_display_reset(display);
+
 	for_each_connected_output(display, output) {
 		enum pipe pipe;
 
@@ -635,32 +643,36 @@ static void test_hdr(data_t *data, uint32_t flags)
 			continue;
 
 		for_each_pipe(display, pipe) {
-			if (igt_pipe_connector_valid(pipe, output)) {
-				prepare_test(data, output, pipe);
+			igt_output_set_pipe(output, pipe);
+			if (!intel_pipe_output_combo_valid(display)) {
+				igt_output_set_pipe(output, PIPE_NONE);
+				continue;
+			}
 
-				if (is_intel_device(data->fd) &&
-				    !igt_max_bpc_constraint(display, pipe, output, 10)) {
-					test_fini(data);
-					break;
-				}
+			prepare_test(data, output, pipe);
 
-				data->mode = igt_output_get_mode(output);
-				data->w = data->mode->hdisplay;
-				data->h = data->mode->vdisplay;
-
-				igt_dynamic_f("pipe-%s-%s",
-					      kmstest_pipe_name(pipe), output->name) {
-					if (flags & (TEST_NONE | TEST_DPMS | TEST_SUSPEND | TEST_INVALID_HDR))
-						test_static_toggle(data, pipe, output, flags);
-					if (flags & TEST_SWAP)
-						test_static_swap(data, pipe, output);
-					if (flags & TEST_INVALID_METADATA_SIZES)
-						test_invalid_metadata_sizes(data, output);
-				}
-
-				/* One pipe is enough */
+			if (is_intel_device(data->fd) &&
+			    !igt_max_bpc_constraint(display, pipe, output, 10)) {
+				test_fini(data);
 				break;
 			}
+
+			data->mode = igt_output_get_mode(output);
+			data->w = data->mode->hdisplay;
+			data->h = data->mode->vdisplay;
+
+			igt_dynamic_f("pipe-%s-%s",
+				      kmstest_pipe_name(pipe), output->name) {
+				if (flags & (TEST_NONE | TEST_DPMS | TEST_SUSPEND | TEST_INVALID_HDR))
+					test_static_toggle(data, pipe, output, flags);
+				if (flags & TEST_SWAP)
+					test_static_swap(data, pipe, output);
+				if (flags & TEST_INVALID_METADATA_SIZES)
+					test_invalid_metadata_sizes(data, output);
+			}
+
+			/* One pipe is enough */
+			break;
 		}
 	}
 }
