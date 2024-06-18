@@ -377,7 +377,6 @@ static void *tile4_ptr(void *ptr,
 		((tile_y & 3) << __builtin_ctz(owords)) +
 		(tile_x & (owords - 1));
 	igt_assert((pos & (cpp - 1)) == 0);
-	pos = pos >> __builtin_ctz(cpp);
 
 	return ptr + pos;
 }
