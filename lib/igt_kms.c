@@ -6480,17 +6480,20 @@ bool intel_pipe_output_combo_valid(igt_display_t *display)
 	int combo = 0;
 	igt_output_t *output;
 
-	if (!is_intel_device(display->drm_fd))
-		return true;
-
 	for_each_connected_output(display, output) {
 		if (output->pending_pipe == PIPE_NONE)
 			continue;
+
+		if (!igt_pipe_connector_valid(output->pending_pipe, output))
+			return false;
 
 		combo++;
 	}
 
 	igt_assert_f(combo, "At least one pipe/output combo needed.\n");
+
+	if (!is_intel_device(display->drm_fd))
+		return true;
 
 	/*
 	 * Check the given pipe/output combo is valid for Bigjoiner.
