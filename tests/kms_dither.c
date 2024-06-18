@@ -76,12 +76,9 @@ typedef struct {
 /* Prepare test data. */
 static void prepare_test(data_t *data, igt_output_t *output, enum pipe p)
 {
-	igt_display_t *display = &data->display;
 	igt_pipe_t *pipe = &data->display.pipes[p];
 
 	igt_assert(pipe);
-
-	igt_display_reset(display);
 
 	data->primary =
 		igt_pipe_get_plane_type(pipe, DRM_PLANE_TYPE_PRIMARY);
@@ -205,6 +202,8 @@ run_dither_test(data_t *data, int fb_bpc, int fb_format, int output_bpc)
 	igt_output_t *output;
 	igt_display_t *display = &data->display;
 
+	igt_display_reset(display);
+
 	for_each_connected_output(display, output) {
 		enum pipe pipe;
 
@@ -215,15 +214,20 @@ run_dither_test(data_t *data, int fb_bpc, int fb_format, int output_bpc)
 			continue;
 
 		for_each_pipe(display, pipe) {
-			if (igt_pipe_connector_valid(pipe, output)) {
-				igt_dynamic_f("pipe-%s-%s",
-					      kmstest_pipe_name(pipe), output->name)
-					test_dithering(data, pipe, output, fb_bpc,
-							fb_format, output_bpc);
+			igt_output_set_pipe(output, pipe);
 
-				/* One pipe is enough */
-				break;
+			if (!intel_pipe_output_combo_valid(display)) {
+				igt_output_set_pipe(output, PIPE_NONE);
+				continue;
 			}
+
+			igt_dynamic_f("pipe-%s-%s",
+					      kmstest_pipe_name(pipe), output->name)
+				test_dithering(data, pipe, output, fb_bpc,
+							   fb_format, output_bpc);
+
+			/* One pipe is enough */
+			break;
 		}
 	}
 }
