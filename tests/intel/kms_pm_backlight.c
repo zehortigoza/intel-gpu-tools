@@ -234,10 +234,11 @@ static void test_setup(igt_display_t display, igt_output_t *output)
 	igt_display_reset(&display);
 
 	for_each_pipe(&display, pipe) {
-		if (!igt_pipe_connector_valid(pipe, output))
-			continue;
-
 		igt_output_set_pipe(output, pipe);
+		if (!intel_pipe_output_combo_valid(&display)) {
+			igt_output_set_pipe(output, PIPE_NONE);
+			continue;
+		}
 		mode = igt_output_get_mode(output);
 
 		igt_create_pattern_fb(display.drm_fd,

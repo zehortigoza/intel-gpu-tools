@@ -728,9 +728,14 @@ static enum pipe get_pipe_for_output(igt_display_t *display,
 	enum pipe pipe;
 
 	for_each_pipe(display, pipe) {
-		if (igt_pipe_connector_valid(pipe, output)) {
-			return pipe;
+		igt_output_set_pipe(output, pipe);
+
+		if (!intel_pipe_output_combo_valid(display)) {
+			igt_output_set_pipe(output, PIPE_NONE);
+			continue;
 		}
+
+		return pipe;
 	}
 
 	igt_assert_f(false, "No pipe found for output %s\n",
@@ -750,9 +755,6 @@ static void test_setup(data_t *data)
 			      "Can't test FBC with PSR\n");
 
 	pipe = get_pipe_for_output(&data->display, data->output);
-	igt_output_set_pipe(data->output, pipe);
-	igt_require_f(intel_pipe_output_combo_valid(&data->display),
-		      "output pipe combo not valid\n");
 	data->crtc_id = data->output->config.crtc->crtc_id;
 	connector = data->output->config.connector;
 
@@ -762,6 +764,11 @@ static void test_setup(data_t *data)
 		kmstest_dump_mode(data->mode);
 
 		igt_output_override_mode(data->output, data->mode);
+
+		if (!intel_pipe_output_combo_valid(&data->display)) {
+			igt_info("Skipping mode, not compatible with selected pipe/output\n");
+			continue;
+		}
 
 		psr_enable_if_enabled(data);
 		setup_test_plane(data, data->test_plane_id);
