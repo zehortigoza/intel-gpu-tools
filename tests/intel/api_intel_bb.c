@@ -849,10 +849,15 @@ static void scratch_buf_init(struct buf_ops *bops,
 			     uint32_t req_tiling,
 			     enum i915_compression compression)
 {
+	int fd = buf_ops_get_fd(bops);
 	int bpp = 32;
+	uint32_t region = REGION_SMEM;
 
-	intel_buf_init(bops, buf, width, height, bpp, 0,
-		       req_tiling, compression);
+	if (compression && gem_has_lmem(fd))
+		region = REGION_LMEM(0);
+
+	intel_buf_init_in_region(bops, buf, width, height, bpp, 0,
+				 req_tiling, compression, region);
 
 	igt_assert(intel_buf_width(buf) == width);
 	igt_assert(intel_buf_height(buf) == height);
@@ -1419,6 +1424,7 @@ static void render_ccs(struct buf_ops *bops)
 	uint32_t compressed = 0;
 	uint32_t devid = intel_get_drm_devid(i915);
 	igt_render_copyfunc_t render_copy = NULL;
+	int tiling = IS_DG2(devid) ? I915_TILING_4 : I915_TILING_Y;
 
 	ibb = intel_bb_create(i915, PAGE_SIZE);
 	if (debug_bb)
@@ -1426,9 +1432,9 @@ static void render_ccs(struct buf_ops *bops)
 
 	scratch_buf_init(bops, &src, width, height, I915_TILING_NONE,
 			 I915_COMPRESSION_NONE);
-	scratch_buf_init(bops, &dst, width, height, I915_TILING_Y,
+	scratch_buf_init(bops, &dst, width, height, tiling,
 			 I915_COMPRESSION_RENDER);
-	scratch_buf_init(bops, &dst2, width, height, I915_TILING_Y,
+	scratch_buf_init(bops, &dst2, width, height, tiling,
 			 I915_COMPRESSION_RENDER);
 	scratch_buf_init(bops, &final, width, height, I915_TILING_NONE,
 			 I915_COMPRESSION_NONE);
@@ -1459,21 +1465,25 @@ static void render_ccs(struct buf_ops *bops)
 		    0, 0);
 
 	intel_bb_sync(ibb);
-
-	fails = compare_bufs(&src, &final, true);
-	compressed = count_compressed(ibb->gen, &dst);
-
 	intel_bb_destroy(ibb);
 
-	igt_debug("fails: %u, compressed: %u\n", fails, compressed);
+	fails = compare_bufs(&src, &final, true);
+	if (!HAS_FLATCCS(devid)) {
+		compressed = count_compressed(ibb->gen, &dst);
+		igt_debug("fails: %u, compressed: %u\n", fails, compressed);
+	} else {
+		igt_debug("fails: %u\n", fails);
+	}
 
 	if (write_png) {
-		intel_buf_write_to_png(&src, "render-ccs-src.png");
-		intel_buf_write_to_png(&dst, "render-ccs-dst.png");
-		intel_buf_write_to_png(&dst2, "render-ccs-dst2.png");
-		intel_buf_write_aux_to_png(&dst, "render-ccs-dst-aux.png");
-		intel_buf_write_aux_to_png(&dst2, "render-ccs-dst2-aux.png");
-		intel_buf_write_to_png(&final, "render-ccs-final.png");
+		intel_buf_raw_write_to_png(&src, "render-ccs-src.png");
+		intel_buf_raw_write_to_png(&dst, "render-ccs-dst.png");
+		intel_buf_raw_write_to_png(&dst2, "render-ccs-dst2.png");
+		intel_buf_raw_write_to_png(&final, "render-ccs-final.png");
+		if (!HAS_FLATCCS(devid)) {
+			intel_buf_write_aux_to_png(&dst, "render-ccs-dst-aux.png");
+			intel_buf_write_aux_to_png(&dst2, "render-ccs-dst2-aux.png");
+		}
 	}
 
 	intel_buf_close(bops, &src);
