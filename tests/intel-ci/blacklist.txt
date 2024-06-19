@@ -140,3 +140,6 @@ igt@device_reset@reset-bound
 
 # not working for i915
 igt@kms_bw@.*
+
+# Tests specific to (Display_ver > 14) are not applicable for i915
+igt@kms_vrr@cmrr
