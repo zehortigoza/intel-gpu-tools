@@ -3012,6 +3012,8 @@ test_disabled_read_error(void)
 	__perf_close(stream_fd);
 }
 
+#define NUM_MI_RPC_RUNS 5
+
 /**
  * SUBTEST: mi-rpc
  * Description: Test OAR/OAC using MI_REPORT_PERF_COUNT
@@ -3051,75 +3053,105 @@ test_mi_rpc(struct drm_xe_engine_class_instance *hwe)
 		.num_properties = ARRAY_SIZE(properties) / 2,
 		.properties_ptr = to_user_pointer(properties),
 	};
-	struct buf_ops *bops;
-	struct intel_bb *ibb;
-	struct intel_buf *buf;
-#define INVALID_CTX_ID 0xffffffff
-	uint32_t ctx_id = INVALID_CTX_ID;
-	uint32_t vm = 0;
-	uint32_t *report32;
-	size_t format_size_32;
+	const uint32_t report_size = xe_get_default_alignment(drm_fd);
 	struct oa_format format = get_oa_format(fmt);
+	struct {
+		uint32_t bo;
+		uint32_t bb_bo;
+
+		void *map;
+		uint32_t *bb_map;
+
+		uint64_t addr;
+		uint64_t bb_addr;
+	} reports[NUM_MI_RPC_RUNS] = {};
+	uint32_t exec_queue_id, vm, i;
+
+	printf("test_mi_rpc fmt=%u metric=%lu\n", fmt, test_set->perf_oa_metrics_set);
 
 	/* Ensure perf_stream_paranoid is set to 1 by default */
 	write_u64_file("/proc/sys/dev/xe/perf_stream_paranoid", 1);
 
-	bops = buf_ops_create(drm_fd);
 	vm = xe_vm_create(drm_fd, 0, 0);
-	ctx_id = xe_exec_queue_create(drm_fd, vm, hwe, 0);
-	igt_assert_neq(ctx_id, INVALID_CTX_ID);
-	properties[3] = ctx_id;
-
-	ibb = intel_bb_create_with_context(drm_fd, ctx_id, vm, NULL, BATCH_SZ);
-	buf = intel_buf_create(bops, 4096, 1, 8, 64,
-			       I915_TILING_NONE, I915_COMPRESSION_NONE);
-
-	buf_map(drm_fd, buf, true);
-	memset(buf->ptr, 0x80, 4096);
-	intel_buf_unmap(buf);
+	exec_queue_id = xe_exec_queue_create(drm_fd, vm, hwe, 0);
+	properties[3] = exec_queue_id;
 
 	stream_fd = __perf_open(drm_fd, &param, false);
         set_fd_flags(stream_fd, O_CLOEXEC);
 
-#define REPORT_ID 0xdeadbeef
-#define REPORT_OFFSET 0
-	emit_report_perf_count(ibb,
-			       buf,
-			       REPORT_OFFSET,
-			       REPORT_ID);
-	intel_bb_flush_render(ibb);
-	intel_bb_sync(ibb);
+	/* allocate report and batch buffer and fill batch buffer */
+	for (i = 0; i < NUM_MI_RPC_RUNS; i++) {
+		uint32_t bb_i = 0;
 
-	buf_map(drm_fd, buf, false);
-	report32 = buf->ptr;
-	format_size_32 = format.size >> 2;
-	dump_report(report32, format_size_32, "mi-rpc");
+		reports[i].bo = xe_bo_create(drm_fd, vm, report_size, vram_if_possible(drm_fd, 0),
+					     DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
+		reports[i].map = xe_bo_map(drm_fd, reports[i].bo, report_size);
+		reports[i].addr = 0x100000 + (report_size * i);
+		xe_vm_bind_sync(drm_fd, vm, reports[i].bo, 0, reports[i].addr, report_size);
+		memset(reports[i].map, 0x80, report_size);
+		msync(reports[i].map, report_size, MS_SYNC | MS_INVALIDATE);
 
-	/* Sanity check reports
-	 * reportX_32[0]: report id passed with mi-rpc
-	 * reportX_32[1]: timestamp. NOTE: wraps around in ~6 minutes.
-	 *
-	 * reportX_32[format.b_off]: check if the entire report was filled.
-	 * B0 counter falls in the last 64 bytes of this report format.
-	 * Since reports are filled in 64 byte blocks, we should be able to
-	 * assure that the report was filled by checking the B0 counter. B0
-	 * counter is defined to be zero, so we can easily validate it.
-	 *
-	 * reportX_32[format_size_32]: outside report, make sure only the report
-	 * size amount of data was written.
-	 */
-	igt_assert_eq(report32[0], REPORT_ID);
-	igt_assert(oa_timestamp(report32, test_set->perf_oa_format));
-	igt_assert_neq(report32[format.b_off >> 2], 0x80808080);
-	igt_assert_eq(report32[format_size_32], 0x80808080);
+		reports[i].bb_bo = xe_bo_create(drm_fd, vm, report_size, vram_if_possible(drm_fd, 0),
+					        DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
+		reports[i].bb_map = xe_bo_map(drm_fd, reports[i].bb_bo, report_size);
+		reports[i].bb_addr = 0x1000000 + (report_size * i);
+		xe_vm_bind_sync(drm_fd, vm, reports[i].bb_bo, 0, reports[i].bb_addr, report_size);
 
-	intel_buf_unmap(buf);
-	intel_buf_destroy(buf);
-	intel_bb_destroy(ibb);
-	xe_exec_queue_destroy(drm_fd, ctx_id);
-	xe_vm_destroy(drm_fd, vm);
-	buf_ops_destroy(bops);
+		reports[i].bb_map[bb_i++] = OA_MI_REPORT_PERF_COUNT;
+		reports[i].bb_map[bb_i++] = reports[i].addr & 0xFFFFFFC0;
+		reports[i].bb_map[bb_i++] = reports[i].addr >> 32;
+		reports[i].bb_map[bb_i++] = 0xdeadbeef + i;
+		reports[i].bb_map[bb_i++] = MI_BATCH_BUFFER_END;
+		msync(reports[i].bb_map, report_size, MS_SYNC | MS_INVALIDATE);
+		munmap(reports[i].bb_map, report_size);
+	}
+
+	/* LNL hangs if xe_exec() is done in the loop above, not sure why. */
+	for (i = 0; i < NUM_MI_RPC_RUNS; i++) {
+		xe_exec_wait(drm_fd, exec_queue_id, reports[i].bb_addr);
+	}
+
+	/* check reports */
+	for (i = 0; i < NUM_MI_RPC_RUNS; i++) {
+		uint32_t *report32;
+		size_t format_size_32;
+
+		report32 = reports[i].map;
+		format_size_32 = format.size >> 2;
+		dump_report(report32, format_size_32, "mi-rpc");
+
+		/* Sanity check reports
+		* reportX_32[0]: report id passed with mi-rpc
+		* reportX_32[1]: timestamp. NOTE: wraps around in ~6 minutes.
+		*
+		* reportX_32[format.b_off]: check if the entire report was filled.
+		* B0 counter falls in the last 64 bytes of this report format.
+		* Since reports are filled in 64 byte blocks, we should be able to
+		* assure that the report was filled by checking the B0 counter. B0
+		* counter is defined to be zero, so we can easily validate it.
+		*
+		* reportX_32[format_size_32]: outside report, make sure only the report
+		* size amount of data was written.
+		*/
+		igt_assert_eq(report32[0], 0xdeadbeef + i);
+		igt_assert(oa_timestamp(report32, test_set->perf_oa_format));
+		igt_assert_neq(report32[format.b_off >> 2], 0x80808080);
+		igt_assert_eq(report32[format_size_32], 0x80808080);
+	}
+
+	/* destroy resources */
+	for (i = 0; i < NUM_MI_RPC_RUNS; i++) {
+		munmap(reports[i].map, report_size);
+		xe_vm_unbind_sync(drm_fd, vm, 0, reports[i].addr, report_size);
+		gem_close(drm_fd, reports[i].bo);
+
+		xe_vm_unbind_sync(drm_fd, vm, 0, reports[i].bb_addr, report_size);
+		gem_close(drm_fd, reports[i].bb_bo);
+	}
+
 	__perf_close(stream_fd);
+	xe_exec_queue_destroy(drm_fd, exec_queue_id);
+	xe_vm_destroy(drm_fd, vm);
 }
 
 static void
