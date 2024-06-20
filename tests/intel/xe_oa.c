@@ -715,6 +715,18 @@ oar_unit_default_format(void)
 	return default_test_set->perf_oa_format;
 }
 
+static enum intel_xe_oa_format_name
+oar_unit_format_get(uint32_t device_id, struct drm_xe_engine_class_instance *hwe)
+{
+	enum intel_xe_oa_format_name fmt = oar_unit_default_format();
+
+	if ((IS_DG2(device_id) || IS_METEORLAKE(device_id)) &&
+	    hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE)
+		fmt = XE_OAC_FORMAT_A24u64_B8_C8;
+
+	return fmt;
+}
+
 static void *buf_map(int fd, struct intel_buf *buf, bool write)
 {
 	void *p;
@@ -3008,9 +3020,7 @@ static void
 test_mi_rpc(struct drm_xe_engine_class_instance *hwe)
 
 {
-	uint64_t fmt = ((IS_DG2(devid) || IS_METEORLAKE(devid)) &&
-			hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE) ?
-		XE_OAC_FORMAT_A24u64_B8_C8 : oar_unit_default_format();
+	enum intel_xe_oa_format_name fmt = oar_unit_format_get(devid, hwe);
 	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
