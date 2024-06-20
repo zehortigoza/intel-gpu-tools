@@ -379,6 +379,101 @@ dump_report(const uint32_t *report, uint32_t size, const char *message) {
 	}
 }
 
+static void
+dump_pec(const uint32_t *report)
+{
+	const uint64_t *report64;
+	int i;
+
+	report64 = (const uint64_t *)report;
+
+	igt_debug("\trpt_id: 0x%lx\n", report64[0]);
+	igt_debug("\ttime_stamp: 0x%lx\n", report64[1]);
+	igt_debug("\tgpu_ticks: 0x%lx\n", report64[3]);
+	igt_debug("\tctx_id: 0x%x\n", report[4]);
+
+	for (i = 0; i < 64; i++) {
+		uint64_t pec = report64[4 + i];
+
+		igt_debug("\tPEC%i: 0x%lx\n", i, pec);
+	}
+}
+
+static void
+dump_a32u40_a4u32(const uint32_t *report)
+{
+	uint64_t val;
+	int i;
+
+	igt_debug("\trpt_id: 0x%x\n", report[0]);
+	igt_debug("\ttime_stamp: 0x%x\n", report[1]);
+	igt_debug("\tgpu_ticks: 0x%x\n", report[3]);
+	igt_debug("\tctx_id: 0x%x\n", report[2]);
+
+	/* 32x 40bit A counters... */
+	for (i = 0; i < 32; i++) {
+		uint64_t high_bits;
+
+		val = report[4 + i];
+		high_bits = report[40 + i / 4];
+		high_bits = high_bits >> ((i % 4) * 2);
+		high_bits &= 0x3;
+		high_bits <<= 32;
+
+		val |= high_bits;
+		igt_debug("\tA%i: 0x%lx\n", i, val);
+	}
+
+	/* 4x 32bit A counters... */
+	for (i = 0; i < 4; i++) {
+		val = report[36 + i];
+		igt_debug("\tA%i: 0x%lx\n", i + 32, val);
+	}
+
+	/* 8x 32bit B counters */
+	for (i = 0; i < 8; i++) {
+		val = report[48 + i];
+		igt_debug("\tB%i: 0x%lx\n", i, val);
+	}
+
+	/* 8x 32bit C counters */
+	for (i = 0; i < 8; i++) {
+		val = report[56 + i];
+		igt_debug("\tC%i: 0x%lx\n", i, val);
+	}
+}
+
+static void
+dump_report_with_format(const uint32_t *report, uint32_t size,
+			enum intel_xe_oa_format_name format, const char *message)
+{
+	/*
+	 * For now only a small set of formats are supported, anything not
+	 * suported it will fallback to regular dump_report()
+	 */
+	switch (format) {
+	case XE_OA_FORMAT_PEC64u64:
+	case XE_OA_FORMAT_A32u40_A4u32_B8_C8:
+		break;
+	default:
+		dump_report(report, size, message);
+		return;
+	}
+
+	igt_debug("%s\n", message);
+
+	switch (format) {
+	case XE_OA_FORMAT_PEC64u64:
+		dump_pec(report);
+		break;
+	case XE_OA_FORMAT_A32u40_A4u32_B8_C8:
+		dump_a32u40_a4u32(report);
+		break;
+	default:
+		break;
+	}
+}
+
 static struct oa_format
 get_oa_format(enum intel_xe_oa_format_name format)
 {
@@ -3115,10 +3210,12 @@ test_mi_rpc(struct drm_xe_engine_class_instance *hwe)
 	for (i = 0; i < NUM_MI_RPC_RUNS; i++) {
 		uint32_t *report32;
 		size_t format_size_32;
+		char string[256];
 
 		report32 = reports[i].map;
 		format_size_32 = format.size >> 2;
-		dump_report(report32, format_size_32, "mi-rpc");
+		snprintf(string, sizeof(string), "mi-rpc report %i", i);
+		dump_report_with_format(report32, format_size_32, fmt, string);
 
 		/* Sanity check reports
 		* reportX_32[0]: report id passed with mi-rpc
