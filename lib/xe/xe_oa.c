@@ -743,7 +743,7 @@ intel_xe_perf_load_perf_configs(struct intel_xe_perf *perf, int drm_fd)
 		igt_list_for_each_entry(metric_set, &perf->metric_sets, link) {
 			if (!strcmp(metric_set->hw_config_guid, entry->d_name)) {
 				metric_set->perf_oa_metrics_set = metric_id;
-				break;
+				//break;
 			}
 		}
 	}
