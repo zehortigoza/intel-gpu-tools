@@ -728,6 +728,7 @@ intel_xe_perf_load_perf_configs(struct intel_xe_perf *perf, int drm_fd)
 			continue;
 
 		snprintf(path, sizeof(path), "%s/id", entry->d_name);
+		printf("path=%s\n", path);
 
 		id_fd = openat(metrics_dir_fd, path, O_RDONLY);
 		if (id_fd < 0)
