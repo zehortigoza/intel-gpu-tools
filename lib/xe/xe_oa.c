@@ -660,6 +660,8 @@ void
 intel_xe_perf_add_metric_set(struct intel_xe_perf *perf,
 			     struct intel_xe_perf_metric_set *metric_set)
 {
+	printf("intel_xe_perf_add_metric_set name=%s symbol=%s gui=%s\n",
+	       metric_set->name, metric_set->symbol_name, metric_set->hw_config_guid);
 	igt_list_add_tail(&metric_set->link, &perf->metric_sets);
 }
 
@@ -740,10 +742,11 @@ intel_xe_perf_load_perf_configs(struct intel_xe_perf *perf, int drm_fd)
 		if (!metric_id_read)
 			continue;
 
+		printf("metric_id=%lu\n", metric_id);
 		igt_list_for_each_entry(metric_set, &perf->metric_sets, link) {
 			if (!strcmp(metric_set->hw_config_guid, entry->d_name)) {
 				metric_set->perf_oa_metrics_set = metric_id;
-				//break;
+				break;
 			}
 		}
 	}
