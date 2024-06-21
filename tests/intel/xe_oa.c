@@ -306,21 +306,26 @@ static uint64_t oa_exp_1_millisec;
 struct intel_mmio_data mmio_data;
 static igt_render_copyfunc_t render_copy;
 
-static struct intel_xe_perf_metric_set *metric_set(const struct drm_xe_engine_class_instance *hwe)
+static struct intel_xe_perf_metric_set *metric_set_with_name(const struct drm_xe_engine_class_instance *hwe,
+							     const char *name)
 {
 	const char *test_set_name = NULL;
 	struct intel_xe_perf_metric_set *metric_set_iter;
 	struct intel_xe_perf_metric_set *test_set = NULL;
 
-	if (hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER ||
-	    hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE)
-		test_set_name = "TestOa";
-	else if ((hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_DECODE ||
-		  hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE) &&
-		 HAS_OAM(devid))
-		test_set_name = "MediaSet1";
-	else
-		igt_assert(!"reached");
+	if (name == NULL) {
+		if (hwe->engine_class == DRM_XE_ENGINE_CLASS_RENDER ||
+		hwe->engine_class == DRM_XE_ENGINE_CLASS_COMPUTE)
+			test_set_name = "TestOa";
+		else if ((hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_DECODE ||
+			hwe->engine_class == DRM_XE_ENGINE_CLASS_VIDEO_ENHANCE) &&
+			HAS_OAM(devid))
+			test_set_name = "MediaSet1";
+		else
+			igt_assert(!"reached");
+	} else {
+		test_set_name = name;
+	}
 
 	igt_list_for_each_entry(metric_set_iter, &intel_xe_perf->metric_sets, link) {
 		if (strcmp(metric_set_iter->symbol_name, test_set_name) == 0) {
@@ -346,6 +351,11 @@ static struct intel_xe_perf_metric_set *metric_set(const struct drm_xe_engine_cl
 		  test_set->hw_config_guid);
 
 	return test_set;
+}
+
+static struct intel_xe_perf_metric_set *metric_set(const struct drm_xe_engine_class_instance *hwe)
+{
+	return metric_set_with_name(hwe, NULL);
 }
 #define default_test_set metric_set(&default_hwe)
 
@@ -3118,7 +3128,7 @@ test_mi_rpc(struct drm_xe_engine_class_instance *hwe)
 
 {
 	enum intel_xe_oa_format_name fmt = oar_unit_format_get(devid, hwe);
-	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
+	struct intel_xe_perf_metric_set *test_set = metric_set_with_name(hwe, "RenderBasic");
 	uint64_t properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
 
