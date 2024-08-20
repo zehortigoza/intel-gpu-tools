@@ -22,6 +22,7 @@
 #include "drm.h"
 #include "igt.h"
 #include "igt_device.h"
+#include "igt_syncobj.h"
 #include "igt_sysfs.h"
 #include "xe/xe_ioctl.h"
 #include "xe/xe_query.h"
@@ -4454,6 +4455,98 @@ static void test_mapped_oa_buffer(map_oa_buffer_test_t test_with_fd_open,
 	__perf_close(stream_fd);
 }
 
+static bool find_alt_oa_config(u32 config_id, u32 *alt_config_id)
+{
+	struct dirent *entry;
+	int metrics_fd, dir_fd;
+	DIR *metrics_dir;
+	bool ret;
+
+	metrics_fd = openat(sysfs, "metrics", O_DIRECTORY);
+	igt_assert_lte(0, metrics_fd);
+
+	metrics_dir = fdopendir(metrics_fd);
+	igt_assert(metrics_dir);
+
+	while ((entry = readdir(metrics_dir))) {
+		if (entry->d_type != DT_DIR)
+			continue;
+
+		dir_fd = openat(metrics_fd, entry->d_name, O_RDONLY);
+		ret = __igt_sysfs_get_u32(dir_fd, "id", alt_config_id);
+		close(dir_fd);
+		if (!ret)
+			continue;
+
+		if (config_id != *alt_config_id) {
+			closedir(metrics_dir);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * SUBTEST: syncs-signal
+ * Description: Test OA syncs signal correctly
+ */
+static void
+test_syncs_signal(const struct drm_xe_engine_class_instance *hwe)
+{
+	struct drm_xe_ext_set_property extn[XE_OA_MAX_SET_PROPERTIES] = {};
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
+	struct drm_xe_sync sync = {
+	    .type = DRM_XE_SYNC_TYPE_SYNCOBJ,
+	    .flags = DRM_XE_SYNC_FLAG_SIGNAL,
+	};
+	uint64_t open_properties[] = {
+		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
+		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
+		DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
+		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(test_set->perf_oa_format),
+		DRM_XE_OA_PROPERTY_NUM_SYNCS, 1,
+		DRM_XE_OA_PROPERTY_SYNCS, to_user_pointer(&sync),
+	};
+	struct intel_xe_oa_open_prop open_param = {
+		.num_properties = ARRAY_SIZE(open_properties) / 2,
+		.properties_ptr = to_user_pointer(open_properties),
+	};
+	uint64_t config_properties[] = {
+		DRM_XE_OA_PROPERTY_OA_METRIC_SET, 0, /* Filled later */
+		DRM_XE_OA_PROPERTY_NUM_SYNCS, 1,
+		DRM_XE_OA_PROPERTY_SYNCS, to_user_pointer(&sync),
+	};
+	struct intel_xe_oa_open_prop config_param = {
+		.num_properties = ARRAY_SIZE(config_properties) / 2,
+		.properties_ptr = to_user_pointer(config_properties),
+	};
+	uint32_t syncobj = syncobj_create(drm_fd, 0);
+	uint32_t alt_config_id;
+	int ret;
+
+	sync.handle = syncobj;
+	stream_fd = __perf_open(drm_fd, &open_param, false);
+
+	igt_assert(syncobj_wait(drm_fd, &syncobj, 1, INT64_MAX, 0, NULL));
+
+	/* Change stream configuration */
+	syncobj_reset(drm_fd, &syncobj, 1);
+	if (!find_alt_oa_config(test_set->perf_oa_metrics_set, &alt_config_id))
+		goto out;
+
+	config_properties[1] = alt_config_id;
+	intel_xe_oa_prop_to_ext(&config_param, extn);
+
+	ret = igt_ioctl(stream_fd, DRM_XE_OBSERVATION_IOCTL_CONFIG, extn);
+	igt_assert_eq(ret, test_set->perf_oa_metrics_set);
+
+	igt_assert(syncobj_wait(drm_fd, &syncobj, 1, INT64_MAX, 0, NULL));
+out:
+	__perf_close(stream_fd);
+	syncobj_destroy(drm_fd, syncobj);
+}
+
 static const char *xe_engine_class_name(uint32_t engine_class)
 {
 	switch (engine_class) {
@@ -4700,6 +4793,19 @@ igt_main
 			__for_one_hwe_in_oag(hwe)
 				test_mmio_triggered_reports(hwe);
 		}
+	}
+
+	igt_subtest_group {
+		igt_fixture {
+			struct drm_xe_query_oa_units *qoa = xe_oa_units(drm_fd);
+			struct drm_xe_oa_unit *oau = (struct drm_xe_oa_unit *)&qoa->oa_units[0];
+
+			igt_require(oau->capabilities & DRM_XE_OA_CAPS_SYNCS);
+		}
+
+		igt_subtest_with_dynamic("syncs-signal")
+			__for_one_render_engine(hwe)
+				test_syncs_signal(hwe);
 	}
 
 	igt_fixture {
