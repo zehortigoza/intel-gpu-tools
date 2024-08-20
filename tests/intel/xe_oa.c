@@ -4547,6 +4547,105 @@ out:
 	syncobj_destroy(drm_fd, syncobj);
 }
 
+/**
+ * SUBTEST: syncs-ufence
+ * Description: Test OA ufence signal correctly
+ */
+#define USERPTR (1 << 0)
+static void
+test_syncs_ufence(const struct drm_xe_engine_class_instance *hwe, unsigned int flags)
+{
+	uint32_t vm;
+	uint64_t addr = 0x1a0000;
+#define USER_FENCE_VALUE	0xdeadbeefdeadbeefull
+	size_t bo_size;
+	uint32_t bo = 0;
+	struct {
+		uint64_t vm_sync;
+		uint64_t pad;
+		uint64_t oa_sync;
+	} *data;
+	struct drm_xe_ext_set_property extn[XE_OA_MAX_SET_PROPERTIES] = {};
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
+	struct drm_xe_sync sync = {
+		.type = DRM_XE_SYNC_TYPE_USER_FENCE,
+		.flags = DRM_XE_SYNC_FLAG_SIGNAL,
+		.timeline_value = USER_FENCE_VALUE,
+	};
+	uint64_t open_properties[] = {
+		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
+		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
+		DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
+		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(test_set->perf_oa_format),
+		DRM_XE_OA_PROPERTY_NUM_SYNCS, 1,
+		DRM_XE_OA_PROPERTY_SYNCS, to_user_pointer(&sync),
+	};
+	struct intel_xe_oa_open_prop open_param = {
+		.num_properties = ARRAY_SIZE(open_properties) / 2,
+		.properties_ptr = to_user_pointer(open_properties),
+	};
+	uint64_t config_properties[] = {
+		DRM_XE_OA_PROPERTY_OA_METRIC_SET, 0, /* Filled later */
+		DRM_XE_OA_PROPERTY_NUM_SYNCS, 1,
+		DRM_XE_OA_PROPERTY_SYNCS, to_user_pointer(&sync),
+	};
+	struct intel_xe_oa_open_prop config_param = {
+		.num_properties = ARRAY_SIZE(config_properties) / 2,
+		.properties_ptr = to_user_pointer(config_properties),
+	};
+	uint32_t alt_config_id;
+	int ret;
+
+	vm = xe_vm_create(drm_fd, 0, 0);
+	bo_size = xe_bb_size(drm_fd, sizeof(*data));
+
+	if (flags & USERPTR) {
+		data = aligned_alloc(xe_get_default_alignment(drm_fd), bo_size);
+		igt_assert(data);
+	} else {
+		bo = xe_bo_create(drm_fd, vm, bo_size, vram_if_possible(drm_fd, hwe->gt_id),
+				  DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
+		data = xe_bo_map(drm_fd, bo, bo_size);
+	}
+	memset(data, 0, bo_size);
+
+	sync.addr = to_user_pointer(&data[0].vm_sync);
+	if (bo)
+		xe_vm_bind_async(drm_fd, vm, 0, bo, 0, addr, bo_size, &sync, 1);
+	else
+		xe_vm_bind_userptr_async(drm_fd, vm, 0, to_user_pointer(data), addr,
+					 bo_size, &sync, 1);
+	xe_wait_ufence(drm_fd, &data[0].vm_sync, USER_FENCE_VALUE, 0, NSEC_PER_SEC);
+
+	sync.addr = to_user_pointer(&data[0].oa_sync);
+	stream_fd = __perf_open(drm_fd, &open_param, false);
+
+	xe_wait_ufence(drm_fd, &data[0].oa_sync, USER_FENCE_VALUE, 0, NSEC_PER_SEC);
+
+	/* Change stream configuration */
+	data[0].oa_sync = 0;
+	if (!find_alt_oa_config(test_set->perf_oa_metrics_set, &alt_config_id))
+		goto out;
+
+	config_properties[1] = alt_config_id;
+	intel_xe_oa_prop_to_ext(&config_param, extn);
+
+	ret = igt_ioctl(stream_fd, DRM_XE_OBSERVATION_IOCTL_CONFIG, extn);
+	igt_assert_eq(ret, test_set->perf_oa_metrics_set);
+
+	xe_wait_ufence(drm_fd, &data[0].oa_sync, USER_FENCE_VALUE, 0, NSEC_PER_SEC);
+out:
+	__perf_close(stream_fd);
+
+	if (bo) {
+		munmap(data, bo_size);
+		gem_close(drm_fd, bo);
+	} else {
+		free(data);
+	}
+	xe_vm_destroy(drm_fd, vm);
+}
+
 static const char *xe_engine_class_name(uint32_t engine_class)
 {
 	switch (engine_class) {
@@ -4806,6 +4905,10 @@ igt_main
 		igt_subtest_with_dynamic("syncs-signal")
 			__for_one_render_engine(hwe)
 				test_syncs_signal(hwe);
+
+		igt_subtest_with_dynamic("syncs-ufence")
+			__for_one_render_engine(hwe)
+				test_syncs_ufence(hwe, 0);
 	}
 
 	igt_fixture {
