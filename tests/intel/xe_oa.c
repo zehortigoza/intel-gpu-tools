@@ -4552,10 +4552,10 @@ out:
  * Description: Test OA syncs with syncobj timeline
  */
 static void
-test_syncs_timeline(const struct drm_xe_engine_class_instance *hwe)
+test_syncs_timeline(struct drm_xe_engine_class_instance *hwe)
 {
 	struct drm_xe_ext_set_property extn[XE_OA_MAX_SET_PROPERTIES] = {};
-	struct drm_xe_sync syncs[2] = {};
+	struct drm_xe_sync oa_syncs[2] = {};
 	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
 	uint64_t open_properties[] = {
 		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
@@ -4563,7 +4563,7 @@ test_syncs_timeline(const struct drm_xe_engine_class_instance *hwe)
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
 		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(test_set->perf_oa_format),
 		DRM_XE_OA_PROPERTY_NUM_SYNCS, 1,
-		DRM_XE_OA_PROPERTY_SYNCS, to_user_pointer(syncs),
+		DRM_XE_OA_PROPERTY_SYNCS, to_user_pointer(oa_syncs),
 	};
 	struct intel_xe_oa_open_prop open_param = {
 		.num_properties = ARRAY_SIZE(open_properties) / 2,
@@ -4572,7 +4572,7 @@ test_syncs_timeline(const struct drm_xe_engine_class_instance *hwe)
 	uint64_t config_properties[] = {
 		DRM_XE_OA_PROPERTY_OA_METRIC_SET, 0, /* Filled later */
 		DRM_XE_OA_PROPERTY_NUM_SYNCS, 2,
-		DRM_XE_OA_PROPERTY_SYNCS, to_user_pointer(syncs),
+		DRM_XE_OA_PROPERTY_SYNCS, to_user_pointer(oa_syncs),
 	};
 	struct intel_xe_oa_open_prop config_param = {
 		.num_properties = ARRAY_SIZE(config_properties) / 2,
@@ -4586,33 +4586,66 @@ test_syncs_timeline(const struct drm_xe_engine_class_instance *hwe)
 		.timeout_nsec = INT64_MAX,
 		.count_handles = 1,
 	};
+	const uint32_t vm = xe_vm_create(drm_fd, 0, 0);
+	const uint32_t exec_queue = xe_exec_queue_create(drm_fd, vm, hwe, 0);
+	struct drm_xe_sync exec_syncs[2] = {};
+	const uint64_t bb_addr = 0x1a0000;
+	struct drm_xe_exec exec = {
+		.exec_queue_id = exec_queue,
+		.num_syncs = ARRAY_SIZE(exec_syncs),
+		.syncs = to_user_pointer(exec_syncs),
+		.address = bb_addr,
+		.num_batch_buffer = 1,
+	};
+	const uint32_t bo_size = xe_bb_size(drm_fd, 256);
+
 	uint32_t alt_config_id;
+	uint32_t bo, *bo_data;
 	int ret;
 
-	syncs[0].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
-	syncs[0].flags = DRM_XE_SYNC_FLAG_SIGNAL;
-	syncs[0].timeline_value = ++timeline_value;
-	syncs[0].handle = syncobj;
+	/* create and bind a batch buffer with MI_BATCH_BUFFER_END */
+	bo = xe_bo_create(drm_fd, vm, bo_size, vram_if_possible(drm_fd, hwe->gt_id),
+			  DRM_XE_GEM_CREATE_FLAG_NEEDS_VISIBLE_VRAM);
+	xe_vm_bind_sync(drm_fd, vm, bo, 0, bb_addr, bo_size);
+	bo_data = xe_bo_map(drm_fd, bo, bo_size);
+	*bo_data = MI_BATCH_BUFFER_END;
+	munmap(bo_data, bo_size);
 
+	/* signal completition of perf open */
+	oa_syncs[0].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+	oa_syncs[0].flags = DRM_XE_SYNC_FLAG_SIGNAL;
+	oa_syncs[0].timeline_value = ++timeline_value;
+	oa_syncs[0].handle = syncobj;
 	stream_fd = __perf_open(drm_fd, &open_param, false);
 
 	if (!find_alt_oa_config(test_set->perf_oa_metrics_set, &alt_config_id))
 		goto out;
 
-	/* wait on open */
-	syncs[1].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
-	syncs[1].flags = 0;
-	syncs[1].timeline_value = timeline_value;
-	syncs[1].handle = syncobj;
-
-	/* signal completition */
-	syncs[0].timeline_value = ++timeline_value;
+	/* wait on perf open */
+	oa_syncs[1].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+	oa_syncs[1].flags = 0;/* wait */
+	oa_syncs[1].timeline_value = timeline_value;
+	oa_syncs[1].handle = syncobj;
+	/* signal completition of DRM_XE_OBSERVATION_IOCTL_CONFIG */
+	oa_syncs[0].timeline_value = ++timeline_value;
 
 	config_properties[1] = alt_config_id;
 	intel_xe_oa_prop_to_ext(&config_param, extn);
 
 	ret = igt_ioctl(stream_fd, DRM_XE_OBSERVATION_IOCTL_CONFIG, extn);
 	igt_assert_eq(ret, test_set->perf_oa_metrics_set);
+
+	/* wait completition of DRM_XE_OBSERVATION_IOCTL_CONFIG */
+	exec_syncs[0].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+	exec_syncs[0].flags = 0; /* wait */
+	exec_syncs[0].timeline_value = timeline_value;
+	exec_syncs[0].handle = syncobj;
+	/* signal copletition of exec */
+	exec_syncs[1].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+	exec_syncs[1].flags = DRM_XE_SYNC_FLAG_SIGNAL;
+	exec_syncs[1].timeline_value = ++timeline_value;
+	exec_syncs[1].handle = syncobj;
+	xe_exec(drm_fd, &exec);
 
 	/* will wait on timeline_value==2 */
 	igt_assert(__syncobj_timeline_wait_ioctl(drm_fd, &timeline_wait) == 0);
