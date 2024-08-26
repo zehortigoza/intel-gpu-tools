@@ -4548,6 +4548,80 @@ out:
 }
 
 /**
+ * SUBTEST: syncs-timeline
+ * Description: Test OA syncs with syncobj timeline
+ */
+static void
+test_syncs_timeline(const struct drm_xe_engine_class_instance *hwe)
+{
+	struct drm_xe_ext_set_property extn[XE_OA_MAX_SET_PROPERTIES] = {};
+	struct drm_xe_sync syncs[2] = {};
+	struct intel_xe_perf_metric_set *test_set = metric_set(hwe);
+	uint64_t open_properties[] = {
+		DRM_XE_OA_PROPERTY_OA_UNIT_ID, 0,
+		DRM_XE_OA_PROPERTY_SAMPLE_OA, true,
+		DRM_XE_OA_PROPERTY_OA_METRIC_SET, test_set->perf_oa_metrics_set,
+		DRM_XE_OA_PROPERTY_OA_FORMAT, __ff(test_set->perf_oa_format),
+		DRM_XE_OA_PROPERTY_NUM_SYNCS, 1,
+		DRM_XE_OA_PROPERTY_SYNCS, to_user_pointer(syncs),
+	};
+	struct intel_xe_oa_open_prop open_param = {
+		.num_properties = ARRAY_SIZE(open_properties) / 2,
+		.properties_ptr = to_user_pointer(open_properties),
+	};
+	uint64_t config_properties[] = {
+		DRM_XE_OA_PROPERTY_OA_METRIC_SET, 0, /* Filled later */
+		DRM_XE_OA_PROPERTY_NUM_SYNCS, 2,
+		DRM_XE_OA_PROPERTY_SYNCS, to_user_pointer(syncs),
+	};
+	struct intel_xe_oa_open_prop config_param = {
+		.num_properties = ARRAY_SIZE(config_properties) / 2,
+		.properties_ptr = to_user_pointer(config_properties),
+	};
+	uint32_t syncobj = syncobj_create(drm_fd, 0);
+	uint64_t timeline_value = 0;
+	struct drm_syncobj_timeline_wait timeline_wait = {
+		.handles = to_user_pointer(&syncobj),
+		.points = to_user_pointer(&timeline_value),
+		.timeout_nsec = INT64_MAX,
+		.count_handles = 1,
+	};
+	uint32_t alt_config_id;
+	int ret;
+
+	syncs[0].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+	syncs[0].flags = DRM_XE_SYNC_FLAG_SIGNAL;
+	syncs[0].timeline_value = ++timeline_value;
+	syncs[0].handle = syncobj;
+
+	stream_fd = __perf_open(drm_fd, &open_param, false);
+
+	if (!find_alt_oa_config(test_set->perf_oa_metrics_set, &alt_config_id))
+		goto out;
+
+	/* wait on open */
+	syncs[1].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+	syncs[1].flags = 0;
+	syncs[1].timeline_value = timeline_value;
+	syncs[1].handle = syncobj;
+
+	/* signal completition */
+	syncs[0].timeline_value = ++timeline_value;
+
+	config_properties[1] = alt_config_id;
+	intel_xe_oa_prop_to_ext(&config_param, extn);
+
+	ret = igt_ioctl(stream_fd, DRM_XE_OBSERVATION_IOCTL_CONFIG, extn);
+	igt_assert_eq(ret, test_set->perf_oa_metrics_set);
+
+	/* will wait on timeline_value==2 */
+	igt_assert(__syncobj_timeline_wait_ioctl(drm_fd, &timeline_wait) == 0);
+out:
+	__perf_close(stream_fd);
+	syncobj_destroy(drm_fd, syncobj);
+}
+
+/**
  * SUBTEST: syncs-ufence
  * Description: Test OA ufence signal correctly
  */
@@ -4905,6 +4979,10 @@ igt_main
 		igt_subtest_with_dynamic("syncs-signal")
 			__for_one_render_engine(hwe)
 				test_syncs_signal(hwe);
+
+		igt_subtest_with_dynamic("syncs-timeline")
+			__for_one_render_engine(hwe)
+				test_syncs_timeline(hwe);
 
 		igt_subtest_with_dynamic("syncs-ufence")
 			__for_one_render_engine(hwe)
