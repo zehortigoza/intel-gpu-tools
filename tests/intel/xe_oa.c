@@ -4547,6 +4547,9 @@ out:
 	syncobj_destroy(drm_fd, syncobj);
 }
 
+#define SIGNAL_INDEX 0
+#define WAIT_INDEX 1
+
 /**
  * SUBTEST: syncs-timeline
  * Description: Test OA syncs with syncobj timeline
@@ -4586,8 +4589,8 @@ test_syncs_timeline(struct drm_xe_engine_class_instance *hwe)
 		.timeout_nsec = INT64_MAX,
 		.count_handles = 1,
 	};
-	const uint32_t vm = xe_vm_create(drm_fd, 0, 0);
-	const uint32_t exec_queue = xe_exec_queue_create(drm_fd, vm, hwe, 0);
+	uint32_t vm = xe_vm_create(drm_fd, 0, 0);
+	uint32_t exec_queue = xe_exec_queue_create(drm_fd, vm, hwe, 0);
 	struct drm_xe_sync exec_syncs[2] = {};
 	const uint64_t bb_addr = 0x1a0000;
 	struct drm_xe_exec exec = {
@@ -4611,46 +4614,56 @@ test_syncs_timeline(struct drm_xe_engine_class_instance *hwe)
 	*bo_data = MI_BATCH_BUFFER_END;
 	munmap(bo_data, bo_size);
 
-	/* signal completition of perf open */
-	oa_syncs[0].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
-	oa_syncs[0].flags = DRM_XE_SYNC_FLAG_SIGNAL;
-	oa_syncs[0].timeline_value = ++timeline_value;
-	oa_syncs[0].handle = syncobj;
+	/* signal completition of perf open, timeline_value = 1 */
+	oa_syncs[SIGNAL_INDEX].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+	oa_syncs[SIGNAL_INDEX].flags = DRM_XE_SYNC_FLAG_SIGNAL;
+	oa_syncs[SIGNAL_INDEX].timeline_value = ++timeline_value;
+	oa_syncs[SIGNAL_INDEX].handle = syncobj;
 	stream_fd = __perf_open(drm_fd, &open_param, false);
 
+	/* wait on perf open and change oa metric */
 	if (!find_alt_oa_config(test_set->perf_oa_metrics_set, &alt_config_id))
 		goto out;
-
-	/* wait on perf open */
-	oa_syncs[1].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
-	oa_syncs[1].flags = 0;/* wait */
-	oa_syncs[1].timeline_value = timeline_value;
-	oa_syncs[1].handle = syncobj;
-	/* signal completition of DRM_XE_OBSERVATION_IOCTL_CONFIG */
-	oa_syncs[0].timeline_value = ++timeline_value;
-
 	config_properties[1] = alt_config_id;
+	oa_syncs[WAIT_INDEX].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+	oa_syncs[WAIT_INDEX].flags = 0;/* wait */
+	oa_syncs[WAIT_INDEX].timeline_value = timeline_value;
+	oa_syncs[WAIT_INDEX].handle = syncobj;
+	/* signal completition of DRM_XE_OBSERVATION_IOCTL_CONFIG, timeline_value = 2 */
+	oa_syncs[SIGNAL_INDEX].timeline_value = ++timeline_value;
 	intel_xe_oa_prop_to_ext(&config_param, extn);
-
 	ret = igt_ioctl(stream_fd, DRM_XE_OBSERVATION_IOCTL_CONFIG, extn);
 	igt_assert_eq(ret, test_set->perf_oa_metrics_set);
 
-	/* wait completition of DRM_XE_OBSERVATION_IOCTL_CONFIG */
-	exec_syncs[0].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
-	exec_syncs[0].flags = 0; /* wait */
-	exec_syncs[0].timeline_value = timeline_value;
-	exec_syncs[0].handle = syncobj;
+	/* wait oa metric change before run batch buffer */
+	exec_syncs[WAIT_INDEX].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+	exec_syncs[WAIT_INDEX].flags = 0; /* wait */
+	exec_syncs[WAIT_INDEX].timeline_value = timeline_value;
+	exec_syncs[WAIT_INDEX].handle = syncobj;
 	/* signal copletition of exec */
-	exec_syncs[1].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
-	exec_syncs[1].flags = DRM_XE_SYNC_FLAG_SIGNAL;
-	exec_syncs[1].timeline_value = ++timeline_value;
-	exec_syncs[1].handle = syncobj;
+	exec_syncs[SIGNAL_INDEX].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+	exec_syncs[SIGNAL_INDEX].flags = DRM_XE_SYNC_FLAG_SIGNAL;
+	exec_syncs[SIGNAL_INDEX].timeline_value = ++timeline_value;
+	exec_syncs[SIGNAL_INDEX].handle = syncobj;
 	xe_exec(drm_fd, &exec);
 
-	/* will wait on timeline_value==2 */
+	/* wait on exec before change oa metric again */
+	test_set->perf_oa_metrics_set = alt_config_id;
+	if (!find_alt_oa_config(test_set->perf_oa_metrics_set, &alt_config_id))
+		goto out;
+	config_properties[1] = alt_config_id;
+	oa_syncs[WAIT_INDEX].timeline_value = timeline_value;
+	oa_syncs[SIGNAL_INDEX].timeline_value = ++timeline_value;
+	intel_xe_oa_prop_to_ext(&config_param, extn);
+	ret = igt_ioctl(stream_fd, DRM_XE_OBSERVATION_IOCTL_CONFIG, extn);
+	igt_assert_eq(ret, test_set->perf_oa_metrics_set);
+
 	igt_assert(__syncobj_timeline_wait_ioctl(drm_fd, &timeline_wait) == 0);
 out:
 	__perf_close(stream_fd);
+	gem_close(drm_fd, bo);
+	xe_exec_queue_destroy(drm_fd, exec_queue);
+	xe_vm_destroy(drm_fd, vm);
 	syncobj_destroy(drm_fd, syncobj);
 }
 
