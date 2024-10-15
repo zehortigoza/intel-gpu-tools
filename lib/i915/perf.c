@@ -68,6 +68,8 @@
 #include "i915_perf_metrics_acmgt3.h"
 #include "i915_perf_metrics_mtlgt2.h"
 #include "i915_perf_metrics_mtlgt3.h"
+#include "i915_perf_metrics_arlgt1.h"
+#include "i915_perf_metrics_arlgt2.h"
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
@@ -461,9 +463,9 @@ intel_perf_for_devinfo(uint32_t device_id,
 		else if (is_mtl_gt3(&perf->devinfo))
 			intel_perf_load_metrics_mtlgt3(perf);
 		else if (is_arl_gt1(&perf->devinfo))
-			intel_perf_load_metrics_mtlgt2(perf);
+			intel_perf_load_metrics_arlgt1(perf);
 		else if (is_arl_gt2(&perf->devinfo))
-			intel_perf_load_metrics_mtlgt3(perf);
+			intel_perf_load_metrics_arlgt2(perf);
 		else
 			return unsupported_i915_perf_platform(perf);
 	} else {

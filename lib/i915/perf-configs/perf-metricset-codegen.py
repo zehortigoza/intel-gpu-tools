@@ -144,7 +144,7 @@ def generate_metric_sets(args, gen):
                 metric_set->perfcnt_offset = metric_set->c_offset + 8;
 
             """))
-        elif gen.chipset.startswith("acm") or gen.chipset.startswith("mtl"):
+        elif gen.chipset.startswith("acm") or gen.chipset.startswith("mtl") or gen.chipset.startswith("arl"):
             if set.oa_format == "128B_MPEC8_NOA16":
                 c(textwrap.dedent("""\
                     metric_set->perf_oa_format = I915_OAM_FORMAT_MPEC8u32_B8_C8;

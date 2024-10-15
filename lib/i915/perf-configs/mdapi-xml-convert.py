@@ -201,9 +201,10 @@ chipsets = {
     'ADL': gen8_11_chipset_oa_formats,
     'ACM': xehpsdv_chipset_oa_formats,
     'MTL': mtl_chipset_oa_formats,
+    'ARL': mtl_chipset_oa_formats,
 }
 
-xehp_plus = ( 'ACM', 'MTL' )
+xehp_plus = ( 'ACM', 'MTL', 'ARL' )
 
 register_types = { 'OA', 'NOA', 'FLEX', 'PM' }
 
@@ -984,7 +985,7 @@ for arg in args.xml:
             # equations for the GpuTime counters, which seem inconsistent
             if mdapi_counter.get('SymbolName') == "GpuTime":
                 mdapi_counter.set('DeltaReportReadEquation', "qw@0x0 1000000000 UMUL $GpuTimestampFrequency UDIV")
-                if chipset == 'MTL' and oa_format != '256B_GENERIC_NOA16':
+                if (chipset == 'MTL' or chipset == 'ARL') and oa_format != '256B_GENERIC_NOA16':
                     mdapi_counter.set('SnapshotReportReadEquation', "qw@0x08 1000000000 UMUL $GpuTimestampFrequency UDIV")
                 else:
                     mdapi_counter.set('SnapshotReportReadEquation', "dw@0x04 1000000000 UMUL $GpuTimestampFrequency UDIV")
