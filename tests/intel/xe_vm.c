@@ -366,6 +366,55 @@ static void userptr_invalid(int fd)
 	xe_vm_destroy(fd, vm);
 }
 
+/** Align a value to a power of two */
+#define ALIGN_POT(x, pot_align) (((x) + (pot_align) - 1) & ~((pot_align) - 1))
+
+static inline uint64_t
+align64(uint64_t value, uint64_t alignment)
+{
+   return ALIGN_POT(value, alignment);
+}
+
+/**
+ * SUBTEST: page-sizes
+ * Functionality: bind
+ * Description:
+ *	Allocate and bind different size of bo to check if KMD binds it with
+ *      optimal page sizes.
+ */
+static void page_sizes(int fd)
+{
+	/* all the expectations below are for platforms that has 4k min alignment */
+	size_t bo_sizes[] = {
+		SZ_4K, /* expectation: size=4k, 1 x 4k page */
+		SZ_4K + SZ_1K, /* expectation: size=8k, 2 x 4k page */
+		SZ_64K, /* expectation: size=64k, 1 x 64k page */
+		SZ_64K + SZ_1K, /* expectation: size=68k, 1 x 64k page + 1 x 4k page */
+		SZ_2M, /* expectation: size=2m, 1 x 2m page */
+		SZ_2M + SZ_64K, /* expectation: size=2.0625m, 1 x 2m page + 1 x 64k page */
+		SZ_2M + SZ_1M  /* expectation: size=3m, 1 x 2m page + 16 x 64k page */
+	};
+	size_t min_page_size = xe_get_default_alignment(fd);
+	uint32_t vm, i;
+
+	vm = xe_vm_create(fd, 0, 0);
+
+	for (i = 0; i < ARRAY_SIZE(bo_sizes); i++) {
+		uint32_t bo;
+		size_t size;
+
+		if (bo_sizes[i] < min_page_size)
+			continue;
+
+		size = align64(bo_sizes[i], min_page_size);
+		bo = xe_bo_create(fd, vm, size, vram_if_possible(fd, 0), 0);
+		xe_vm_bind_sync(fd, vm, bo, 0, SZ_2M, size);
+		xe_vm_unbind_sync(fd, vm, 0, SZ_2M, size);
+	}
+
+	xe_vm_destroy(fd, vm);
+}
+
 /**
  * SUBTEST: compact-64k-pages
  * Functionality: bind
@@ -2497,6 +2546,9 @@ igt_main
 			compact_64k_pages(fd, hwe);
 			break;
 		}
+
+	igt_subtest("page-sizes")
+		page_sizes(fd);
 
 	igt_subtest("shared-pte-page")
 		xe_for_each_engine(fd, hwe)
